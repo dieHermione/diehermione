@@ -4,6 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Sign in — Test Site</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sour+Gummy:wght@400..700&display=swap" rel="stylesheet" />
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -12,8 +15,18 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      flex-direction: column;
+      gap: 1.5rem;
       background: linear-gradient(135deg, #ff90b0 0%, #f6f6f6 100%);
       padding: 1rem;
+    }
+    .site-header {
+      font-family: "Sour Gummy", sans-serif;
+      font-size: 3rem;
+      font-weight: 700;
+      color: #ff4860;
+      text-shadow: 0 2px 12px rgba(255, 255, 255, 0.6);
+      text-align: center;
     }
     .card {
       background: #fff;
@@ -72,7 +85,7 @@
   </style>
 </head>
 <body>
-  <h1> Text</h1>
+  <h1 class="site-header">BITCHHHH</h1>
   <main class="card">
     <div class="tabs">
       <button id="tab-login" class="active" type="button">Log in</button>
@@ -100,7 +113,6 @@
       const login = mode === "login";
       tabLogin.classList.toggle("active", login);
       tabRegister.classList.toggle("active", !login);
-      document.getElementById("title").textContent = login ? "" : "Create an account";
       document.getElementById("submit").textContent = login ? "Log in" : "Register";
       document.getElementById("password").autocomplete = login ? "current-password" : "new-password";
       hint.hidden = login;
