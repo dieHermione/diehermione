@@ -29,3 +29,9 @@ Set `PORT` and `SESSION_SECRET` env vars in production-ish deployments.
 | `/api/login` | POST | Sign in |
 | `/api/logout` | POST | Sign out |
 | `/api/me` | GET | Current session user |
+
+## Credits
+
+Chess piece images are the "Cburnett" set by Colin M.L. Burnett, from
+[Wikimedia Commons](https://commons.wikimedia.org/wiki/Category:SVG_chess_pieces)
+(CC BY-SA 3.0), recolored from black to pink in `public/pieces/`.

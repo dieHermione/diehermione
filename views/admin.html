@@ -34,7 +34,7 @@
       border-radius: 12px;
       box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
       width: 100%;
-      max-width: 480px;
+      max-width: 600px;
       padding: 2rem;
     }
     table { width: 100%; border-collapse: collapse; margin-bottom: 1.5rem; }
@@ -43,18 +43,25 @@
     tr + tr td { border-top: 1px solid #eee; }
     td { color: #333; }
     .count { color: #999; font-size: 0.85rem; margin-bottom: 1rem; }
-    .delete {
-      flex: none;
-      padding: 0.3rem 0.75rem;
-      background: #fff;
-      color: #ff4860;
-      border: 1px solid #ff4860;
+    .action-menu {
+      padding: 0.3rem 0.4rem;
+      border: 1px solid #ddd;
       border-radius: 6px;
-      font-size: 0.8rem;
-      font-weight: 600;
+      font-size: 0.85rem;
+      background: #fff;
+      color: #333;
       cursor: pointer;
     }
-    .delete:hover { background: #ff4860; color: #fff; }
+    .action-menu:focus { outline: none; border-color: #ff90b0; }
+    .pts-input {
+      width: 4rem;
+      padding: 0.3rem 0.4rem;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      margin-right: 0.35rem;
+    }
+    .pts-input:focus { outline: none; border-color: #ff90b0; }
     .nav { display: flex; gap: 0.75rem; }
     button {
       flex: 1;
@@ -70,12 +77,12 @@
   </style>
 </head>
 <body>
-  <h1 class="site-header">⊹₊ ˚‧︵‿₊୨ accounts ୧₊‿︵‧ ˚ ₊⊹</h1>
+  <h1 class="site-header">⊹₊ ˚‧︵‿₊୨ Accounts ୧₊‿︵‧ ˚ ₊⊹</h1>
   <main class="card">
     <p class="count" id="count">Loading…</p>
     <table>
       <thead>
-        <tr><th>Username</th><th>Registered</th><th></th></tr>
+        <tr><th>Username</th><th>Registered</th><th>Points</th><th>Listed</th><th></th></tr>
       </thead>
       <tbody id="rows"></tbody>
     </table>
@@ -99,20 +106,76 @@
             name.textContent = u.username;
             const date = document.createElement("td");
             date.textContent = new Date(u.createdAt).toLocaleDateString();
+            const points = document.createElement("td");
+            points.textContent = u.points;
+            const listed = document.createElement("td");
+            listed.textContent = u.flagged ? "✓" : "—";
             const actions = document.createElement("td");
+            const amount = document.createElement("input");
+            amount.type = "number";
+            amount.step = "1";
+            amount.className = "pts-input";
+            amount.placeholder = "pts";
+            const menu = document.createElement("select");
+            menu.className = "action-menu";
+            const options = [
+              ["", "Actions…"],
+              ["add", "Add points"],
+              ["flag", u.flagged ? "Hide from leaderboard" : "Show on leaderboard"],
+            ];
             if (u.username.toLowerCase() !== "hermione") {
-              const del = document.createElement("button");
-              del.type = "button";
-              del.className = "delete";
-              del.textContent = "Delete";
-              del.addEventListener("click", () => deleteAccount(u.username));
-              actions.append(del);
+              options.push(["delete", "Delete account…"]);
             }
-            tr.append(name, date, actions);
+            for (const [value, label] of options) {
+              const opt = document.createElement("option");
+              opt.value = value;
+              opt.textContent = label;
+              menu.append(opt);
+            }
+            menu.addEventListener("change", async () => {
+              const action = menu.value;
+              menu.value = "";
+              if (action === "add") await addPoints(u.username, amount.value);
+              else if (action === "flag") await setFlag(u.username, !u.flagged);
+              else if (action === "delete") await deleteAccount(u.username);
+            });
+            actions.append(amount, menu);
+            tr.append(name, date, points, listed, actions);
             rows.append(tr);
           }
         })
         .catch(() => (window.location.href = "/"));
+    }
+
+    async function addPoints(username, value) {
+      const amount = parseInt(value, 10);
+      if (!Number.isInteger(amount) || amount === 0) {
+        alert("Enter a whole number of points first.");
+        return;
+      }
+      const res = await fetch("/api/users/" + encodeURIComponent(username) + "/points", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || "Adding points failed.");
+      }
+      loadAccounts();
+    }
+
+    async function setFlag(username, flagged) {
+      const res = await fetch("/api/users/" + encodeURIComponent(username) + "/flag", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ flagged }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || "Updating the leaderboard flag failed.");
+      }
+      loadAccounts();
     }
 
     async function deleteAccount(username) {

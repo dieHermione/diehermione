@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chess — Test Site</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sour+Gummy:wght@400..700&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 1.5rem;
+      background: linear-gradient(135deg, #ff90b0 0%, #f6f6f6 100%);
+      padding: 1rem;
+    }
+    .site-header {
+      font-family: "Sour Gummy", sans-serif;
+      font-size: 3rem;
+      font-weight: 700;
+      color: #ffffff;
+      text-shadow: 0 2px 12px rgba(255, 255, 255, 0.6);
+      text-align: center;
+      margin-bottom: 1.25rem;
+    }
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+      width: 100%;
+      max-width: 520px;
+      padding: 2rem;
+      text-align: center;
+    }
+    .status { color: #333; font-weight: 600; margin-bottom: 1rem; min-height: 1.4em; }
+    .picker { margin-bottom: 1rem; }
+    .picker select {
+      padding: 0.4rem 0.6rem;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      background: #fff;
+      color: #333;
+    }
+    #board {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      width: 100%;
+      max-width: 440px;
+      aspect-ratio: 1;
+      margin: 0 auto 1.25rem;
+      border: 3px solid #ffb0c4;
+      border-radius: 8px;
+      overflow: hidden;
+      user-select: none;
+    }
+    .square { position: relative; cursor: pointer; }
+    .square.light { background: #ffffff; }
+    .square.dark { background: #ffb0c4; }
+    .square.selected::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      box-shadow: inset 0 0 0 3px #e0325c;
+    }
+    .square.last::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      box-shadow: inset 0 0 0 3px #ffd6e0;
+    }
+    .square img { width: 100%; height: 100%; display: block; pointer-events: none; }
+    .nav { display: flex; gap: 0.75rem; justify-content: center; }
+    button {
+      padding: 0.6rem 1.25rem;
+      background: #ff90b0;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .note { color: #999; font-size: 0.85rem; margin-top: 1rem; }
+  </style>
+</head>
+<body>
+  <h1 class="site-header">⊹₊ ˚‧︵‿₊୨ Chess ୧₊‿︵‧ ˚ ₊⊹</h1>
+  <main class="card">
+    <div class="picker" id="picker" hidden>
+      <label for="opponent">Game vs </label>
+      <select id="opponent"></select>
+    </div>
+    <p class="status" id="status">Loading…</p>
+    <div id="board"></div>
+    <div class="nav">
+      <button id="newgame" type="button">New game</button>
+      <button id="back" type="button">Dashboard</button>
+    </div>
+    <p class="note" id="note" hidden>You play white; Hermione plays pink. Click a piece, then its destination. Pawns promote to queens.</p>
+  </main>
+  <script>
+    let mySide = "w";      // players are white; hermione is pink ("b")
+    let isAdmin = false;
+    let opponent = null;   // admin only: which player's game is shown
+    let game = null;
+    let selected = null;
+    let busy = false;
+
+    const boardEl = document.getElementById("board");
+    const statusEl = document.getElementById("status");
+
+    const PIECE_SRC = (ch) =>
+      "/pieces/" + (ch === ch.toUpperCase() ? "w" : "p") + ch.toUpperCase() + ".svg";
+
+    function squares() {
+      // board squares in render order, honoring orientation (own side at bottom)
+      const files = "abcdefgh".split("");
+      const ranks = [8, 7, 6, 5, 4, 3, 2, 1];
+      const list = [];
+      for (const r of ranks) for (const f of files) list.push(f + r);
+      return mySide === "b" ? list.reverse() : list;
+    }
+
+    function fenBoard(fen) {
+      // expand the FEN placement field into a { square: pieceChar } map
+      const map = {};
+      const rows = fen.split(" ")[0].split("/");
+      rows.forEach((row, i) => {
+        let file = 0;
+        for (const ch of row) {
+          if (/\d/.test(ch)) file += Number(ch);
+          else {
+            map["abcdefgh"[file] + (8 - i)] = ch;
+            file++;
+          }
+        }
+      });
+      return map;
+    }
+
+    function render() {
+      boardEl.replaceChildren();
+      if (!game) return;
+      const pieces = fenBoard(game.fen);
+      let dark = false;
+      squares().forEach((sq, i) => {
+        if (i % 8 !== 0) dark = !dark;
+        const div = document.createElement("div");
+        div.className = "square " + (dark ? "dark" : "light");
+        div.dataset.square = sq;
+        div.setAttribute("role", "button");
+        div.setAttribute("aria-label", sq + (pieces[sq] ? " " + pieces[sq] : ""));
+        if (sq === selected) div.classList.add("selected");
+        const piece = pieces[sq];
+        if (piece) {
+          const img = document.createElement("img");
+          img.src = PIECE_SRC(piece);
+          img.alt = piece;
+          div.append(img);
+        }
+        div.addEventListener("click", () => onSquareClick(sq, piece));
+        boardEl.append(div);
+      });
+      statusEl.textContent = statusText();
+    }
+
+    function statusText() {
+      if (!game) return "";
+      if (game.checkmate) {
+        const winner = game.winner === "w" ? "White" : "Pink";
+        return "Checkmate — " + winner + " wins!";
+      }
+      if (game.draw || game.gameOver) return "Draw.";
+      const mine = game.turn === mySide;
+      let text = mine ? "Your move" : "Waiting for " + (isAdmin ? game.opponent : "Hermione") + "…";
+      if (game.check) text += " — check!";
+      return text;
+    }
+
+    function pieceSide(ch) {
+      return ch === ch.toUpperCase() ? "w" : "b";
+    }
+
+    async function onSquareClick(sq, piece) {
+      if (!game || game.gameOver || busy) return;
+      if (game.turn !== mySide) return;
+      if (selected && sq !== selected) {
+        if (piece && pieceSide(piece) === mySide) {
+          selected = sq;
+          render();
+          return;
+        }
+        await sendMove(selected, sq);
+        return;
+      }
+      if (piece && pieceSide(piece) === mySide) {
+        selected = selected === sq ? null : sq;
+        render();
+      }
+    }
+
+    async function sendMove(from, to) {
+      busy = true;
+      const body = { from, to };
+      if (isAdmin) body.opponent = opponent;
+      const res = await fetch("/api/chess/move", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json().catch(() => ({}));
+      busy = false;
+      if (res.ok) {
+        game = data.game;
+        selected = null;
+        render();
+      } else if (data.error && data.error !== "Illegal move.") {
+        statusEl.textContent = data.error;
+      } else {
+        selected = null;
+        render();
+      }
+    }
+
+    async function loadGame() {
+      if (busy) return;
+      const url = isAdmin
+        ? "/api/chess/game?opponent=" + encodeURIComponent(opponent || "")
+        : "/api/chess/game";
+      const res = await fetch(url);
+      if (!res.ok) {
+        if (res.status === 401) window.location.href = "/";
+        return;
+      }
+      const data = await res.json();
+      if (!game || data.game.fen !== game.fen || data.game.opponent !== game.opponent) {
+        game = data.game;
+        selected = null;
+        render();
+      }
+    }
+
+    async function loadAdminGames() {
+      const res = await fetch("/api/chess/games");
+      if (!res.ok) return;
+      const data = await res.json();
+      const select = document.getElementById("opponent");
+      const current = opponent;
+      select.replaceChildren();
+      for (const g of data.games) {
+        const opt = document.createElement("option");
+        opt.value = g.key;
+        opt.textContent = g.opponent + (g.gameOver ? " (finished)" : g.turn === "b" ? " (your move)" : "");
+        select.append(opt);
+      }
+      if (data.games.length === 0) {
+        statusEl.textContent = "No games yet — players start games from their dashboards.";
+        boardEl.replaceChildren();
+        game = null;
+        return;
+      }
+      opponent = data.games.some((g) => g.key === current) ? current : data.games[0].key;
+      select.value = opponent;
+      await loadGame();
+    }
+
+    document.getElementById("opponent").addEventListener("change", (e) => {
+      opponent = e.target.value;
+      game = null;
+      selected = null;
+      loadGame();
+    });
+
+    document.getElementById("newgame").addEventListener("click", async () => {
+      if (isAdmin && !opponent) return;
+      if (!confirm("Start a fresh game? The current board will be cleared.")) return;
+      const body = isAdmin ? { opponent } : {};
+      const res = await fetch("/api/chess/reset", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        game = data.game;
+        selected = null;
+        render();
+      }
+    });
+
+    document.getElementById("back").addEventListener("click", () => {
+      window.location.href = "/dashboard";
+    });
+
+    fetch("/api/me")
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then(async (d) => {
+        isAdmin = d.username.toLowerCase() === "hermione";
+        mySide = isAdmin ? "b" : "w";
+        document.getElementById("note").hidden = isAdmin;
+        if (isAdmin) {
+          document.getElementById("picker").hidden = false;
+          await loadAdminGames();
+          setInterval(loadAdminGames, 4000);
+        } else {
+          await loadGame();
+          setInterval(loadGame, 3000);
+        }
+      })
+      .catch(() => (window.location.href = "/"));
+  </script>
+</body>
+</html>

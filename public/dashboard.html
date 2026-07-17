@@ -39,7 +39,14 @@
       text-align: center;
     }
     h1 { font-size: 1.5rem; color: #333; margin-bottom: 0.5rem; }
+    h2 { font-size: 1.1rem; color: #333; margin-bottom: 1rem; }
     p { color: #777; margin-bottom: 1.5rem; }
+    table { width: 100%; border-collapse: collapse; text-align: left; }
+    th, td { padding: 0.5rem 0.75rem; font-size: 0.95rem; }
+    th { color: #888; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    tr + tr td { border-top: 1px solid #eee; }
+    td { color: #333; }
+    td.rank { color: #999; width: 2.5rem; }
     button {
       padding: 0.6rem 1.5rem;
       background: #ff90b0;
@@ -59,8 +66,18 @@
     <h1 id="welcome">Welcome!</h1>
     <p>Your account is set up. This is a placeholder page — the real site goes here.</p>
     <button id="admin" type="button" hidden>Accounts</button>
+    <button id="chess" type="button">Play Chess</button>
     <button id="logout" type="button">Log out</button>
   </main>
+  <section class="card">
+    <h2>Leaderboard</h2>
+    <table>
+      <thead>
+        <tr><th></th><th>Username</th><th>Points</th></tr>
+      </thead>
+      <tbody id="board"></tbody>
+    </table>
+  </section>
   <script>
     fetch("/api/me")
       .then((r) => (r.ok ? r.json() : Promise.reject()))
@@ -72,8 +89,30 @@
       })
       .catch(() => (window.location.href = "/"));
 
+    fetch("/api/leaderboard")
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((d) => {
+        const board = document.getElementById("board");
+        d.users.forEach((u, i) => {
+          const tr = document.createElement("tr");
+          const rank = document.createElement("td");
+          rank.className = "rank";
+          rank.textContent = i + 1;
+          const name = document.createElement("td");
+          name.textContent = u.username;
+          const points = document.createElement("td");
+          points.textContent = u.points;
+          tr.append(rank, name, points);
+          board.append(tr);
+        });
+      })
+      .catch(() => {});
+
     document.getElementById("admin").addEventListener("click", () => {
       window.location.href = "/admin";
+    });
+    document.getElementById("chess").addEventListener("click", () => {
+      window.location.href = "/chess";
     });
     document.getElementById("logout").addEventListener("click", async () => {
       await fetch("/api/logout", { method: "POST" });

@@ -1,7 +1,27 @@
 {
   "permissions": {
     "allow": [
-      "Bash(curl -s -X POST localhost:3000/api/register -H 'Content-Type: application/json' -d '{\"username\":\"deleteme2\",\"password\":\"deletemepass1\"}')"
+      "Bash(curl -s -X POST localhost:3000/api/register -H 'Content-Type: application/json' -d '{\"username\":\"deleteme2\",\"password\":\"deletemepass1\"}')",
+      "Bash(node -e ' *)",
+      "Bash(curl -s -c /tmp/tu.txt -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"username\":\"testuser\",\"password\":\"testpass123\"}')",
+      "Bash(curl -s -b /tmp/tu.txt -X POST localhost:3000/api/users/testuser/points -H 'Content-Type: application/json' -d '{\"amount\":100}')",
+      "Bash(curl -s localhost:3000/api/leaderboard)",
+      "Bash(curl -s -c /tmp/herm.txt -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"username\":\"hermione\",\"password\":\"temp-test-pass-3\"}')",
+      "Bash(curl -s -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"username\":\"hermione\",\"password\":\"temp-test-pass-3\"}')",
+      "Bash(npm install *)",
+      "Bash(node -e 'const { Chess } = require\\(\"chess.js\"\\); const c = new Chess\\(\\); c.move\\(\"e4\"\\); console.log\\(\"chess.js OK, after e4:\", c.fen\\(\\).split\\(\" \"\\)[0]\\)')",
+      "Bash(md5 -q wP.svg wB.svg wN.svg pB.svg)",
+      "Bash(curl -s -c /tmp/herm.txt -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"username\":\"hermione\",\"password\":\"temp-test-pass-4\"}')",
+      "Bash(curl -s -b /tmp/tu.txt localhost:3000/api/leaderboard)",
+      "Bash(curl -s -b /tmp/tu.txt -X POST localhost:3000/api/users/testuser/flag -H 'Content-Type: application/json' -d '{\"flagged\":true}')",
+      "Bash(curl -s -b /tmp/herm.txt -X POST localhost:3000/api/users/testuser/flag -H 'Content-Type: application/json' -d '{\"flagged\":true}')",
+      "Bash(node -pe 'const u = JSON.parse\\(require\\(\"fs\"\\).readFileSync\\(\"users.json\",\"utf8\"\\)\\); Object.keys\\(u\\).map\\(k => k + \" pts=\" + \\(u[k].points||0\\) + \" flagged=\" + !!u[k].flagged\\).join\\(\"\\\\n\"\\)')",
+      "Bash(curl -s -c /tmp/ct.txt -X POST localhost:3000/api/register -H 'Content-Type: application/json' -d '{\"username\":\"chesstester\",\"password\":\"chesspass123\"}')",
+      "Bash(curl -s -b /tmp/ct.txt localhost:3000/api/leaderboard)",
+      "Bash(curl -s -b /tmp/ct.txt -X POST localhost:3000/api/users/chesstester/flag -H 'Content-Type: application/json' -d '{\"flagged\":true}')",
+      "Bash(curl -s -b /tmp/herm.txt -X POST localhost:3000/api/users/chesstester/flag -H 'Content-Type: application/json' -d '{\"flagged\":true}')",
+      "Bash(curl -s -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"username\":\"hermione\",\"password\":\"temp-test-pass-4\"}')",
+      "Bash(git add *)"
     ]
   }
 }

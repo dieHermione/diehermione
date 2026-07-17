@@ -1,4 +1,5 @@
 node_modules/
 users.json
+games.json
 .DS_Store
 .env
