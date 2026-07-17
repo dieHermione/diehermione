@@ -73,7 +73,6 @@
 </head>
 <body>
   <main class="card">
-    <h1 id="title">BITCHHHH</h1>
     <div class="tabs">
       <button id="tab-login" class="active" type="button">Log in</button>
       <button id="tab-register" type="button">Register</button>
@@ -100,7 +99,7 @@
       const login = mode === "login";
       tabLogin.classList.toggle("active", login);
       tabRegister.classList.toggle("active", !login);
-      document.getElementById("title").textContent = login ? "Bitchhhh" : "Create an account";
+      document.getElementById("title").textContent = login ? "" : "Create an account";
       document.getElementById("submit").textContent = login ? "Log in" : "Register";
       document.getElementById("password").autocomplete = login ? "current-password" : "new-password";
       hint.hidden = login;
