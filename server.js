@@ -7,7 +7,7 @@ const path = require("path");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const USERS_FILE = path.join(__dirname, "users.json");
+const USERS_FILE = path.join(process.env.DATA_DIR || __dirname, "users.json");
 
 // --- simple JSON-file user store (fine for testing; swap for a DB later) ---
 function loadUsers() {
