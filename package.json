@@ -1,0 +1,15 @@
+{
+  "name": "simple-auth-site",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Minimal registration/login test site",
+  "main": "server.js",
+  "scripts": {
+    "start": "node --env-file-if-exists=.env server.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "express": "^4.21.2",
+    "express-session": "^1.18.1"
+  }
+}

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign in — Test Site</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 1rem;
+    }
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+      width: 100%;
+      max-width: 380px;
+      padding: 2rem;
+    }
+    h1 { font-size: 1.4rem; margin-bottom: 1.25rem; text-align: center; color: #333; }
+    .tabs { display: flex; margin-bottom: 1.5rem; border-bottom: 2px solid #eee; }
+    .tabs button {
+      flex: 1;
+      background: none;
+      border: none;
+      padding: 0.6rem;
+      font-size: 1rem;
+      cursor: pointer;
+      color: #888;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+    }
+    .tabs button.active { color: #667eea; border-bottom-color: #667eea; font-weight: 600; }
+    label { display: block; font-size: 0.85rem; color: #555; margin-bottom: 0.3rem; }
+    input {
+      width: 100%;
+      padding: 0.6rem 0.75rem;
+      margin-bottom: 1rem;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 1rem;
+    }
+    input:focus { outline: none; border-color: #667eea; }
+    .submit {
+      width: 100%;
+      padding: 0.7rem;
+      background: #667eea;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .submit:hover { background: #5a6fd6; }
+    .error {
+      display: none;
+      background: #fdecea;
+      color: #b3261e;
+      border-radius: 8px;
+      padding: 0.6rem 0.75rem;
+      margin-bottom: 1rem;
+      font-size: 0.9rem;
+    }
+    .hint { font-size: 0.8rem; color: #999; margin-top: -0.5rem; margin-bottom: 1rem; }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1 id="title">Sign in</h1>
+    <div class="tabs">
+      <button id="tab-login" class="active" type="button">Log in</button>
+      <button id="tab-register" type="button">Register</button>
+    </div>
+    <div class="error" id="error"></div>
+    <form id="form">
+      <label for="username">Username</label>
+      <input id="username" name="username" autocomplete="username" required minlength="3" maxlength="30" />
+      <label for="password">Password</label>
+      <input id="password" name="password" type="password" autocomplete="current-password" required minlength="8" />
+      <p class="hint" id="hint" hidden>At least 8 characters.</p>
+      <button class="submit" id="submit" type="submit">Log in</button>
+    </form>
+  </main>
+  <script>
+    let mode = "login";
+    const tabLogin = document.getElementById("tab-login");
+    const tabRegister = document.getElementById("tab-register");
+    const errorBox = document.getElementById("error");
+    const hint = document.getElementById("hint");
+
+    function setMode(next) {
+      mode = next;
+      const login = mode === "login";
+      tabLogin.classList.toggle("active", login);
+      tabRegister.classList.toggle("active", !login);
+      document.getElementById("title").textContent = login ? "Sign in" : "Create an account";
+      document.getElementById("submit").textContent = login ? "Log in" : "Register";
+      document.getElementById("password").autocomplete = login ? "current-password" : "new-password";
+      hint.hidden = login;
+      errorBox.style.display = "none";
+    }
+    tabLogin.addEventListener("click", () => setMode("login"));
+    tabRegister.addEventListener("click", () => setMode("register"));
+
+    document.getElementById("form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      errorBox.style.display = "none";
+      const body = JSON.stringify({
+        username: document.getElementById("username").value.trim(),
+        password: document.getElementById("password").value,
+      });
+      const res = await fetch("/api/" + mode, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body,
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        window.location.href = "/dashboard";
+      } else {
+        errorBox.textContent = data.error || "Something went wrong.";
+        errorBox.style.display = "block";
+      }
+    });
+  </script>
+</body>
+</html>
