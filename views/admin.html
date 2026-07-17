@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dashboard — Test Site</title>
+  <title>Accounts — Test Site</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Sour+Gummy:wght@400..700&display=swap" rel="stylesheet" />
@@ -22,7 +22,7 @@
     }
     .site-header {
       font-family: "Sour Gummy", sans-serif;
-      font-size: 3rem;
+      font-size: 2.5rem;
       font-weight: 700;
       color: #ffffff;
       text-shadow: 0 2px 12px rgba(255, 255, 255, 0.6);
@@ -34,45 +34,64 @@
       box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
       width: 100%;
       max-width: 480px;
-      padding: 2.5rem;
-      text-align: center;
+      padding: 2rem;
     }
-    h1 { font-size: 1.5rem; color: #333; margin-bottom: 0.5rem; }
-    p { color: #777; margin-bottom: 1.5rem; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 1.5rem; }
+    th, td { text-align: left; padding: 0.5rem 0.75rem; font-size: 0.95rem; }
+    th { color: #888; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    tr + tr td { border-top: 1px solid #eee; }
+    td { color: #333; }
+    .count { color: #999; font-size: 0.85rem; margin-bottom: 1rem; }
+    .nav { display: flex; gap: 0.75rem; }
     button {
-      padding: 0.6rem 1.5rem;
+      flex: 1;
+      padding: 0.6rem 1rem;
       background: #ff90b0;
       color: #fff;
       border: none;
       border-radius: 8px;
-      font-size: 1rem;
+      font-size: 0.95rem;
       font-weight: 600;
       cursor: pointer;
     }
-    button + button { margin-left: 0.5rem; }
   </style>
 </head>
 <body>
-  <h1 class="site-header">⊹₊ ˚‧︵‿₊୨ hermione  ୧₊‿︵‧ ˚ ₊⊹</h1>
+  <h1 class="site-header">⊹₊ ˚‧︵‿₊୨ accounts ୧₊‿︵‧ ˚ ₊⊹</h1>
   <main class="card">
-    <h1 id="welcome">Welcome!</h1>
-    <p>Your account is set up. This is a placeholder page — the real site goes here.</p>
-    <button id="admin" type="button" hidden>Accounts</button>
-    <button id="logout" type="button">Log out</button>
+    <p class="count" id="count">Loading…</p>
+    <table>
+      <thead>
+        <tr><th>Username</th><th>Registered</th></tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <div class="nav">
+      <button id="back" type="button">Dashboard</button>
+      <button id="logout" type="button">Log out</button>
+    </div>
   </main>
   <script>
-    fetch("/api/me")
+    fetch("/api/users")
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((d) => {
-        document.getElementById("welcome").textContent = "Welcome, " + d.username + "!";
-        if (d.username.toLowerCase() === "hermione") {
-          document.getElementById("admin").hidden = false;
+        document.getElementById("count").textContent =
+          d.users.length + " registered account" + (d.users.length === 1 ? "" : "s");
+        const rows = document.getElementById("rows");
+        for (const u of d.users) {
+          const tr = document.createElement("tr");
+          const name = document.createElement("td");
+          name.textContent = u.username;
+          const date = document.createElement("td");
+          date.textContent = new Date(u.createdAt).toLocaleDateString();
+          tr.append(name, date);
+          rows.append(tr);
         }
       })
       .catch(() => (window.location.href = "/"));
 
-    document.getElementById("admin").addEventListener("click", () => {
-      window.location.href = "/admin";
+    document.getElementById("back").addEventListener("click", () => {
+      window.location.href = "/dashboard";
     });
     document.getElementById("logout").addEventListener("click", async () => {
       await fetch("/api/logout", { method: "POST" });

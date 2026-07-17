@@ -38,6 +38,10 @@ function requireLogin(req, res, next) {
   next();
 }
 
+function isAdmin(req) {
+  return req.session.username && req.session.username.toLowerCase() === "hermione";
+}
+
 // --- routes ---
 app.post("/api/register", async (req, res) => {
   const { username, password } = req.body;
@@ -90,6 +94,24 @@ app.get("/api/me", (req, res) => {
 
 app.get("/dashboard", requireLogin, (req, res) => {
   res.sendFile(path.join(__dirname, "public", "dashboard.html"));
+});
+
+app.get("/api/users", (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });
+  const users = loadUsers();
+  res.json({
+    users: Object.values(users).map((u) => ({
+      username: u.username,
+      createdAt: u.createdAt,
+    })),
+  });
+});
+
+// kept out of public/ so the static middleware can't serve it unauthenticated
+app.get("/admin", requireLogin, (req, res) => {
+  if (!isAdmin(req)) return res.redirect("/dashboard");
+  res.sendFile(path.join(__dirname, "views", "admin.html"));
 });
 
 app.listen(PORT, () => {
