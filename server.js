@@ -108,6 +108,20 @@ app.get("/api/users", (req, res) => {
   });
 });
 
+app.delete("/api/users/:username", (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });
+  const key = req.params.username.toLowerCase();
+  if (key === "hermione") {
+    return res.status(400).json({ error: "The admin account can't be deleted." });
+  }
+  const users = loadUsers();
+  if (!users[key]) return res.status(404).json({ error: "No such account." });
+  delete users[key];
+  saveUsers(users);
+  res.json({ ok: true });
+});
+
 // kept out of public/ so the static middleware can't serve it unauthenticated
 app.get("/admin", requireLogin, (req, res) => {
   if (!isAdmin(req)) return res.redirect("/dashboard");

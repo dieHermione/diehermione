@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s -X POST localhost:3000/api/register -H 'Content-Type: application/json' -d '{\"username\":\"deleteme2\",\"password\":\"deletemepass1\"}')"
+    ]
+  }
+}

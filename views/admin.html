@@ -27,6 +27,7 @@
       color: #ffffff;
       text-shadow: 0 2px 12px rgba(255, 255, 255, 0.6);
       text-align: center;
+      margin-bottom: 1.25rem;
     }
     .card {
       background: #fff;
@@ -42,6 +43,18 @@
     tr + tr td { border-top: 1px solid #eee; }
     td { color: #333; }
     .count { color: #999; font-size: 0.85rem; margin-bottom: 1rem; }
+    .delete {
+      flex: none;
+      padding: 0.3rem 0.75rem;
+      background: #fff;
+      color: #ff4860;
+      border: 1px solid #ff4860;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .delete:hover { background: #ff4860; color: #fff; }
     .nav { display: flex; gap: 0.75rem; }
     button {
       flex: 1;
@@ -62,7 +75,7 @@
     <p class="count" id="count">Loading…</p>
     <table>
       <thead>
-        <tr><th>Username</th><th>Registered</th></tr>
+        <tr><th>Username</th><th>Registered</th><th></th></tr>
       </thead>
       <tbody id="rows"></tbody>
     </table>
@@ -72,23 +85,47 @@
     </div>
   </main>
   <script>
-    fetch("/api/users")
-      .then((r) => (r.ok ? r.json() : Promise.reject()))
-      .then((d) => {
-        document.getElementById("count").textContent =
-          d.users.length + " registered account" + (d.users.length === 1 ? "" : "s");
-        const rows = document.getElementById("rows");
-        for (const u of d.users) {
-          const tr = document.createElement("tr");
-          const name = document.createElement("td");
-          name.textContent = u.username;
-          const date = document.createElement("td");
-          date.textContent = new Date(u.createdAt).toLocaleDateString();
-          tr.append(name, date);
-          rows.append(tr);
-        }
-      })
-      .catch(() => (window.location.href = "/"));
+    function loadAccounts() {
+      fetch("/api/users")
+        .then((r) => (r.ok ? r.json() : Promise.reject()))
+        .then((d) => {
+          document.getElementById("count").textContent =
+            d.users.length + " registered account" + (d.users.length === 1 ? "" : "s");
+          const rows = document.getElementById("rows");
+          rows.replaceChildren();
+          for (const u of d.users) {
+            const tr = document.createElement("tr");
+            const name = document.createElement("td");
+            name.textContent = u.username;
+            const date = document.createElement("td");
+            date.textContent = new Date(u.createdAt).toLocaleDateString();
+            const actions = document.createElement("td");
+            if (u.username.toLowerCase() !== "hermione") {
+              const del = document.createElement("button");
+              del.type = "button";
+              del.className = "delete";
+              del.textContent = "Delete";
+              del.addEventListener("click", () => deleteAccount(u.username));
+              actions.append(del);
+            }
+            tr.append(name, date, actions);
+            rows.append(tr);
+          }
+        })
+        .catch(() => (window.location.href = "/"));
+    }
+
+    async function deleteAccount(username) {
+      if (!confirm('Delete the account "' + username + '"? This cannot be undone.')) return;
+      const res = await fetch("/api/users/" + encodeURIComponent(username), { method: "DELETE" });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || "Delete failed.");
+      }
+      loadAccounts();
+    }
+
+    loadAccounts();
 
     document.getElementById("back").addEventListener("click", () => {
       window.location.href = "/dashboard";
