@@ -22,18 +22,18 @@
       --shadow: rgba(0, 0, 0, 0.2);
       --picker-bg: #fff;
       --picker-text: #333;
-      --border-color: #ffb0c4;
+      --border-color: #444444;
       --board-light: #ffffff;
-      --board-dark: #ffb0c4;
-      --board-selected: #e0325c;
-      --board-last: #ffd6e0;
+      --board-dark: #b0b0b0;
+      --board-selected: #f5c542;
+      --board-last: #fce9b8;
       --toggle-bg: rgba(255, 255, 255, 0.9);
       --toggle-text: #333;
     }
     body[data-theme="dark"] {
       color-scheme: dark;
-      --bg1: #140d16;
-      --bg2: #231628;
+      --bg1: #38383e;
+      --bg2: #56565e;
       --panel-bg: rgba(37, 34, 42, 0.92);
       --header-color: #ffffff;
       --text-color: #ffffff;
@@ -44,11 +44,11 @@
       --shadow: rgba(0, 0, 0, 0.45);
       --picker-bg: #2b2234;
       --picker-text: #ffffff;
-      --border-color: #9d5a72;
-      --board-light: #34253a;
-      --board-dark: #6f4358;
-      --board-selected: #ff8dbd;
-      --board-last: #ffbddb;
+      --border-color: #1f1f1f;
+      --board-light: #e6e6e6;
+      --board-dark: #6e6e6e;
+      --board-selected: #f5c542;
+      --board-last: #d9c27a;
       --toggle-bg: rgba(41, 34, 49, 0.95);
       --toggle-text: #ffffff;
     }
@@ -184,7 +184,7 @@
       <button id="newgame" type="button">New game</button>
       <button id="back" type="button">Dashboard</button>
     </div>
-    <p class="note" id="note" hidden>You play white; Hermione plays pink. Click a piece, then its destination. Pawns promote to queens.</p>
+    <p class="note" id="note" hidden>You play white; Hermione plays black. Click a piece, then its destination. Pawns promote to queens.</p>
   </main>
   <script>
     const body = document.body;
@@ -206,7 +206,7 @@
       applyTheme(nextTheme);
     });
 
-    let mySide = "w";      // players are white; hermione is pink ("b")
+    let mySide = "w";      // players are white; hermione is black ("b")
     let isAdmin = false;
     let opponent = null;   // admin only: which player's game is shown
     let game = null;
@@ -276,7 +276,7 @@
       if (!game) return "";
       if (removeMode) return "Click one of " + game.opponent + "'s pieces to remove it.";
       if (game.checkmate) {
-        const winner = game.winner === "w" ? "White" : "Pink";
+        const winner = game.winner === "w" ? "White" : "Black";
         return "Checkmate — " + winner + " wins!";
       }
       if (game.draw || game.gameOver) return "Draw.";

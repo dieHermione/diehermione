@@ -23,7 +23,14 @@
       "Bash(curl -s -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"username\":\"hermione\",\"password\":\"temp-test-pass-4\"}')",
       "Bash(git add *)",
       "Bash(git commit -q -m 'Admin actions dropdown, leaderboard flag, chess vs Hermione *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Bash(curl -s -b /tmp/herm.txt -X DELETE localhost:3000/api/users/removetester)",
+      "Bash(curl -s -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"username\":\"hermione\",\"password\":\"temp-test-pass-5\"}')",
+      "Bash(curl -s -X POST localhost:3000/api/register -H 'Content-Type: application/json' -d '{\"username\":\"skincheck\",\"password\":\"skincheck1\"}')",
+      "Bash(curl -s -c /tmp/h.txt -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"username\":\"hermione\",\"password\":\"tmp-del-1\"}')",
+      "Bash(curl -s -b /tmp/h.txt -X DELETE localhost:3000/api/users/skincheck)",
+      "Bash(curl -s -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"username\":\"hermione\",\"password\":\"tmp-del-1\"}')",
+      "Bash(git commit -q -m 'Chess b/w reskin, remove-piece admin power, Snake, dark mode polish *)"
     ]
   }
 }

@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Snake — Test Site</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cause:wght@400..700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      color-scheme: light;
+      --bg1: #ff90b0;
+      --bg2: #f6f6f6;
+      --panel-bg: rgba(255, 255, 255, 0.95);
+      --header-color: #ffffff;
+      --text-color: #333;
+      --muted-color: #999;
+      --button-bg: #FBC3D3;
+      --button-text: #ffffff;
+      --button-hover-bg: #f7b8c8;
+      --shadow: rgba(0, 0, 0, 0.2);
+      --input-border: #ddd;
+      --toggle-bg: rgba(255, 255, 255, 0.9);
+      --toggle-text: #333;
+    }
+    body[data-theme="dark"] {
+      color-scheme: dark;
+      --bg1: #38383e;
+      --bg2: #56565e;
+      --panel-bg: rgba(37, 34, 42, 0.92);
+      --header-color: #ffffff;
+      --text-color: #ffffff;
+      --muted-color: #ffffff;
+      --button-bg: #d99baf;
+      --button-text: #ffffff;
+      --button-hover-bg: #edb6ca;
+      --shadow: rgba(0, 0, 0, 0.45);
+      --input-border: #6e5a72;
+      --toggle-bg: rgba(41, 34, 49, 0.95);
+      --toggle-text: #ffffff;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Cause", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 1.5rem;
+      background: linear-gradient(135deg, var(--bg1) 0%, var(--bg2) 100%);
+      padding: 1rem;
+      color: var(--text-color);
+    }
+    .site-header {
+      font-family: "Cause", sans-serif;
+      font-size: 3rem;
+      font-weight: 700;
+      color: var(--header-color);
+      text-shadow: 0 2px 12px rgba(255, 255, 255, 0.6);
+      text-align: center;
+      margin-bottom: 1.25rem;
+    }
+    .card {
+      background: var(--panel-bg);
+      border-radius: 12px;
+      box-shadow: 0 10px 40px var(--shadow);
+      width: 100%;
+      max-width: 520px;
+      padding: 2rem;
+      text-align: center;
+      color: var(--text-color);
+    }
+    .status { color: var(--text-color); font-weight: 600; margin-bottom: 1rem; min-height: 1.4em; }
+    canvas {
+      width: 100%;
+      max-width: 440px;
+      aspect-ratio: 1;
+      border: 3px solid #444444;
+      border-radius: 8px;
+      display: block;
+      margin: 0 auto 1.25rem;
+      background: #2e2e33;
+      touch-action: none;
+    }
+    .nav { display: flex; gap: 0.75rem; justify-content: center; }
+    button {
+      padding: 0.6rem 1.25rem;
+      background: var(--button-bg);
+      color: var(--button-text);
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button:hover { background: var(--button-hover-bg); }
+    .note { color: var(--muted-color); font-size: 0.85rem; margin-top: 1rem; }
+    .theme-toggle {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      z-index: 10;
+      width: 3rem;
+      height: 1.6rem;
+      padding: 0;
+      border: 1px solid var(--input-border);
+      border-radius: 999px;
+      background: var(--toggle-bg);
+      color: transparent;
+      box-shadow: 0 6px 16px var(--shadow);
+      cursor: pointer;
+      overflow: hidden;
+    }
+    .theme-toggle .thumb {
+      position: absolute;
+      top: 0.15rem;
+      left: 0.15rem;
+      width: 1.15rem;
+      height: 1.15rem;
+      border-radius: 50%;
+      background: var(--button-bg);
+      display: block;
+      transition: left 0.2s ease, background-color 0.2s ease;
+    }
+    .theme-toggle.is-dark .thumb {
+      left: calc(100% - 1.15rem - 0.15rem);
+      background: var(--button-hover-bg);
+    }
+  </style>
+</head>
+<body>
+  <button id="theme-toggle" class="theme-toggle" type="button" aria-pressed="false" aria-label="Toggle dark mode"><span class="thumb"></span></button>
+  <h1 class="site-header">˚₊‧꒰ა Snake ໒꒱ ‧₊˚</h1>
+  <main class="card">
+    <p class="status" id="status">Press Start to play!</p>
+    <canvas id="game" width="440" height="440"></canvas>
+    <div class="nav">
+      <button id="start" type="button">Start</button>
+      <button id="back" type="button">Dashboard</button>
+    </div>
+    <p class="note">Arrow keys or WASD to steer. Eat the hearts; don't hit the walls or yourself.</p>
+  </main>
+  <script>
+    const body = document.body;
+    const toggle = document.getElementById("theme-toggle");
+    const savedTheme = localStorage.getItem("site-theme") || "light";
+
+    function applyTheme(theme) {
+      body.dataset.theme = theme;
+      if (toggle) {
+        toggle.classList.toggle("is-dark", theme === "dark");
+        toggle.setAttribute("aria-pressed", String(theme === "dark"));
+      }
+      localStorage.setItem("site-theme", theme);
+    }
+
+    applyTheme(savedTheme);
+    toggle?.addEventListener("click", () => {
+      const nextTheme = body.dataset.theme === "dark" ? "light" : "dark";
+      applyTheme(nextTheme);
+    });
+
+    const GRID = 20;
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+    const CELL = canvas.width / GRID;
+    const statusEl = document.getElementById("status");
+
+    const COLORS = {
+      board: "#2e2e33",
+      snake: "#9a9aa2",
+      head: "#ffffff",
+      heart: "#f7b8c8",
+    };
+
+    let snake, dir, nextDir, food, score, timer = null, alive = false;
+
+    function reset() {
+      snake = [{ x: 9, y: 10 }, { x: 8, y: 10 }, { x: 7, y: 10 }];
+      dir = { x: 1, y: 0 };
+      nextDir = dir;
+      score = 0;
+      alive = true;
+      placeFood();
+    }
+
+    function placeFood() {
+      do {
+        food = { x: Math.floor(Math.random() * GRID), y: Math.floor(Math.random() * GRID) };
+      } while (snake.some((s) => s.x === food.x && s.y === food.y));
+    }
+
+    function drawBoard() {
+      ctx.fillStyle = COLORS.board;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function drawHeart(cx, cy, size) {
+      ctx.fillStyle = COLORS.heart;
+      ctx.beginPath();
+      const s = size / 2;
+      ctx.moveTo(cx, cy + s * 0.6);
+      ctx.bezierCurveTo(cx + s, cy - s * 0.4, cx + s * 0.5, cy - s, cx, cy - s * 0.3);
+      ctx.bezierCurveTo(cx - s * 0.5, cy - s, cx - s, cy - s * 0.4, cx, cy + s * 0.6);
+      ctx.fill();
+    }
+
+    function draw() {
+      drawBoard();
+      drawHeart(food.x * CELL + CELL / 2, food.y * CELL + CELL / 2, CELL * 0.9);
+      snake.forEach((seg, i) => {
+        ctx.fillStyle = i === 0 ? COLORS.head : COLORS.snake;
+        const pad = 1.5;
+        const r = 5;
+        const x = seg.x * CELL + pad, y = seg.y * CELL + pad, w = CELL - pad * 2;
+        ctx.beginPath();
+        ctx.roundRect(x, y, w, w, r);
+        ctx.fill();
+      });
+    }
+
+    function tick() {
+      dir = nextDir;
+      const head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
+      const hitWall = head.x < 0 || head.x >= GRID || head.y < 0 || head.y >= GRID;
+      const hitSelf = snake.some((s) => s.x === head.x && s.y === head.y);
+      if (hitWall || hitSelf) {
+        gameOver();
+        return;
+      }
+      snake.unshift(head);
+      if (head.x === food.x && head.y === food.y) {
+        score++;
+        statusEl.textContent = "Score: " + score;
+        placeFood();
+      } else {
+        snake.pop();
+      }
+      draw();
+    }
+
+    function gameOver() {
+      alive = false;
+      clearInterval(timer);
+      timer = null;
+      statusEl.textContent = "Game over — final score " + score + ". Press Start to try again!";
+      document.getElementById("start").textContent = "Start";
+    }
+
+    function start() {
+      if (timer) clearInterval(timer);
+      reset();
+      statusEl.textContent = "Score: 0";
+      document.getElementById("start").textContent = "Restart";
+      draw();
+      timer = setInterval(tick, 120);
+    }
+
+    const UP = { x: 0, y: -1 }, DOWN = { x: 0, y: 1 }, LEFT = { x: -1, y: 0 }, RIGHT = { x: 1, y: 0 };
+    const KEYS = {
+      ArrowUp: UP, ArrowDown: DOWN, ArrowLeft: LEFT, ArrowRight: RIGHT,
+      Up: UP, Down: DOWN, Left: LEFT, Right: RIGHT,
+      KeyW: UP, KeyS: DOWN, KeyA: LEFT, KeyD: RIGHT,
+      w: UP, s: DOWN, a: LEFT, d: RIGHT,
+    };
+    document.addEventListener("keydown", (e) => {
+      const key = e.key && e.key.length === 1 ? e.key.toLowerCase() : e.key;
+      const d = KEYS[key] || KEYS[e.code];
+      if (!d) return;
+      e.preventDefault();
+      if (!alive) return;
+      if (d.x === -dir.x && d.y === -dir.y) return; // no instant reversal
+      nextDir = d;
+    });
+
+    document.getElementById("start").addEventListener("click", start);
+    document.getElementById("back").addEventListener("click", () => {
+      window.location.href = "/dashboard";
+    });
+
+    // require a login like the rest of the site
+    fetch("/api/me").then((r) => {
+      if (!r.ok) window.location.href = "/";
+    });
+
+    drawBoard();
+  </script>
+</body>
+</html>

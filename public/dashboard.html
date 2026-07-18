@@ -34,8 +34,8 @@
     }
     body[data-theme="dark"] {
       color-scheme: dark;
-      --bg1: #140d16;
-      --bg2: #231628;
+      --bg1: #38383e;
+      --bg2: #56565e;
       --panel-bg: rgba(37, 34, 42, 0.92);
       --header-color: #ffffff;
       --heading-color: #ffffff;
@@ -150,6 +150,7 @@
     <p>There is no text here yet.</p>
     <button id="admin" type="button" hidden>Accounts</button>
     <button id="chess" type="button">Play Chess</button>
+    <button id="snake" type="button">Play Snake</button>
     <button id="logout" type="button">Log out</button>
   </main>
   <section class="card">
@@ -218,6 +219,9 @@
     });
     document.getElementById("chess").addEventListener("click", () => {
       window.location.href = "/chess";
+    });
+    document.getElementById("snake").addEventListener("click", () => {
+      window.location.href = "/snake";
     });
     document.getElementById("logout").addEventListener("click", async () => {
       await fetch("/api/logout", { method: "POST" });

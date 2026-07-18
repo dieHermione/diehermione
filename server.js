@@ -319,6 +319,10 @@ app.get("/chess", requireLogin, (req, res) => {
   res.sendFile(path.join(__dirname, "views", "chess.html"));
 });
 
+app.get("/snake", requireLogin, (req, res) => {
+  res.sendFile(path.join(__dirname, "views", "snake.html"));
+});
+
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
 });
