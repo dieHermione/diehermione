@@ -48,7 +48,11 @@
       "Bash(curl -s -b /tmp/herm.txt -X PUT localhost:3000/api/profile/hermione -H 'Content-Type: application/json' -d '{\"pronouns\":\"nonsense\"}')",
       "Bash(curl -s -X POST localhost:3000/api/register -H 'Content-Type: application/json' -d '{\"username\":\"casetester\",\"password\":\"casepass123\",\"pronouns\":\"they/them\",\"role\":\"domme\"}')",
       "Bash(node -pe 'const u=JSON.parse\\(require\\(\"fs\"\\).readFileSync\\(\"users.json\",\"utf8\"\\)\\).casetester; u.pronouns + \" / \" + u.role')",
-      "Bash(git commit -q -m 'Drop sexuality, add pronoun and domme/sub selection at registration *)"
+      "Bash(git commit -q -m 'Drop sexuality, add pronoun and domme/sub selection at registration *)",
+      "Bash(curl -s -m 20 https://angeldom.me/)",
+      "Bash(curl -s -m 10 https://angeldom.me/)",
+      "Bash(curl -s -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"username\":\"hermione\",\"password\":\"tmp-style-1\"}')",
+      "Bash(git commit -q -m 'Match profile tile styling, remove dashboard card backgrounds *)"
     ]
   }
 }
