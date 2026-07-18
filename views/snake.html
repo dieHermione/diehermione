@@ -63,25 +63,21 @@
       margin-bottom: 1.25rem;
     }
     body.has-top-nav {
-      padding-top: 5rem;
+      padding-top: 1.5rem;
     }
     .top-nav {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      z-index: 20;
       display: flex;
       flex-wrap: wrap;
       justify-content: center;
       align-items: center;
       gap: 0.55rem;
-      width: 100%;
-      padding: 0.7rem 1rem;
+      width: min(100%, 720px);
+      padding: 0.65rem 1rem;
+      margin: 0 0 0.85rem;
+      border-radius: 999px;
       background: var(--panel-bg);
       box-shadow: 0 8px 24px var(--shadow);
       backdrop-filter: blur(8px);
-      border-bottom: 1px solid rgba(255,255,255,0.18);
     }
     .top-nav .greeting {
       color: var(--heading-color);
