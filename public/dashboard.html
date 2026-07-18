@@ -84,9 +84,8 @@
       gap: 1rem;
     }
     .top-nav {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: space-between;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
       align-items: center;
       gap: 0.55rem;
       position: relative;
@@ -105,15 +104,13 @@
       margin-right: 0.25rem;
     }
     .top-nav .nav-links {
+      grid-column: 2;
+      justify-self: center;
       display: flex;
       flex-wrap: wrap;
       justify-content: center;
       align-items: center;
       gap: 0.45rem;
-      flex: 1;
-      margin-left: auto;
-      margin-right: auto;
-      padding-right: 3rem;
     }
     .top-nav a,
     .top-nav button,
@@ -165,13 +162,14 @@
       width: 100%;
     }
     .top-nav .theme-toggle {
+      grid-column: 3;
+      justify-self: end;
       position: relative;
       top: auto;
       right: auto;
       width: 2.8rem;
       height: 1.45rem;
-      margin-left: auto;
-      margin-right: 0.2rem;
+      margin: 0;
       flex-shrink: 0;
       box-shadow: 0 4px 10px var(--shadow);
     }
@@ -272,7 +270,7 @@
       <a id="nav-snake" href="/snake">Snake</a>
       <button id="nav-logout" type="button">Log out</button>
     </div>
-    <button id="theme-toggle" class="theme-toggle" type="button" aria-pressed="false" aria-label="Toggle dark mode" style="margin-left:auto;"><span class="thumb"></span></button>
+    <button id="theme-toggle" class="theme-toggle" type="button" aria-pressed="false" aria-label="Toggle dark mode"><span class="thumb"></span></button>
   </nav>
   <h1 class="site-header">˚₊‧꒰ა Dashboard ໒꒱ ‧₊˚</h1>
   <main class="card">
