@@ -68,6 +68,14 @@ app.post("/api/register", async (req, res) => {
   if (password.length < 8) {
     return res.status(400).json({ error: "Password must be at least 8 characters." });
   }
+  const pronouns = canonical(req.body.pronouns, PRONOUN_OPTIONS);
+  if (!pronouns) {
+    return res.status(400).json({ error: "Pick your pronouns." });
+  }
+  const role = canonical(req.body.role, ROLE_OPTIONS);
+  if (!role) {
+    return res.status(400).json({ error: "Pick domme or sub." });
+  }
   const users = loadUsers();
   const key = username.toLowerCase();
   if (users[key]) {
@@ -77,6 +85,10 @@ app.post("/api/register", async (req, res) => {
     username,
     passwordHash: await bcrypt.hash(password, 10),
     createdAt: new Date().toISOString(),
+    pronouns,
+    role,
+    points: 0,
+    dollars: 0,
   };
   saveUsers(users);
   req.session.username = username;
@@ -111,6 +123,15 @@ app.get("/dashboard", requireLogin, (req, res) => {
 });
 
 // --- profiles: viewable by any logged-in user, editable by the owner or hermione ---
+const PRONOUN_OPTIONS = ["She/Her", "He/Him", "They/Them"];
+const ROLE_OPTIONS = ["Domme", "Sub"];
+
+// tolerate legacy free-text values like "she/her" from before these were dropdowns
+function canonical(value, options) {
+  const v = String(value || "").trim().toLowerCase();
+  return options.find((o) => o.toLowerCase() === v) || "";
+}
+
 function rankFor(key) {
   return key === "hermione" ? "Princess" : "User";
 }
@@ -131,9 +152,10 @@ app.get("/api/profile/:username", (req, res) => {
       rank: rankFor(key),
       icon: user.icon || "",
       bio: user.bio || "",
-      gender: user.gender || "",
-      pronouns: user.pronouns || "",
-      sexuality: user.sexuality || "",
+      pronouns: canonical(user.pronouns, PRONOUN_OPTIONS),
+      role: canonical(user.role, ROLE_OPTIONS),
+      points: user.points || 0,
+      dollars: user.dollars || 0,
       createdAt: user.createdAt,
       canEdit: canEditProfile(req, key),
     },
@@ -149,12 +171,7 @@ app.put("/api/profile/:username", (req, res) => {
   if (!canEditProfile(req, key)) {
     return res.status(403).json({ error: "You can only edit your own profile." });
   }
-  const fields = [
-    ["bio", 500],
-    ["gender", 60],
-    ["pronouns", 60],
-    ["sexuality", 60],
-  ];
+  const fields = [["bio", 500]];
   for (const [name, max] of fields) {
     if (req.body[name] === undefined) continue;
     const value = String(req.body[name]).trim();
@@ -162,6 +179,26 @@ app.put("/api/profile/:username", (req, res) => {
       return res.status(400).json({ error: name + " must be " + max + " characters or fewer." });
     }
     user[name] = value;
+  }
+  if (req.body.pronouns !== undefined) {
+    const raw = String(req.body.pronouns).trim();
+    const value = canonical(raw, PRONOUN_OPTIONS);
+    if (raw !== "" && !value) {
+      return res.status(400).json({ error: "Pick one of the listed pronoun options." });
+    }
+    user.pronouns = value;
+  }
+  // the domme/sub flag is set at registration; only hermione can change it afterwards
+  if (req.body.role !== undefined) {
+    if (!isAdmin(req)) {
+      return res.status(403).json({ error: "Only Hermione can change that." });
+    }
+    const raw = String(req.body.role).trim();
+    const value = canonical(raw, ROLE_OPTIONS);
+    if (raw !== "" && !value) {
+      return res.status(400).json({ error: "Role must be domme or sub." });
+    }
+    user.role = value;
   }
   if (req.body.icon !== undefined) {
     const icon = String(req.body.icon);

@@ -111,6 +111,38 @@
       color: var(--input-text);
     }
     input:focus { outline: none; border-color: var(--active-color); }
+    select {
+      width: 100%;
+      padding: 0.6rem 0.75rem;
+      margin-bottom: 1rem;
+      border: 1px solid var(--input-border);
+      border-radius: 8px;
+      font-size: 1rem;
+      background: var(--input-bg);
+      color: var(--input-text);
+      font-family: inherit;
+      cursor: pointer;
+    }
+    select:focus { outline: none; border-color: var(--active-color); }
+    .role-toggle { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+    .role-option {
+      flex: 1;
+      padding: 0.6rem;
+      border: 1px solid var(--input-border);
+      border-radius: 8px;
+      background: var(--input-bg);
+      color: var(--input-text);
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .role-option:hover { border-color: var(--button-hover-bg); }
+    .role-option.selected {
+      background: var(--button-bg);
+      color: var(--button-text);
+      border-color: var(--button-bg);
+    }
     .submit {
       width: 100%;
       padding: 0.7rem;
@@ -198,6 +230,20 @@
       <label for="password">Password</label>
       <input id="password" name="password" type="password" autocomplete="current-password" required minlength="8" />
       <p class="hint" id="hint" hidden>At least 8 characters.</p>
+      <div id="register-fields" hidden>
+        <label for="pronouns">Pronouns</label>
+        <select id="pronouns">
+          <option value="">Choose…</option>
+          <option value="She/Her">She/Her</option>
+          <option value="He/Him">He/Him</option>
+          <option value="They/Them">They/Them</option>
+        </select>
+        <label>I am a…</label>
+        <div class="role-toggle">
+          <button type="button" class="role-option" data-role="Domme">Domme</button>
+          <button type="button" class="role-option" data-role="Sub">Sub</button>
+        </div>
+      </div>
       <button class="submit" id="submit" type="submit">Log in</button>
     </form>
   </main>
@@ -235,18 +281,34 @@
       document.getElementById("submit").textContent = login ? "Log in" : "Register";
       document.getElementById("password").autocomplete = login ? "current-password" : "new-password";
       hint.hidden = login;
+      document.getElementById("register-fields").hidden = login;
       errorBox.style.display = "none";
     }
+
+    let selectedRole = "";
+    document.querySelectorAll(".role-option").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        selectedRole = btn.dataset.role;
+        document.querySelectorAll(".role-option").forEach((b) => {
+          b.classList.toggle("selected", b === btn);
+        });
+      });
+    });
     tabLogin.addEventListener("click", () => setMode("login"));
     tabRegister.addEventListener("click", () => setMode("register"));
 
     document.getElementById("form").addEventListener("submit", async (e) => {
       e.preventDefault();
       errorBox.style.display = "none";
-      const body = JSON.stringify({
+      const payload = {
         username: document.getElementById("username").value.trim(),
         password: document.getElementById("password").value,
-      });
+      };
+      if (mode === "register") {
+        payload.pronouns = document.getElementById("pronouns").value;
+        payload.role = selectedRole;
+      }
+      const body = JSON.stringify(payload);
       const res = await fetch("/api/" + mode, {
         method: "POST",
         headers: { "Content-Type": "application/json" },

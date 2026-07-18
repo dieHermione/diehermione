@@ -285,6 +285,23 @@
       color: var(--table-header-color);
       margin-bottom: 0.3rem;
     }
+    .field select {
+      width: 100%;
+      padding: 0.55rem 0.7rem;
+      border: 1px solid var(--input-border);
+      border-radius: 8px;
+      font-size: 0.95rem;
+      background: var(--input-bg);
+      color: var(--input-text);
+      font-family: inherit;
+      cursor: pointer;
+    }
+    .field select:focus { outline: none; border-color: var(--button-hover-bg); }
+    .detail.stat .value {
+      font-family: "Cause", sans-serif;
+      font-size: 1.35rem;
+      color: var(--heading-color);
+    }
     .field input[type="text"], .field textarea {
       width: 100%;
       padding: 0.55rem 0.7rem;
@@ -370,9 +387,12 @@
       <div id="p-badge"></div>
       <p class="bio" id="p-bio"></p>
       <div class="details">
-        <div class="detail"><span class="label">Gender</span><span class="value" id="p-gender">—</span></div>
         <div class="detail"><span class="label">Pronouns</span><span class="value" id="p-pronouns">—</span></div>
-        <div class="detail"><span class="label">Sexuality</span><span class="value" id="p-sexuality">—</span></div>
+        <div class="detail"><span class="label">Role</span><span class="value" id="p-role">—</span></div>
+      </div>
+      <div class="details">
+        <div class="detail stat"><span class="label">Points</span><span class="value" id="p-points">0</span></div>
+        <div class="detail stat"><span class="label">Dollars</span><span class="value" id="p-dollars">$0</span></div>
       </div>
       <p class="joined" id="p-joined"></p>
       <button id="edit-btn" type="button" hidden>Edit profile</button>
@@ -392,16 +412,21 @@
         <textarea id="f-bio" maxlength="500" placeholder="Tell everyone a little about yourself…"></textarea>
       </div>
       <div class="field">
-        <label for="f-gender">Gender</label>
-        <input type="text" id="f-gender" maxlength="60" />
-      </div>
-      <div class="field">
         <label for="f-pronouns">Pronouns</label>
-        <input type="text" id="f-pronouns" maxlength="60" placeholder="e.g. she/her" />
+        <select id="f-pronouns">
+          <option value="">Not set</option>
+          <option value="She/Her">She/Her</option>
+          <option value="He/Him">He/Him</option>
+          <option value="They/Them">They/Them</option>
+        </select>
       </div>
-      <div class="field">
-        <label for="f-sexuality">Sexuality</label>
-        <input type="text" id="f-sexuality" maxlength="60" />
+      <div class="field" id="role-field" hidden>
+        <label for="f-role">Role</label>
+        <select id="f-role">
+          <option value="">Not set</option>
+          <option value="Domme">Domme</option>
+          <option value="Sub">Sub</option>
+        </select>
       </div>
       <div class="form-actions">
         <button type="submit" id="save-btn">Save</button>
@@ -479,9 +504,10 @@
       const bio = document.getElementById("p-bio");
       bio.textContent = profile.bio || "No bio yet.";
       bio.classList.toggle("empty", !profile.bio);
-      document.getElementById("p-gender").textContent = profile.gender || "—";
       document.getElementById("p-pronouns").textContent = profile.pronouns || "—";
-      document.getElementById("p-sexuality").textContent = profile.sexuality || "—";
+      document.getElementById("p-role").textContent = profile.role || "—";
+      document.getElementById("p-points").textContent = profile.points;
+      document.getElementById("p-dollars").textContent = "$" + profile.dollars;
       const created = new Date(profile.createdAt);
       document.getElementById("p-joined").textContent =
         "Joined " + created.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" }) +
@@ -508,9 +534,9 @@
         pendingIcon = undefined;
         document.getElementById("form-error").style.display = "none";
         document.getElementById("f-bio").value = profile.bio;
-        document.getElementById("f-gender").value = profile.gender;
         document.getElementById("f-pronouns").value = profile.pronouns;
-        document.getElementById("f-sexuality").value = profile.sexuality;
+        document.getElementById("role-field").hidden = !me.isAdmin;
+        document.getElementById("f-role").value = profile.role;
         document.getElementById("f-icon").value = "";
         document.getElementById("edit-avatar-slot").replaceChildren(avatarEl(profile));
       }
@@ -545,10 +571,9 @@
       e.preventDefault();
       const bodyData = {
         bio: document.getElementById("f-bio").value,
-        gender: document.getElementById("f-gender").value,
         pronouns: document.getElementById("f-pronouns").value,
-        sexuality: document.getElementById("f-sexuality").value,
       };
+      if (me.isAdmin) bodyData.role = document.getElementById("f-role").value;
       if (pendingIcon !== undefined) bodyData.icon = pendingIcon;
       const res = await fetch("/api/profile/" + encodeURIComponent(profileUser), {
         method: "PUT",

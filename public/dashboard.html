@@ -410,9 +410,10 @@
       <div id="pc-badge"></div>
       <p class="bio" id="pc-bio"></p>
       <div class="mini-details">
-        <div class="mini-detail"><span class="label">Gender</span><span class="value" id="pc-gender">—</span></div>
         <div class="mini-detail"><span class="label">Pronouns</span><span class="value" id="pc-pronouns">—</span></div>
-        <div class="mini-detail"><span class="label">Sexuality</span><span class="value" id="pc-sexuality">—</span></div>
+        <div class="mini-detail"><span class="label">Role</span><span class="value" id="pc-role">—</span></div>
+        <div class="mini-detail"><span class="label">Points</span><span class="value" id="pc-points">0</span></div>
+        <div class="mini-detail"><span class="label">Dollars</span><span class="value" id="pc-dollars">$0</span></div>
       </div>
       <p class="joined" id="pc-joined"></p>
       <button id="pc-view" type="button">View profile</button>
@@ -562,9 +563,10 @@
       const bio = document.getElementById("pc-bio");
       bio.textContent = p.bio || "No bio yet.";
       bio.classList.toggle("empty", !p.bio);
-      document.getElementById("pc-gender").textContent = p.gender || "—";
       document.getElementById("pc-pronouns").textContent = p.pronouns || "—";
-      document.getElementById("pc-sexuality").textContent = p.sexuality || "—";
+      document.getElementById("pc-role").textContent = p.role || "—";
+      document.getElementById("pc-points").textContent = p.points;
+      document.getElementById("pc-dollars").textContent = "$" + p.dollars;
       document.getElementById("pc-joined").textContent =
         "Joined " + new Date(p.createdAt).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" }) +
         " · " + pcAgeString(p.createdAt);
