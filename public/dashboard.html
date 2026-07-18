@@ -253,7 +253,7 @@
   <h1 class="site-header">˚₊‧꒰ა Dashboard ໒꒱ ‧₊˚</h1>
   <main class="card">
     <h1 id="welcome">˚₊‧꒰ა Welcome! ໒꒱ ‧₊˚</h1>
-    <p>There is no text here yet.</p>
+    <p id="dashboard-message">There is no text here yet.</p>
     <div class="dashboard-actions">
       <button id="admin" type="button" hidden>Accounts</button>
       <button id="chess" type="button">Play Chess</button>
@@ -338,6 +338,9 @@
         document.getElementById("welcome").textContent = isHermione
           ? "˚₊‧꒰ა Welcome, Princess! ໒꒱ ‧₊˚"
           : "˚₊‧꒰ა Welcome, " + d.username + "! ໒꒱ ‧₊˚";
+        document.getElementById("dashboard-message").textContent = isHermione
+          ? "mirror mirror on the wall."
+          : "There is no text here yet.";
         if (isHermione) {
           document.getElementById("admin").hidden = false;
         }
