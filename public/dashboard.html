@@ -82,8 +82,11 @@
     fetch("/api/me")
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((d) => {
-        document.getElementById("welcome").textContent = "˚₊‧꒰ა Welcome, " + d.username + "! ໒꒱ ‧₊˚";
-        if (d.username.toLowerCase() === "hermione") {
+        const isHermione = d.username.toLowerCase() === "hermione";
+        document.getElementById("welcome").textContent = isHermione
+          ? "˚₊‧꒰ა Welcome, Princess! ໒꒱ ‧₊˚"
+          : "˚₊‧꒰ა Welcome, " + d.username + "! ໒꒱ ‧₊˚";
+        if (isHermione) {
           document.getElementById("admin").hidden = false;
         }
       })
