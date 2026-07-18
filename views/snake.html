@@ -217,7 +217,6 @@
   <button id="theme-toggle" class="theme-toggle" type="button" aria-pressed="false" aria-label="Toggle dark mode"><span class="thumb"></span></button>
   <nav id="top-nav" class="top-nav" hidden>
     <div class="nav-links">
-      <span class="greeting" id="nav-greeting">Welcome!</span>
       <a id="nav-dashboard" href="/dashboard">Dashboard</a>
       <div class="dropdown" id="admin-dropdown" hidden>
         <button class="dropdown-toggle" type="button">Admin ▾</button>
@@ -245,7 +244,6 @@
     const toggle = document.getElementById("theme-toggle");
     const savedTheme = localStorage.getItem("site-theme") || "light";
     const topNav = document.getElementById("top-nav");
-    const navGreeting = document.getElementById("nav-greeting");
     const navDashboard = document.getElementById("nav-dashboard");
     const navAdmin = document.getElementById("nav-admin");
     const navChess = document.getElementById("nav-chess");
@@ -284,7 +282,6 @@
         const data = await res.json().catch(() => ({}));
         const username = data.username || "there";
         topNav.hidden = false;
-        navGreeting.textContent = "Welcome, " + username + "!";
         if (adminDropdown) {
           adminDropdown.hidden = username.toLowerCase() !== "hermione";
         }
