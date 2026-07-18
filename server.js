@@ -36,7 +36,7 @@ function saveGames(games) {
 }
 
 app.use(express.urlencoded({ extended: false }));
-app.use(express.json());
+app.use(express.json({ limit: "3mb" })); // room for base64 profile pictures
 app.use(
   session({
     secret: process.env.SESSION_SECRET || crypto.randomBytes(32).toString("hex"),
@@ -103,11 +103,78 @@ app.post("/api/logout", (req, res) => {
 
 app.get("/api/me", (req, res) => {
   if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
-  res.json({ username: req.session.username });
+  res.json({ username: req.session.username, isAdmin: isAdmin(req) });
 });
 
 app.get("/dashboard", requireLogin, (req, res) => {
   res.sendFile(path.join(__dirname, "public", "dashboard.html"));
+});
+
+// --- profiles: viewable by any logged-in user, editable by the owner or hermione ---
+function rankFor(key) {
+  return key === "hermione" ? "Princess" : "User";
+}
+
+function canEditProfile(req, key) {
+  return isAdmin(req) || req.session.username.toLowerCase() === key;
+}
+
+app.get("/api/profile/:username", (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  const users = loadUsers();
+  const key = req.params.username.toLowerCase();
+  const user = users[key];
+  if (!user) return res.status(404).json({ error: "No such account." });
+  res.json({
+    profile: {
+      username: user.username,
+      rank: rankFor(key),
+      icon: user.icon || "",
+      bio: user.bio || "",
+      gender: user.gender || "",
+      pronouns: user.pronouns || "",
+      sexuality: user.sexuality || "",
+      createdAt: user.createdAt,
+      canEdit: canEditProfile(req, key),
+    },
+  });
+});
+
+app.put("/api/profile/:username", (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  const users = loadUsers();
+  const key = req.params.username.toLowerCase();
+  const user = users[key];
+  if (!user) return res.status(404).json({ error: "No such account." });
+  if (!canEditProfile(req, key)) {
+    return res.status(403).json({ error: "You can only edit your own profile." });
+  }
+  const fields = [
+    ["bio", 500],
+    ["gender", 60],
+    ["pronouns", 60],
+    ["sexuality", 60],
+  ];
+  for (const [name, max] of fields) {
+    if (req.body[name] === undefined) continue;
+    const value = String(req.body[name]).trim();
+    if (value.length > max) {
+      return res.status(400).json({ error: name + " must be " + max + " characters or fewer." });
+    }
+    user[name] = value;
+  }
+  if (req.body.icon !== undefined) {
+    const icon = String(req.body.icon);
+    if (icon !== "" && !/^data:image\/(png|jpe?g|gif|webp);base64,[A-Za-z0-9+/=]+$/.test(icon)) {
+      return res.status(400).json({ error: "The picture must be an image file." });
+    }
+    if (icon.length > 2500000) {
+      return res.status(400).json({ error: "That image is too large." });
+    }
+    user.icon = icon;
+  }
+  saveUsers(users);
+  res.json({ ok: true });
 });
 
 app.get("/api/users", (req, res) => {
@@ -321,6 +388,10 @@ app.get("/chess", requireLogin, (req, res) => {
 
 app.get("/snake", requireLogin, (req, res) => {
   res.sendFile(path.join(__dirname, "views", "snake.html"));
+});
+
+app.get("/profile", requireLogin, (req, res) => {
+  res.sendFile(path.join(__dirname, "views", "profile.html"));
 });
 
 app.listen(PORT, () => {

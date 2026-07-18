@@ -137,6 +137,7 @@
       background: var(--button-hover-bg);
       box-shadow: inset 0 0 0 1px rgba(255,255,255,0.3);
     }
+    .top-nav .dropdown[hidden] { display: none; }
     .top-nav .dropdown {
       position: relative;
       display: inline-flex;
@@ -202,6 +203,108 @@
     .dashboard-actions button {
       margin: 0;
     }
+    .dashboard-grid {
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      gap: 1.5rem;
+      width: min(100%, 1020px);
+    }
+    .dashboard-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.5rem;
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+    .profile-card {
+      max-width: 300px;
+      flex: 0 0 300px;
+      padding: 2rem 1.5rem;
+    }
+    @media (max-width: 900px) {
+      .dashboard-grid { flex-direction: column; align-items: center; }
+      .profile-card { flex: 0 1 auto; max-width: 480px; width: 100%; }
+    }
+    .profile-card .avatar {
+      width: 88px;
+      height: 88px;
+      border-radius: 50%;
+      object-fit: cover;
+      display: block;
+      margin: 0 auto 0.85rem;
+      box-shadow: 0 6px 20px var(--shadow);
+      border: 4px solid var(--button-bg);
+      background: linear-gradient(135deg, #ff90b0, #f7b8c8);
+    }
+    .profile-card .avatar-fallback {
+      width: 88px;
+      height: 88px;
+      border-radius: 50%;
+      margin: 0 auto 0.85rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: "Cause", sans-serif;
+      font-size: 2.2rem;
+      font-weight: 700;
+      color: #ffffff;
+      background: linear-gradient(135deg, #ff90b0, #f7b8c8);
+      box-shadow: 0 6px 20px var(--shadow);
+      border: 4px solid var(--button-bg);
+    }
+    .profile-card .badge {
+      display: inline-block;
+      padding: 0.2rem 0.8rem;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+    .profile-card .badge.princess {
+      background: linear-gradient(135deg, #ff90b0, #f7b8c8);
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(255, 144, 176, 0.5);
+    }
+    .profile-card .badge.user {
+      background: var(--table-border);
+      color: var(--muted-color);
+    }
+    .profile-card .bio {
+      color: var(--text-color);
+      font-size: 0.9rem;
+      margin-bottom: 1rem;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+    .profile-card .bio.empty { color: var(--muted-color); font-style: italic; }
+    .profile-card .mini-details {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      text-align: left;
+    }
+    .profile-card .mini-detail {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.5rem;
+      background: rgba(255, 144, 176, 0.08);
+      border: 1px solid var(--table-border);
+      border-radius: 8px;
+      padding: 0.45rem 0.7rem;
+      font-size: 0.85rem;
+    }
+    .profile-card .mini-detail .label {
+      color: var(--table-header-color);
+      text-transform: uppercase;
+      font-size: 0.68rem;
+      letter-spacing: 0.05em;
+      align-self: center;
+    }
+    .profile-card .mini-detail .value { font-weight: 600; overflow-wrap: anywhere; text-align: right; }
+    .profile-card .joined { color: var(--muted-color); font-size: 0.78rem; margin-bottom: 1rem; }
     h1 { font-family: "Cause", sans-serif; font-size: 1.5rem; color: var(--heading-color); margin-bottom: 0.5rem; }
     h2 { font-family: "Cause", sans-serif; font-size: 1.1rem; color: var(--heading-color); margin-bottom: 1rem; }
     p { color: var(--muted-color); margin-bottom: 1.5rem; }
@@ -211,6 +314,8 @@
     tr + tr td { border-top: 1px solid var(--table-border); }
     td { color: var(--text-color); }
     td.rank { color: var(--muted-color); width: 2.5rem; }
+    td a { color: inherit; text-decoration: underline; text-decoration-color: var(--button-hover-bg); text-underline-offset: 3px; }
+    td a:hover { color: var(--button-hover-bg); }
     button {
       padding: 0.6rem 1.5rem;
       background: var(--button-bg);
@@ -266,6 +371,7 @@
           <a id="nav-admin" href="/admin">Accounts</a>
         </div>
       </div>
+      <a id="nav-profile" href="/profile">Profile</a>
       <a id="nav-chess" href="/chess">Chess</a>
       <a id="nav-snake" href="/snake">Snake</a>
       <button id="nav-logout" type="button">Log out</button>
@@ -273,25 +379,42 @@
     <button id="theme-toggle" class="theme-toggle" type="button" aria-pressed="false" aria-label="Toggle dark mode"><span class="thumb"></span></button>
   </nav>
   <h1 class="site-header">˚₊‧꒰ა Dashboard ໒꒱ ‧₊˚</h1>
-  <main class="card">
-    <h1 id="welcome">˚₊‧꒰ა Welcome! ໒꒱ ‧₊˚</h1>
-    <p id="dashboard-message">There is no text here yet.</p>
-    <div class="dashboard-actions">
-      <button id="admin" type="button" hidden>Accounts</button>
-      <button id="chess" type="button">Play Chess</button>
-      <button id="snake" type="button">Play Snake</button>
-      <button id="logout" type="button">Log out</button>
+  <div class="dashboard-grid">
+    <div class="dashboard-col">
+      <main class="card">
+        <h1 id="welcome">˚₊‧꒰ა Welcome! ໒꒱ ‧₊˚</h1>
+        <p id="dashboard-message">There is no text here yet.</p>
+        <div class="dashboard-actions">
+          <button id="admin" type="button" hidden>Accounts</button>
+          <button id="chess" type="button">Play Chess</button>
+          <button id="snake" type="button">Play Snake</button>
+          <button id="logout" type="button">Log out</button>
+        </div>
+      </main>
+      <section class="card">
+        <h2>Leaderboard</h2>
+        <table>
+          <thead>
+            <tr><th></th><th>Username</th><th>Points</th></tr>
+          </thead>
+          <tbody id="board"></tbody>
+        </table>
+      </section>
     </div>
-  </main>
-  <section class="card">
-    <h2>Leaderboard</h2>
-    <table>
-      <thead>
-        <tr><th></th><th>Username</th><th>Points</th></tr>
-      </thead>
-      <tbody id="board"></tbody>
-    </table>
-  </section>
+    <aside class="card profile-card" id="profile-card" hidden>
+      <div id="pc-avatar"></div>
+      <h2 id="pc-username">…</h2>
+      <div id="pc-badge"></div>
+      <p class="bio" id="pc-bio"></p>
+      <div class="mini-details">
+        <div class="mini-detail"><span class="label">Gender</span><span class="value" id="pc-gender">—</span></div>
+        <div class="mini-detail"><span class="label">Pronouns</span><span class="value" id="pc-pronouns">—</span></div>
+        <div class="mini-detail"><span class="label">Sexuality</span><span class="value" id="pc-sexuality">—</span></div>
+      </div>
+      <p class="joined" id="pc-joined"></p>
+      <button id="pc-view" type="button">View profile</button>
+    </aside>
+  </div>
   <script>
     const body = document.body;
     const toggle = document.getElementById("theme-toggle");
@@ -326,6 +449,9 @@
 
     async function initTopNav() {
       if (!topNav) return;
+      if (adminDropdown) {
+        adminDropdown.hidden = true;
+      }
       try {
         const res = await fetch("/api/me");
         if (!res.ok) {
@@ -334,13 +460,17 @@
         }
         const data = await res.json().catch(() => ({}));
         const username = data.username || "there";
+        const isAdmin = Boolean(data.isAdmin ?? (username && username.toLowerCase() === "hermione"));
         topNav.hidden = false;
         if (adminDropdown) {
-          adminDropdown.hidden = username.toLowerCase() !== "hermione";
+          adminDropdown.hidden = !isAdmin;
         }
         setActiveNav(window.location.pathname);
       } catch {
         topNav.hidden = true;
+        if (adminDropdown) {
+          adminDropdown.hidden = true;
+        }
       }
     }
 
@@ -354,7 +484,7 @@
     fetch("/api/me")
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((d) => {
-        const isHermione = d.username.toLowerCase() === "hermione";
+        const isHermione = Boolean(d.isAdmin ?? (d.username && d.username.toLowerCase() === "hermione"));
         document.getElementById("welcome").textContent = isHermione
           ? "˚₊‧꒰ა Welcome, Princess! ໒꒱ ‧₊˚"
           : "˚₊‧꒰ა Welcome, " + d.username + "! ໒꒱ ‧₊˚";
@@ -377,7 +507,10 @@
           rank.className = "rank";
           rank.textContent = i + 1;
           const name = document.createElement("td");
-          name.textContent = u.username;
+          const link = document.createElement("a");
+          link.href = "/profile?user=" + encodeURIComponent(u.username);
+          link.textContent = u.username;
+          name.append(link);
           const points = document.createElement("td");
           points.textContent = u.points;
           tr.append(rank, name, points);
@@ -385,6 +518,60 @@
         });
       })
       .catch(() => {});
+
+    function pcAgeString(createdAt) {
+      const days = Math.floor((Date.now() - new Date(createdAt).getTime()) / 86400000);
+      if (days < 1) return "brand new";
+      if (days < 31) return days + (days === 1 ? " day old" : " days old");
+      const months = Math.floor(days / 30.44);
+      if (months < 12) return months + (months === 1 ? " month old" : " months old");
+      const years = Math.floor(months / 12);
+      const rem = months % 12;
+      return years + (years === 1 ? " year" : " years") + (rem ? ", " + rem + (rem === 1 ? " month" : " months") : "") + " old";
+    }
+
+    async function loadProfileCard() {
+      const meRes = await fetch("/api/me");
+      if (!meRes.ok) return;
+      const me = await meRes.json();
+      const res = await fetch("/api/profile/" + encodeURIComponent(me.username));
+      if (!res.ok) return;
+      const p = (await res.json()).profile;
+      const slot = document.getElementById("pc-avatar");
+      if (p.icon) {
+        const img = document.createElement("img");
+        img.className = "avatar";
+        img.src = p.icon;
+        img.alt = p.username + "'s profile picture";
+        slot.replaceChildren(img);
+      } else {
+        const div = document.createElement("div");
+        div.className = "avatar-fallback";
+        div.textContent = (p.username[0] || "?").toUpperCase();
+        slot.replaceChildren(div);
+      }
+      document.getElementById("pc-username").textContent = p.username;
+      const badge = document.createElement("span");
+      const princess = p.rank === "Princess";
+      badge.className = "badge " + (princess ? "princess" : "user");
+      badge.textContent = p.rank;
+      document.getElementById("pc-badge").replaceChildren(badge);
+      const bio = document.getElementById("pc-bio");
+      bio.textContent = p.bio || "No bio yet.";
+      bio.classList.toggle("empty", !p.bio);
+      document.getElementById("pc-gender").textContent = p.gender || "—";
+      document.getElementById("pc-pronouns").textContent = p.pronouns || "—";
+      document.getElementById("pc-sexuality").textContent = p.sexuality || "—";
+      document.getElementById("pc-joined").textContent =
+        "Joined " + new Date(p.createdAt).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" }) +
+        " · " + pcAgeString(p.createdAt);
+      document.getElementById("profile-card").hidden = false;
+    }
+    loadProfileCard();
+
+    document.getElementById("pc-view").addEventListener("click", () => {
+      window.location.href = "/profile";
+    });
 
     document.getElementById("admin").addEventListener("click", () => {
       window.location.href = "/admin";

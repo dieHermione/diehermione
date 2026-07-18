@@ -133,6 +133,7 @@
       background: var(--button-hover-bg);
       box-shadow: inset 0 0 0 1px rgba(255,255,255,0.3);
     }
+    .top-nav .dropdown[hidden] { display: none; }
     .top-nav .dropdown {
       position: relative;
       display: inline-flex;
@@ -192,6 +193,8 @@
     th { color: var(--table-header-color); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
     tr + tr td { border-top: 1px solid var(--table-border); }
     td { color: var(--text-color); }
+    td a { color: inherit; text-decoration: underline; text-decoration-color: var(--button-hover-bg); text-underline-offset: 3px; }
+    td a:hover { color: var(--button-hover-bg); }
     .count { color: var(--muted-color); font-size: 0.85rem; margin-bottom: 1rem; }
     .action-menu {
       padding: 0.3rem 0.4rem;
@@ -270,6 +273,7 @@
           <a id="nav-admin" href="/admin">Accounts</a>
         </div>
       </div>
+      <a id="nav-profile" href="/profile">Profile</a>
       <a id="nav-chess" href="/chess">Chess</a>
       <a id="nav-snake" href="/snake">Snake</a>
       <button id="nav-logout" type="button">Log out</button>
@@ -324,6 +328,9 @@
 
     async function initTopNav() {
       if (!topNav) return;
+      if (adminDropdown) {
+        adminDropdown.hidden = true;
+      }
       try {
         const res = await fetch("/api/me");
         if (!res.ok) {
@@ -332,13 +339,17 @@
         }
         const data = await res.json().catch(() => ({}));
         const username = data.username || "there";
+        const isAdmin = Boolean(data.isAdmin ?? (username && username.toLowerCase() === "hermione"));
         topNav.hidden = false;
         if (adminDropdown) {
-          adminDropdown.hidden = username.toLowerCase() !== "hermione";
+          adminDropdown.hidden = !isAdmin;
         }
         setActiveNav(window.location.pathname);
       } catch {
         topNav.hidden = true;
+        if (adminDropdown) {
+          adminDropdown.hidden = true;
+        }
       }
     }
 
@@ -360,7 +371,10 @@
           for (const u of d.users) {
             const tr = document.createElement("tr");
             const name = document.createElement("td");
-            name.textContent = u.username;
+            const profileLink = document.createElement("a");
+            profileLink.href = "/profile?user=" + encodeURIComponent(u.username);
+            profileLink.textContent = u.username;
+            name.append(profileLink);
             const date = document.createElement("td");
             date.textContent = new Date(u.createdAt).toLocaleDateString();
             const points = document.createElement("td");

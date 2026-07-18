@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Profile — Test Site</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cause:wght@400..700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      color-scheme: light;
+      --bg1: #ff90b0;
+      --bg2: #f6f6f6;
+      --panel-bg: rgba(255, 255, 255, 0.95);
+      --header-color: #ffffff;
+      --heading-color: #FBC3D3;
+      --text-color: #333;
+      --muted-color: #777;
+      --table-border: #eee;
+      --table-header-color: #888;
+      --button-bg: #FBC3D3;
+      --button-text: #ffffff;
+      --button-hover-bg: #f7b8c8;
+      --shadow: rgba(0, 0, 0, 0.2);
+      --input-border: #ddd;
+      --input-bg: #fff;
+      --input-text: #333;
+      --toggle-bg: rgba(255, 255, 255, 0.9);
+      --toggle-text: #333;
+    }
+    body[data-theme="dark"] {
+      color-scheme: dark;
+      --bg1: #14141a;
+      --bg2: #22222b;
+      --panel-bg: rgba(37, 34, 42, 0.92);
+      --header-color: #ffffff;
+      --heading-color: #ffffff;
+      --text-color: #ffffff;
+      --muted-color: #ffffff;
+      --table-border: #5a4257;
+      --table-header-color: #ffffff;
+      --button-bg: #d99baf;
+      --button-text: #ffffff;
+      --button-hover-bg: #edb6ca;
+      --shadow: rgba(0, 0, 0, 0.45);
+      --input-border: #6e5a72;
+      --input-bg: #2b2234;
+      --input-text: #f8ebf4;
+      --toggle-bg: rgba(41, 34, 49, 0.95);
+      --toggle-text: #ffffff;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Cause", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 1.5rem;
+      background: linear-gradient(135deg, var(--bg1) 0%, var(--bg2) 100%);
+      padding: 1rem;
+      color: var(--text-color);
+    }
+    .site-header {
+      font-family: "Cause", sans-serif;
+      font-size: 3rem;
+      font-weight: 700;
+      color: var(--header-color);
+      text-shadow: 0 2px 12px rgba(255, 255, 255, 0.6);
+      text-align: center;
+      margin-bottom: 1.25rem;
+    }
+    body.has-top-nav {
+      justify-content: flex-start;
+      padding-top: 1.75rem;
+      gap: 1rem;
+    }
+    .top-nav {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+      align-items: center;
+      gap: 0.55rem;
+      position: relative;
+      width: min(100%, 720px);
+      padding: 0.65rem 1rem;
+      margin: 0 0 0.75rem;
+      border-radius: 999px;
+      background: var(--panel-bg);
+      box-shadow: 0 8px 24px var(--shadow);
+      backdrop-filter: blur(8px);
+    }
+    .top-nav .nav-links {
+      grid-column: 2;
+      justify-self: center;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      gap: 0.45rem;
+    }
+    .top-nav a,
+    .top-nav button,
+    .top-nav .dropdown-toggle {
+      padding: 0.45rem 0.85rem;
+      border-radius: 999px;
+      border: none;
+      background: var(--button-bg);
+      color: var(--button-text);
+      font-size: 0.9rem;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .top-nav a:hover,
+    .top-nav button:hover,
+    .top-nav .dropdown-toggle:hover {
+      background: var(--button-hover-bg);
+    }
+    .top-nav a.active {
+      background: var(--button-hover-bg);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.3);
+    }
+    .top-nav .dropdown[hidden] { display: none; }
+    .top-nav .dropdown {
+      position: relative;
+      display: inline-flex;
+    }
+    .top-nav .dropdown-menu {
+      position: absolute;
+      top: calc(100% + 0.35rem);
+      left: 0;
+      display: none;
+      flex-direction: column;
+      gap: 0.35rem;
+      padding: 0.45rem;
+      background: var(--panel-bg);
+      border-radius: 8px;
+      box-shadow: 0 8px 24px var(--shadow);
+      min-width: 8rem;
+    }
+    .top-nav .dropdown:hover .dropdown-menu,
+    .top-nav .dropdown:focus-within .dropdown-menu {
+      display: flex;
+    }
+    .top-nav .dropdown-menu a {
+      width: 100%;
+    }
+    .top-nav .theme-toggle {
+      grid-column: 3;
+      justify-self: end;
+      position: relative;
+      top: auto;
+      right: auto;
+      width: 2.8rem;
+      height: 1.45rem;
+      margin: 0;
+      flex-shrink: 0;
+      box-shadow: 0 4px 10px var(--shadow);
+    }
+    .top-nav .theme-toggle .thumb {
+      top: 0.12rem;
+      left: 0.12rem;
+      width: 1rem;
+      height: 1rem;
+    }
+    .top-nav .theme-toggle.is-dark .thumb {
+      left: calc(100% - 1rem - 0.12rem);
+    }
+    .card {
+      background: var(--panel-bg);
+      border-radius: 12px;
+      box-shadow: 0 10px 40px var(--shadow);
+      width: 100%;
+      max-width: 520px;
+      padding: 2.5rem;
+      text-align: center;
+      color: var(--text-color);
+    }
+    .avatar {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      object-fit: cover;
+      display: block;
+      margin: 0 auto 1rem;
+      box-shadow: 0 6px 20px var(--shadow);
+      border: 4px solid var(--button-bg);
+      background: linear-gradient(135deg, #ff90b0, #f7b8c8);
+    }
+    .avatar-fallback {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      margin: 0 auto 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: "Cause", sans-serif;
+      font-size: 3rem;
+      font-weight: 700;
+      color: #ffffff;
+      background: linear-gradient(135deg, #ff90b0, #f7b8c8);
+      box-shadow: 0 6px 20px var(--shadow);
+      border: 4px solid var(--button-bg);
+    }
+    h1.username {
+      font-family: "Cause", sans-serif;
+      font-size: 1.6rem;
+      color: var(--heading-color);
+      margin-bottom: 0.35rem;
+    }
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.9rem;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      margin-bottom: 1.25rem;
+    }
+    .badge.princess {
+      background: linear-gradient(135deg, #ff90b0, #f7b8c8);
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(255, 144, 176, 0.5);
+    }
+    .badge.user {
+      background: var(--table-border);
+      color: var(--muted-color);
+    }
+    .bio {
+      color: var(--text-color);
+      margin: 0 auto 1.5rem;
+      max-width: 380px;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+    .bio.empty { color: var(--muted-color); font-style: italic; }
+    .details {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+    .detail {
+      background: rgba(255, 144, 176, 0.08);
+      border: 1px solid var(--table-border);
+      border-radius: 10px;
+      padding: 0.75rem 0.5rem;
+    }
+    .detail .label {
+      display: block;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--table-header-color);
+      margin-bottom: 0.3rem;
+    }
+    .detail .value { font-weight: 600; font-size: 0.95rem; overflow-wrap: anywhere; }
+    .joined { color: var(--muted-color); font-size: 0.85rem; margin-bottom: 1.5rem; }
+    button {
+      padding: 0.6rem 1.5rem;
+      background: var(--button-bg);
+      color: var(--button-text);
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button:hover { background: var(--button-hover-bg); }
+    button + button { margin-left: 0.5rem; }
+    /* edit mode */
+    #edit-form { display: none; text-align: left; }
+    #edit-form.open { display: block; }
+    #view-mode.closed { display: none; }
+    .field { margin-bottom: 1rem; }
+    .field label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--table-header-color);
+      margin-bottom: 0.3rem;
+    }
+    .field input[type="text"], .field textarea {
+      width: 100%;
+      padding: 0.55rem 0.7rem;
+      border: 1px solid var(--input-border);
+      border-radius: 8px;
+      font-size: 0.95rem;
+      background: var(--input-bg);
+      color: var(--input-text);
+      font-family: inherit;
+    }
+    .field textarea { min-height: 90px; resize: vertical; }
+    .field input:focus, .field textarea:focus { outline: none; border-color: var(--button-hover-bg); }
+    .picture-row { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
+    .picture-row .avatar, .picture-row .avatar-fallback {
+      width: 72px; height: 72px; margin: 0; font-size: 1.8rem; flex-shrink: 0;
+    }
+    .picture-row input[type="file"] { font-size: 0.85rem; color: var(--muted-color); max-width: 100%; }
+    .form-actions { text-align: center; margin-top: 1.25rem; }
+    .form-error {
+      display: none;
+      color: #b3261e;
+      background: rgba(255, 144, 176, 0.15);
+      border-radius: 8px;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.85rem;
+      margin-bottom: 1rem;
+    }
+    .theme-toggle {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      z-index: 10;
+      width: 3rem;
+      height: 1.6rem;
+      padding: 0;
+      border: 1px solid var(--input-border);
+      border-radius: 999px;
+      background: var(--toggle-bg);
+      color: transparent;
+      box-shadow: 0 6px 16px var(--shadow);
+      cursor: pointer;
+      overflow: hidden;
+    }
+    .theme-toggle .thumb {
+      position: absolute;
+      top: 0.15rem;
+      left: 0.15rem;
+      width: 1.15rem;
+      height: 1.15rem;
+      border-radius: 50%;
+      background: var(--button-bg);
+      display: block;
+      transition: left 0.2s ease, background-color 0.2s ease;
+    }
+    .theme-toggle.is-dark .thumb {
+      left: calc(100% - 1.15rem - 0.15rem);
+      background: var(--button-hover-bg);
+    }
+  </style>
+</head>
+<body class="has-top-nav">
+  <nav id="top-nav" class="top-nav" hidden>
+    <div class="nav-links">
+      <a id="nav-dashboard" href="/dashboard">Dashboard</a>
+      <div class="dropdown" id="admin-dropdown" hidden>
+        <button class="dropdown-toggle" type="button">Admin ▾</button>
+        <div class="dropdown-menu">
+          <a id="nav-admin" href="/admin">Accounts</a>
+        </div>
+      </div>
+      <a id="nav-profile" href="/profile">Profile</a>
+      <a id="nav-chess" href="/chess">Chess</a>
+      <a id="nav-snake" href="/snake">Snake</a>
+      <button id="nav-logout" type="button">Log out</button>
+    </div>
+    <button id="theme-toggle" class="theme-toggle" type="button" aria-pressed="false" aria-label="Toggle dark mode"><span class="thumb"></span></button>
+  </nav>
+  <h1 class="site-header">˚₊‧꒰ა Profile ໒꒱ ‧₊˚</h1>
+  <main class="card">
+    <div id="view-mode">
+      <div id="avatar-slot"></div>
+      <h1 class="username" id="p-username">…</h1>
+      <div id="p-badge"></div>
+      <p class="bio" id="p-bio"></p>
+      <div class="details">
+        <div class="detail"><span class="label">Gender</span><span class="value" id="p-gender">—</span></div>
+        <div class="detail"><span class="label">Pronouns</span><span class="value" id="p-pronouns">—</span></div>
+        <div class="detail"><span class="label">Sexuality</span><span class="value" id="p-sexuality">—</span></div>
+      </div>
+      <p class="joined" id="p-joined"></p>
+      <button id="edit-btn" type="button" hidden>Edit profile</button>
+    </div>
+
+    <form id="edit-form">
+      <div class="form-error" id="form-error"></div>
+      <div class="field">
+        <label>Profile picture</label>
+        <div class="picture-row">
+          <div id="edit-avatar-slot"></div>
+          <input type="file" id="f-icon" accept="image/*" />
+        </div>
+      </div>
+      <div class="field">
+        <label for="f-bio">Bio</label>
+        <textarea id="f-bio" maxlength="500" placeholder="Tell everyone a little about yourself…"></textarea>
+      </div>
+      <div class="field">
+        <label for="f-gender">Gender</label>
+        <input type="text" id="f-gender" maxlength="60" />
+      </div>
+      <div class="field">
+        <label for="f-pronouns">Pronouns</label>
+        <input type="text" id="f-pronouns" maxlength="60" placeholder="e.g. she/her" />
+      </div>
+      <div class="field">
+        <label for="f-sexuality">Sexuality</label>
+        <input type="text" id="f-sexuality" maxlength="60" />
+      </div>
+      <div class="form-actions">
+        <button type="submit" id="save-btn">Save</button>
+        <button type="button" id="cancel-btn">Cancel</button>
+      </div>
+    </form>
+  </main>
+  <script>
+    const body = document.body;
+    const toggle = document.getElementById("theme-toggle");
+    const savedTheme = localStorage.getItem("site-theme") || "light";
+    const topNav = document.getElementById("top-nav");
+    const adminDropdown = document.getElementById("admin-dropdown");
+
+    function applyTheme(theme) {
+      body.dataset.theme = theme;
+      if (toggle) {
+        toggle.classList.toggle("is-dark", theme === "dark");
+        toggle.setAttribute("aria-pressed", String(theme === "dark"));
+      }
+      localStorage.setItem("site-theme", theme);
+    }
+
+    applyTheme(savedTheme);
+    toggle?.addEventListener("click", () => {
+      applyTheme(body.dataset.theme === "dark" ? "light" : "dark");
+    });
+
+    document.getElementById("nav-logout")?.addEventListener("click", async () => {
+      await fetch("/api/logout", { method: "POST" });
+      window.location.href = "/";
+    });
+
+    // --- profile logic ---
+    const params = new URLSearchParams(window.location.search);
+    let me = null;
+    let profileUser = null; // whose profile is shown
+    let profile = null;
+    let pendingIcon = undefined; // data URL chosen in the edit form
+
+    function avatarEl(p, small) {
+      if (p.icon) {
+        const img = document.createElement("img");
+        img.className = "avatar";
+        img.src = p.icon;
+        img.alt = p.username + "'s profile picture";
+        return img;
+      }
+      const div = document.createElement("div");
+      div.className = "avatar-fallback";
+      div.textContent = (p.username[0] || "?").toUpperCase();
+      return div;
+    }
+
+    function ageString(createdAt) {
+      const days = Math.floor((Date.now() - new Date(createdAt).getTime()) / 86400000);
+      if (days < 1) return "brand new";
+      if (days < 31) return days + (days === 1 ? " day old" : " days old");
+      const months = Math.floor(days / 30.44);
+      if (months < 12) return months + (months === 1 ? " month old" : " months old");
+      const years = Math.floor(months / 12);
+      const rem = months % 12;
+      return years + (years === 1 ? " year" : " years") + (rem ? ", " + rem + (rem === 1 ? " month" : " months") : "") + " old";
+    }
+
+    function renderProfile() {
+      const slot = document.getElementById("avatar-slot");
+      slot.replaceChildren(avatarEl(profile));
+      document.getElementById("p-username").textContent = profile.username;
+      const badge = document.createElement("span");
+      const princess = profile.rank === "Princess";
+      badge.className = "badge " + (princess ? "princess" : "user");
+      badge.textContent = princess ? "Princess" : "User";
+      document.getElementById("p-badge").replaceChildren(badge);
+      const bio = document.getElementById("p-bio");
+      bio.textContent = profile.bio || "No bio yet.";
+      bio.classList.toggle("empty", !profile.bio);
+      document.getElementById("p-gender").textContent = profile.gender || "—";
+      document.getElementById("p-pronouns").textContent = profile.pronouns || "—";
+      document.getElementById("p-sexuality").textContent = profile.sexuality || "—";
+      const created = new Date(profile.createdAt);
+      document.getElementById("p-joined").textContent =
+        "Joined " + created.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" }) +
+        " · account is " + ageString(profile.createdAt);
+      document.getElementById("edit-btn").hidden = !profile.canEdit;
+      document.title = profile.username + " — Profile";
+    }
+
+    async function loadProfile() {
+      const res = await fetch("/api/profile/" + encodeURIComponent(profileUser));
+      if (!res.ok) {
+        document.getElementById("p-username").textContent = "Profile not found";
+        document.getElementById("p-bio").textContent = "That account doesn't seem to exist.";
+        return;
+      }
+      profile = (await res.json()).profile;
+      renderProfile();
+    }
+
+    function setEditing(on) {
+      document.getElementById("edit-form").classList.toggle("open", on);
+      document.getElementById("view-mode").classList.toggle("closed", on);
+      if (on) {
+        pendingIcon = undefined;
+        document.getElementById("form-error").style.display = "none";
+        document.getElementById("f-bio").value = profile.bio;
+        document.getElementById("f-gender").value = profile.gender;
+        document.getElementById("f-pronouns").value = profile.pronouns;
+        document.getElementById("f-sexuality").value = profile.sexuality;
+        document.getElementById("f-icon").value = "";
+        document.getElementById("edit-avatar-slot").replaceChildren(avatarEl(profile));
+      }
+    }
+
+    document.getElementById("edit-btn").addEventListener("click", () => setEditing(true));
+    document.getElementById("cancel-btn").addEventListener("click", () => setEditing(false));
+
+    // downscale the chosen image to a 256px square so uploads stay tiny
+    document.getElementById("f-icon").addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const img = new Image();
+      img.onload = () => {
+        const size = 256;
+        const canvas = document.createElement("canvas");
+        canvas.width = canvas.height = size;
+        const ctx = canvas.getContext("2d");
+        const scale = Math.max(size / img.width, size / img.height);
+        const w = img.width * scale, h = img.height * scale;
+        ctx.drawImage(img, (size - w) / 2, (size - h) / 2, w, h);
+        pendingIcon = canvas.toDataURL("image/jpeg", 0.85);
+        document.getElementById("edit-avatar-slot").replaceChildren(
+          avatarEl({ username: profile.username, icon: pendingIcon })
+        );
+        URL.revokeObjectURL(img.src);
+      };
+      img.src = URL.createObjectURL(file);
+    });
+
+    document.getElementById("edit-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const bodyData = {
+        bio: document.getElementById("f-bio").value,
+        gender: document.getElementById("f-gender").value,
+        pronouns: document.getElementById("f-pronouns").value,
+        sexuality: document.getElementById("f-sexuality").value,
+      };
+      if (pendingIcon !== undefined) bodyData.icon = pendingIcon;
+      const res = await fetch("/api/profile/" + encodeURIComponent(profileUser), {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(bodyData),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const err = document.getElementById("form-error");
+        err.textContent = data.error || "Saving failed.";
+        err.style.display = "block";
+        return;
+      }
+      await loadProfile();
+      setEditing(false);
+    });
+
+    fetch("/api/me")
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then(async (d) => {
+        me = d;
+        topNav.hidden = false;
+        adminDropdown.hidden = !d.isAdmin;
+        profileUser = params.get("user") || d.username;
+        document.getElementById("nav-profile").classList.toggle(
+          "active",
+          profileUser.toLowerCase() === d.username.toLowerCase()
+        );
+        await loadProfile();
+      })
+      .catch(() => (window.location.href = "/"));
+  </script>
+</body>
+</html>
