@@ -34,21 +34,21 @@
       --bg1: #140d16;
       --bg2: #231628;
       --panel-bg: rgba(37, 34, 42, 0.92);
-      --header-color: #ffeef8;
-      --text-color: #f5e8f2;
-      --muted-color: #e4c9dc;
+      --header-color: #ffffff;
+      --text-color: #ffffff;
+      --muted-color: #ffffff;
       --table-border: #5a4257;
-      --table-header-color: #ffcfde;
+      --table-header-color: #ffffff;
       --button-bg: #d99baf;
-      --button-text: #2e1d27;
+      --button-text: #ffffff;
       --button-hover-bg: #edb6ca;
       --shadow: rgba(0, 0, 0, 0.45);
       --input-border: #6e5a72;
       --input-bg: #2b2234;
       --input-text: #f8ebf4;
-      --focus-color: #ffcfde;
+      --focus-color: #ffffff;
       --toggle-bg: rgba(41, 34, 49, 0.95);
-      --toggle-text: #ffeef8;
+      --toggle-text: #ffffff;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -126,16 +126,39 @@
       top: 1rem;
       right: 1rem;
       z-index: 10;
+      width: 3rem;
+      height: 1.7rem;
+      padding: 0.2rem;
+      border: 1px solid var(--input-border);
       border-radius: 999px;
-      padding: 0.55rem 0.9rem;
       background: var(--toggle-bg);
-      color: var(--toggle-text);
+      color: transparent;
       box-shadow: 0 6px 16px var(--shadow);
+      display: inline-flex;
+      align-items: center;
+      justify-content: flex-start;
+      cursor: pointer;
+    }
+    .theme-toggle .thumb {
+      width: 1.1rem;
+      height: 1.1rem;
+      border-radius: 50%;
+      background: var(--button-bg);
+      display: block;
+      transition: transform 0.2s ease;
+      transform: translateX(0);
+    }
+    .theme-toggle.is-dark {
+      justify-content: flex-end;
+    }
+    .theme-toggle.is-dark .thumb {
+      transform: translateX(1.15rem);
+      background: var(--button-hover-bg);
     }
   </style>
 </head>
 <body>
-  <button id="theme-toggle" class="theme-toggle" type="button" aria-pressed="false">🌙 Dark mode</button>
+  <button id="theme-toggle" class="theme-toggle" type="button" aria-pressed="false" aria-label="Toggle dark mode"><span class="thumb"></span></button>
   <h1 class="site-header">˚₊‧꒰ა Accounts ໒꒱ ‧₊˚</h1>
   <main class="card">
     <p class="count" id="count">Loading…</p>
@@ -158,7 +181,7 @@
     function applyTheme(theme) {
       body.dataset.theme = theme;
       if (toggle) {
-        toggle.textContent = theme === "dark" ? "☀️ Light mode" : "🌙 Dark mode";
+        toggle.classList.toggle("is-dark", theme === "dark");
         toggle.setAttribute("aria-pressed", String(theme === "dark"));
       }
       localStorage.setItem("site-theme", theme);
