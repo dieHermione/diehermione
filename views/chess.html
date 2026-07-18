@@ -51,6 +51,7 @@
     #board {
       display: grid;
       grid-template-columns: repeat(8, 1fr);
+      grid-template-rows: repeat(8, 1fr);
       width: 100%;
       max-width: 440px;
       aspect-ratio: 1;
@@ -100,6 +101,7 @@
     <p class="status" id="status">Loading…</p>
     <div id="board"></div>
     <div class="nav">
+      <button id="removebtn" type="button" hidden>Remove piece</button>
       <button id="newgame" type="button">New game</button>
       <button id="back" type="button">Dashboard</button>
     </div>
@@ -112,6 +114,7 @@
     let game = null;
     let selected = null;
     let busy = false;
+    let removeMode = false;
 
     const boardEl = document.getElementById("board");
     const statusEl = document.getElementById("status");
@@ -173,6 +176,7 @@
 
     function statusText() {
       if (!game) return "";
+      if (removeMode) return "Click one of " + game.opponent + "'s pieces to remove it.";
       if (game.checkmate) {
         const winner = game.winner === "w" ? "White" : "Pink";
         return "Checkmate — " + winner + " wins!";
@@ -190,6 +194,10 @@
 
     async function onSquareClick(sq, piece) {
       if (!game || game.gameOver || busy) return;
+      if (removeMode) {
+        if (piece && pieceSide(piece) === "w") await sendRemove(sq);
+        return;
+      }
       if (game.turn !== mySide) return;
       if (selected && sq !== selected) {
         if (piece && pieceSide(piece) === mySide) {
@@ -226,6 +234,31 @@
       } else {
         selected = null;
         render();
+      }
+    }
+
+    function setRemoveMode(on) {
+      removeMode = on;
+      document.getElementById("removebtn").textContent = on ? "Cancel remove" : "Remove piece";
+      selected = null;
+      render();
+    }
+
+    async function sendRemove(square) {
+      busy = true;
+      const res = await fetch("/api/chess/remove", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ opponent, square }),
+      });
+      const data = await res.json().catch(() => ({}));
+      busy = false;
+      setRemoveMode(false);
+      if (res.ok) {
+        game = data.game;
+        render();
+      } else if (data.error) {
+        statusEl.textContent = data.error;
       }
     }
 
@@ -275,7 +308,14 @@
       opponent = e.target.value;
       game = null;
       selected = null;
+      removeMode = false;
+      document.getElementById("removebtn").textContent = "Remove piece";
       loadGame();
+    });
+
+    document.getElementById("removebtn").addEventListener("click", () => {
+      if (!game || game.gameOver) return;
+      setRemoveMode(!removeMode);
     });
 
     document.getElementById("newgame").addEventListener("click", async () => {
@@ -307,6 +347,7 @@
         document.getElementById("note").hidden = isAdmin;
         if (isAdmin) {
           document.getElementById("picker").hidden = false;
+          document.getElementById("removebtn").hidden = false;
           await loadAdminGames();
           setInterval(loadAdminGames, 4000);
         } else {

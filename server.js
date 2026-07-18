@@ -245,6 +245,41 @@ app.post("/api/chess/move", (req, res) => {
   res.json({ game: gameState(entry, key) });
 });
 
+app.post("/api/chess/remove", (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });
+  const key = chessKeyFor(req, req.body.opponent);
+  if (!key) return res.status(400).json({ error: "A valid opponent is required." });
+  const games = loadGames();
+  const entry = games[key];
+  if (!entry) return res.status(404).json({ error: "No such game." });
+  const square = req.body.square;
+  if (!/^[a-h][1-8]$/.test(square || "")) {
+    return res.status(400).json({ error: "Invalid square." });
+  }
+  const chess = new Chess(entry.fen);
+  if (chess.isGameOver()) return res.status(400).json({ error: "The game is over." });
+  const piece = chess.get(square);
+  if (!piece) return res.status(404).json({ error: "No piece on that square." });
+  if (piece.color !== "w") {
+    return res.status(400).json({ error: "Only the player's white pieces can be removed." });
+  }
+  if (piece.type === "k") {
+    return res.status(400).json({ error: "The king can't be removed." });
+  }
+  chess.remove(square);
+  let fen;
+  try {
+    fen = new Chess(chess.fen()).fen();
+  } catch {
+    return res.status(400).json({ error: "Removing that piece would break the game." });
+  }
+  entry.fen = fen;
+  entry.updatedAt = new Date().toISOString();
+  saveGames(games);
+  res.json({ game: gameState(entry, key) });
+});
+
 app.post("/api/chess/reset", (req, res) => {
   if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
   const key = chessKeyFor(req, req.body.opponent);
