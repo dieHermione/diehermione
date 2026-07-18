@@ -63,7 +63,7 @@
 <body>
   <h1 class="site-header">˚₊‧꒰ა Dashboard ໒꒱ ‧₊˚</h1>
   <main class="card">
-    <h1 id="welcome">Welcome!</h1>
+    <h1 id="welcome">˚₊‧꒰ა Welcome! ໒꒱ ‧₊˚</h1>
     <p>There is no text here yet.</p>
     <button id="admin" type="button" hidden>Accounts</button>
     <button id="chess" type="button">Play Chess</button>
@@ -82,7 +82,7 @@
     fetch("/api/me")
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((d) => {
-        document.getElementById("welcome").textContent = "Welcome, " + d.username + "!";
+        document.getElementById("welcome").textContent = "˚₊‧꒰ა Welcome, " + d.username + "! ໒꒱ ‧₊˚";
         if (d.username.toLowerCase() === "hermione") {
           document.getElementById("admin").hidden = false;
         }
