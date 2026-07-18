@@ -14,6 +14,7 @@
       --bg2: #f6f6f6;
       --panel-bg: rgba(255, 255, 255, 0.95);
       --header-color: #ffffff;
+      --heading-color: #FBC3D3;
       --text-color: #333;
       --muted-color: #999;
       --button-bg: #FBC3D3;
@@ -32,10 +33,11 @@
     }
     body[data-theme="dark"] {
       color-scheme: dark;
-      --bg1: #38383e;
-      --bg2: #56565e;
+      --bg1: #14141a;
+      --bg2: #22222b;
       --panel-bg: rgba(37, 34, 42, 0.92);
       --header-color: #ffffff;
+      --heading-color: #ffffff;
       --text-color: #ffffff;
       --muted-color: #ffffff;
       --button-bg: #d99baf;
@@ -75,7 +77,7 @@
       margin-bottom: 1.25rem;
     }
     body.has-top-nav {
-      padding-top: 1.5rem;
+      padding-top: 2rem;
     }
     .top-nav {
       display: flex;
@@ -85,7 +87,7 @@
       gap: 0.55rem;
       width: min(100%, 720px);
       padding: 0.65rem 1rem;
-      margin: 0 0 0.85rem;
+      margin: 0 0 1rem;
       border-radius: 999px;
       background: var(--panel-bg);
       box-shadow: 0 8px 24px var(--shadow);
