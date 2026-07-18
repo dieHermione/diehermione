@@ -62,10 +62,88 @@
       text-align: center;
       margin-bottom: 1.25rem;
     }
-    .dashboard-space {
+    body.has-top-nav {
+      padding-top: 5rem;
+    }
+    .top-nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 20;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      gap: 0.55rem;
       width: 100%;
-      max-width: 720px;
-      min-height: 1.5rem;
+      padding: 0.7rem 1rem;
+      background: var(--panel-bg);
+      box-shadow: 0 8px 24px var(--shadow);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid rgba(255,255,255,0.18);
+    }
+    .top-nav .greeting {
+      color: var(--heading-color);
+      font-weight: 700;
+      font-size: 0.95rem;
+      margin-right: 0.25rem;
+    }
+    .top-nav .nav-links {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      gap: 0.45rem;
+    }
+    .top-nav a,
+    .top-nav button,
+    .top-nav .dropdown-toggle {
+      padding: 0.45rem 0.85rem;
+      border-radius: 999px;
+      border: none;
+      background: var(--button-bg);
+      color: var(--button-text);
+      font-size: 0.9rem;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .top-nav a:hover,
+    .top-nav button:hover,
+    .top-nav .dropdown-toggle:hover {
+      background: var(--button-hover-bg);
+    }
+    .top-nav a.active {
+      background: var(--button-hover-bg);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.3);
+    }
+    .top-nav .dropdown {
+      position: relative;
+      display: inline-flex;
+    }
+    .top-nav .dropdown-menu {
+      position: absolute;
+      top: calc(100% + 0.35rem);
+      left: 0;
+      display: none;
+      flex-direction: column;
+      gap: 0.35rem;
+      padding: 0.45rem;
+      background: var(--panel-bg);
+      border-radius: 8px;
+      box-shadow: 0 8px 24px var(--shadow);
+      min-width: 8rem;
+    }
+    .top-nav .dropdown:hover .dropdown-menu,
+    .top-nav .dropdown:focus-within .dropdown-menu {
+      display: flex;
+    }
+    .top-nav .dropdown-menu a {
+      width: 100%;
     }
     .card {
       background: var(--panel-bg);
@@ -135,9 +213,23 @@
     }
   </style>
 </head>
-<body>
+<body class="has-top-nav">
   <button id="theme-toggle" class="theme-toggle" type="button" aria-pressed="false" aria-label="Toggle dark mode"><span class="thumb"></span></button>
-  <div class="dashboard-space" aria-hidden="true"></div>
+  <nav id="top-nav" class="top-nav" hidden>
+    <div class="nav-links">
+      <span class="greeting" id="nav-greeting">Welcome!</span>
+      <a id="nav-dashboard" href="/dashboard">Dashboard</a>
+      <div class="dropdown" id="admin-dropdown" hidden>
+        <button class="dropdown-toggle" type="button">Admin ▾</button>
+        <div class="dropdown-menu">
+          <a id="nav-admin" href="/admin">Accounts</a>
+        </div>
+      </div>
+      <a id="nav-chess" href="/chess">Chess</a>
+      <a id="nav-snake" href="/snake">Snake</a>
+      <button id="nav-logout" type="button">Log out</button>
+    </div>
+  </nav>
   <h1 class="site-header">˚₊‧꒰ა Snake ໒꒱ ‧₊˚</h1>
   <main class="card">
     <p class="status" id="status">Press Start to play!</p>
@@ -152,6 +244,14 @@
     const body = document.body;
     const toggle = document.getElementById("theme-toggle");
     const savedTheme = localStorage.getItem("site-theme") || "light";
+    const topNav = document.getElementById("top-nav");
+    const navGreeting = document.getElementById("nav-greeting");
+    const navDashboard = document.getElementById("nav-dashboard");
+    const navAdmin = document.getElementById("nav-admin");
+    const navChess = document.getElementById("nav-chess");
+    const navSnake = document.getElementById("nav-snake");
+    const navLogout = document.getElementById("nav-logout");
+    const adminDropdown = document.getElementById("admin-dropdown");
 
     function applyTheme(theme) {
       body.dataset.theme = theme;
@@ -167,6 +267,39 @@
       const nextTheme = body.dataset.theme === "dark" ? "light" : "dark";
       applyTheme(nextTheme);
     });
+
+    function setActiveNav(path) {
+      const links = [navDashboard, navAdmin, navChess, navSnake];
+      links.forEach((link) => link?.classList.toggle("active", link?.getAttribute("href") === path));
+    }
+
+    async function initTopNav() {
+      if (!topNav) return;
+      try {
+        const res = await fetch("/api/me");
+        if (!res.ok) {
+          topNav.hidden = true;
+          return;
+        }
+        const data = await res.json().catch(() => ({}));
+        const username = data.username || "there";
+        topNav.hidden = false;
+        navGreeting.textContent = "Welcome, " + username + "!";
+        if (adminDropdown) {
+          adminDropdown.hidden = username.toLowerCase() !== "hermione";
+        }
+        setActiveNav(window.location.pathname);
+      } catch {
+        topNav.hidden = true;
+      }
+    }
+
+    navLogout?.addEventListener("click", async () => {
+      await fetch("/api/logout", { method: "POST" });
+      window.location.href = "/";
+    });
+
+    initTopNav();
 
     const GRID = 20;
     const canvas = document.getElementById("game");
