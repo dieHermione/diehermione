@@ -72,7 +72,7 @@
     .top-nav {
       display: flex;
       flex-wrap: wrap;
-      justify-content: center;
+      justify-content: space-between;
       align-items: center;
       gap: 0.55rem;
       width: min(100%, 720px);
@@ -92,9 +92,10 @@
     .top-nav .nav-links {
       display: flex;
       flex-wrap: wrap;
-      justify-content: center;
+      justify-content: flex-start;
       align-items: center;
       gap: 0.45rem;
+      flex: 1;
     }
     .top-nav a,
     .top-nav button,
@@ -151,7 +152,8 @@
       right: auto;
       width: 2.8rem;
       height: 1.45rem;
-      margin-left: 0.2rem;
+      margin-left: auto;
+      margin-right: 0.2rem;
       flex-shrink: 0;
       box-shadow: 0 4px 10px var(--shadow);
     }
@@ -245,8 +247,8 @@
       <a id="nav-chess" href="/chess">Chess</a>
       <a id="nav-snake" href="/snake">Snake</a>
       <button id="nav-logout" type="button">Log out</button>
-      <button id="theme-toggle" class="theme-toggle" type="button" aria-pressed="false" aria-label="Toggle dark mode"><span class="thumb"></span></button>
     </div>
+    <button id="theme-toggle" class="theme-toggle" type="button" aria-pressed="false" aria-label="Toggle dark mode"><span class="thumb"></span></button>
   </nav>
   <h1 class="site-header">˚₊‧꒰ა Snake ໒꒱ ‧₊˚</h1>
   <main class="card">
