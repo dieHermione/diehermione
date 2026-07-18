@@ -78,50 +78,6 @@
       text-align: center;
       margin-bottom: 1.25rem;
     }
-    .top-nav {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      align-items: center;
-      gap: 0.55rem;
-      width: min(100%, 720px);
-      padding: 0.65rem 1rem;
-      margin: 0 0 0.85rem;
-      border-radius: 999px;
-      background: var(--panel-bg);
-      box-shadow: 0 8px 24px var(--shadow);
-      backdrop-filter: blur(8px);
-    }
-    .top-nav .greeting {
-      color: var(--heading-color);
-      font-weight: 700;
-      font-size: 0.95rem;
-      margin-right: 0.25rem;
-    }
-    .top-nav a,
-    .top-nav button {
-      padding: 0.45rem 0.85rem;
-      border-radius: 999px;
-      border: none;
-      background: var(--button-bg);
-      color: var(--button-text);
-      font-size: 0.9rem;
-      font-weight: 600;
-      text-decoration: none;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .top-nav a:hover,
-    .top-nav button:hover {
-      background: var(--button-hover-bg);
-    }
-    .top-nav a.active,
-    .top-nav button.active {
-      background: var(--button-hover-bg);
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.3);
-    }
     .card {
       background: var(--panel-bg);
       border-radius: 12px;
@@ -188,14 +144,6 @@
 </head>
 <body>
   <button id="theme-toggle" class="theme-toggle" type="button" aria-pressed="false" aria-label="Toggle dark mode"><span class="thumb"></span></button>
-  <nav id="top-nav" class="top-nav" hidden>
-    <span class="greeting" id="nav-greeting">Welcome!</span>
-    <a id="nav-dashboard" href="/dashboard">Dashboard</a>
-    <a id="nav-admin" href="/admin" hidden>Accounts</a>
-    <a id="nav-chess" href="/chess">Chess</a>
-    <a id="nav-snake" href="/snake">Snake</a>
-    <button id="nav-logout" type="button">Log out</button>
-  </nav>
   <h1 class="site-header">˚₊‧꒰ა Dashboard ໒꒱ ‧₊˚</h1>
   <main class="card">
     <h1 id="welcome">˚₊‧꒰ა Welcome! ໒꒱ ‧₊˚</h1>
@@ -218,13 +166,6 @@
     const body = document.body;
     const toggle = document.getElementById("theme-toggle");
     const savedTheme = localStorage.getItem("site-theme") || "light";
-    const topNav = document.getElementById("top-nav");
-    const navGreeting = document.getElementById("nav-greeting");
-    const navDashboard = document.getElementById("nav-dashboard");
-    const navAdmin = document.getElementById("nav-admin");
-    const navChess = document.getElementById("nav-chess");
-    const navSnake = document.getElementById("nav-snake");
-    const navLogout = document.getElementById("nav-logout");
 
     function applyTheme(theme) {
       body.dataset.theme = theme;
@@ -240,32 +181,6 @@
       const nextTheme = body.dataset.theme === "dark" ? "light" : "dark";
       applyTheme(nextTheme);
     });
-
-    function setActiveNav(path) {
-      const links = [navDashboard, navAdmin, navChess, navSnake];
-      links.forEach((link) => link?.classList.toggle("active", link?.getAttribute("href") === path));
-    }
-
-    async function initTopNav() {
-      try {
-        const res = await fetch("/api/me");
-        if (!res.ok) return;
-        const data = await res.json().catch(() => ({}));
-        topNav.hidden = false;
-        navGreeting.textContent = "Welcome, " + (data.username || "there") + "!";
-        if (navAdmin && data.username?.toLowerCase() === "hermione") navAdmin.hidden = false;
-        setActiveNav(window.location.pathname);
-      } catch {
-        topNav.hidden = true;
-      }
-    }
-
-    navLogout?.addEventListener("click", async () => {
-      await fetch("/api/logout", { method: "POST" });
-      window.location.href = "/";
-    });
-
-    initTopNav();
 
     fetch("/api/me")
       .then((r) => (r.ok ? r.json() : Promise.reject()))
