@@ -204,28 +204,31 @@
       margin: 0;
     }
     .dashboard-grid {
-      display: flex;
-      align-items: flex-start;
-      justify-content: center;
+      display: grid;
+      /* equal 1fr spacers keep the middle column truly centered on the page */
+      grid-template-columns: 1fr auto 1fr;
+      align-items: start;
       gap: 1.5rem;
-      width: min(100%, 1020px);
+      width: 100%;
     }
     .dashboard-col {
+      grid-column: 2;
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 1.5rem;
-      flex: 1 1 auto;
-      min-width: 0;
+      width: min(480px, 90vw);
     }
     .profile-card {
-      max-width: 300px;
-      flex: 0 0 300px;
+      grid-column: 3;
+      justify-self: start;
+      width: 300px;
       padding: 2rem 1.5rem;
     }
-    @media (max-width: 900px) {
-      .dashboard-grid { flex-direction: column; align-items: center; }
-      .profile-card { flex: 0 1 auto; max-width: 480px; width: 100%; }
+    @media (max-width: 1100px) {
+      .dashboard-grid { display: flex; flex-direction: column; align-items: center; }
+      .dashboard-col { width: min(100%, 480px); }
+      .profile-card { width: 100%; max-width: 480px; }
     }
     .profile-card .avatar {
       width: 88px;

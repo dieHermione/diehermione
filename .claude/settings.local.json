@@ -35,7 +35,8 @@
       "Bash(curl -s -b /tmp/herm.txt -X DELETE localhost:3000/api/users/profiletester)",
       "Bash(curl -s -b /tmp/herm.txt -X DELETE localhost:3000/api/users/profileviewer)",
       "Bash(curl -s -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"username\":\"hermione\",\"password\":\"temp-test-pass-6\"}')",
-      "Bash(curl -s -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"username\":\"hermione\",\"password\":\"tmp-card-1\"}')"
+      "Bash(curl -s -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"username\":\"hermione\",\"password\":\"tmp-card-1\"}')",
+      "Bash(git commit -q -m 'Center dashboard column and align profile card to its right *)"
     ]
   }
 }
