@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dashboard — Test Site</title>
+  <title>Dashboard — angeldom.me</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cause:wght@400..700&display=swap" rel="stylesheet" />
@@ -77,7 +77,10 @@
       text-shadow: 0 2px 12px rgba(255, 255, 255, 0.6);
       text-align: center;
       margin-bottom: 1.25rem;
+      padding: 20px 0;
     }
+    .bow { display: inline-block; }
+    .bow.flip { transform: scaleX(-1); }
     body.has-top-nav {
       justify-content: flex-start;
       padding-top: 1.75rem;
@@ -138,9 +141,19 @@
       box-shadow: inset 0 0 0 1px rgba(255,255,255,0.3);
     }
     .top-nav .dropdown[hidden] { display: none; }
+    .top-nav a[hidden] { display: none; }
     .top-nav .dropdown {
       position: relative;
       display: inline-flex;
+    }
+    /* invisible bridge across the gap so hover survives the trip to the menu */
+    .top-nav .dropdown::after {
+      content: "";
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      height: 0.5rem;
     }
     .top-nav .dropdown-menu {
       position: absolute;
@@ -192,6 +205,16 @@
       padding: 2.5rem;
       text-align: center;
       color: var(--text-color);
+    }
+    .checkin-notice {
+      background: rgba(255, 144, 176, 0.12);
+      border: 1px solid var(--button-bg);
+      border-radius: 10px;
+      padding: 0.6rem 0.9rem;
+      color: var(--text-color);
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
     }
     .dashboard-actions {
       display: flex;
@@ -365,30 +388,28 @@
   <nav id="top-nav" class="top-nav" hidden>
     <div class="nav-links">
       <a id="nav-dashboard" href="/dashboard">Dashboard</a>
-      <div class="dropdown" id="admin-dropdown" hidden>
-        <button class="dropdown-toggle" type="button">Admin ▾</button>
+      <a id="nav-admin" href="/admin" hidden>Admin</a>
+      <a id="nav-profile" href="/profile">Profile</a>
+      <a id="nav-tasks" href="/tasks">Tasks</a>
+      <div class="dropdown" id="games-dropdown">
+        <button class="dropdown-toggle" type="button">Games ▾</button>
         <div class="dropdown-menu">
-          <a id="nav-admin" href="/admin">Accounts</a>
+          <a id="nav-chess" href="/chess">Chess</a>
+          <a id="nav-snake" href="/snake">Snake</a>
         </div>
       </div>
-      <a id="nav-profile" href="/profile">Profile</a>
-      <a id="nav-chess" href="/chess">Chess</a>
-      <a id="nav-snake" href="/snake">Snake</a>
-      <button id="nav-logout" type="button">Log out</button>
     </div>
     <button id="theme-toggle" class="theme-toggle" type="button" aria-pressed="false" aria-label="Toggle dark mode"><span class="thumb"></span></button>
   </nav>
-  <h1 class="site-header">˚₊‧꒰ა Dashboard ໒꒱ ‧₊˚</h1>
+  <h1 class="site-header"><span class="bow flip">꣑ৎ</span> Dashboard <span class="bow">꣑ৎ</span></h1>
   <div class="dashboard-grid">
     <div class="dashboard-col">
       <main class="card">
-        <h1 id="welcome">˚₊‧꒰ა Welcome! ໒꒱ ‧₊˚</h1>
+        <h1 id="welcome"><span class="bow flip">꣑ৎ</span> Welcome! <span class="bow">꣑ৎ</span></h1>
         <p id="dashboard-message">There is no text here yet.</p>
+        <p class="checkin-notice" id="checkin-notice" hidden></p>
         <div class="dashboard-actions">
-          <button id="admin" type="button" hidden>Accounts</button>
-          <button id="chess" type="button">Play Chess</button>
-          <button id="snake" type="button">Play Snake</button>
-          <button id="logout" type="button">Log out</button>
+          <button id="placeholder" type="button">placeholder</button>
         </div>
       </main>
       <section class="card">
@@ -425,8 +446,7 @@
     const navAdmin = document.getElementById("nav-admin");
     const navChess = document.getElementById("nav-chess");
     const navSnake = document.getElementById("nav-snake");
-    const navLogout = document.getElementById("nav-logout");
-    const adminDropdown = document.getElementById("admin-dropdown");
+    const adminDropdown = document.getElementById("nav-admin");
 
     function applyTheme(theme) {
       body.dataset.theme = theme;
@@ -448,53 +468,40 @@
       links.forEach((link) => link?.classList.toggle("active", link?.getAttribute("href") === path));
     }
 
-    async function initTopNav() {
+    // one /api/me call for the whole page: a second would swallow the daily
+    // check-in result, since the server only reports it once per day
+    function initTopNav(data) {
       if (!topNav) return;
+      const username = data.username || "there";
+      const isAdmin = Boolean(data.isAdmin ?? (username && username.toLowerCase() === "hermione"));
+      topNav.hidden = false;
       if (adminDropdown) {
-        adminDropdown.hidden = true;
+        adminDropdown.hidden = !isAdmin;
       }
-      try {
-        const res = await fetch("/api/me");
-        if (!res.ok) {
-          topNav.hidden = true;
-          return;
-        }
-        const data = await res.json().catch(() => ({}));
-        const username = data.username || "there";
-        const isAdmin = Boolean(data.isAdmin ?? (username && username.toLowerCase() === "hermione"));
-        topNav.hidden = false;
-        if (adminDropdown) {
-          adminDropdown.hidden = !isAdmin;
-        }
-        setActiveNav(window.location.pathname);
-      } catch {
-        topNav.hidden = true;
-        if (adminDropdown) {
-          adminDropdown.hidden = true;
-        }
-      }
+      setActiveNav(window.location.pathname);
     }
-
-    navLogout?.addEventListener("click", async () => {
-      await fetch("/api/logout", { method: "POST" });
-      window.location.href = "/";
-    });
-
-    initTopNav();
 
     fetch("/api/me")
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((d) => {
+        initTopNav(d);
+        if (d.checkIn) {
+          const notice = document.getElementById("checkin-notice");
+          notice.textContent = "Daily check-in: +$" + d.checkIn.amount + " — you now have $" + d.checkIn.dollars + ".";
+          notice.hidden = false;
+        }
         const isHermione = Boolean(d.isAdmin ?? (d.username && d.username.toLowerCase() === "hermione"));
-        document.getElementById("welcome").textContent = isHermione
-          ? "˚₊‧꒰ა Welcome, Princess! ໒꒱ ‧₊˚"
-          : "˚₊‧꒰ა Welcome, " + d.username + "! ໒꒱ ‧₊˚";
+        const left = document.createElement("span");
+        left.className = "bow flip";
+        left.textContent = "꣑ৎ";
+        const right = document.createElement("span");
+        right.className = "bow";
+        right.textContent = "꣑ৎ";
+        const greeting = isHermione ? " Welcome, Princess! " : " Welcome, " + d.username + "! ";
+        document.getElementById("welcome").replaceChildren(left, document.createTextNode(greeting), right);
         document.getElementById("dashboard-message").textContent = isHermione
           ? "mirror mirror on the wall."
           : "There is no text here yet.";
-        if (isHermione) {
-          document.getElementById("admin").hidden = false;
-        }
       })
       .catch(() => (window.location.href = "/"));
 
@@ -574,20 +581,7 @@
     document.getElementById("pc-view").addEventListener("click", () => {
       window.location.href = "/profile";
     });
-
-    document.getElementById("admin").addEventListener("click", () => {
-      window.location.href = "/admin";
-    });
-    document.getElementById("chess").addEventListener("click", () => {
-      window.location.href = "/chess";
-    });
-    document.getElementById("snake").addEventListener("click", () => {
-      window.location.href = "/snake";
-    });
-    document.getElementById("logout").addEventListener("click", async () => {
-      await fetch("/api/logout", { method: "POST" });
-      window.location.href = "/";
-    });
   </script>
+  <script src="/notifications.js" defer></script>
 </body>
 </html>

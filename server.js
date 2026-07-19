@@ -95,6 +95,49 @@ app.post("/api/register", async (req, res) => {
   res.json({ ok: true });
 });
 
+// --- currency ---
+const DAILY_CHECKIN_DOLLARS = 5;
+const SNAKE_FOOD_DOLLARS = 1;
+// Snake pickups are reported by the browser, so they can't be trusted outright.
+// These bound the damage: a daily ceiling makes farming pointless, and a token
+// bucket caps the sustained rate while still allowing honest bursts (food can
+// spawn right in front of the snake and be eaten on the very next 120ms tick).
+const SNAKE_DAILY_CAP = 20;
+const SNAKE_BURST = 8;
+const SNAKE_REFILL_MS = 2000;
+
+// The daily bonus resets at noon Eastern. Read the Eastern wall clock, then
+// step back 12h so the date label only flips at midday rather than midnight.
+const RESET_ZONE = "America/New_York";
+const RESET_HOUR = 12;
+function todayKey(now = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: RESET_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(now);
+  const get = (type) => Number(parts.find((p) => p.type === type).value);
+  const shifted = new Date(
+    Date.UTC(get("year"), get("month") - 1, get("day"), get("hour") - RESET_HOUR)
+  );
+  return shifted.toISOString().slice(0, 10);
+}
+
+// grants $5 the first time an account is seen each day; returns null otherwise
+function awardDailyCheckIn(users, key) {
+  const user = users[key];
+  if (!user) return null;
+  const today = todayKey();
+  if (user.lastCheckIn === today) return null;
+  user.lastCheckIn = today;
+  user.dollars = (user.dollars || 0) + DAILY_CHECKIN_DOLLARS;
+  saveUsers(users);
+  return { amount: DAILY_CHECKIN_DOLLARS, dollars: user.dollars };
+}
+
 app.post("/api/login", async (req, res) => {
   const { username, password } = req.body;
   if (!username || !password) {
@@ -106,7 +149,10 @@ app.post("/api/login", async (req, res) => {
     return res.status(401).json({ error: "Invalid username or password." });
   }
   req.session.username = user.username;
-  res.json({ ok: true });
+  const checkIn = awardDailyCheckIn(users, user.username.toLowerCase());
+  seedNotifications(user);
+  saveUsers(users);
+  res.json({ ok: true, checkIn });
 });
 
 app.post("/api/logout", (req, res) => {
@@ -115,7 +161,17 @@ app.post("/api/logout", (req, res) => {
 
 app.get("/api/me", (req, res) => {
   if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
-  res.json({ username: req.session.username, isAdmin: isAdmin(req) });
+  const users = loadUsers();
+  const key = req.session.username.toLowerCase();
+  if (!users[key]) return res.status(401).json({ error: "Not logged in." });
+  // sessions outlive a day, so check in on the first page view of each day too
+  const checkIn = awardDailyCheckIn(users, key);
+  res.json({
+    username: req.session.username,
+    isAdmin: isAdmin(req),
+    dollars: users[key].dollars || 0,
+    checkIn,
+  });
 });
 
 app.get("/dashboard", requireLogin, (req, res) => {
@@ -425,6 +481,113 @@ app.get("/chess", requireLogin, (req, res) => {
 
 app.get("/snake", requireLogin, (req, res) => {
   res.sendFile(path.join(__dirname, "views", "snake.html"));
+});
+
+// $1 per snake food. The client reports each pickup, so a light floor on how
+// fast awards can arrive keeps a stuck key or a rapid script from printing money.
+app.post("/api/snake/food", (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  const users = loadUsers();
+  const key = req.session.username.toLowerCase();
+  const user = users[key];
+  if (!user) return res.status(404).json({ error: "No such account." });
+  // rate limit: refill one token every SNAKE_REFILL_MS, up to SNAKE_BURST
+  const now = Date.now();
+  const bucket = req.session.snakeBucket || { tokens: SNAKE_BURST, at: now };
+  const refilled = Math.min(SNAKE_BURST, bucket.tokens + (now - bucket.at) / SNAKE_REFILL_MS);
+  if (refilled < 1) {
+    req.session.snakeBucket = { tokens: refilled, at: now };
+    return res.status(429).json({ error: "Too fast." });
+  }
+  req.session.snakeBucket = { tokens: refilled - 1, at: now };
+
+  // daily ceiling, on the same noon-Eastern day as the check-in bonus
+  const today = todayKey();
+  if (user.snakeDay !== today) {
+    user.snakeDay = today;
+    user.snakeToday = 0;
+  }
+  if (user.snakeToday >= SNAKE_DAILY_CAP) {
+    saveUsers(users);
+    return res.json({
+      ok: true,
+      earned: 0,
+      capped: true,
+      cap: SNAKE_DAILY_CAP,
+      dollars: user.dollars || 0,
+    });
+  }
+
+  user.snakeToday += SNAKE_FOOD_DOLLARS;
+  user.dollars = (user.dollars || 0) + SNAKE_FOOD_DOLLARS;
+  saveUsers(users);
+  res.json({
+    ok: true,
+    earned: SNAKE_FOOD_DOLLARS,
+    dollars: user.dollars,
+    remaining: SNAKE_DAILY_CAP - user.snakeToday,
+  });
+});
+
+// --- notifications ---
+// Placeholder until real triggers exist: cleared notifications come back on the
+// next login, so the bell always has something to show after signing in.
+const PLACEHOLDER_NOTIFICATION_ID = "placeholder";
+
+function seedNotifications(user) {
+  const list = Array.isArray(user.notifications) ? user.notifications : [];
+  if (!list.some((n) => n.id === PLACEHOLDER_NOTIFICATION_ID)) {
+    list.unshift({
+      id: PLACEHOLDER_NOTIFICATION_ID,
+      text: "Welcome back! Notifications will show up here.",
+      createdAt: new Date().toISOString(),
+    });
+  }
+  user.notifications = list;
+}
+
+app.get("/api/notifications", (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  const users = loadUsers();
+  const user = users[req.session.username.toLowerCase()];
+  if (!user) return res.status(401).json({ error: "Not logged in." });
+  res.json({ notifications: Array.isArray(user.notifications) ? user.notifications : [] });
+});
+
+app.delete("/api/notifications/:id", (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  const users = loadUsers();
+  const user = users[req.session.username.toLowerCase()];
+  if (!user) return res.status(401).json({ error: "Not logged in." });
+  const list = Array.isArray(user.notifications) ? user.notifications : [];
+  user.notifications = list.filter((n) => String(n.id) !== req.params.id);
+  saveUsers(users);
+  res.json({ ok: true, notifications: user.notifications });
+});
+
+app.post("/api/notifications/clear", (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  const users = loadUsers();
+  const user = users[req.session.username.toLowerCase()];
+  if (!user) return res.status(401).json({ error: "Not logged in." });
+  user.notifications = [];
+  saveUsers(users);
+  res.json({ ok: true });
+});
+
+// --- tasks: assigned by hermione or granted automatically. Read-only for now;
+// the assignment and auto-award flows come later.
+app.get("/api/tasks", (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  const users = loadUsers();
+  const key = req.session.username.toLowerCase();
+  const user = users[key];
+  if (!user) return res.status(401).json({ error: "Not logged in." });
+  res.json({ tasks: Array.isArray(user.tasks) ? user.tasks : [] });
+});
+
+app.get("/tasks", requireLogin, (req, res) => {
+  res.sendFile(path.join(__dirname, "views", "tasks.html"));
 });
 
 app.get("/profile", requireLogin, (req, res) => {

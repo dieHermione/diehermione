@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Snake — Test Site</title>
+  <title>Snake — angeldom.me</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cause:wght@400..700&display=swap" rel="stylesheet" />
@@ -63,7 +63,10 @@
       text-shadow: 0 2px 12px rgba(255, 255, 255, 0.6);
       text-align: center;
       margin-bottom: 1.25rem;
+      padding: 20px 0;
     }
+    .bow { display: inline-block; }
+    .bow.flip { transform: scaleX(-1); }
     body.has-top-nav {
       justify-content: flex-start;
       padding-top: 1.75rem;
@@ -124,9 +127,19 @@
       box-shadow: inset 0 0 0 1px rgba(255,255,255,0.3);
     }
     .top-nav .dropdown[hidden] { display: none; }
+    .top-nav a[hidden] { display: none; }
     .top-nav .dropdown {
       position: relative;
       display: inline-flex;
+    }
+    /* invisible bridge across the gap so hover survives the trip to the menu */
+    .top-nav .dropdown::after {
+      content: "";
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      height: 0.5rem;
     }
     .top-nav .dropdown-menu {
       position: absolute;
@@ -184,11 +197,11 @@
       width: 100%;
       max-width: 440px;
       aspect-ratio: 1;
-      border: 3px solid #444444;
+      border: 3px solid var(--button-bg);
       border-radius: 8px;
       display: block;
       margin: 0 auto 1.25rem;
-      background: #2e2e33;
+      background: transparent;
       touch-action: none;
     }
     .nav { display: flex; gap: 0.75rem; justify-content: center; }
@@ -241,20 +254,20 @@
   <nav id="top-nav" class="top-nav" hidden>
     <div class="nav-links">
       <a id="nav-dashboard" href="/dashboard">Dashboard</a>
-      <div class="dropdown" id="admin-dropdown" hidden>
-        <button class="dropdown-toggle" type="button">Admin ▾</button>
+      <a id="nav-admin" href="/admin" hidden>Admin</a>
+      <a id="nav-profile" href="/profile">Profile</a>
+      <a id="nav-tasks" href="/tasks">Tasks</a>
+      <div class="dropdown" id="games-dropdown">
+        <button class="dropdown-toggle" type="button">Games ▾</button>
         <div class="dropdown-menu">
-          <a id="nav-admin" href="/admin">Accounts</a>
+          <a id="nav-chess" href="/chess">Chess</a>
+          <a id="nav-snake" href="/snake">Snake</a>
         </div>
       </div>
-      <a id="nav-profile" href="/profile">Profile</a>
-      <a id="nav-chess" href="/chess">Chess</a>
-      <a id="nav-snake" href="/snake">Snake</a>
-      <button id="nav-logout" type="button">Log out</button>
     </div>
     <button id="theme-toggle" class="theme-toggle" type="button" aria-pressed="false" aria-label="Toggle dark mode"><span class="thumb"></span></button>
   </nav>
-  <h1 class="site-header">˚₊‧꒰ა Snake ໒꒱ ‧₊˚</h1>
+  <h1 class="site-header"><span class="bow flip">꣑ৎ</span> Snake <span class="bow">꣑ৎ</span></h1>
   <main class="card">
     <p class="status" id="status">Press Start to play!</p>
     <canvas id="game" width="440" height="440"></canvas>
@@ -273,8 +286,7 @@
     const navAdmin = document.getElementById("nav-admin");
     const navChess = document.getElementById("nav-chess");
     const navSnake = document.getElementById("nav-snake");
-    const navLogout = document.getElementById("nav-logout");
-    const adminDropdown = document.getElementById("admin-dropdown");
+    const adminDropdown = document.getElementById("nav-admin");
 
     function applyTheme(theme) {
       body.dataset.theme = theme;
@@ -323,11 +335,6 @@
       }
     }
 
-    navLogout?.addEventListener("click", async () => {
-      await fetch("/api/logout", { method: "POST" });
-      window.location.href = "/";
-    });
-
     initTopNav();
 
     const GRID = 20;
@@ -336,14 +343,32 @@
     const CELL = canvas.width / GRID;
     const statusEl = document.getElementById("status");
 
-    const COLORS = {
-      board: "#2e2e33",
-      snake: "#9a9aa2",
-      head: "#ffffff",
-      heart: "#f7b8c8",
-    };
+    const HEART_COLOR = "#ff90b0";
+    const TELEPORT_CHANCE = 0.9;   // odds the food bolts when you get adjacent
+    const TELEPORT_MIN_DISTANCE = 8;  // where fleeing food lands
+    const SPAWN_MIN_DISTANCE = 4;     // where fresh food lands after being eaten
+
+    // the head matches the site buttons; each segment behind it fades toward white
+    function headColor() {
+      return getComputedStyle(document.body).getPropertyValue("--button-bg").trim() || "#FBC3D3";
+    }
+
+    function hexToRgb(hex) {
+      const h = hex.replace("#", "");
+      const full = h.length === 3 ? h.split("").map((c) => c + c).join("") : h;
+      return [0, 2, 4].map((i) => parseInt(full.slice(i, i + 2), 16));
+    }
+
+    function segmentColor(base, index) {
+      const [r, g, b] = hexToRgb(base);
+      const fade = Math.min(0.72, index * 0.07); // toward white, capped so it stays visible
+      const mix = (c) => Math.round(c + (255 - c) * fade);
+      return "rgb(" + mix(r) + ", " + mix(g) + ", " + mix(b) + ")";
+    }
 
     let snake, dir, nextDir, food, score, timer = null, alive = false;
+    let earned = 0;     // dollars earned this run
+    let cappedAt = 0;   // set once the server says the daily limit is spent
 
     function reset() {
       snake = [{ x: 9, y: 10 }, { x: 8, y: 10 }, { x: 7, y: 10 }];
@@ -354,19 +379,50 @@
       placeFood();
     }
 
+    function freeSquares() {
+      const taken = new Set(snake.map((s) => s.x + "," + s.y));
+      const open = [];
+      for (let y = 0; y < GRID; y++) {
+        for (let x = 0; x < GRID; x++) {
+          if (!taken.has(x + "," + y)) open.push({ x, y });
+        }
+      }
+      return open;
+    }
+
+    // never drop food in the player's lap: prefer squares at least minDist away,
+    // relaxing only if a long snake has left nowhere better
+    function pickSquare(head, minDist) {
+      const open = freeSquares();
+      if (!open.length) return food;
+      let pool = open.filter((sq) => distance(sq, head) >= minDist);
+      if (!pool.length) pool = open.filter((sq) => distance(sq, head) > 1);
+      if (!pool.length) pool = open;
+      return pool[Math.floor(Math.random() * pool.length)];
+    }
+
     function placeFood() {
-      do {
-        food = { x: Math.floor(Math.random() * GRID), y: Math.floor(Math.random() * GRID) };
-      } while (snake.some((s) => s.x === food.x && s.y === food.y));
+      food = pickSquare(snake[0], SPAWN_MIN_DISTANCE);
+    }
+
+    // how far apart two squares are, counting wrap-around as a shortcut
+    function distance(a, b) {
+      const dx = Math.min(Math.abs(a.x - b.x), GRID - Math.abs(a.x - b.x));
+      const dy = Math.min(Math.abs(a.y - b.y), GRID - Math.abs(a.y - b.y));
+      return Math.max(dx, dy);
+    }
+
+    // the food is shy: once the head is adjacent it usually bolts somewhere far
+    function fleeFrom(head) {
+      food = pickSquare(head, TELEPORT_MIN_DISTANCE);
     }
 
     function drawBoard() {
-      ctx.fillStyle = COLORS.board;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
 
     function drawHeart(cx, cy, size) {
-      ctx.fillStyle = COLORS.heart;
+      ctx.fillStyle = HEART_COLOR;
       ctx.beginPath();
       const s = size / 2;
       ctx.moveTo(cx, cy + s * 0.6);
@@ -378,8 +434,9 @@
     function draw() {
       drawBoard();
       drawHeart(food.x * CELL + CELL / 2, food.y * CELL + CELL / 2, CELL * 0.9);
+      const base = headColor();
       snake.forEach((seg, i) => {
-        ctx.fillStyle = i === 0 ? COLORS.head : COLORS.snake;
+        ctx.fillStyle = segmentColor(base, i);
         const pad = 1.5;
         const r = 5;
         const x = seg.x * CELL + pad, y = seg.y * CELL + pad, w = CELL - pad * 2;
@@ -391,36 +448,66 @@
 
     function tick() {
       dir = nextDir;
-      const head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
-      const hitWall = head.x < 0 || head.x >= GRID || head.y < 0 || head.y >= GRID;
-      const hitSelf = snake.some((s) => s.x === head.x && s.y === head.y);
-      if (hitWall || hitSelf) {
+      // walls wrap: leaving one edge brings you back on the opposite side
+      const head = {
+        x: (snake[0].x + dir.x + GRID) % GRID,
+        y: (snake[0].y + dir.y + GRID) % GRID,
+      };
+      if (snake.some((s) => s.x === head.x && s.y === head.y)) {
         gameOver();
         return;
       }
       snake.unshift(head);
       if (head.x === food.x && head.y === food.y) {
         score++;
-        statusEl.textContent = "Score: " + score;
+        awardFood();
+        showScore();
         placeFood();
       } else {
         snake.pop();
+        if (distance(head, food) <= 1 && Math.random() < TELEPORT_CHANCE) {
+          fleeFrom(head);
+        }
       }
       draw();
+    }
+
+    // each pickup is worth $1; the server is the one that actually credits it
+    async function awardFood() {
+      try {
+        const res = await fetch("/api/snake/food", { method: "POST" });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.capped) {
+          cappedAt = data.cap;
+        } else {
+          earned += data.earned;
+        }
+        showScore();
+      } catch {}
+    }
+
+    function showScore() {
+      let text = "Score: " + score + (earned ? " · earned $" + earned : "");
+      if (cappedAt) text += " · daily $" + cappedAt + " limit reached";
+      statusEl.textContent = text;
     }
 
     function gameOver() {
       alive = false;
       clearInterval(timer);
       timer = null;
-      statusEl.textContent = "Game over — final score " + score + ". Press Start to try again!";
+      statusEl.textContent =
+        "Game over — final score " + score +
+        (earned ? ", earned $" + earned : "") + ". Press Start to try again!";
       document.getElementById("start").textContent = "Start";
     }
 
     function start() {
       if (timer) clearInterval(timer);
       reset();
-      statusEl.textContent = "Score: 0";
+      earned = 0;
+      showScore();
       document.getElementById("start").textContent = "Restart";
       draw();
       timer = setInterval(tick, 120);
@@ -455,5 +542,6 @@
 
     drawBoard();
   </script>
+  <script src="/notifications.js" defer></script>
 </body>
 </html>

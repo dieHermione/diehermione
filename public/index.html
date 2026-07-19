@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sign in — Test Site</title>
+  <title>Sign in — angeldom.me</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cause:wght@400..700&display=swap" rel="stylesheet" />
@@ -75,7 +75,10 @@
       text-shadow: 0 2px 12px rgba(255, 255, 255, 0.6);
       text-align: center;
       margin-bottom: 1.25rem;
+      padding: 20px 0;
     }
+    .bow { display: inline-block; }
+    .bow.flip { transform: scaleX(-1); }
     .card {
       background: var(--panel-bg);
       border-radius: 12px;
@@ -217,7 +220,7 @@
 </head>
 <body>
   <button id="theme-toggle" class="theme-toggle" type="button" aria-pressed="false" aria-label="Toggle dark mode"><span class="thumb"></span></button>
-  <h1 class="site-header">˚₊‧꒰ა Hermione ໒꒱ ‧₊˚</h1>
+  <h1 class="site-header"><span class="bow flip">꣑ৎ</span> angeldom.me <span class="bow">꣑ৎ</span></h1>
   <main class="card">
     <div class="tabs">
       <button id="tab-login" class="active" type="button">Log in</button>

@@ -1,8 +1,8 @@
 {
-  "name": "simple-auth-site",
+  "name": "angeldom-me",
   "version": "1.0.0",
   "private": true,
-  "description": "Minimal registration/login test site",
+  "description": "angeldom.me — accounts, profiles, and games",
   "main": "server.js",
   "scripts": {
     "start": "node --env-file-if-exists=.env server.js"

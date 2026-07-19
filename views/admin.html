@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Accounts — Test Site</title>
+  <title>Admin — angeldom.me</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cause:wght@400..700&display=swap" rel="stylesheet" />
@@ -73,7 +73,10 @@
       text-shadow: 0 2px 12px rgba(255, 255, 255, 0.6);
       text-align: center;
       margin-bottom: 1.25rem;
+      padding: 20px 0;
     }
+    .bow { display: inline-block; }
+    .bow.flip { transform: scaleX(-1); }
     body.has-top-nav {
       justify-content: flex-start;
       padding-top: 1.75rem;
@@ -134,9 +137,19 @@
       box-shadow: inset 0 0 0 1px rgba(255,255,255,0.3);
     }
     .top-nav .dropdown[hidden] { display: none; }
+    .top-nav a[hidden] { display: none; }
     .top-nav .dropdown {
       position: relative;
       display: inline-flex;
+    }
+    /* invisible bridge across the gap so hover survives the trip to the menu */
+    .top-nav .dropdown::after {
+      content: "";
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      height: 0.5rem;
     }
     .top-nav .dropdown-menu {
       position: absolute;
@@ -184,7 +197,7 @@
       border-radius: 12px;
       box-shadow: 0 10px 40px var(--shadow);
       width: 100%;
-      max-width: 600px;
+      max-width: 700px;
       padding: 2rem;
       color: var(--text-color);
     }
@@ -196,6 +209,27 @@
     td a { color: inherit; text-decoration: underline; text-decoration-color: var(--button-hover-bg); text-underline-offset: 3px; }
     td a:hover { color: var(--button-hover-bg); }
     .count { color: var(--muted-color); font-size: 0.85rem; margin-bottom: 1rem; }
+    .admin-grid {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.5rem;
+      width: 100%;
+    }
+    h2 {
+      font-family: "Cause", sans-serif;
+      font-size: 1.1rem;
+      color: var(--heading-color);
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+    .panel-empty {
+      color: var(--muted-color);
+      font-style: italic;
+      font-size: 0.9rem;
+      text-align: center;
+      padding: 0.75rem 0;
+    }
     .action-menu {
       padding: 0.3rem 0.4rem;
       border: 1px solid var(--input-border);
@@ -217,6 +251,45 @@
       color: var(--input-text);
     }
     .pts-input:focus { outline: none; border-color: var(--focus-color); }
+    .action-row { display: flex; flex-wrap: wrap; gap: 0.35rem; align-items: center; }
+    .chip {
+      flex: 0 0 auto;
+      padding: 0.32rem 0.75rem;
+      border: none;
+      border-radius: 999px;
+      background: var(--button-bg);
+      color: var(--button-text);
+      font-family: inherit;
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background-color 0.15s ease, transform 0.1s ease;
+    }
+    .chip:hover { background: var(--button-hover-bg); transform: translateY(-1px); }
+    .chip:active { transform: translateY(0); }
+    .chip.on {
+      background: transparent;
+      color: var(--heading-color);
+      box-shadow: inset 0 0 0 1.5px var(--button-bg);
+    }
+    .chip.on:hover { background: var(--button-bg); color: var(--button-text); }
+    .chip.danger {
+      background: transparent;
+      color: #d4607f;
+      box-shadow: inset 0 0 0 1.5px #f0b6c6;
+    }
+    .chip.danger:hover { background: #e8748f; color: #ffffff; box-shadow: none; }
+    .listed-pill {
+      display: inline-block;
+      padding: 0.15rem 0.6rem;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+    }
+    .listed-pill.yes { background: var(--button-bg); color: var(--button-text); }
+    .listed-pill.no { background: var(--table-border); color: var(--muted-color); }
+    .pts-input { width: 3.4rem; margin-right: 0.15rem; }
     .nav { display: flex; gap: 0.75rem; }
     button {
       flex: 1;
@@ -267,33 +340,36 @@
   <nav id="top-nav" class="top-nav" hidden>
     <div class="nav-links">
       <a id="nav-dashboard" href="/dashboard">Dashboard</a>
-      <div class="dropdown" id="admin-dropdown" hidden>
-        <button class="dropdown-toggle" type="button">Admin ▾</button>
+      <a id="nav-admin" href="/admin" hidden>Admin</a>
+      <a id="nav-profile" href="/profile">Profile</a>
+      <a id="nav-tasks" href="/tasks">Tasks</a>
+      <div class="dropdown" id="games-dropdown">
+        <button class="dropdown-toggle" type="button">Games ▾</button>
         <div class="dropdown-menu">
-          <a id="nav-admin" href="/admin">Accounts</a>
+          <a id="nav-chess" href="/chess">Chess</a>
+          <a id="nav-snake" href="/snake">Snake</a>
         </div>
       </div>
-      <a id="nav-profile" href="/profile">Profile</a>
-      <a id="nav-chess" href="/chess">Chess</a>
-      <a id="nav-snake" href="/snake">Snake</a>
-      <button id="nav-logout" type="button">Log out</button>
     </div>
     <button id="theme-toggle" class="theme-toggle" type="button" aria-pressed="false" aria-label="Toggle dark mode"><span class="thumb"></span></button>
   </nav>
-  <h1 class="site-header">˚₊‧꒰ა Accounts ໒꒱ ‧₊˚</h1>
-  <main class="card">
-    <p class="count" id="count">Loading…</p>
-    <table>
-      <thead>
-        <tr><th>Username</th><th>Registered</th><th>Points</th><th>Listed</th><th></th></tr>
-      </thead>
-      <tbody id="rows"></tbody>
-    </table>
-    <div class="nav">
-      <button id="back" type="button">Dashboard</button>
-      <button id="logout" type="button">Log out</button>
-    </div>
-  </main>
+  <h1 class="site-header"><span class="bow flip">꣑ৎ</span> Admin <span class="bow">꣑ৎ</span></h1>
+  <div class="admin-grid">
+    <section class="card">
+      <h2>Accounts</h2>
+      <p class="count" id="count">Loading…</p>
+      <table>
+        <thead>
+          <tr><th>Username</th><th>Registered</th><th>Points</th><th>Listed</th><th></th></tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </section>
+    <section class="card">
+      <h2>Tasks</h2>
+      <p class="panel-empty">Assigning tasks to accounts will live here.</p>
+    </section>
+  </div>
   <script>
     const body = document.body;
     const toggle = document.getElementById("theme-toggle");
@@ -303,8 +379,7 @@
     const navAdmin = document.getElementById("nav-admin");
     const navChess = document.getElementById("nav-chess");
     const navSnake = document.getElementById("nav-snake");
-    const navLogout = document.getElementById("nav-logout");
-    const adminDropdown = document.getElementById("admin-dropdown");
+    const adminDropdown = document.getElementById("nav-admin");
 
     function applyTheme(theme) {
       body.dataset.theme = theme;
@@ -353,11 +428,6 @@
       }
     }
 
-    navLogout?.addEventListener("click", async () => {
-      await fetch("/api/logout", { method: "POST" });
-      window.location.href = "/";
-    });
-
     initTopNav();
 
     function loadAccounts() {
@@ -380,37 +450,47 @@
             const points = document.createElement("td");
             points.textContent = u.points;
             const listed = document.createElement("td");
-            listed.textContent = u.flagged ? "✓" : "—";
+            const pill = document.createElement("span");
+            pill.className = "listed-pill " + (u.flagged ? "yes" : "no");
+            pill.textContent = u.flagged ? "Listed" : "Hidden";
+            listed.append(pill);
+
             const actions = document.createElement("td");
+            const row = document.createElement("div");
+            row.className = "action-row";
+
             const amount = document.createElement("input");
             amount.type = "number";
             amount.step = "1";
             amount.className = "pts-input";
             amount.placeholder = "pts";
-            const menu = document.createElement("select");
-            menu.className = "action-menu";
-            const options = [
-              ["", "Actions…"],
-              ["add", "Add points"],
-              ["flag", u.flagged ? "Hide from leaderboard" : "Show on leaderboard"],
-            ];
+
+            const give = document.createElement("button");
+            give.type = "button";
+            give.className = "chip give";
+            give.textContent = "Give";
+            give.title = "Add points";
+            give.addEventListener("click", () => addPoints(u.username, amount.value));
+
+            const flag = document.createElement("button");
+            flag.type = "button";
+            flag.className = "chip" + (u.flagged ? " on" : "");
+            flag.textContent = u.flagged ? "Hide" : "Show";
+            flag.title = u.flagged ? "Hide from leaderboard" : "Show on leaderboard";
+            flag.addEventListener("click", () => setFlag(u.username, !u.flagged));
+
+            row.append(amount, give, flag);
+
             if (u.username.toLowerCase() !== "hermione") {
-              options.push(["delete", "Delete account…"]);
+              const del = document.createElement("button");
+              del.type = "button";
+              del.className = "chip danger";
+              del.textContent = "Delete";
+              del.title = "Delete account";
+              del.addEventListener("click", () => deleteAccount(u.username));
+              row.append(del);
             }
-            for (const [value, label] of options) {
-              const opt = document.createElement("option");
-              opt.value = value;
-              opt.textContent = label;
-              menu.append(opt);
-            }
-            menu.addEventListener("change", async () => {
-              const action = menu.value;
-              menu.value = "";
-              if (action === "add") await addPoints(u.username, amount.value);
-              else if (action === "flag") await setFlag(u.username, !u.flagged);
-              else if (action === "delete") await deleteAccount(u.username);
-            });
-            actions.append(amount, menu);
+            actions.append(row);
             tr.append(name, date, points, listed, actions);
             rows.append(tr);
           }
@@ -460,14 +540,7 @@
     }
 
     loadAccounts();
-
-    document.getElementById("back").addEventListener("click", () => {
-      window.location.href = "/dashboard";
-    });
-    document.getElementById("logout").addEventListener("click", async () => {
-      await fetch("/api/logout", { method: "POST" });
-      window.location.href = "/";
-    });
   </script>
+  <script src="/notifications.js" defer></script>
 </body>
 </html>

@@ -52,7 +52,18 @@
       "Bash(curl -s -m 20 https://angeldom.me/)",
       "Bash(curl -s -m 10 https://angeldom.me/)",
       "Bash(curl -s -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"username\":\"hermione\",\"password\":\"tmp-style-1\"}')",
-      "Bash(git commit -q -m 'Match profile tile styling, remove dashboard card backgrounds *)"
+      "Bash(git commit -q -m 'Match profile tile styling, remove dashboard card backgrounds *)",
+      "Bash(curl -s -m 10 https://angeldom.me/dashboard -o /dev/null -w \"%{http_code}\")",
+      "Bash(perl -0pi -e 's/\\(\\\\.site-header \\\\{[^}]*?\\)\\(\\\\n\\\\s*\\\\}\\)/$1\\\\n      padding: 20px 0;$2/s' public/index.html public/dashboard.html views/admin.html views/chess.html views/snake.html views/profile.html)",
+      "Bash(perl -CSD -0pi -e 's/— Test Site/— angeldom.me/g; s/˚₊‧꒰ა /꣑ৎ /g; s/ ໒꒱ ‧₊˚/ ꣑ৎ/g' public/index.html public/dashboard.html views/admin.html views/chess.html views/snake.html views/profile.html)",
+      "Bash(perl -CSD -Mutf8 -0pi -e 's/— Test Site/— angeldom.me/g; s/˚₊‧꒰ა /꣑ৎ /g; s/ ໒꒱ ‧₊˚/ ꣑ৎ/g' public/index.html public/dashboard.html views/admin.html views/chess.html views/snake.html views/profile.html)",
+      "Bash(perl -CSD -Mutf8 -0pi -e ' *)",
+      "Bash(curl -s -c /tmp/h.txt -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"username\":\"hermione\",\"password\":\"tmp-money-1\"}')",
+      "Bash(curl -s -b /tmp/h.txt -X DELETE localhost:3000/api/users/moneytester)",
+      "Bash(curl -s -X POST localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"username\":\"hermione\",\"password\":\"tmp-money-1\"}')",
+      "Bash(curl -s -c /tmp/tz.txt -X POST localhost:3000/api/register -H 'Content-Type: application/json' -d '{\"username\":\"tztester\",\"password\":\"tzpass12345\",\"pronouns\":\"She/Her\",\"role\":\"Sub\"}')",
+      "Bash(curl -s -b /tmp/tz.txt localhost:3000/api/me)",
+      "Bash(node -pe 'JSON.parse\\(require\\(\"fs\"\\).readFileSync\\(\"users.json\",\"utf8\"\\)\\).tztester.lastCheckIn')"
     ]
   }
 }

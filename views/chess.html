@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Chess — Test Site</title>
+  <title>Chess — angeldom.me</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cause:wght@400..700&display=swap" rel="stylesheet" />
@@ -75,7 +75,10 @@
       text-shadow: 0 2px 12px rgba(255, 255, 255, 0.6);
       text-align: center;
       margin-bottom: 1.25rem;
+      padding: 20px 0;
     }
+    .bow { display: inline-block; }
+    .bow.flip { transform: scaleX(-1); }
     body.has-top-nav {
       justify-content: flex-start;
       padding-top: 1.75rem;
@@ -136,9 +139,19 @@
       box-shadow: inset 0 0 0 1px rgba(255,255,255,0.3);
     }
     .top-nav .dropdown[hidden] { display: none; }
+    .top-nav a[hidden] { display: none; }
     .top-nav .dropdown {
       position: relative;
       display: inline-flex;
+    }
+    /* invisible bridge across the gap so hover survives the trip to the menu */
+    .top-nav .dropdown::after {
+      content: "";
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      height: 0.5rem;
     }
     .top-nav .dropdown-menu {
       position: absolute;
@@ -280,20 +293,20 @@
   <nav id="top-nav" class="top-nav" hidden>
     <div class="nav-links">
       <a id="nav-dashboard" href="/dashboard">Dashboard</a>
-      <div class="dropdown" id="admin-dropdown" hidden>
-        <button class="dropdown-toggle" type="button">Admin ▾</button>
+      <a id="nav-admin" href="/admin" hidden>Admin</a>
+      <a id="nav-profile" href="/profile">Profile</a>
+      <a id="nav-tasks" href="/tasks">Tasks</a>
+      <div class="dropdown" id="games-dropdown">
+        <button class="dropdown-toggle" type="button">Games ▾</button>
         <div class="dropdown-menu">
-          <a id="nav-admin" href="/admin">Accounts</a>
+          <a id="nav-chess" href="/chess">Chess</a>
+          <a id="nav-snake" href="/snake">Snake</a>
         </div>
       </div>
-      <a id="nav-profile" href="/profile">Profile</a>
-      <a id="nav-chess" href="/chess">Chess</a>
-      <a id="nav-snake" href="/snake">Snake</a>
-      <button id="nav-logout" type="button">Log out</button>
     </div>
     <button id="theme-toggle" class="theme-toggle" type="button" aria-pressed="false" aria-label="Toggle dark mode"><span class="thumb"></span></button>
   </nav>
-  <h1 class="site-header">˚₊‧꒰ა Chess ໒꒱ ‧₊˚</h1>
+  <h1 class="site-header"><span class="bow flip">꣑ৎ</span> Chess <span class="bow">꣑ৎ</span></h1>
   <main class="card">
     <div class="picker" id="picker" hidden>
       <label for="opponent">Game vs </label>
@@ -317,8 +330,7 @@
     const navAdmin = document.getElementById("nav-admin");
     const navChess = document.getElementById("nav-chess");
     const navSnake = document.getElementById("nav-snake");
-    const navLogout = document.getElementById("nav-logout");
-    const adminDropdown = document.getElementById("admin-dropdown");
+    const adminDropdown = document.getElementById("nav-admin");
 
     function applyTheme(theme) {
       body.dataset.theme = theme;
@@ -366,11 +378,6 @@
         }
       }
     }
-
-    navLogout?.addEventListener("click", async () => {
-      await fetch("/api/logout", { method: "POST" });
-      window.location.href = "/";
-    });
 
     initTopNav();
 
@@ -623,5 +630,6 @@
       })
       .catch(() => (window.location.href = "/"));
   </script>
+  <script src="/notifications.js" defer></script>
 </body>
 </html>
