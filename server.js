@@ -10,6 +10,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const USERS_FILE = path.join(process.env.DATA_DIR || __dirname, "users.json");
 const GAMES_FILE = path.join(process.env.DATA_DIR || __dirname, "games.json");
+const WRITING_FILE = path.join(process.env.DATA_DIR || __dirname, "writing.json");
 
 // --- simple JSON-file user store (fine for testing; swap for a DB later) ---
 function loadUsers() {
@@ -536,16 +537,52 @@ app.post("/api/snake/food", (req, res) => {
 });
 
 // --- writing: passages the player has to type out exactly ---
-const WRITING_PASSAGES = Array.from({ length: 9 }, (_, i) => ({
+// Seeded once, then stored on disk so hermione can rewrite them in-site.
+const DEFAULT_PASSAGES = Array.from({ length: 9 }, (_, i) => ({
   id: "placeholder-" + (i + 1),
   title: "Placeholder #" + (i + 1),
   text: "This is placeholder passage number " + (i + 1) +
     ". Type it exactly as it appears, with no mistakes and no going back.",
 }));
 
+function loadPassages() {
+  try {
+    const stored = JSON.parse(fs.readFileSync(WRITING_FILE, "utf8"));
+    if (Array.isArray(stored) && stored.length) return stored;
+  } catch {}
+  return DEFAULT_PASSAGES;
+}
+
+function savePassages(passages) {
+  fs.writeFileSync(WRITING_FILE, JSON.stringify(passages, null, 2));
+}
+
 app.get("/api/writing", (req, res) => {
   if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
-  res.json({ passages: WRITING_PASSAGES });
+  res.json({ passages: loadPassages() });
+});
+
+app.put("/api/writing/:id", (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });
+  const passages = loadPassages();
+  const passage = passages.find((p) => p.id === req.params.id);
+  if (!passage) return res.status(404).json({ error: "No such passage." });
+
+  if (req.body.title !== undefined) {
+    const title = String(req.body.title).trim();
+    if (!title) return res.status(400).json({ error: "Give it a title." });
+    if (title.length > 80) return res.status(400).json({ error: "Title must be 80 characters or fewer." });
+    passage.title = title;
+  }
+  if (req.body.text !== undefined) {
+    const text = String(req.body.text).replace(/\r\n/g, "\n").trim();
+    if (!text) return res.status(400).json({ error: "The passage can't be empty." });
+    if (text.length > 2000) return res.status(400).json({ error: "Passage must be 2000 characters or fewer." });
+    passage.text = text;
+  }
+  savePassages(passages);
+  res.json({ ok: true, passage });
 });
 
 // --- tithe: hand $5 to hermione ---

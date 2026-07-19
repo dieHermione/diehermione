@@ -207,6 +207,57 @@
       transform: translateY(-2px);
       border-color: var(--button-bg);
     }
+    .passage-card { position: relative; }
+    .edit-pencil {
+      position: absolute;
+      top: 0.35rem;
+      right: 0.35rem;
+      width: 1.5rem;
+      height: 1.5rem;
+      padding: 0;
+      border: none;
+      border-radius: 50%;
+      background: var(--button-bg);
+      color: var(--button-text);
+      font-size: 0.78rem;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0.85;
+      transition: opacity 0.12s ease, transform 0.12s ease;
+    }
+    .edit-pencil:hover { opacity: 1; transform: scale(1.1); }
+    .editor label {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--table-header-color);
+      margin-bottom: 0.3rem;
+    }
+    .editor input, .editor textarea {
+      width: 100%;
+      padding: 0.55rem 0.7rem;
+      margin-bottom: 1rem;
+      border: 1px solid var(--input-border);
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 0.95rem;
+      background: var(--input-bg);
+      color: var(--input-text);
+    }
+    .editor textarea { min-height: 8rem; resize: vertical; line-height: 1.5; }
+    .editor input:focus, .editor textarea:focus { outline: none; border-color: var(--button-hover-bg); }
+    .editor .error {
+      display: none;
+      color: #d4607f;
+      background: rgba(255, 144, 176, 0.15);
+      border-radius: 8px;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.85rem;
+      margin-bottom: 1rem;
+    }
     .passage-card .name {
       font-weight: 700;
       font-size: 0.95rem;
@@ -345,6 +396,19 @@
     <p class="note">Type it out exactly. No pasting, no backspace — one wrong key and you start over.</p>
   </section>
 
+  <section class="card editor" id="editor" hidden>
+    <h2>Edit passage</h2>
+    <div class="error" id="edit-error"></div>
+    <label for="edit-title">Title</label>
+    <input type="text" id="edit-title" maxlength="80" />
+    <label for="edit-text">Passage</label>
+    <textarea id="edit-text" maxlength="2000"></textarea>
+    <div class="actions">
+      <button class="pill" id="edit-save" type="button">Save</button>
+      <button class="pill" id="edit-cancel" type="button">Cancel</button>
+    </div>
+  </section>
+
   <section class="card" id="game" hidden>
     <h2 id="game-title">…</h2>
     <p class="status" id="status">Start typing.</p>
@@ -387,6 +451,7 @@
 
     // --- game state ---
     let passages = [];
+    let isAdmin = false;
     let current = null;   // the passage being typed
     let typed = 0;        // how many characters are correct so far
     let finished = false;
@@ -409,6 +474,19 @@
         peek.textContent = p.text;
         card.append(name, peek);
         card.addEventListener("click", () => openPassage(p));
+        if (isAdmin) {
+          const pencil = document.createElement("button");
+          pencil.type = "button";
+          pencil.className = "edit-pencil";
+          pencil.textContent = "\u270e";
+          pencil.title = "Edit this passage";
+          pencil.setAttribute("aria-label", "Edit " + p.title);
+          pencil.addEventListener("click", (e) => {
+            e.stopPropagation();          // don't start the game
+            openEditor(p);
+          });
+          card.append(pencil);
+        }
         return card;
       }));
     }
@@ -494,6 +572,47 @@
       document.addEventListener(evt, (e) => e.preventDefault())
     );
 
+    let editing = null;
+
+    function openEditor(p) {
+      editing = p;
+      document.getElementById("picker").hidden = true;
+      document.getElementById("editor").hidden = false;
+      document.getElementById("edit-error").style.display = "none";
+      document.getElementById("edit-title").value = p.title;
+      document.getElementById("edit-text").value = p.text;
+    }
+
+    function closeEditor() {
+      editing = null;
+      document.getElementById("editor").hidden = true;
+      document.getElementById("picker").hidden = false;
+    }
+
+    document.getElementById("edit-cancel").addEventListener("click", closeEditor);
+
+    document.getElementById("edit-save").addEventListener("click", async () => {
+      if (!editing) return;
+      const res = await fetch("/api/writing/" + encodeURIComponent(editing.id), {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: document.getElementById("edit-title").value,
+          text: document.getElementById("edit-text").value,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const err = document.getElementById("edit-error");
+        err.textContent = data.error || "Saving failed.";
+        err.style.display = "block";
+        return;
+      }
+      Object.assign(editing, data.passage);
+      renderShelf();
+      closeEditor();
+    });
+
     document.getElementById("restart").addEventListener("click", () => restart());
     document.getElementById("back").addEventListener("click", () => {
       current = null;
@@ -505,7 +624,8 @@
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((d) => {
         topNav.hidden = false;
-        adminDropdown.hidden = !d.isAdmin;
+        isAdmin = Boolean(d.isAdmin);
+        adminDropdown.hidden = !isAdmin;
         return fetch("/api/writing");
       })
       .then((r) => (r.ok ? r.json() : Promise.reject()))
