@@ -536,6 +536,37 @@ app.post("/api/snake/food", (req, res) => {
   });
 });
 
+// --- dailies: objectives that reset with the noon-Eastern day ---
+app.get("/api/dailies", (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  const users = loadUsers();
+  const key = req.session.username.toLowerCase();
+  const user = users[key];
+  if (!user) return res.status(401).json({ error: "Not logged in." });
+  const today = todayKey();
+  const snakeToday = user.snakeDay === today ? user.snakeToday || 0 : 0;
+  res.json({
+    resets: "noon Eastern",
+    dailies: [
+      {
+        id: "checkin",
+        label: "Daily check-in",
+        detail: "Open the site once a day.",
+        reward: "$" + DAILY_CHECKIN_DOLLARS,
+        done: user.lastCheckIn === today,
+      },
+      {
+        id: "snake",
+        label: "Snake earnings",
+        detail: "$" + SNAKE_FOOD_DOLLARS + " for every heart eaten.",
+        reward: "$" + SNAKE_DAILY_CAP,
+        done: snakeToday >= SNAKE_DAILY_CAP,
+        progress: { current: snakeToday, max: SNAKE_DAILY_CAP },
+      },
+    ],
+  });
+});
+
 // --- writing: passages the player has to type out exactly ---
 // Seeded once, then stored on disk so hermione can rewrite them in-site.
 const DEFAULT_PASSAGES = Array.from({ length: 9 }, (_, i) => ({

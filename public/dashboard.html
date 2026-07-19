@@ -205,6 +205,57 @@
     .dashboard-actions button {
       margin: 0;
     }
+    .daily-list { display: flex; flex-direction: column; gap: 0.6rem; text-align: left; }
+    .daily {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      padding: 0.7rem 0.85rem;
+      border: 1px solid var(--table-border);
+      border-radius: 10px;
+    }
+    .daily.done { border-color: var(--button-bg); background: rgba(255, 144, 176, 0.08); }
+    .daily .tick {
+      flex-shrink: 0;
+      width: 1.25rem;
+      height: 1.25rem;
+      margin-top: 0.1rem;
+      border-radius: 50%;
+      border: 2px solid var(--button-bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      color: var(--button-text);
+    }
+    .daily.done .tick { background: var(--button-bg); }
+    .daily .body { flex: 1; min-width: 0; }
+    .daily .label { font-weight: 700; font-size: 0.92rem; }
+    .daily .detail { color: var(--muted-color); font-size: 0.8rem; margin-top: 0.1rem; }
+    .daily .reward {
+      flex-shrink: 0;
+      align-self: center;
+      padding: 0.15rem 0.6rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      background: var(--button-bg);
+      color: var(--button-text);
+    }
+    .daily .mini-bar {
+      height: 5px;
+      border-radius: 999px;
+      background: var(--table-border);
+      overflow: hidden;
+      margin-top: 0.45rem;
+    }
+    .daily .mini-bar span { display: block; height: 100%; background: var(--button-bg); }
+    .daily-reset {
+      color: var(--muted-color);
+      font-size: 0.78rem;
+      text-align: center;
+      margin: 0.9rem 0 0;
+    }
     .dashboard-grid {
       display: grid;
       /* equal 1fr spacers keep the middle column truly centered on the page */
@@ -393,6 +444,11 @@
         </div>
       </main>
       <section class="card">
+        <h2>Dailies</h2>
+        <div class="daily-list" id="daily-list"></div>
+        <p class="daily-reset" id="daily-reset"></p>
+      </section>
+      <section class="card">
         <h2>Leaderboard</h2>
         <table>
           <thead>
@@ -564,6 +620,52 @@
       document.getElementById("profile-card").hidden = false;
     }
     loadProfileCard();
+
+    async function loadDailies() {
+      const res = await fetch("/api/dailies");
+      if (!res.ok) return;
+      const data = await res.json();
+      const list = document.getElementById("daily-list");
+      list.replaceChildren(...data.dailies.map((d) => {
+        const row = document.createElement("div");
+        row.className = "daily" + (d.done ? " done" : "");
+
+        const tick = document.createElement("div");
+        tick.className = "tick";
+        tick.textContent = d.done ? "✓" : "";
+        row.append(tick);
+
+        const bodyEl = document.createElement("div");
+        bodyEl.className = "body";
+        const label = document.createElement("div");
+        label.className = "label";
+        label.textContent = d.label;
+        bodyEl.append(label);
+        const detail = document.createElement("div");
+        detail.className = "detail";
+        detail.textContent = d.progress && !d.done
+          ? d.detail + " — $" + d.progress.current + " of $" + d.progress.max + " today"
+          : d.detail;
+        bodyEl.append(detail);
+        if (d.progress) {
+          const bar = document.createElement("div");
+          bar.className = "mini-bar";
+          const fill = document.createElement("span");
+          fill.style.width = Math.min(100, (d.progress.current / d.progress.max) * 100) + "%";
+          bar.append(fill);
+          bodyEl.append(bar);
+        }
+        row.append(bodyEl);
+
+        const reward = document.createElement("span");
+        reward.className = "reward";
+        reward.textContent = d.reward;
+        row.append(reward);
+        return row;
+      }));
+      document.getElementById("daily-reset").textContent = "Resets at " + data.resets + ".";
+    }
+    loadDailies();
 
     document.getElementById("tithe").addEventListener("click", async () => {
       const res = await fetch("/api/tithe", { method: "POST" });
