@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Writing — angeldom.me</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cause:wght@400..700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      color-scheme: light;
+      --bg1: #ff90b0;
+      --bg2: #f6f6f6;
+      --panel-bg: rgba(255, 255, 255, 0.95);
+      --header-color: #ffffff;
+      --heading-color: #FBC3D3;
+      --text-color: #333;
+      --muted-color: #777;
+      --table-border: #eee;
+      --table-header-color: #888;
+      --button-bg: #FBC3D3;
+      --button-text: #ffffff;
+      --button-hover-bg: #f7b8c8;
+      --shadow: rgba(0, 0, 0, 0.2);
+      --input-border: #ddd;
+      --input-bg: #fff;
+      --input-text: #333;
+      --toggle-bg: rgba(255, 255, 255, 0.9);
+      --toggle-text: #333;
+    }
+    body[data-theme="dark"] {
+      color-scheme: dark;
+      --bg1: #14141a;
+      --bg2: #22222b;
+      --panel-bg: rgba(37, 34, 42, 0.92);
+      --header-color: #ffffff;
+      --heading-color: #ffffff;
+      --text-color: #ffffff;
+      --muted-color: #ffffff;
+      --table-border: #5a4257;
+      --table-header-color: #ffffff;
+      --button-bg: #d99baf;
+      --button-text: #ffffff;
+      --button-hover-bg: #edb6ca;
+      --shadow: rgba(0, 0, 0, 0.45);
+      --input-border: #FBC3D3;
+      --input-bg: #2b2234;
+      --input-text: #f8ebf4;
+      --toggle-bg: rgba(41, 34, 49, 0.95);
+      --toggle-text: #ffffff;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Cause", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 1.5rem;
+      background: linear-gradient(135deg, var(--bg1) 0%, var(--bg2) 100%);
+      padding: 1rem;
+      color: var(--text-color);
+    }
+    .site-header {
+      font-family: "Cause", sans-serif;
+      font-size: 3rem;
+      font-weight: 700;
+      color: var(--header-color);
+      text-shadow: 0 2px 12px rgba(255, 255, 255, 0.6);
+      text-align: center;
+      margin-bottom: 1.25rem;
+      padding: 20px 0;
+    }
+    .bow { display: inline-block; }
+    .bow.flip { transform: scaleX(-1); }
+    body.has-top-nav {
+      justify-content: flex-start;
+      padding-top: 1.75rem;
+      gap: 1rem;
+    }
+    .top-nav {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+      align-items: center;
+      gap: 0.55rem;
+      position: relative;
+      width: min(100%, 720px);
+      padding: 0.65rem 1rem;
+      margin: 0 0 0.75rem;
+      border-radius: 999px;
+      background: var(--panel-bg);
+      box-shadow: 0 8px 24px var(--shadow);
+      backdrop-filter: blur(8px);
+    }
+    .top-nav .nav-links {
+      grid-column: 2;
+      justify-self: center;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      gap: 0.45rem;
+    }
+    .top-nav a,
+    .top-nav button,
+    .top-nav .dropdown-toggle {
+      padding: 0.45rem 0.85rem;
+      border-radius: 999px;
+      border: none;
+      background: var(--button-bg);
+      color: var(--button-text);
+      font-size: 0.9rem;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .top-nav a:hover,
+    .top-nav button:hover,
+    .top-nav .dropdown-toggle:hover { background: var(--button-hover-bg); }
+    .top-nav a.active {
+      background: var(--button-hover-bg);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.3);
+    }
+    .top-nav .dropdown[hidden] { display: none; }
+    .top-nav a[hidden] { display: none; }
+    .top-nav .dropdown { position: relative; display: inline-flex; }
+    /* invisible bridge across the gap so hover survives the trip to the menu */
+    .top-nav .dropdown::after {
+      content: "";
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      height: 0.5rem;
+    }
+    .top-nav .dropdown-menu {
+      position: absolute;
+      top: calc(100% + 0.35rem);
+      left: 0;
+      display: none;
+      flex-direction: column;
+      gap: 0.35rem;
+      padding: 0.45rem;
+      background: var(--panel-bg);
+      border-radius: 8px;
+      box-shadow: 0 8px 24px var(--shadow);
+      min-width: 8rem;
+    }
+    .top-nav .dropdown:hover .dropdown-menu,
+    .top-nav .dropdown:focus-within .dropdown-menu { display: flex; }
+    .top-nav .dropdown-menu a { width: 100%; }
+    .card {
+      background: var(--panel-bg);
+      border-radius: 12px;
+      box-shadow: 0 10px 40px var(--shadow);
+      width: 100%;
+      max-width: 720px;
+      padding: 2rem;
+      color: var(--text-color);
+    }
+    h2 {
+      font-family: "Cause", sans-serif;
+      font-size: 1.1rem;
+      color: var(--heading-color);
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+    /* --- the shelf of passages --- */
+    .shelf {
+      display: flex;
+      gap: 0.85rem;
+      overflow-x: auto;
+      padding: 0.35rem 0.25rem 1rem;
+      scroll-snap-type: x proximity;
+    }
+    .shelf::-webkit-scrollbar { height: 8px; }
+    .shelf::-webkit-scrollbar-track { background: transparent; }
+    .shelf::-webkit-scrollbar-thumb {
+      background: var(--button-bg);
+      border-radius: 999px;
+    }
+    .passage-card {
+      flex: 0 0 auto;
+      width: 9.5rem;
+      min-height: 7rem;
+      scroll-snap-align: start;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 0.5rem;
+      padding: 0.9rem;
+      border: 1px solid var(--table-border);
+      border-radius: 12px;
+      background: rgba(255, 144, 176, 0.08);
+      color: var(--text-color);
+      font-family: inherit;
+      text-align: left;
+      cursor: pointer;
+      transition: transform 0.12s ease, border-color 0.12s ease;
+    }
+    .passage-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--button-bg);
+    }
+    .passage-card .name {
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: var(--heading-color);
+    }
+    .passage-card .peek {
+      font-size: 0.72rem;
+      color: var(--muted-color);
+      line-height: 1.3;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    /* --- the typing game --- */
+    #game[hidden] { display: none; }
+    .target {
+      font-size: 1.05rem;
+      line-height: 1.7;
+      letter-spacing: 0.01em;
+      padding: 1.25rem;
+      border-radius: 10px;
+      background: var(--input-bg);
+      color: var(--muted-color);
+      border: 2px solid var(--table-border);
+      user-select: none;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      margin-bottom: 1rem;
+      transition: border-color 0.15s ease;
+    }
+    .target.armed { border-color: var(--button-bg); }
+    .target.wrong { border-color: #e8748f; animation: shake 0.25s; }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-4px); }
+      75% { transform: translateX(4px); }
+    }
+    .target .done { color: var(--heading-color); font-weight: 600; }
+    .target .cursor {
+      background: var(--button-bg);
+      color: var(--button-text);
+      border-radius: 2px;
+    }
+    .status {
+      text-align: center;
+      font-weight: 600;
+      min-height: 1.4em;
+      margin-bottom: 1rem;
+    }
+    .status.win { color: var(--heading-color); }
+    .bar {
+      height: 6px;
+      border-radius: 999px;
+      background: var(--table-border);
+      overflow: hidden;
+      margin-bottom: 1.25rem;
+    }
+    .bar span {
+      display: block;
+      height: 100%;
+      width: 0%;
+      background: var(--button-bg);
+      transition: width 0.1s linear;
+    }
+    .actions { display: flex; gap: 0.75rem; justify-content: center; }
+    button.pill {
+      padding: 0.6rem 1.25rem;
+      background: var(--button-bg);
+      color: var(--button-text);
+      border: none;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button.pill:hover { background: var(--button-hover-bg); }
+    .note { color: var(--muted-color); font-size: 0.85rem; margin-top: 1rem; text-align: center; }
+    .theme-toggle {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      z-index: 10;
+      width: 3rem;
+      height: 1.6rem;
+      padding: 0;
+      border: 1px solid var(--input-border);
+      border-radius: 999px;
+      background: var(--toggle-bg);
+      color: transparent;
+      box-shadow: 0 6px 16px var(--shadow);
+      cursor: pointer;
+      overflow: hidden;
+    }
+    .theme-toggle .thumb {
+      position: absolute;
+      top: 0.15rem;
+      left: 0.15rem;
+      width: 1.15rem;
+      height: 1.15rem;
+      border-radius: 50%;
+      background: var(--button-bg);
+      display: block;
+      transition: left 0.2s ease, background-color 0.2s ease;
+    }
+    .theme-toggle.is-dark .thumb {
+      left: calc(100% - 1.15rem - 0.15rem);
+      background: var(--button-hover-bg);
+    }
+  </style>
+</head>
+<body class="has-top-nav">
+  <button id="theme-toggle" class="theme-toggle" type="button" aria-pressed="false" aria-label="Toggle dark mode"><span class="thumb"></span></button>
+  <nav id="top-nav" class="top-nav" hidden>
+    <div class="nav-links">
+      <a id="nav-dashboard" href="/dashboard">Dashboard</a>
+      <a id="nav-admin" href="/admin" hidden>Admin</a>
+      <a id="nav-profile" href="/profile">Profile</a>
+      <a id="nav-tasks" href="/tasks">Tasks</a>
+      <div class="dropdown" id="games-dropdown">
+        <button class="dropdown-toggle" type="button">Games ▾</button>
+        <div class="dropdown-menu">
+          <a id="nav-chess" href="/chess">Chess</a>
+          <a id="nav-snake" href="/snake">Snake</a>
+          <a id="nav-writing" href="/writing">Writing</a>
+        </div>
+      </div>
+    </div>
+  </nav>
+  <h1 class="site-header"><span class="bow flip">꣑ৎ</span> Writing <span class="bow">꣑ৎ</span></h1>
+
+  <section class="card" id="picker">
+    <h2>Choose a passage</h2>
+    <div class="shelf" id="shelf"></div>
+    <p class="note">Type it out exactly. No pasting, no backspace — one wrong key and you start over.</p>
+  </section>
+
+  <section class="card" id="game" hidden>
+    <h2 id="game-title">…</h2>
+    <p class="status" id="status">Start typing.</p>
+    <div class="bar"><span id="bar-fill"></span></div>
+    <div class="target" id="target"></div>
+    <div class="actions">
+      <button class="pill" id="restart" type="button">Restart</button>
+      <button class="pill" id="back" type="button">Pick another</button>
+    </div>
+  </section>
+
+  <script>
+    const body = document.body;
+    const toggle = document.getElementById("theme-toggle");
+    const storedTheme = localStorage.getItem("site-theme");
+    const systemDark = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
+    // no explicit choice yet? follow whatever the browser/OS is set to
+    const savedTheme = storedTheme || (systemDark && systemDark.matches ? "dark" : "light");
+    const topNav = document.getElementById("top-nav");
+    const adminDropdown = document.getElementById("nav-admin");
+
+    function applyTheme(theme, persist) {
+      body.dataset.theme = theme;
+      if (toggle) {
+        toggle.classList.toggle("is-dark", theme === "dark");
+        toggle.setAttribute("aria-pressed", String(theme === "dark"));
+      }
+      if (persist) localStorage.setItem("site-theme", theme);
+    }
+
+    applyTheme(savedTheme);
+    systemDark?.addEventListener?.("change", (e) => {
+      if (!localStorage.getItem("site-theme")) applyTheme(e.matches ? "dark" : "light");
+    });
+    toggle?.addEventListener("click", () => {
+      applyTheme(body.dataset.theme === "dark" ? "light" : "dark", true);
+    });
+
+    document.getElementById("nav-writing").classList.add("active");
+
+    // --- game state ---
+    let passages = [];
+    let current = null;   // the passage being typed
+    let typed = 0;        // how many characters are correct so far
+    let finished = false;
+
+    const targetEl = document.getElementById("target");
+    const statusEl = document.getElementById("status");
+    const fillEl = document.getElementById("bar-fill");
+
+    function renderShelf() {
+      const shelf = document.getElementById("shelf");
+      shelf.replaceChildren(...passages.map((p) => {
+        const card = document.createElement("button");
+        card.type = "button";
+        card.className = "passage-card";
+        const name = document.createElement("span");
+        name.className = "name";
+        name.textContent = p.title;
+        const peek = document.createElement("span");
+        peek.className = "peek";
+        peek.textContent = p.text;
+        card.append(name, peek);
+        card.addEventListener("click", () => openPassage(p));
+        return card;
+      }));
+    }
+
+    function renderTarget() {
+      const done = current.text.slice(0, typed);
+      const next = current.text.slice(typed, typed + 1);
+      const rest = current.text.slice(typed + 1);
+      targetEl.replaceChildren();
+      const doneEl = document.createElement("span");
+      doneEl.className = "done";
+      doneEl.textContent = done;
+      const cursorEl = document.createElement("span");
+      cursorEl.className = "cursor";
+      cursorEl.textContent = next;
+      targetEl.append(doneEl, cursorEl, document.createTextNode(rest));
+      const pct = (typed / current.text.length) * 100;
+      fillEl.style.width = pct + "%";
+    }
+
+    function openPassage(p) {
+      current = p;
+      typed = 0;
+      finished = false;
+      document.getElementById("picker").hidden = true;
+      document.getElementById("game").hidden = false;
+      document.getElementById("game-title").textContent = p.title;
+      statusEl.textContent = "Start typing.";
+      statusEl.classList.remove("win");
+      targetEl.classList.add("armed");
+      renderTarget();
+    }
+
+    function restart(reason) {
+      typed = 0;
+      finished = false;
+      statusEl.textContent = reason || "Start typing.";
+      statusEl.classList.remove("win");
+      targetEl.classList.remove("wrong");
+      // reflow so the shake animation can replay
+      void targetEl.offsetWidth;
+      if (reason) targetEl.classList.add("wrong");
+      renderTarget();
+    }
+
+    function finish() {
+      finished = true;
+      targetEl.classList.remove("armed");
+      statusEl.textContent = "Finished — every character correct.";
+      statusEl.classList.add("win");
+    }
+
+    document.addEventListener("keydown", (e) => {
+      if (!current || finished) return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;   // leave shortcuts alone
+
+      if (e.key === "Backspace") {
+        e.preventDefault();                              // no going back
+        return;
+      }
+
+      let key = e.key;
+      if (key === "Enter") key = "\n";
+      if (key.length !== 1 && key !== "\n") return;      // ignore Shift, arrows, F-keys…
+      e.preventDefault();
+
+      if (key === current.text[typed]) {
+        typed++;
+        targetEl.classList.remove("wrong");
+        if (typed === current.text.length) {
+          renderTarget();
+          finish();
+          return;
+        }
+        renderTarget();
+      } else {
+        restart("Wrong key — back to the start.");
+      }
+    });
+
+    // pasting would defeat the whole exercise
+    ["paste", "drop"].forEach((evt) =>
+      document.addEventListener(evt, (e) => e.preventDefault())
+    );
+
+    document.getElementById("restart").addEventListener("click", () => restart());
+    document.getElementById("back").addEventListener("click", () => {
+      current = null;
+      document.getElementById("game").hidden = true;
+      document.getElementById("picker").hidden = false;
+    });
+
+    fetch("/api/me")
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((d) => {
+        topNav.hidden = false;
+        adminDropdown.hidden = !d.isAdmin;
+        return fetch("/api/writing");
+      })
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((d) => {
+        passages = d.passages || [];
+        renderShelf();
+      })
+      .catch(() => (window.location.href = "/"));
+  </script>
+  <script src="/notifications.js" defer></script>
+</body>
+</html>

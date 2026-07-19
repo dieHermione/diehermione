@@ -535,6 +535,19 @@ app.post("/api/snake/food", (req, res) => {
   });
 });
 
+// --- writing: passages the player has to type out exactly ---
+const WRITING_PASSAGES = Array.from({ length: 9 }, (_, i) => ({
+  id: "placeholder-" + (i + 1),
+  title: "Placeholder #" + (i + 1),
+  text: "This is placeholder passage number " + (i + 1) +
+    ". Type it exactly as it appears, with no mistakes and no going back.",
+}));
+
+app.get("/api/writing", (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  res.json({ passages: WRITING_PASSAGES });
+});
+
 // --- tithe: hand $5 to hermione ---
 const TITHE_DOLLARS = 5;
 
@@ -618,6 +631,10 @@ app.get("/api/tasks", (req, res) => {
 
 app.get("/tasks", requireLogin, (req, res) => {
   res.sendFile(path.join(__dirname, "views", "tasks.html"));
+});
+
+app.get("/writing", requireLogin, (req, res) => {
+  res.sendFile(path.join(__dirname, "views", "writing.html"));
 });
 
 app.get("/profile", requireLogin, (req, res) => {
