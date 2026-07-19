@@ -13,13 +13,12 @@
     .notif-btn svg { width: 1.05rem; height: 1.05rem; display: block; }
     .notif-dot {
       position: absolute;
-      top: 0.15rem;
-      right: 0.2rem;
-      width: 0.55rem;
-      height: 0.55rem;
+      top: 0.32rem;
+      right: 0.42rem;
+      width: 0.38rem;
+      height: 0.38rem;
       border-radius: 50%;
       background: #ffffff;
-      box-shadow: 0 0 0 2px var(--panel-bg);
       display: none;
     }
     .notif-wrap.has-unread .notif-dot { display: block; }

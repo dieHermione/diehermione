@@ -11,6 +11,7 @@ const PORT = process.env.PORT || 3000;
 const USERS_FILE = path.join(process.env.DATA_DIR || __dirname, "users.json");
 const GAMES_FILE = path.join(process.env.DATA_DIR || __dirname, "games.json");
 const WRITING_FILE = path.join(process.env.DATA_DIR || __dirname, "writing.json");
+const DEATHROLL_FILE = path.join(process.env.DATA_DIR || __dirname, "deathroll.json");
 
 // --- simple JSON-file user store (fine for testing; swap for a DB later) ---
 function loadUsers() {
@@ -536,6 +537,128 @@ app.post("/api/snake/food", (req, res) => {
   });
 });
 
+// --- deathroll: hermione picks a number, then the two players alternate
+// rolling 1d(previous roll). Whoever rolls a 1 loses. ---
+const DEATHROLL_MIN_SIDES = 2;
+const DEATHROLL_MAX_SIDES = 1000000;
+
+function loadRolls() {
+  try {
+    return JSON.parse(fs.readFileSync(DEATHROLL_FILE, "utf8"));
+  } catch {
+    return {};
+  }
+}
+function saveRolls(games) {
+  fs.writeFileSync(DEATHROLL_FILE, JSON.stringify(games, null, 2));
+}
+
+// games are keyed by the non-hermione player, same as chess
+function deathrollKeyFor(req, opponent) {
+  if (isAdmin(req)) {
+    const key = String(opponent || "").toLowerCase();
+    return key && key !== "hermione" ? key : null;
+  }
+  return req.session.username.toLowerCase();
+}
+
+function deathrollState(game, viewerIsAdmin) {
+  const yourTurn = viewerIsAdmin ? game.turn === "hermione" : game.turn === "player";
+  return {
+    opponent: game.opponent,
+    sides: game.sides,       // what the next roll is against
+    turn: game.turn,
+    yourTurn: !game.over && yourTurn,
+    over: game.over,
+    loser: game.loser || null,
+    history: game.history,
+    startedWith: game.startedWith,
+  };
+}
+
+app.get("/api/deathroll/game", (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  const key = deathrollKeyFor(req, req.query.opponent);
+  if (!key) return res.status(400).json({ error: "Pick an opponent." });
+  const games = loadRolls();
+  const game = games[key];
+  if (!game) return res.json({ game: null });
+  res.json({ game: deathrollState(game, isAdmin(req)) });
+});
+
+app.get("/api/deathroll/games", (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });
+  const games = loadRolls();
+  const users = loadUsers();
+  res.json({
+    players: Object.keys(users)
+      .filter((k) => k !== "hermione")
+      .map((k) => ({
+        username: users[k].username,
+        hasGame: Boolean(games[k]),
+        yourTurn: Boolean(games[k] && !games[k].over && games[k].turn === "hermione"),
+        over: Boolean(games[k] && games[k].over),
+      })),
+  });
+});
+
+// hermione alone sets the opening number
+app.post("/api/deathroll/start", (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  if (!isAdmin(req)) return res.status(403).json({ error: "Only Hermione starts a deathroll." });
+  const key = deathrollKeyFor(req, req.body.opponent);
+  if (!key) return res.status(400).json({ error: "Pick an opponent." });
+  const users = loadUsers();
+  if (!users[key]) return res.status(404).json({ error: "No such account." });
+  const sides = Number(req.body.sides);
+  if (!Number.isInteger(sides) || sides < DEATHROLL_MIN_SIDES || sides > DEATHROLL_MAX_SIDES) {
+    return res.status(400).json({
+      error: "Pick a whole number between " + DEATHROLL_MIN_SIDES + " and " + DEATHROLL_MAX_SIDES + ".",
+    });
+  }
+  const games = loadRolls();
+  games[key] = {
+    opponent: users[key].username,
+    startedWith: sides,
+    sides,
+    turn: "hermione",       // she picked the number, so she rolls it
+    over: false,
+    loser: null,
+    history: [],
+    updatedAt: new Date().toISOString(),
+  };
+  saveRolls(games);
+  res.json({ game: deathrollState(games[key], true) });
+});
+
+app.post("/api/deathroll/roll", (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  const key = deathrollKeyFor(req, req.body.opponent);
+  if (!key) return res.status(400).json({ error: "Pick an opponent." });
+  const games = loadRolls();
+  const game = games[key];
+  if (!game) return res.status(404).json({ error: "No game yet." });
+  if (game.over) return res.status(400).json({ error: "That game is finished." });
+
+  const admin = isAdmin(req);
+  const side = admin ? "hermione" : "player";
+  if (game.turn !== side) return res.status(400).json({ error: "It isn't your roll." });
+
+  const result = Math.floor(Math.random() * game.sides) + 1;
+  game.history.push({ by: side, sides: game.sides, result });
+  if (result === 1) {
+    game.over = true;
+    game.loser = side;
+  } else {
+    game.sides = result;                                  // the next roll is against this
+    game.turn = side === "hermione" ? "player" : "hermione";
+  }
+  game.updatedAt = new Date().toISOString();
+  saveRolls(games);
+  res.json({ game: deathrollState(game, admin), rolled: result });
+});
+
 // --- wheel: one spin a day for everyone except hermione ---
 // The server picks the winning wedge; the page only animates to it.
 const WHEEL_SEGMENTS = [
@@ -773,6 +896,10 @@ app.get("/api/tasks", (req, res) => {
 
 app.get("/tasks", requireLogin, (req, res) => {
   res.sendFile(path.join(__dirname, "views", "tasks.html"));
+});
+
+app.get("/deathroll", requireLogin, (req, res) => {
+  res.sendFile(path.join(__dirname, "views", "deathroll.html"));
 });
 
 app.get("/wheel", requireLogin, (req, res) => {

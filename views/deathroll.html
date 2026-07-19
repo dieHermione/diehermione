@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Wheel — angeldom.me</title>
+  <title>Deathroll — angeldom.me</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cause:wght@400..700&display=swap" rel="stylesheet" />
@@ -28,10 +28,6 @@
       --input-text: #333;
       --toggle-bg: rgba(255, 255, 255, 0.9);
       --toggle-text: #333;
-      --wedge-a: #ffffff;
-      --wedge-b: #FBC3D3;
-      --wedge-line: #f7b8c8;
-      --wedge-text: #d4718f;
     }
     body[data-theme="dark"] {
       color-scheme: dark;
@@ -53,10 +49,6 @@
       --input-text: #f8ebf4;
       --toggle-bg: rgba(41, 34, 49, 0.95);
       --toggle-text: #ffffff;
-      --wedge-a: #f3e7ec;
-      --wedge-b: #d99baf;
-      --wedge-line: #b3798e;
-      --wedge-text: #5a3444;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -173,49 +165,77 @@
       color: var(--text-color);
     }
     .status { font-weight: 600; min-height: 1.4em; margin-bottom: 1.25rem; }
-    .status.win { color: var(--heading-color); font-size: 1.1rem; }
-    .wheel-wrap {
-      position: relative;
-      width: min(340px, 82vw);
-      margin: 0 auto 1.5rem;
+    .status.lost { color: #d4607f; }
+    .status.won { color: var(--heading-color); font-size: 1.1rem; }
+    .picker { margin-bottom: 1.25rem; display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; }
+    .picker[hidden] { display: none; }   /* display:flex would otherwise beat the hidden attribute */
+    select, input[type="number"] {
+      padding: 0.5rem 0.7rem;
+      border: 1px solid var(--input-border);
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 0.95rem;
+      background: var(--input-bg);
+      color: var(--input-text);
     }
-    /* the marker the winning wedge stops under */
-    .pointer {
-      position: absolute;
-      top: -2px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 0;
-      height: 0;
-      border-left: 13px solid transparent;
-      border-right: 13px solid transparent;
-      border-top: 22px solid var(--button-bg);
-      filter: drop-shadow(0 2px 3px var(--shadow));
-      z-index: 2;
+    input[type="number"] { width: 8rem; }
+    select:focus, input:focus { outline: none; border-color: var(--button-hover-bg); }
+    /* the big number you're about to roll against */
+    .die {
+      width: min(220px, 60vw);
+      aspect-ratio: 1;
+      margin: 0 auto 1.25rem;
+      border-radius: 24px;
+      background: linear-gradient(135deg, #ff90b0, #f7b8c8);
+      box-shadow: 0 10px 30px var(--shadow);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
     }
-    #wheel {
-      width: 100%;
-      height: auto;
-      display: block;
-      border-radius: 50%;
-      box-shadow: 0 8px 30px var(--shadow);
-      transform: rotate(0deg);
+    .die .cap {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      opacity: 0.9;
     }
-    #wheel.spinning { transition: transform 4.2s cubic-bezier(0.15, 0.85, 0.2, 1); }
-    .hub {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 3.2rem;
-      height: 3.2rem;
-      border-radius: 50%;
-      background: var(--button-bg);
-      box-shadow: 0 3px 10px var(--shadow);
-      z-index: 1;
+    .die .value {
+      font-family: "Cause", sans-serif;
+      font-size: clamp(2.4rem, 12vw, 3.6rem);
+      font-weight: 700;
+      line-height: 1.1;
+      overflow-wrap: anywhere;
     }
+    .die.rolling .value { animation: flicker 0.09s steps(2) infinite; }
+    @keyframes flicker { 0% { opacity: 1; } 100% { opacity: 0.45; } }
+    .die.dead { background: linear-gradient(135deg, #c96b86, #e8748f); }
+    .log {
+      max-height: 11rem;
+      overflow-y: auto;
+      text-align: left;
+      border: 1px solid var(--table-border);
+      border-radius: 10px;
+      padding: 0.5rem;
+      margin-bottom: 1.25rem;
+    }
+    .log-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.5rem;
+      padding: 0.35rem 0.5rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+    }
+    .log-row + .log-row { margin-top: 0.2rem; }
+    .log-row.hermione { background: rgba(255, 144, 176, 0.12); }
+    .log-row .who { font-weight: 700; }
+    .log-row .roll { font-weight: 700; color: var(--heading-color); }
+    .log-row.fatal .roll { color: #d4607f; }
+    .log-empty { color: var(--muted-color); font-style: italic; font-size: 0.85rem; padding: 0.75rem; text-align: center; }
+    .actions { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; }
     button.pill {
-      padding: 0.7rem 1.75rem;
+      padding: 0.7rem 1.6rem;
       background: var(--button-bg);
       color: var(--button-text);
       border: none;
@@ -281,17 +301,28 @@
       </div>
     </div>
   </nav>
-  <h1 class="site-header"><span class="bow flip">꣑ৎ</span> Wheel <span class="bow">꣑ৎ</span></h1>
+  <h1 class="site-header"><span class="bow flip">꣑ৎ</span> Deathroll <span class="bow">꣑ৎ</span></h1>
 
   <main class="card">
-    <p class="status" id="status">Loading…</p>
-    <div class="wheel-wrap">
-      <div class="pointer"></div>
-      <svg id="wheel" viewBox="0 0 200 200" aria-label="Prize wheel"></svg>
-      <div class="hub"></div>
+    <div class="picker" id="admin-picker" hidden>
+      <select id="opponent"></select>
+      <input type="number" id="sides" min="2" max="1000000" placeholder="e.g. 500" />
+      <button class="pill" id="start" type="button">New roll</button>
     </div>
-    <button class="pill" id="spin" type="button" disabled>Spin</button>
-    <p class="note" id="note"></p>
+
+    <p class="status" id="status">Loading…</p>
+
+    <div class="die" id="die">
+      <span class="cap" id="die-cap">rolling</span>
+      <span class="value" id="die-value">—</span>
+    </div>
+
+    <div class="log" id="log"></div>
+
+    <div class="actions">
+      <button class="pill" id="roll" type="button" disabled>Roll</button>
+    </div>
+    <p class="note" id="note">Whoever rolls a 1 loses.</p>
   </main>
 
   <script>
@@ -321,117 +352,175 @@
       applyTheme(body.dataset.theme === "dark" ? "light" : "dark", true);
     });
 
-    document.getElementById("nav-wheel").classList.add("active");
+    document.getElementById("nav-deathroll").classList.add("active");
 
-    const SVG_NS = "http://www.w3.org/2000/svg";
-    const wheelEl = document.getElementById("wheel");
+    let isAdmin = false;
+    let opponent = null;   // admin only: whose game is on screen
+    let game = null;
+    let rolling = false;
+
     const statusEl = document.getElementById("status");
-    const noteEl = document.getElementById("note");
-    const spinBtn = document.getElementById("spin");
+    const dieEl = document.getElementById("die");
+    const dieCap = document.getElementById("die-cap");
+    const dieValue = document.getElementById("die-value");
+    const rollBtn = document.getElementById("roll");
+    const logEl = document.getElementById("log");
 
-    let segments = [];
-    let segAngle = 0;
-    let rotation = 0;       // keeps climbing so the wheel always turns forwards
-    let spinning = false;
-
-    // angles run clockwise from 12 o'clock, which is where the pointer sits
-    function pointOnCircle(cx, cy, r, angleDeg) {
-      const a = (angleDeg * Math.PI) / 180;
-      return [cx + r * Math.sin(a), cy - r * Math.cos(a)];
-    }
-
-    function drawWheel() {
-      wheelEl.replaceChildren();
-      segAngle = 360 / segments.length;
-      segments.forEach((seg, i) => {
-        const start = i * segAngle;
-        const end = start + segAngle;
-        const [x1, y1] = pointOnCircle(100, 100, 100, start);
-        const [x2, y2] = pointOnCircle(100, 100, 100, end);
-        const path = document.createElementNS(SVG_NS, "path");
-        path.setAttribute("d",
-          "M 100 100 L " + x1 + " " + y1 +
-          " A 100 100 0 " + (segAngle > 180 ? 1 : 0) + " 1 " + x2 + " " + y2 + " Z");
-        path.setAttribute("fill", i % 2 === 0 ? "var(--wedge-a)" : "var(--wedge-b)");
-        path.setAttribute("stroke", "var(--wedge-line)");
-        path.setAttribute("stroke-width", "0.8");
-        wheelEl.append(path);
-
-        const mid = start + segAngle / 2;
-        const [tx, ty] = pointOnCircle(100, 100, 66, mid);
-        const label = document.createElementNS(SVG_NS, "text");
-        label.setAttribute("x", tx);
-        label.setAttribute("y", ty);
-        label.setAttribute("text-anchor", "middle");
-        label.setAttribute("dominant-baseline", "central");
-        label.setAttribute("font-size", "15");
-        label.setAttribute("font-weight", "700");
-        label.setAttribute("font-family", "Cause, sans-serif");
-        label.setAttribute("fill", "var(--wedge-text)");
-        // flip labels past the halfway mark so they never read upside-down
-        const spin = mid > 90 && mid < 270 ? mid + 180 : mid;
-        label.setAttribute("transform", "rotate(" + spin + " " + tx + " " + ty + ")");
-        label.textContent = seg.label;
-        wheelEl.append(label);
-      });
-    }
-
-    function setLocked(state) {
-      spinBtn.disabled = !state.canSpin || spinning;
-      if (state.unlimited) {
-        noteEl.textContent = "Spin as often as you like.";
-      } else if (state.spunToday) {
-        noteEl.textContent = "You've had your spin — the wheel resets at noon Eastern.";
-      } else {
-        noteEl.textContent = "One spin a day. Resets at noon Eastern.";
+    function renderLog() {
+      logEl.replaceChildren();
+      if (!game || !game.history.length) {
+        const empty = document.createElement("p");
+        empty.className = "log-empty";
+        empty.textContent = "No rolls yet.";
+        logEl.append(empty);
+        return;
       }
+      // newest at the top
+      [...game.history].reverse().forEach((h) => {
+        const row = document.createElement("div");
+        row.className = "log-row " + h.by + (h.result === 1 ? " fatal" : "");
+        const who = document.createElement("span");
+        who.className = "who";
+        who.textContent = h.by === "hermione" ? "Hermione" : (game.opponent || "You");
+        const roll = document.createElement("span");
+        roll.className = "roll";
+        roll.textContent = "d" + h.sides + " → " + h.result + (h.result === 1 ? "  ☠" : "");
+        row.append(who, roll);
+        logEl.append(row);
+      });
+      logEl.scrollTop = 0;
     }
 
-    async function spin() {
-      if (spinning) return;
-      spinning = true;
-      spinBtn.disabled = true;
-      statusEl.textContent = "Spinning…";
-      statusEl.classList.remove("win");
-
-      const res = await fetch("/api/wheel/spin", { method: "POST" });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        spinning = false;
-        statusEl.textContent = data.error || "That didn't work.";
+    function render() {
+      if (!game) {
+        statusEl.textContent = isAdmin
+          ? "Pick someone and a number to start."
+          : "Hermione hasn't started a roll with you yet.";
+        statusEl.className = "status";
+        dieCap.textContent = "waiting";
+        dieValue.textContent = "—";
+        dieEl.classList.remove("dead");
+        rollBtn.disabled = true;
+        renderLog();
         return;
       }
 
-      // land the winning wedge's centre under the pointer, after a few turns
-      const target = 360 - (data.index * segAngle + segAngle / 2);
-      const current = ((rotation % 360) + 360) % 360;
-      rotation += (5 * 360) + (((target - current) % 360) + 360) % 360;
-      wheelEl.classList.add("spinning");
-      wheelEl.style.transform = "rotate(" + rotation + "deg)";
+      dieCap.textContent = game.over ? "final roll" : "roll 1d";
+      dieValue.textContent = game.over
+        ? (game.history.length ? game.history[game.history.length - 1].result : game.sides)
+        : game.sides;
+      dieEl.classList.toggle("dead", game.over);
 
-      wheelEl.addEventListener("transitionend", () => {
-        spinning = false;
-        statusEl.textContent = "You won " + data.label + "! You now have $" + data.dollars + ".";
-        statusEl.classList.add("win");
-        setLocked({ canSpin: data.canSpin, unlimited: data.canSpin, spunToday: !data.canSpin });
-      }, { once: true });
+      if (game.over) {
+        const iLost = (isAdmin && game.loser === "hermione") || (!isAdmin && game.loser === "player");
+        const loserName = game.loser === "hermione" ? "Hermione" : game.opponent;
+        statusEl.textContent = iLost
+          ? "You rolled a 1. You lose."
+          : loserName + " rolled a 1 — you win!";
+        statusEl.className = "status " + (iLost ? "lost" : "won");
+        rollBtn.disabled = true;
+      } else if (game.yourTurn) {
+        statusEl.textContent = "Your roll — 1d" + game.sides + ".";
+        statusEl.className = "status";
+        rollBtn.disabled = rolling;
+      } else {
+        statusEl.textContent = game.turn === "hermione"
+          ? "Waiting on Hermione…"
+          : "Waiting on " + game.opponent + "…";
+        statusEl.className = "status";
+        rollBtn.disabled = true;
+      }
+      renderLog();
     }
 
-    spinBtn.addEventListener("click", spin);
+    async function loadGame() {
+      if (isAdmin && !opponent) { game = null; render(); return; }
+      const url = "/api/deathroll/game" + (isAdmin ? "?opponent=" + encodeURIComponent(opponent) : "");
+      const res = await fetch(url);
+      if (!res.ok) return;
+      const data = await res.json();
+      game = data.game;
+      render();
+    }
+
+    async function roll() {
+      if (rolling || !game || !game.yourTurn) return;
+      rolling = true;
+      rollBtn.disabled = true;
+      dieEl.classList.add("rolling");
+
+      const res = await fetch("/api/deathroll/roll", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(isAdmin ? { opponent } : {}),
+      });
+      const data = await res.json().catch(() => ({}));
+
+      // let the flicker run briefly so the result lands rather than blinks
+      await new Promise((r) => setTimeout(r, 550));
+      dieEl.classList.remove("rolling");
+      rolling = false;
+
+      if (!res.ok) {
+        statusEl.textContent = data.error || "That didn't work.";
+        await loadGame();
+        return;
+      }
+      game = data.game;
+      render();
+    }
+
+    rollBtn.addEventListener("click", roll);
+
+    document.getElementById("start").addEventListener("click", async () => {
+      const sides = parseInt(document.getElementById("sides").value, 10);
+      const res = await fetch("/api/deathroll/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ opponent, sides }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        statusEl.textContent = data.error || "Couldn't start that.";
+        return;
+      }
+      game = data.game;
+      render();
+    });
+
+    document.getElementById("opponent").addEventListener("change", (e) => {
+      opponent = e.target.value;
+      loadGame();
+    });
+
+    async function initAdminPicker() {
+      const res = await fetch("/api/deathroll/games");
+      if (!res.ok) return;
+      const data = await res.json();
+      const select = document.getElementById("opponent");
+      select.replaceChildren(...data.players.map((p) => {
+        const opt = document.createElement("option");
+        opt.value = p.username;
+        opt.textContent = p.username + (p.yourTurn ? " (your roll)" : "");
+        return opt;
+      }));
+      if (data.players.length) {
+        opponent = data.players[0].username;
+        select.value = opponent;
+      }
+      document.getElementById("admin-picker").hidden = false;
+    }
 
     fetch("/api/me")
       .then((r) => (r.ok ? r.json() : Promise.reject()))
-      .then((d) => {
+      .then(async (d) => {
         topNav.hidden = false;
-        adminDropdown.hidden = !d.isAdmin;
-        return fetch("/api/wheel");
-      })
-      .then((r) => (r.ok ? r.json() : Promise.reject()))
-      .then((state) => {
-        segments = state.segments;
-        drawWheel();
-        setLocked(state);
-        statusEl.textContent = state.canSpin ? "Give it a spin." : "Come back tomorrow.";
+        isAdmin = Boolean(d.isAdmin);
+        adminDropdown.hidden = !isAdmin;
+        if (isAdmin) await initAdminPicker();
+        await loadGame();
+        // the other player's roll arrives while you're sitting here
+        setInterval(() => { if (!rolling) loadGame(); }, 4000);
       })
       .catch(() => (window.location.href = "/"));
   </script>
