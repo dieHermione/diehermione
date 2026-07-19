@@ -72,9 +72,9 @@ app.post("/api/register", async (req, res) => {
   if (!pronouns) {
     return res.status(400).json({ error: "Pick your pronouns." });
   }
-  const role = canonical(req.body.role, ROLE_OPTIONS);
-  if (!role) {
-    return res.status(400).json({ error: "Pick domme or sub." });
+  const rank = canonical(req.body.rank, SIGNUP_RANKS);
+  if (!rank) {
+    return res.status(400).json({ error: "Pick visitor or citizen." });
   }
   const users = loadUsers();
   const key = username.toLowerCase();
@@ -86,7 +86,7 @@ app.post("/api/register", async (req, res) => {
     passwordHash: await bcrypt.hash(password, 10),
     createdAt: new Date().toISOString(),
     pronouns,
-    role,
+    rank,
     points: 0,
     dollars: 0,
   };
@@ -180,7 +180,11 @@ app.get("/dashboard", requireLogin, (req, res) => {
 
 // --- profiles: viewable by any logged-in user, editable by the owner or hermione ---
 const PRONOUN_OPTIONS = ["She/Her", "He/Him", "They/Them"];
-const ROLE_OPTIONS = ["Domme", "Sub"];
+// Rank replaces the old domme/sub role and the old Princess/User badge — one
+// value covers both. Princess is hermione's alone and isn't offered at signup.
+const RANK_OPTIONS = ["Visitor", "Citizen", "Princess"];
+const SIGNUP_RANKS = ["Visitor", "Citizen"];
+const LEGACY_RANKS = { domme: "Visitor", sub: "Citizen" };
 
 // tolerate legacy free-text values like "she/her" from before these were dropdowns
 function canonical(value, options) {
@@ -188,8 +192,10 @@ function canonical(value, options) {
   return options.find((o) => o.toLowerCase() === v) || "";
 }
 
-function rankFor(key) {
-  return key === "hermione" ? "Princess" : "User";
+function rankFor(user, key) {
+  if (key === "hermione") return "Princess";
+  const raw = String((user && (user.rank || user.role)) || "").trim();
+  return canonical(raw, RANK_OPTIONS) || LEGACY_RANKS[raw.toLowerCase()] || "";
 }
 
 function canEditProfile(req, key) {
@@ -205,11 +211,10 @@ app.get("/api/profile/:username", (req, res) => {
   res.json({
     profile: {
       username: user.username,
-      rank: rankFor(key),
+      rank: rankFor(user, key),
       icon: user.icon || "",
       bio: user.bio || "",
       pronouns: canonical(user.pronouns, PRONOUN_OPTIONS),
-      role: canonical(user.role, ROLE_OPTIONS),
       points: user.points || 0,
       dollars: user.dollars || 0,
       createdAt: user.createdAt,
@@ -244,17 +249,18 @@ app.put("/api/profile/:username", (req, res) => {
     }
     user.pronouns = value;
   }
-  // the domme/sub flag is set at registration; only hermione can change it afterwards
-  if (req.body.role !== undefined) {
+  // rank is picked at registration; only hermione can change it afterwards
+  if (req.body.rank !== undefined) {
     if (!isAdmin(req)) {
       return res.status(403).json({ error: "Only Hermione can change that." });
     }
-    const raw = String(req.body.role).trim();
-    const value = canonical(raw, ROLE_OPTIONS);
+    const raw = String(req.body.rank).trim();
+    const value = canonical(raw, RANK_OPTIONS);
     if (raw !== "" && !value) {
-      return res.status(400).json({ error: "Role must be domme or sub." });
+      return res.status(400).json({ error: "Rank must be visitor, citizen or princess." });
     }
-    user.role = value;
+    user.rank = value;
+    delete user.role; // retire the old field as accounts are touched
   }
   if (req.body.icon !== undefined) {
     const icon = String(req.body.icon);
@@ -527,6 +533,30 @@ app.post("/api/snake/food", (req, res) => {
     dollars: user.dollars,
     remaining: SNAKE_DAILY_CAP - user.snakeToday,
   });
+});
+
+// --- tithe: hand $5 to hermione ---
+const TITHE_DOLLARS = 5;
+
+app.post("/api/tithe", (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  const key = req.session.username.toLowerCase();
+  if (key === "hermione") {
+    return res.status(400).json({ error: "Hermione has no one to tithe to." });
+  }
+  const users = loadUsers();
+  const user = users[key];
+  const hermione = users["hermione"];
+  if (!user) return res.status(401).json({ error: "Not logged in." });
+  if (!hermione) return res.status(500).json({ error: "There is no one to tithe to." });
+  const balance = user.dollars || 0;
+  if (balance < TITHE_DOLLARS) {
+    return res.status(400).json({ error: "You need $" + TITHE_DOLLARS + " to tithe." });
+  }
+  user.dollars = balance - TITHE_DOLLARS;
+  hermione.dollars = (hermione.dollars || 0) + TITHE_DOLLARS;
+  saveUsers(users);
+  res.json({ ok: true, amount: TITHE_DOLLARS, dollars: user.dollars });
 });
 
 // --- notifications ---

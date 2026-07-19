@@ -44,7 +44,7 @@
       --button-text: #ffffff;
       --button-hover-bg: #edb6ca;
       --shadow: rgba(0, 0, 0, 0.45);
-      --input-border: #6e5a72;
+      --input-border: #FBC3D3;
       --input-bg: #2b2234;
       --input-text: #f8ebf4;
       --toggle-bg: rgba(41, 34, 49, 0.95);
@@ -162,27 +162,6 @@
     }
     .top-nav .dropdown-menu a {
       width: 100%;
-    }
-    .top-nav .theme-toggle {
-      grid-column: 3;
-      justify-self: end;
-      position: relative;
-      top: auto;
-      right: auto;
-      width: 2.8rem;
-      height: 1.45rem;
-      margin: 0;
-      flex-shrink: 0;
-      box-shadow: 0 4px 10px var(--shadow);
-    }
-    .top-nav .theme-toggle .thumb {
-      top: 0.12rem;
-      left: 0.12rem;
-      width: 1rem;
-      height: 1rem;
-    }
-    .top-nav .theme-toggle.is-dark .thumb {
-      left: calc(100% - 1rem - 0.12rem);
     }
     .card {
       background: var(--panel-bg);
@@ -377,6 +356,7 @@
   </style>
 </head>
 <body class="has-top-nav">
+    <button id="theme-toggle" class="theme-toggle" type="button" aria-pressed="false" aria-label="Toggle dark mode"><span class="thumb"></span></button>
   <nav id="top-nav" class="top-nav" hidden>
     <div class="nav-links">
       <a id="nav-dashboard" href="/dashboard">Dashboard</a>
@@ -391,7 +371,6 @@
         </div>
       </div>
     </div>
-    <button id="theme-toggle" class="theme-toggle" type="button" aria-pressed="false" aria-label="Toggle dark mode"><span class="thumb"></span></button>
   </nav>
   <h1 class="site-header"><span class="bow flip">꣑ৎ</span> Profile <span class="bow">꣑ৎ</span></h1>
   <main class="card">
@@ -402,9 +381,6 @@
       <p class="bio" id="p-bio"></p>
       <div class="details">
         <div class="detail"><span class="label">Pronouns</span><span class="value" id="p-pronouns">—</span></div>
-        <div class="detail"><span class="label">Role</span><span class="value" id="p-role">—</span></div>
-      </div>
-      <div class="details">
         <div class="detail stat"><span class="label">Points</span><span class="value" id="p-points">0</span></div>
         <div class="detail stat"><span class="label">Dollars</span><span class="value" id="p-dollars">$0</span></div>
       </div>
@@ -435,12 +411,13 @@
           <option value="They/Them">They/Them</option>
         </select>
       </div>
-      <div class="field" id="role-field" hidden>
-        <label for="f-role">Role</label>
-        <select id="f-role">
+      <div class="field" id="rank-field" hidden>
+        <label for="f-rank">Rank</label>
+        <select id="f-rank">
           <option value="">Not set</option>
-          <option value="Domme">Domme</option>
-          <option value="Sub">Sub</option>
+          <option value="Visitor">Visitor</option>
+          <option value="Citizen">Citizen</option>
+          <option value="Princess">Princess</option>
         </select>
       </div>
       <div class="form-actions">
@@ -452,22 +429,28 @@
   <script>
     const body = document.body;
     const toggle = document.getElementById("theme-toggle");
-    const savedTheme = localStorage.getItem("site-theme") || "light";
+    const storedTheme = localStorage.getItem("site-theme");
+    const systemDark = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
+    // no explicit choice yet? follow whatever the browser/OS is set to
+    const savedTheme = storedTheme || (systemDark && systemDark.matches ? "dark" : "light");
     const topNav = document.getElementById("top-nav");
     const adminDropdown = document.getElementById("nav-admin");
 
-    function applyTheme(theme) {
+    function applyTheme(theme, persist) {
       body.dataset.theme = theme;
       if (toggle) {
         toggle.classList.toggle("is-dark", theme === "dark");
         toggle.setAttribute("aria-pressed", String(theme === "dark"));
       }
-      localStorage.setItem("site-theme", theme);
+      if (persist) localStorage.setItem("site-theme", theme);
     }
 
     applyTheme(savedTheme);
+    systemDark?.addEventListener?.("change", (e) => {
+      if (!localStorage.getItem("site-theme")) applyTheme(e.matches ? "dark" : "light");
+    });
     toggle?.addEventListener("click", () => {
-      applyTheme(body.dataset.theme === "dark" ? "light" : "dark");
+      applyTheme(body.dataset.theme === "dark" ? "light" : "dark", true);
     });
 
     // --- profile logic ---
@@ -507,15 +490,14 @@
       slot.replaceChildren(avatarEl(profile));
       document.getElementById("p-username").textContent = profile.username;
       const badge = document.createElement("span");
-      const princess = profile.rank === "Princess";
-      badge.className = "badge " + (princess ? "princess" : "user");
-      badge.textContent = princess ? "Princess" : "User";
+      const rank = profile.rank || "";
+      badge.className = "badge " + (rank === "Princess" ? "princess" : "user");
+      badge.textContent = rank || "Unranked";
       document.getElementById("p-badge").replaceChildren(badge);
       const bio = document.getElementById("p-bio");
       bio.textContent = profile.bio || "No bio yet.";
       bio.classList.toggle("empty", !profile.bio);
       document.getElementById("p-pronouns").textContent = profile.pronouns || "—";
-      document.getElementById("p-role").textContent = profile.role || "—";
       document.getElementById("p-points").textContent = profile.points;
       document.getElementById("p-dollars").textContent = "$" + profile.dollars;
       const created = new Date(profile.createdAt);
@@ -545,8 +527,8 @@
         document.getElementById("form-error").style.display = "none";
         document.getElementById("f-bio").value = profile.bio;
         document.getElementById("f-pronouns").value = profile.pronouns;
-        document.getElementById("role-field").hidden = !me.isAdmin;
-        document.getElementById("f-role").value = profile.role;
+        document.getElementById("rank-field").hidden = !me.isAdmin;
+        document.getElementById("f-rank").value = profile.rank;
         document.getElementById("f-icon").value = "";
         document.getElementById("edit-avatar-slot").replaceChildren(avatarEl(profile));
       }
@@ -587,7 +569,7 @@
         bio: document.getElementById("f-bio").value,
         pronouns: document.getElementById("f-pronouns").value,
       };
-      if (me.isAdmin) bodyData.role = document.getElementById("f-role").value;
+      if (me.isAdmin) bodyData.rank = document.getElementById("f-rank").value;
       if (pendingIcon !== undefined) bodyData.icon = pendingIcon;
       const res = await fetch("/api/profile/" + encodeURIComponent(profileUser), {
         method: "PUT",

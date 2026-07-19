@@ -47,7 +47,7 @@
       --button-text: #ffffff;
       --button-hover-bg: #edb6ca;
       --shadow: rgba(0, 0, 0, 0.45);
-      --input-border: #6e5a72;
+      --input-border: #FBC3D3;
       --input-bg: #2b2234;
       --input-text: #f8ebf4;
       --active-color: #ffffff;
@@ -174,27 +174,6 @@
     }
     .top-nav .dropdown-menu a {
       width: 100%;
-    }
-    .top-nav .theme-toggle {
-      grid-column: 3;
-      justify-self: end;
-      position: relative;
-      top: auto;
-      right: auto;
-      width: 2.8rem;
-      height: 1.45rem;
-      margin: 0;
-      flex-shrink: 0;
-      box-shadow: 0 4px 10px var(--shadow);
-    }
-    .top-nav .theme-toggle .thumb {
-      top: 0.12rem;
-      left: 0.12rem;
-      width: 1rem;
-      height: 1rem;
-    }
-    .top-nav .theme-toggle.is-dark .thumb {
-      left: calc(100% - 1rem - 0.12rem);
     }
     .card {
       background: var(--panel-bg);
@@ -385,6 +364,7 @@
   </style>
 </head>
 <body class="has-top-nav">
+    <button id="theme-toggle" class="theme-toggle" type="button" aria-pressed="false" aria-label="Toggle dark mode"><span class="thumb"></span></button>
   <nav id="top-nav" class="top-nav" hidden>
     <div class="nav-links">
       <a id="nav-dashboard" href="/dashboard">Dashboard</a>
@@ -399,7 +379,6 @@
         </div>
       </div>
     </div>
-    <button id="theme-toggle" class="theme-toggle" type="button" aria-pressed="false" aria-label="Toggle dark mode"><span class="thumb"></span></button>
   </nav>
   <h1 class="site-header"><span class="bow flip">꣑ৎ</span> Dashboard <span class="bow">꣑ৎ</span></h1>
   <div class="dashboard-grid">
@@ -409,7 +388,7 @@
         <p id="dashboard-message">There is no text here yet.</p>
         <p class="checkin-notice" id="checkin-notice" hidden></p>
         <div class="dashboard-actions">
-          <button id="placeholder" type="button">placeholder</button>
+          <button id="tithe" type="button" hidden>Tithe $5</button>
         </div>
       </main>
       <section class="card">
@@ -429,7 +408,7 @@
       <p class="bio" id="pc-bio"></p>
       <div class="mini-details">
         <div class="mini-detail"><span class="label">Pronouns</span><span class="value" id="pc-pronouns">—</span></div>
-        <div class="mini-detail"><span class="label">Role</span><span class="value" id="pc-role">—</span></div>
+        <div class="mini-detail"><span class="label">Rank</span><span class="value" id="pc-rank">—</span></div>
         <div class="mini-detail"><span class="label">Points</span><span class="value" id="pc-points">0</span></div>
         <div class="mini-detail"><span class="label">Dollars</span><span class="value" id="pc-dollars">$0</span></div>
       </div>
@@ -440,7 +419,10 @@
   <script>
     const body = document.body;
     const toggle = document.getElementById("theme-toggle");
-    const savedTheme = localStorage.getItem("site-theme") || "light";
+    const storedTheme = localStorage.getItem("site-theme");
+    const systemDark = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
+    // no explicit choice yet? follow whatever the browser/OS is set to
+    const savedTheme = storedTheme || (systemDark && systemDark.matches ? "dark" : "light");
     const topNav = document.getElementById("top-nav");
     const navDashboard = document.getElementById("nav-dashboard");
     const navAdmin = document.getElementById("nav-admin");
@@ -448,19 +430,22 @@
     const navSnake = document.getElementById("nav-snake");
     const adminDropdown = document.getElementById("nav-admin");
 
-    function applyTheme(theme) {
+    function applyTheme(theme, persist) {
       body.dataset.theme = theme;
       if (toggle) {
         toggle.classList.toggle("is-dark", theme === "dark");
         toggle.setAttribute("aria-pressed", String(theme === "dark"));
       }
-      localStorage.setItem("site-theme", theme);
+      if (persist) localStorage.setItem("site-theme", theme);
     }
 
     applyTheme(savedTheme);
+    systemDark?.addEventListener?.("change", (e) => {
+      if (!localStorage.getItem("site-theme")) applyTheme(e.matches ? "dark" : "light");
+    });
     toggle?.addEventListener("click", () => {
       const nextTheme = body.dataset.theme === "dark" ? "light" : "dark";
-      applyTheme(nextTheme);
+      applyTheme(nextTheme, true);
     });
 
     function setActiveNav(path) {
@@ -502,6 +487,7 @@
         document.getElementById("dashboard-message").textContent = isHermione
           ? "mirror mirror on the wall."
           : "There is no text here yet.";
+        document.getElementById("tithe").hidden = isHermione;
       })
       .catch(() => (window.location.href = "/"));
 
@@ -568,7 +554,7 @@
       bio.textContent = p.bio || "No bio yet.";
       bio.classList.toggle("empty", !p.bio);
       document.getElementById("pc-pronouns").textContent = p.pronouns || "—";
-      document.getElementById("pc-role").textContent = p.role || "—";
+      document.getElementById("pc-rank").textContent = p.rank || "—";
       document.getElementById("pc-points").textContent = p.points;
       document.getElementById("pc-dollars").textContent = "$" + p.dollars;
       document.getElementById("pc-joined").textContent =
@@ -577,6 +563,17 @@
       document.getElementById("profile-card").hidden = false;
     }
     loadProfileCard();
+
+    document.getElementById("tithe").addEventListener("click", async () => {
+      const res = await fetch("/api/tithe", { method: "POST" });
+      const data = await res.json().catch(() => ({}));
+      const notice = document.getElementById("checkin-notice");
+      notice.textContent = res.ok
+        ? "Tithed $" + data.amount + " to Hermione. You have $" + data.dollars + " left."
+        : data.error || "That didn't work.";
+      notice.hidden = false;
+      if (res.ok) loadProfileCard();
+    });
 
     document.getElementById("pc-view").addEventListener("click", () => {
       window.location.href = "/profile";

@@ -40,12 +40,12 @@
       --heading-color: #ffffff;
       --text-color: #ffffff;
       --muted-color: #ffffff;
-      --table-border: #5a4257;
+      --table-border: #FBC3D3;
       --button-bg: #4a4a4a;
       --button-text: #ffffff;
       --button-hover-bg: #5f5f5f;
       --shadow: rgba(0, 0, 0, 0.45);
-      --input-border: #6e5a72;
+      --input-border: #FBC3D3;
       --input-bg: #d9d9d9;
       --input-text: #333333;
       --active-color: #ffffff;
@@ -141,6 +141,34 @@
       cursor: pointer;
     }
     .role-option:hover { border-color: var(--button-hover-bg); }
+    .role-option { position: relative; }
+    .role-option::after {
+      content: attr(data-tip);
+      position: absolute;
+      bottom: calc(100% + 0.55rem);
+      left: 50%;
+      transform: translateX(-50%);
+      width: 12.5rem;
+      padding: 0.55rem 0.7rem;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.97);
+      color: #FBC3D3;
+      box-shadow: 0 8px 24px var(--shadow);
+      font-size: 0.75rem;
+      font-weight: 600;
+      line-height: 1.35;
+      text-align: left;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity 0.15s ease;
+      z-index: 30;
+    }
+    .role-option:hover::after, .role-option:focus-visible::after {
+      opacity: 1;
+      visibility: visible;
+    }
+    body[data-theme="dark"] .role-option::after { color: #6f6f6f; }
     .role-option.selected {
       background: var(--button-bg);
       color: var(--button-text);
@@ -158,6 +186,8 @@
       cursor: pointer;
     }
     .submit:hover { background: var(--button-hover-bg); }
+    body[data-theme="dark"] .submit { background: #3a3a3a; }
+    body[data-theme="dark"] .submit:hover { background: #4d4d4d; }
     .error {
       display: none;
       background: var(--error-bg);
@@ -241,10 +271,10 @@
           <option value="He/Him">He/Him</option>
           <option value="They/Them">They/Them</option>
         </select>
-        <label>I am a…</label>
+        <label>Rank</label>
         <div class="role-toggle">
-          <button type="button" class="role-option" data-role="Domme">Domme</button>
-          <button type="button" class="role-option" data-role="Sub">Sub</button>
+          <button type="button" class="role-option" data-role="Visitor" data-tip="Just passing through. Browse the site and play the games, without signing up for anything more.">Visitor</button>
+          <button type="button" class="role-option" data-role="Citizen" data-tip="Here to stay. Citizens take on tasks set by Hermione and earn points and dollars for them.">Citizen</button>
         </div>
       </div>
       <button class="submit" id="submit" type="submit">Log in</button>
@@ -253,21 +283,27 @@
   <script>
     const body = document.body;
     const toggle = document.getElementById("theme-toggle");
-    const savedTheme = localStorage.getItem("site-theme") || "light";
+    const storedTheme = localStorage.getItem("site-theme");
+    const systemDark = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
+    // no explicit choice yet? follow whatever the browser/OS is set to
+    const savedTheme = storedTheme || (systemDark && systemDark.matches ? "dark" : "light");
 
-    function applyTheme(theme) {
+    function applyTheme(theme, persist) {
       body.dataset.theme = theme;
       if (toggle) {
         toggle.classList.toggle("is-dark", theme === "dark");
         toggle.setAttribute("aria-pressed", String(theme === "dark"));
       }
-      localStorage.setItem("site-theme", theme);
+      if (persist) localStorage.setItem("site-theme", theme);
     }
 
     applyTheme(savedTheme);
+    systemDark?.addEventListener?.("change", (e) => {
+      if (!localStorage.getItem("site-theme")) applyTheme(e.matches ? "dark" : "light");
+    });
     toggle?.addEventListener("click", () => {
       const nextTheme = body.dataset.theme === "dark" ? "light" : "dark";
-      applyTheme(nextTheme);
+      applyTheme(nextTheme, true);
     });
 
     let mode = "login";
@@ -309,7 +345,7 @@
       };
       if (mode === "register") {
         payload.pronouns = document.getElementById("pronouns").value;
-        payload.role = selectedRole;
+        payload.rank = selectedRole;
       }
       const body = JSON.stringify(payload);
       const res = await fetch("/api/" + mode, {

@@ -44,7 +44,7 @@
       --button-text: #ffffff;
       --button-hover-bg: #edb6ca;
       --shadow: rgba(0, 0, 0, 0.45);
-      --input-border: #6e5a72;
+      --input-border: #FBC3D3;
       --input-bg: #2b2234;
       --input-text: #f8ebf4;
       --toggle-bg: rgba(41, 34, 49, 0.95);
@@ -161,27 +161,6 @@
       display: flex;
     }
     .top-nav .dropdown-menu a { width: 100%; }
-    .top-nav .theme-toggle {
-      grid-column: 3;
-      justify-self: end;
-      position: relative;
-      top: auto;
-      right: auto;
-      width: 2.8rem;
-      height: 1.45rem;
-      margin: 0;
-      flex-shrink: 0;
-      box-shadow: 0 4px 10px var(--shadow);
-    }
-    .top-nav .theme-toggle .thumb {
-      top: 0.12rem;
-      left: 0.12rem;
-      width: 1rem;
-      height: 1rem;
-    }
-    .top-nav .theme-toggle.is-dark .thumb {
-      left: calc(100% - 1rem - 0.12rem);
-    }
     .card {
       background: var(--panel-bg);
       border-radius: 12px;
@@ -299,6 +278,7 @@
   </style>
 </head>
 <body class="has-top-nav">
+    <button id="theme-toggle" class="theme-toggle" type="button" aria-pressed="false" aria-label="Toggle dark mode"><span class="thumb"></span></button>
   <nav id="top-nav" class="top-nav" hidden>
     <div class="nav-links">
       <a id="nav-dashboard" href="/dashboard">Dashboard</a>
@@ -313,7 +293,6 @@
         </div>
       </div>
     </div>
-    <button id="theme-toggle" class="theme-toggle" type="button" aria-pressed="false" aria-label="Toggle dark mode"><span class="thumb"></span></button>
   </nav>
   <h1 class="site-header"><span class="bow flip">꣑ৎ</span> Tasks <span class="bow">꣑ৎ</span></h1>
 
@@ -331,22 +310,28 @@
   <script>
     const body = document.body;
     const toggle = document.getElementById("theme-toggle");
-    const savedTheme = localStorage.getItem("site-theme") || "light";
+    const storedTheme = localStorage.getItem("site-theme");
+    const systemDark = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
+    // no explicit choice yet? follow whatever the browser/OS is set to
+    const savedTheme = storedTheme || (systemDark && systemDark.matches ? "dark" : "light");
     const topNav = document.getElementById("top-nav");
     const adminDropdown = document.getElementById("nav-admin");
 
-    function applyTheme(theme) {
+    function applyTheme(theme, persist) {
       body.dataset.theme = theme;
       if (toggle) {
         toggle.classList.toggle("is-dark", theme === "dark");
         toggle.setAttribute("aria-pressed", String(theme === "dark"));
       }
-      localStorage.setItem("site-theme", theme);
+      if (persist) localStorage.setItem("site-theme", theme);
     }
 
     applyTheme(savedTheme);
+    systemDark?.addEventListener?.("change", (e) => {
+      if (!localStorage.getItem("site-theme")) applyTheme(e.matches ? "dark" : "light");
+    });
     toggle?.addEventListener("click", () => {
-      applyTheme(body.dataset.theme === "dark" ? "light" : "dark");
+      applyTheme(body.dataset.theme === "dark" ? "light" : "dark", true);
     });
 
     document.getElementById("nav-tasks").classList.add("active");
