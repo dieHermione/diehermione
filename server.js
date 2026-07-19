@@ -536,6 +536,73 @@ app.post("/api/snake/food", (req, res) => {
   });
 });
 
+// --- wheel: one spin a day for everyone except hermione ---
+// The server picks the winning wedge; the page only animates to it.
+const WHEEL_SEGMENTS = [
+  { label: "$1", dollars: 1, weight: 10 },
+  { label: "$2", dollars: 2, weight: 9 },
+  { label: "$3", dollars: 3, weight: 8 },
+  { label: "$5", dollars: 5, weight: 7 },
+  { label: "$8", dollars: 8, weight: 5 },
+  { label: "$10", dollars: 10, weight: 4 },
+  { label: "$15", dollars: 15, weight: 2 },
+  { label: "$25", dollars: 25, weight: 1 },
+];
+
+function pickSegment() {
+  const total = WHEEL_SEGMENTS.reduce((sum, s) => sum + s.weight, 0);
+  let roll = Math.random() * total;
+  for (let i = 0; i < WHEEL_SEGMENTS.length; i++) {
+    roll -= WHEEL_SEGMENTS[i].weight;
+    if (roll < 0) return i;
+  }
+  return WHEEL_SEGMENTS.length - 1;
+}
+
+function wheelState(user, key) {
+  const unlimited = key === "hermione";
+  return {
+    segments: WHEEL_SEGMENTS.map((s) => ({ label: s.label, dollars: s.dollars })),
+    unlimited,
+    spunToday: user.wheelDay === todayKey(),
+    canSpin: unlimited || user.wheelDay !== todayKey(),
+  };
+}
+
+app.get("/api/wheel", (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  const users = loadUsers();
+  const key = req.session.username.toLowerCase();
+  const user = users[key];
+  if (!user) return res.status(401).json({ error: "Not logged in." });
+  res.json(wheelState(user, key));
+});
+
+app.post("/api/wheel/spin", (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  const users = loadUsers();
+  const key = req.session.username.toLowerCase();
+  const user = users[key];
+  if (!user) return res.status(401).json({ error: "Not logged in." });
+  const unlimited = key === "hermione";
+  if (!unlimited && user.wheelDay === todayKey()) {
+    return res.status(429).json({ error: "You've already spun today." });
+  }
+  const index = pickSegment();
+  const prize = WHEEL_SEGMENTS[index];
+  if (!unlimited) user.wheelDay = todayKey();
+  user.dollars = (user.dollars || 0) + prize.dollars;
+  saveUsers(users);
+  res.json({
+    ok: true,
+    index,
+    label: prize.label,
+    won: prize.dollars,
+    dollars: user.dollars,
+    canSpin: unlimited,
+  });
+});
+
 // --- dailies: objectives that reset with the noon-Eastern day ---
 app.get("/api/dailies", (req, res) => {
   if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
@@ -554,6 +621,13 @@ app.get("/api/dailies", (req, res) => {
         detail: "Open the site once a day.",
         reward: "$" + DAILY_CHECKIN_DOLLARS,
         done: user.lastCheckIn === today,
+      },
+      {
+        id: "wheel",
+        label: "Spin the wheel",
+        detail: "One spin a day.",
+        reward: "up to $" + Math.max(...WHEEL_SEGMENTS.map((s) => s.dollars)),
+        done: key !== "hermione" && user.wheelDay === today,
       },
       {
         id: "snake",
@@ -699,6 +773,10 @@ app.get("/api/tasks", (req, res) => {
 
 app.get("/tasks", requireLogin, (req, res) => {
   res.sendFile(path.join(__dirname, "views", "tasks.html"));
+});
+
+app.get("/wheel", requireLogin, (req, res) => {
+  res.sendFile(path.join(__dirname, "views", "wheel.html"));
 });
 
 app.get("/writing", requireLogin, (req, res) => {
