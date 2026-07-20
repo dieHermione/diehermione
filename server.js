@@ -12,6 +12,7 @@ const USERS_FILE = path.join(process.env.DATA_DIR || __dirname, "users.json");
 const GAMES_FILE = path.join(process.env.DATA_DIR || __dirname, "games.json");
 const WRITING_FILE = path.join(process.env.DATA_DIR || __dirname, "writing.json");
 const DEATHROLL_FILE = path.join(process.env.DATA_DIR || __dirname, "deathroll.json");
+const MAIL_FILE = path.join(process.env.DATA_DIR || __dirname, "mail.json");
 
 // --- simple JSON-file user store (fine for testing; swap for a DB later) ---
 function loadUsers() {
@@ -909,6 +910,99 @@ app.post("/api/tithe", (req, res) => {
   res.json({ ok: true, amount: TITHE_DOLLARS, dollars: user.dollars });
 });
 
+// --- mail: threads between hermione and each player ---
+// Keyed by the non-hermione participant, same shape as the games.
+function loadMail() {
+  try {
+    return JSON.parse(fs.readFileSync(MAIL_FILE, "utf8"));
+  } catch {
+    return {};
+  }
+}
+function saveMail(mail) {
+  fs.writeFileSync(MAIL_FILE, JSON.stringify(mail, null, 2));
+}
+
+function mailKeyFor(req, withWhom) {
+  if (isAdmin(req)) {
+    const key = String(withWhom || "").toLowerCase();
+    return key && key !== "hermione" ? key : null;
+  }
+  return req.session.username.toLowerCase();
+}
+
+app.get("/api/mail", (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  const key = mailKeyFor(req, req.query.with);
+  const mail = loadMail();
+  const admin = isAdmin(req);
+
+  if (admin && !key) {
+    // no thread picked: list everyone hermione can write to
+    const users = loadUsers();
+    return res.json({
+      threads: Object.keys(users)
+        .filter((k) => k !== "hermione")
+        .map((k) => ({
+          username: users[k].username,
+          unread: (mail[k] || []).filter((m) => m.from === "player" && !m.readByHermione).length,
+        })),
+      messages: null,
+    });
+  }
+  if (!key) return res.status(400).json({ error: "Pick someone to write to." });
+
+  const thread = mail[key] || [];
+  // opening a thread marks the other side's messages read
+  let touched = false;
+  thread.forEach((m) => {
+    if (admin && m.from === "player" && !m.readByHermione) { m.readByHermione = true; touched = true; }
+    if (!admin && m.from === "hermione" && !m.readByPlayer) { m.readByPlayer = true; touched = true; }
+  });
+  if (touched) { mail[key] = thread; saveMail(mail); }
+
+  res.json({
+    with: admin ? key : "hermione",
+    messages: thread.map((m) => ({ from: m.from, text: m.text, at: m.at })),
+  });
+});
+
+app.post("/api/mail", (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  const key = mailKeyFor(req, req.body.with);
+  if (!key) return res.status(400).json({ error: "Pick someone to write to." });
+  const users = loadUsers();
+  if (!users[key]) return res.status(404).json({ error: "No such account." });
+
+  const text = String(req.body.text || "").trim();
+  if (!text) return res.status(400).json({ error: "Write something first." });
+  if (text.length > 2000) return res.status(400).json({ error: "Message must be 2000 characters or fewer." });
+
+  const admin = isAdmin(req);
+  const mail = loadMail();
+  const thread = mail[key] || [];
+  thread.push({
+    from: admin ? "hermione" : "player",
+    text,
+    at: new Date().toISOString(),
+    readByHermione: admin,
+    readByPlayer: !admin,
+  });
+  mail[key] = thread.slice(-200);
+  saveMail(mail);
+
+  // ping the recipient wherever they are
+  const recipientKey = admin ? key : "hermione";
+  const recipient = users[recipientKey];
+  if (recipient) {
+    const sender = admin ? "Hermione" : users[key].username;
+    pushNotification(recipient, "mail-" + key, "New message from " + sender + ".");
+    saveUsers(users);
+  }
+
+  res.json({ ok: true });
+});
+
 // --- notifications ---
 // Placeholder until real triggers exist: cleared notifications come back on the
 // next login, so the bell always has something to show after signing in.
@@ -933,9 +1027,22 @@ function seedNotifications(user) {
 app.get("/api/notifications", (req, res) => {
   if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
   const users = loadUsers();
-  const user = users[req.session.username.toLowerCase()];
+  const key = req.session.username.toLowerCase();
+  const user = users[key];
   if (!user) return res.status(401).json({ error: "Not logged in." });
-  res.json({ notifications: Array.isArray(user.notifications) ? user.notifications : [] });
+
+  // the bell already polls, so the mail badge rides along on the same request
+  const mail = loadMail();
+  const admin = isAdmin(req);
+  const mailUnread = admin
+    ? Object.values(mail).reduce(
+        (n, thread) => n + thread.filter((m) => m.from === "player" && !m.readByHermione).length, 0)
+    : (mail[key] || []).filter((m) => m.from === "hermione" && !m.readByPlayer).length;
+
+  res.json({
+    notifications: Array.isArray(user.notifications) ? user.notifications : [],
+    mailUnread,
+  });
 });
 
 app.delete("/api/notifications/:id", (req, res) => {

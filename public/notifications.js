@@ -72,6 +72,69 @@
       font-style: italic;
       text-align: center;
     }
+    .mail-panel {
+      position: absolute;
+      top: calc(100% + 0.45rem);
+      right: 0;
+      z-index: 20;
+      width: min(23rem, 82vw);
+      padding: 0.6rem;
+      background: var(--panel-bg);
+      border-radius: 12px;
+      box-shadow: 0 10px 30px var(--shadow);
+      display: none;
+      flex-direction: column;
+      gap: 0.5rem;
+      text-align: left;
+    }
+    .notif-wrap.open .mail-panel { display: flex; }
+    .mail-thread {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      max-height: 15rem;
+      overflow-y: auto;
+      padding-right: 0.15rem;
+    }
+    .mail-msg {
+      max-width: 85%;
+      padding: 0.45rem 0.65rem;
+      border-radius: 10px;
+      font-size: 0.82rem;
+      line-height: 1.35;
+      overflow-wrap: anywhere;
+      white-space: pre-wrap;
+    }
+    .mail-msg.mine { align-self: flex-end; background: var(--button-bg); color: var(--button-text); }
+    .mail-msg.theirs { align-self: flex-start; background: var(--notif-item-bg, rgba(251, 195, 211, 0.12)); color: var(--text-color); }
+    .mail-empty { color: var(--muted-color); font-size: 0.82rem; font-style: italic; text-align: center; padding: 0.75rem; }
+    .mail-compose { display: flex; gap: 0.4rem; align-items: flex-end; }
+    .mail-compose textarea {
+      flex: 1;
+      min-height: 2.3rem;
+      max-height: 6rem;
+      padding: 0.45rem 0.6rem;
+      border: 1px solid var(--input-border);
+      border-radius: 8px;
+      background: var(--input-bg);
+      color: var(--input-text);
+      font-family: inherit;
+      font-size: 0.82rem;
+      resize: vertical;
+    }
+    .mail-compose textarea:focus { outline: none; border-color: var(--button-hover-bg); }
+    .mail-send { padding: 0.45rem 0.8rem !important; border-radius: 8px !important; font-size: 0.8rem !important; }
+    .mail-picker {
+      width: 100%;
+      padding: 0.4rem 0.5rem;
+      border: 1px solid var(--input-border);
+      border-radius: 8px;
+      background: var(--input-bg);
+      color: var(--input-text);
+      font-family: inherit;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
     .notif-clear {
       width: 100%;
       font-size: 0.8rem !important;
@@ -79,6 +142,12 @@
       border-radius: 8px !important;
     }
   `;
+
+  const ENVELOPE = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+      stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <rect x="2" y="4" width="20" height="16" rx="2" />
+      <path d="m22 7-10 6L2 7" />
+    </svg>`;
 
   const BELL = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
       stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -121,7 +190,125 @@
       if (!wrap.contains(e.target)) wrap.classList.remove("open");
     });
 
-    return { wrap, panel };
+    // --- mail, sitting right beside the bell and built the same way ---
+    const mailWrap = document.createElement("div");
+    mailWrap.className = "notif-wrap";
+    const mailBtn = document.createElement("button");
+    mailBtn.type = "button";
+    mailBtn.className = "notif-btn";
+    mailBtn.setAttribute("aria-label", "Messages");
+    mailBtn.innerHTML = ENVELOPE + '<span class="notif-dot"></span>';
+    const mailPanel = document.createElement("div");
+    mailPanel.className = "mail-panel";
+    mailWrap.append(mailBtn, mailPanel);
+    wrap.after(mailWrap);
+
+    mailBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const opening = !mailWrap.classList.contains("open");
+      mailWrap.classList.toggle("open");
+      wrap.classList.remove("open");
+      if (opening) loadMail();
+    });
+    document.addEventListener("click", (e) => {
+      if (!mailWrap.contains(e.target)) mailWrap.classList.remove("open");
+    });
+
+    return { wrap, panel, mailWrap, mailPanel };
+  }
+
+  // --- mail ---
+  let mailUi = null;
+  let mailWith = null;      // hermione only: whose thread is open
+  let mailIsAdmin = false;
+
+  function renderMail(data) {
+    const panel = mailUi.mailPanel;
+    panel.replaceChildren();
+
+    // hermione picks a correspondent first
+    if (mailIsAdmin) {
+      const picker = document.createElement("select");
+      picker.className = "mail-picker";
+      (mailThreads || []).forEach((t) => {
+        const opt = document.createElement("option");
+        opt.value = t.username;
+        opt.textContent = t.username + (t.unread ? " (" + t.unread + " new)" : "");
+        picker.append(opt);
+      });
+      if (mailWith) picker.value = mailWith;
+      picker.addEventListener("click", (e) => e.stopPropagation());
+      picker.addEventListener("change", (e) => { mailWith = e.target.value; loadMail(); });
+      panel.append(picker);
+    }
+
+    const thread = document.createElement("div");
+    thread.className = "mail-thread";
+    const messages = (data && data.messages) || [];
+    if (!messages.length) {
+      const empty = document.createElement("div");
+      empty.className = "mail-empty";
+      empty.textContent = "No messages yet.";
+      thread.append(empty);
+    } else {
+      messages.forEach((m) => {
+        const bubble = document.createElement("div");
+        const mine = mailIsAdmin ? m.from === "hermione" : m.from === "player";
+        bubble.className = "mail-msg " + (mine ? "mine" : "theirs");
+        bubble.textContent = m.text;
+        thread.append(bubble);
+      });
+    }
+    panel.append(thread);
+
+    const compose = document.createElement("div");
+    compose.className = "mail-compose";
+    const box = document.createElement("textarea");
+    box.placeholder = "Write a message…";
+    box.addEventListener("click", (e) => e.stopPropagation());
+    const send = document.createElement("button");
+    send.type = "button";
+    send.className = "mail-send";
+    send.textContent = "Send";
+    const submit = async (e) => {
+      e.stopPropagation();
+      const text = box.value.trim();
+      if (!text) return;
+      const body = { text };
+      if (mailIsAdmin) body.with = mailWith;
+      const res = await fetch("/api/mail", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (res.ok) { box.value = ""; loadMail(); }
+    };
+    send.addEventListener("click", submit);
+    box.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submit(e); }
+    });
+    compose.append(box, send);
+    panel.append(compose);
+
+    thread.scrollTop = thread.scrollHeight;
+  }
+
+  let mailThreads = null;
+
+  async function loadMail() {
+    if (!mailUi) return;
+    const url = "/api/mail" + (mailIsAdmin && mailWith ? "?with=" + encodeURIComponent(mailWith) : "");
+    const res = await fetch(url);
+    if (!res.ok) return;
+    const data = await res.json();
+    if (data.threads) {
+      mailThreads = data.threads;
+      if (!mailWith && mailThreads.length) {
+        mailWith = mailThreads[0].username;
+        return loadMail();            // now that we have someone, fetch the thread
+      }
+    }
+    renderMail(data);
   }
 
   function render(ui, notifications) {
@@ -243,10 +430,11 @@
             );
           }
         }
-        const sig = signature(list);
-        const isNew = seen !== null && sig !== seen && list.length > 0;
+        const sig = signature(list) + "|mail:" + (d.mailUnread || 0);
+        const isNew = seen !== null && sig !== seen && (list.length > 0 || d.mailUnread > 0);
         seen = sig;
         render(ui, list);
+        if (ui.mailWrap) ui.mailWrap.classList.toggle("has-unread", (d.mailUnread || 0) > 0);
         if (isNew && !silent) playMeow();
       })
       .catch(() => {});
@@ -255,6 +443,11 @@
   function init() {
     const ui = build();
     if (!ui) return;
+    mailUi = ui;
+    fetch("/api/me")
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((d) => { mailIsAdmin = Boolean(d.isAdmin); })
+      .catch(() => {});
     refresh(ui, { silent: true }).then(() => {
       setInterval(() => refresh(ui), 15000);
     });
