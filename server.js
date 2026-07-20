@@ -217,7 +217,7 @@ app.get("/api/profile/:username", (req, res) => {
       icon: user.icon || "",
       bio: user.bio || "",
       pronouns: canonical(user.pronouns, PRONOUN_OPTIONS),
-      points: user.points || 0,
+      points: key === "hermione" ? null : user.points || 0,   // hermione doesn't keep points
       dollars: user.dollars || 0,
       createdAt: user.createdAt,
       canEdit: canEditProfile(req, key),
@@ -286,7 +286,7 @@ app.get("/api/users", (req, res) => {
     users: Object.values(users).map((u) => ({
       username: u.username,
       createdAt: u.createdAt,
-      points: u.points || 0,
+      points: u.username.toLowerCase() === "hermione" ? null : u.points || 0,
       flagged: !!u.flagged,
     })),
   });
@@ -296,7 +296,7 @@ app.get("/api/leaderboard", (req, res) => {
   if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
   const users = loadUsers();
   const board = Object.values(users)
-    .filter((u) => u.flagged)
+    .filter((u) => u.flagged && u.username.toLowerCase() !== "hermione")
     .map((u) => ({ username: u.username, points: u.points || 0 }))
     .sort((a, b) => b.points - a.points || a.username.localeCompare(b.username));
   res.json({ users: board });
@@ -308,6 +308,9 @@ app.post("/api/users/:username/points", (req, res) => {
   const amount = Number(req.body.amount);
   if (!Number.isInteger(amount)) {
     return res.status(400).json({ error: "Amount must be a whole number." });
+  }
+  if (req.params.username.toLowerCase() === "hermione") {
+    return res.status(400).json({ error: "Hermione doesn't collect points." });
   }
   const users = loadUsers();
   const key = req.params.username.toLowerCase();
@@ -730,7 +733,9 @@ app.post("/api/wheel/spin", (req, res) => {
   }
   const index = pickSegment();
   const prize = WHEEL_SEGMENTS[index];
-  if (!unlimited) user.wheelDay = todayKey();
+  // hermione still records the day so the daily objective completes; it just
+  // doesn't gate her next spin
+  user.wheelDay = todayKey();
   user.dollars = (user.dollars || 0) + prize.dollars;
   saveUsers(users);
   res.json({
@@ -767,7 +772,7 @@ app.get("/api/dailies", (req, res) => {
         label: "Spin the wheel",
         detail: "One spin a day.",
         reward: "up to $" + Math.max(...WHEEL_SEGMENTS.map((s) => s.dollars)),
-        done: key !== "hermione" && user.wheelDay === today,
+        done: user.wheelDay === today,
       },
       {
         id: "snake",

@@ -239,6 +239,7 @@
       gap: 0.75rem;
       margin-bottom: 1.5rem;
     }
+    .detail[hidden] { display: none; }
     .detail {
       background: transparent;
       border: 1px solid var(--table-border);
@@ -510,7 +511,14 @@
       bio.textContent = profile.bio || "No bio yet.";
       bio.classList.toggle("empty", !profile.bio);
       document.getElementById("p-pronouns").textContent = profile.pronouns || "—";
-      document.getElementById("p-points").textContent = profile.points;
+      // hermione keeps no points, so the server sends null and the tile goes away
+      const pointsTile = document.getElementById("p-points").closest(".detail");
+      if (profile.points === null) {
+        pointsTile.hidden = true;
+      } else {
+        pointsTile.hidden = false;
+        document.getElementById("p-points").textContent = profile.points;
+      }
       document.getElementById("p-dollars").textContent = "$" + profile.dollars;
       const created = new Date(profile.createdAt);
       document.getElementById("p-joined").textContent =

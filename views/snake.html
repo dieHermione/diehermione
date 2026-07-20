@@ -334,7 +334,7 @@
     const statusEl = document.getElementById("status");
 
     const heartColor = () => getComputedStyle(document.body).getPropertyValue("--heart-color").trim() || "#FBC3D3";
-    const TELEPORT_CHANCE = 0.9;   // odds the food bolts when you get adjacent
+    let teleportChance = 0.9;      // odds the food bolts when you get adjacent
     const TELEPORT_MIN_DISTANCE = 8;  // where fleeing food lands
     const SPAWN_MIN_DISTANCE = 4;     // where fresh food lands after being eaten
 
@@ -455,7 +455,7 @@
         placeFood();
       } else {
         snake.pop();
-        if (distance(head, food) <= 1 && Math.random() < TELEPORT_CHANCE) {
+        if (distance(head, food) <= 1 && Math.random() < teleportChance) {
           fleeFrom(head);
         }
       }
@@ -525,10 +525,13 @@
       window.location.href = "/dashboard";
     });
 
-    // require a login like the rest of the site
-    fetch("/api/me").then((r) => {
-      if (!r.ok) window.location.href = "/";
-    });
+    // require a login like the rest of the site; hermione's food is less skittish
+    fetch("/api/me")
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((d) => {
+        if (d.isAdmin) teleportChance = 0.5;
+      })
+      .catch(() => (window.location.href = "/"));
 
     drawBoard();
   </script>

@@ -207,6 +207,7 @@
     .dashboard-actions button {
       margin: 0;
     }
+    .mini-detail[hidden] { display: none; }
     .daily-list { display: flex; flex-direction: column; gap: 0.6rem; text-align: left; }
     .daily {
       display: flex;
@@ -621,7 +622,13 @@
       bio.classList.toggle("empty", !p.bio);
       document.getElementById("pc-pronouns").textContent = p.pronouns || "—";
       document.getElementById("pc-rank").textContent = p.rank || "—";
-      document.getElementById("pc-points").textContent = p.points;
+      const pcPoints = document.getElementById("pc-points").closest(".mini-detail");
+      if (p.points === null) {
+        pcPoints.hidden = true;
+      } else {
+        pcPoints.hidden = false;
+        document.getElementById("pc-points").textContent = p.points;
+      }
       document.getElementById("pc-dollars").textContent = "$" + p.dollars;
       document.getElementById("pc-joined").textContent =
         "Joined " + new Date(p.createdAt).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" }) +
