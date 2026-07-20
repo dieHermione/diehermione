@@ -125,7 +125,8 @@ app.post("/api/register", async (req, res) => {
     pushNotification(
       hermione,
       "signup-" + key,
-      username + " has asked to join. Approve or turn them away in the admin panel."
+      username + " has asked to join. Approve or turn them away in the admin panel.",
+      "/admin"
     );
   }
   saveUsers(users);
@@ -425,7 +426,8 @@ app.post("/api/users/:username/points", (req, res) => {
     "points-" + Date.now(),
     (amount > 0 ? "Hermione gave you " + amount : "Hermione took " + Math.abs(amount)) +
       (Math.abs(amount) === 1 ? " point" : " points") +
-      ". You now have " + users[key].points + "."
+      ". You now have " + users[key].points + ".",
+    "/profile"
   );
   saveUsers(users);
   res.json({ ok: true, points: users[key].points });
@@ -784,7 +786,8 @@ app.post("/api/deathroll/roll", (req, res) => {
       "deathroll-" + key,
       result === 1
         ? roller + " rolled a 1, you win the deathroll!"
-        : roller + " rolled " + result + ". Your roll is 1d" + result + "."
+        : roller + " rolled " + result + ". Your roll is 1d" + result + ".",
+      "/deathroll"
     );
     saveUsers(users);
   }
@@ -1074,12 +1077,15 @@ app.put("/api/site", (req, res) => {
 // Placeholder until real triggers exist: cleared notifications come back on the
 // next login, so the bell always has something to show after signing in.
 // One id per subject, so repeat events refresh a single line instead of piling up.
-function pushNotification(user, id, text) {
+// `href` is optional: when a notification is about something you can act on,
+// it carries the page to act on it, and the bell renders a button. Stored on
+// the record rather than derived from the id in the browser, so the server
+// stays the one place that knows where a thing lives.
+function pushNotification(user, id, text, href) {
   const list = Array.isArray(user.notifications) ? user.notifications : [];
-  user.notifications = [
-    { id, text, createdAt: new Date().toISOString() },
-    ...list.filter((n) => n.id !== id),
-  ].slice(0, 20);
+  const note = { id, text, createdAt: new Date().toISOString() };
+  if (href) note.href = href;
+  user.notifications = [note, ...list.filter((n) => n.id !== id)].slice(0, 20);
 }
 
 // removes a notification once whatever it was asking about is dealt with
@@ -1094,7 +1100,12 @@ function seedNotifications(user) {
   const today = todayKey();
   if (user.dailiesNotifiedOn === today) return;
   user.dailiesNotifiedOn = today;
-  pushNotification(user, "dailies-" + today, "You have new daily objectives to complete. :3");
+  pushNotification(
+    user,
+    "dailies-" + today,
+    "You have new daily objectives to complete. :3",
+    "/dashboard"
+  );
 }
 
 app.get("/api/notifications", (req, res) => {

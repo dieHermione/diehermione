@@ -53,7 +53,20 @@
       font-weight: 500;
       line-height: 1.35;
     }
-    .notif-item .text { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+    .notif-item .body { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 0.4rem; }
+    .notif-item .text { overflow-wrap: anywhere; }
+    .notif-go {
+      display: inline-block;
+      padding: 0.22rem 0.7rem;
+      border-radius: 999px;
+      background: var(--button-bg);
+      color: var(--button-text);
+      font-family: inherit;
+      font-size: 0.74rem;
+      font-weight: 700;
+      text-decoration: none;
+    }
+    .notif-go:hover { background: var(--button-hover-bg); }
     .notif-item .dismiss {
       flex-shrink: 0;
       padding: 0 !important;
@@ -82,6 +95,16 @@
       border-radius: 8px !important;
     }
   `;
+
+  // Wording per destination, so the button says where it goes rather than a
+  // generic "Go". Anything not listed falls back to "Go there".
+  const GO_LABELS = {
+    "/admin": "Review",
+    "/deathroll": "Play",
+    "/dashboard": "Open dailies",
+    "/profile": "View profile",
+    "/tasks": "Open tasks",
+  };
 
   const BELL = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
       stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -140,14 +163,31 @@
       return;
     }
 
+    const here = window.location.pathname.replace(/\/+$/, "") || "/";
+
     for (const note of notifications) {
       const item = document.createElement("div");
       item.className = "notif-item";
 
+      const body = document.createElement("div");
+      body.className = "body";
+
       const text = document.createElement("span");
       text.className = "text";
       text.textContent = note.text || "";
-      item.append(text);
+      body.append(text);
+
+      // Notifications about something you can act on carry the page to act on
+      // it. No point offering to send you where you already are.
+      if (note.href && note.href !== here) {
+        const go = document.createElement("a");
+        go.className = "notif-go";
+        go.href = note.href;
+        go.textContent = GO_LABELS[note.href] || "Go there";
+        body.append(go);
+      }
+
+      item.append(body);
 
       const dismiss = document.createElement("button");
       dismiss.type = "button";
