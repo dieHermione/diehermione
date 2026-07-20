@@ -433,7 +433,6 @@
       <div class="dropdown" id="games-dropdown">
         <button class="dropdown-toggle" type="button">Games ▾</button>
         <div class="dropdown-menu">
-          <a id="nav-chess" href="/chess">Chess</a>
           <a id="nav-snake" href="/snake">Snake</a>
           <a id="nav-writing" href="/writing">Writing</a>
           <a id="nav-wheel" href="/wheel">Wheel</a>
@@ -442,7 +441,6 @@
       </div>
     </div>
   </nav>
-  <h1 class="site-header"><span class="bow flip">꣑ৎ</span> Dashboard <span class="bow">꣑ৎ</span></h1>
   <div class="dashboard-grid">
     <aside class="card dailies-card" id="dailies-card">
         <h2>Dailies</h2>
@@ -451,7 +449,7 @@
       </aside>
     <div class="dashboard-col">
       <main class="card">
-        <h1 id="welcome"><span class="bow flip">꣑ৎ</span> Welcome! <span class="bow">꣑ৎ</span></h1>
+        <h1 id="welcome">Welcome!</h1>
         <p id="dashboard-message">There is no text here yet.</p>
         <p class="checkin-notice" id="checkin-notice" hidden></p>
         <div class="dashboard-actions">
@@ -543,14 +541,8 @@
           notice.hidden = false;
         }
         const isHermione = Boolean(d.isAdmin ?? (d.username && d.username.toLowerCase() === "hermione"));
-        const left = document.createElement("span");
-        left.className = "bow flip";
-        left.textContent = "꣑ৎ";
-        const right = document.createElement("span");
-        right.className = "bow";
-        right.textContent = "꣑ৎ";
-        const greeting = isHermione ? " Welcome, Princess! " : " Welcome, " + d.username + "! ";
-        document.getElementById("welcome").replaceChildren(left, document.createTextNode(greeting), right);
+        const greeting = isHermione ? "Welcome, Princess!" : "Welcome, " + d.username + "!";
+        document.getElementById("welcome").textContent = greeting;
         document.getElementById("dashboard-message").textContent = isHermione
           ? "mirror mirror on the wall."
           : "There is no text here yet.";

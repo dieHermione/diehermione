@@ -857,8 +857,6 @@ app.post("/api/tithe", (req, res) => {
 // --- notifications ---
 // Placeholder until real triggers exist: cleared notifications come back on the
 // next login, so the bell always has something to show after signing in.
-const PLACEHOLDER_NOTIFICATION_ID = "placeholder";
-
 // One id per subject, so repeat events refresh a single line instead of piling up.
 function pushNotification(user, id, text) {
   const list = Array.isArray(user.notifications) ? user.notifications : [];
@@ -868,16 +866,13 @@ function pushNotification(user, id, text) {
   ].slice(0, 20);
 }
 
+// Nudge about the day's objectives once per noon-Eastern day, so it lands when
+// the dailies actually reset rather than on every sign-in.
 function seedNotifications(user) {
-  const list = Array.isArray(user.notifications) ? user.notifications : [];
-  if (!list.some((n) => n.id === PLACEHOLDER_NOTIFICATION_ID)) {
-    list.unshift({
-      id: PLACEHOLDER_NOTIFICATION_ID,
-      text: "Welcome back! Notifications will show up here.",
-      createdAt: new Date().toISOString(),
-    });
-  }
-  user.notifications = list;
+  const today = todayKey();
+  if (user.dailiesNotifiedOn === today) return;
+  user.dailiesNotifiedOn = today;
+  pushNotification(user, "dailies-" + today, "You have new daily objectives to complete. :3");
 }
 
 app.get("/api/notifications", (req, res) => {

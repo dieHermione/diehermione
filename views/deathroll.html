@@ -293,7 +293,6 @@
       <div class="dropdown" id="games-dropdown">
         <button class="dropdown-toggle" type="button">Games ▾</button>
         <div class="dropdown-menu">
-          <a id="nav-chess" href="/chess">Chess</a>
           <a id="nav-snake" href="/snake">Snake</a>
           <a id="nav-writing" href="/writing">Writing</a>
           <a id="nav-wheel" href="/wheel">Wheel</a>
@@ -302,7 +301,6 @@
       </div>
     </div>
   </nav>
-  <h1 class="site-header"><span class="bow flip">꣑ৎ</span> Deathroll <span class="bow">꣑ৎ</span></h1>
 
   <main class="card">
     <div class="picker" id="admin-picker" hidden>
@@ -385,7 +383,7 @@
         who.textContent = h.by === "hermione" ? "Hermione" : (game.opponent || "You");
         const roll = document.createElement("span");
         roll.className = "roll";
-        roll.textContent = "d" + h.sides + " → " + h.result + (h.result === 1 ? "  ☠" : "");
+        roll.textContent = "d" + h.sides + " → " + h.result ;
         row.append(who, roll);
         logEl.append(row);
       });
