@@ -134,6 +134,96 @@
       color: var(--text-color);
       font-variant-numeric: tabular-nums;
     }
+    /* --- assigning tasks --- */
+    .assign {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+      gap: 0.75rem 0.9rem;
+      align-items: end;
+      text-align: left;
+      margin-bottom: 1.5rem;
+    }
+    .assign .field { display: flex; flex-direction: column; gap: 0.25rem; min-width: 0; }
+    .assign .field[hidden] { display: none; }
+    .assign .field.narrow { max-width: 9rem; }
+    .assign label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--table-header-color);
+    }
+    .assign input, .assign select, .assign textarea {
+      width: 100%;
+      padding: 0.45rem 0.6rem;
+      border: 1px solid var(--input-border);
+      border-radius: 8px;
+      background: var(--input-bg);
+      color: var(--input-text);
+      font-family: inherit;
+      font-size: 0.88rem;
+      resize: vertical;
+    }
+    .assign input:focus, .assign select:focus, .assign textarea:focus {
+      outline: none;
+      border-color: var(--focus-color);
+    }
+    .assign-actions {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+    }
+    .assign-actions .chip { flex: 0 0 auto; padding: 0.5rem 1.4rem; }
+    .assign-msg { font-size: 0.8rem; color: var(--muted-color); }
+    .assign-msg.bad { color: #d4607f; }
+    .sub-head {
+      font-family: "Cause", sans-serif;
+      font-size: 0.95rem;
+      color: var(--heading-color);
+      margin: 0 0 0.75rem;
+      text-align: center;
+    }
+    .task-admin-list { display: flex; flex-direction: column; gap: 0.6rem; text-align: left; }
+    .task-admin {
+      border: 1px solid var(--table-border);
+      border-radius: 10px;
+      padding: 0.7rem 0.85rem;
+    }
+    .task-admin.done { border-color: var(--button-bg); background: var(--notif-item-bg, rgba(251, 195, 211, 0.1)); }
+    .task-admin .top {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 0.5rem;
+      margin-bottom: 0.2rem;
+    }
+    .task-admin .who { font-weight: 700; font-size: 0.9rem; }
+    .task-admin .kind { color: var(--muted-color); font-size: 0.76rem; }
+    .task-admin .state {
+      margin-left: auto;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--muted-color);
+    }
+    .task-admin.done .state { color: var(--heading-color); }
+    .task-admin .submission {
+      margin-top: 0.5rem;
+      padding: 0.6rem 0.7rem;
+      border-radius: 8px;
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
+      font-size: 0.84rem;
+      line-height: 1.5;
+      white-space: pre-wrap;      /* keep her paragraphing */
+      overflow-wrap: anywhere;
+      max-height: 14rem;
+      overflow-y: auto;
+    }
+    .task-admin .row-actions { display: flex; gap: 0.4rem; margin-top: 0.55rem; }
+
     /* --- signup approvals (note: .pending above is the delete countdown) --- */
     #approvals-card[hidden] { display: none; }
     .approval-list { display: flex; flex-direction: column; gap: 0.75rem; }
@@ -246,10 +336,199 @@
     </section>
     <section class="card">
       <h2>Tasks</h2>
-      <p class="panel-empty">Assigning tasks to accounts will live here.</p>
+
+      <form class="assign" id="assign">
+        <div class="field">
+          <label for="t-who">Who</label>
+          <select id="t-who"></select>
+        </div>
+
+        <div class="field">
+          <label for="t-type">Type</label>
+          <select id="t-type">
+            <option value="essay">Essay</option>
+            <option value="repetition">Write it out</option>
+          </select>
+        </div>
+
+        <!-- essay fields -->
+        <div class="field" id="f-topic">
+          <label for="t-topic">Topic</label>
+          <input id="t-topic" maxlength="200" placeholder="What she is to write about" />
+        </div>
+        <div class="field narrow" id="f-words">
+          <label for="t-words">Minimum words</label>
+          <input id="t-words" type="number" min="1" step="1" value="250" />
+        </div>
+
+        <!-- repetition fields -->
+        <div class="field" id="f-text" hidden>
+          <label for="t-text">Text to write</label>
+          <textarea id="t-text" rows="2" maxlength="2000" placeholder="The line she must copy out"></textarea>
+        </div>
+        <div class="field narrow" id="f-reps" hidden>
+          <label for="t-reps">Repetitions</label>
+          <input id="t-reps" type="number" min="1" step="1" value="10" />
+        </div>
+
+        <div class="field">
+          <label for="t-detail">Note (optional)</label>
+          <input id="t-detail" maxlength="200" placeholder="Anything else she should know" />
+        </div>
+        <div class="field narrow">
+          <label for="t-points">Reward</label>
+          <input id="t-points" type="number" min="0" step="1" value="0" />
+        </div>
+
+        <div class="assign-actions">
+          <button type="submit" class="chip">Assign</button>
+          <span class="assign-msg" id="assign-msg"></span>
+        </div>
+      </form>
+
+      <h3 class="sub-head">Assigned</h3>
+      <p class="panel-empty" id="tasks-empty">Nothing assigned yet.</p>
+      <div class="task-admin-list" id="task-list"></div>
     </section>
   </div>
   <script>
+
+    // --- assigning tasks ---
+    let accounts = [];   // approved, non-hermione, filled by loadAccounts
+
+    function refreshAssignForm() {
+      const essay = document.getElementById("t-type").value === "essay";
+      document.getElementById("f-topic").hidden = !essay;
+      document.getElementById("f-words").hidden = !essay;
+      document.getElementById("f-text").hidden = essay;
+      document.getElementById("f-reps").hidden = essay;
+    }
+    document.getElementById("t-type").addEventListener("change", refreshAssignForm);
+    refreshAssignForm();
+
+    function fillWhoOptions() {
+      const who = document.getElementById("t-who");
+      const previous = who.value;
+      who.replaceChildren();
+      for (const name of accounts) {
+        const opt = document.createElement("option");
+        opt.value = name;
+        opt.textContent = name;
+        who.append(opt);
+      }
+      if (previous && accounts.includes(previous)) who.value = previous;
+      document.getElementById("assign").hidden = accounts.length === 0;
+    }
+
+    document.getElementById("assign").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const msg = document.getElementById("assign-msg");
+      msg.textContent = "";
+      msg.classList.remove("bad");
+
+      const type = document.getElementById("t-type").value;
+      const body = {
+        type,
+        detail: document.getElementById("t-detail").value,
+        points: Number(document.getElementById("t-points").value || 0),
+      };
+      if (type === "essay") {
+        body.topic = document.getElementById("t-topic").value;
+        body.minWords = Number(document.getElementById("t-words").value);
+      } else {
+        body.text = document.getElementById("t-text").value;
+        body.reps = Number(document.getElementById("t-reps").value);
+      }
+
+      const who = document.getElementById("t-who").value;
+      const res = await fetch("/api/users/" + encodeURIComponent(who) + "/tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        msg.textContent = data.error || "That didn't go through.";
+        msg.classList.add("bad");
+        return;
+      }
+      msg.textContent = "Assigned to " + who + ".";
+      document.getElementById("t-topic").value = "";
+      document.getElementById("t-text").value = "";
+      document.getElementById("t-detail").value = "";
+      loadAllTasks();
+    });
+
+    async function loadAllTasks() {
+      const list = document.getElementById("task-list");
+      list.replaceChildren();
+      const rows = [];
+
+      for (const name of accounts) {
+        const res = await fetch("/api/users/" + encodeURIComponent(name) + "/tasks");
+        if (!res.ok) continue;
+        const data = await res.json();
+        for (const t of data.tasks || []) rows.push({ name, task: t });
+      }
+
+      // newest first, so what she just set is at the top
+      rows.sort((a, b) => String(b.task.assignedAt || "").localeCompare(String(a.task.assignedAt || "")));
+      document.getElementById("tasks-empty").hidden = rows.length > 0;
+
+      for (const { name, task } of rows) {
+        const item = document.createElement("div");
+        item.className = "task-admin" + (task.status === "done" ? " done" : "");
+
+        const top = document.createElement("div");
+        top.className = "top";
+        const who = document.createElement("span");
+        who.className = "who";
+        who.textContent = name;
+        const kind = document.createElement("span");
+        kind.className = "kind";
+        kind.textContent = task.type === "essay"
+          ? task.title + " · " + task.minWords + " words"
+          : task.title + " · " + task.repsDone + " of " + task.reps;
+        const state = document.createElement("span");
+        state.className = "state";
+        state.textContent = task.status === "done" ? "Done" : "Active";
+        top.append(who, kind, state);
+        item.append(top);
+
+        if (task.detail) {
+          const d = document.createElement("div");
+          d.className = "kind";
+          d.textContent = task.detail;
+          item.append(d);
+        }
+
+        // her essay, verbatim; textContent because she wrote it
+        if (task.type === "essay" && task.submission) {
+          const sub = document.createElement("div");
+          sub.className = "submission";
+          sub.textContent = task.submission;
+          item.append(sub);
+        }
+
+        const actions = document.createElement("div");
+        actions.className = "row-actions";
+        const del = document.createElement("button");
+        del.type = "button";
+        del.className = "chip danger";
+        del.textContent = "Remove";
+        del.addEventListener("click", async () => {
+          const r = await fetch(
+            "/api/users/" + encodeURIComponent(name) + "/tasks/" + encodeURIComponent(task.id),
+            { method: "DELETE" }
+          );
+          if (r.ok) loadAllTasks();
+        });
+        actions.append(del);
+        item.append(actions);
+
+        list.append(item);
+      }
+    }
 
     // --- signup approvals ---
     function renderApprovals(waiting) {
@@ -323,6 +602,12 @@
           const waiting = d.users.filter((u) => u.pending);
           const approved = d.users.filter((u) => !u.pending);
           renderApprovals(waiting);
+
+          accounts = approved
+            .map((u) => u.username)
+            .filter((n) => n.toLowerCase() !== "hermione");
+          fillWhoOptions();
+          loadAllTasks();
 
           document.getElementById("count").textContent =
             approved.length + " registered account" + (approved.length === 1 ? "" : "s");

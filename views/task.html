@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Task - angeldom.me</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cause:wght@400..700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/site.css" />
+  <script src="/me.js"></script>
+  <style>
+    .card {
+      background: var(--panel-bg);
+      border-radius: 12px;
+      box-shadow: 0 10px 40px var(--shadow);
+      width: min(100%, 820px);
+      padding: 1.75rem 2rem;
+      color: var(--text-color);
+    }
+    h1 {
+      font-family: "Cause", sans-serif;
+      font-size: 1.3rem;
+      color: var(--heading-color);
+      margin-bottom: 0.3rem;
+    }
+    .sub { color: var(--muted-color); font-size: 0.85rem; margin-bottom: 1.25rem; }
+    .sub .reward {
+      display: inline-block;
+      margin-left: 0.4rem;
+      padding: 0.1rem 0.55rem;
+      border-radius: 999px;
+      background: var(--button-bg);
+      color: var(--button-text);
+      font-size: 0.72rem;
+      font-weight: 700;
+    }
+
+    /* --- shared progress bar --- */
+    .meter { margin-bottom: 1rem; }
+    .meter .row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      font-size: 0.82rem;
+      margin-bottom: 0.35rem;
+    }
+    .meter .count { font-weight: 700; font-variant-numeric: tabular-nums; }
+    .meter .goal { color: var(--muted-color); }
+    .bar {
+      height: 8px;
+      border-radius: 999px;
+      background: var(--table-border);
+      overflow: hidden;
+    }
+    .bar span {
+      display: block;
+      height: 100%;
+      width: 0;
+      background: var(--button-bg);
+      transition: width 0.2s ease;
+    }
+    .bar.met span { background: var(--button-hover-bg); }
+
+    /* --- essay --- */
+    .paper {
+      width: 100%;
+      min-height: 22rem;
+      padding: 1.1rem 1.2rem;
+      border: 1px solid var(--input-border);
+      border-radius: 10px;
+      background: var(--input-bg);
+      color: var(--input-text);
+      font-family: inherit;   /* textareas default to a monospace UI font */
+      font-size: 1rem;
+      line-height: 1.7;
+      resize: vertical;
+    }
+    .paper:focus { outline: none; border-color: var(--button-hover-bg); }
+
+    /* --- repetition drill --- */
+    .target {
+      font-size: 1.15rem;
+      line-height: 1.9;
+      padding: 1.1rem 1.2rem;
+      border: 1px solid var(--input-border);
+      border-radius: 10px;
+      background: var(--input-bg);
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      margin-bottom: 1rem;
+      color: var(--muted-color);
+    }
+    .target .done { color: var(--text-color); }
+    .target .cursor {
+      background: var(--button-bg);
+      color: var(--button-text);
+      border-radius: 2px;
+    }
+    .target.wrong { animation: shake 0.16s linear; }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-4px); }
+      75% { transform: translateX(4px); }
+    }
+
+    .status { font-size: 0.9rem; margin-bottom: 1rem; min-height: 1.3rem; }
+    .status.win { color: var(--heading-color); font-weight: 700; }
+    .error { color: var(--error-color); font-size: 0.85rem; margin-bottom: 0.75rem; }
+    .error[hidden] { display: none; }
+
+    .actions { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; }
+    .actions button, .actions a {
+      padding: 0.6rem 1.2rem;
+      border: none;
+      border-radius: 8px;
+      background: var(--button-bg);
+      color: var(--button-text);
+      font-family: inherit;
+      font-size: 0.92rem;
+      font-weight: 700;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .actions button:hover:not(:disabled), .actions a:hover { background: var(--button-hover-bg); }
+    .actions button:disabled { opacity: 0.55; cursor: default; }
+    .actions .ghost {
+      background: transparent;
+      color: var(--heading-color);
+      box-shadow: inset 0 0 0 1.5px var(--button-bg);
+    }
+    .actions .ghost:hover { background: var(--button-bg); color: var(--button-text); }
+
+    .done-note {
+      padding: 0.85rem 1rem;
+      border-radius: 10px;
+      border: 1px solid var(--button-bg);
+      background: var(--notif-item-bg, rgba(251, 195, 211, 0.12));
+      font-size: 0.9rem;
+      margin-bottom: 1rem;
+    }
+    .done-note[hidden] { display: none; }
+  </style>
+</head>
+<body class="has-top-nav">
+  <main class="card" id="card" hidden>
+    <h1 id="title">Task</h1>
+    <p class="sub" id="sub"></p>
+
+    <div class="done-note" id="done-note" hidden></div>
+
+    <!-- essay -->
+    <section id="essay-view" hidden>
+      <div class="meter">
+        <div class="row">
+          <span class="count" id="wc">0 words</span>
+          <span class="goal" id="goal"></span>
+        </div>
+        <div class="bar" id="bar"><span id="fill"></span></div>
+      </div>
+      <textarea class="paper" id="paper" placeholder="Write here." aria-label="Your essay"></textarea>
+      <p class="error" id="essay-error" hidden></p>
+      <div class="actions" style="margin-top: 1rem;">
+        <button type="button" id="submit">Hand it in</button>
+        <a href="/tasks" class="ghost">Back to tasks</a>
+      </div>
+    </section>
+
+    <!-- repetition -->
+    <section id="rep-view" hidden>
+      <div class="meter">
+        <div class="row">
+          <span class="count" id="rep-count">0 of 0</span>
+          <span class="goal">repetitions</span>
+        </div>
+        <div class="bar" id="rep-bar"><span id="rep-fill"></span></div>
+      </div>
+      <div class="target" id="target"></div>
+      <p class="status" id="rep-status">Start typing.</p>
+      <p class="error" id="rep-error" hidden></p>
+      <div class="actions">
+        <button type="button" id="restart" class="ghost">Start this line again</button>
+        <a href="/tasks" class="ghost">Back to tasks</a>
+      </div>
+    </section>
+
+    <p class="sub" id="missing" hidden>That task no longer exists. <a href="/tasks">Back to tasks</a>.</p>
+  </main>
+
+  <script>
+    const taskId = new URLSearchParams(window.location.search).get("id");
+    let task = null;
+
+    const el = (id) => document.getElementById(id);
+
+    function setMeter(barId, fillId, current, goal) {
+      const pct = goal > 0 ? Math.min(100, (current / goal) * 100) : 0;
+      el(fillId).style.width = pct + "%";
+      el(barId).classList.toggle("met", current >= goal);
+    }
+
+    /* --- essay ------------------------------------------------------- */
+    // The browser count is only for the meter; the server counts again on
+    // submit and is the one that decides.
+    function countWords(text) {
+      return text.trim().split(/\s+/).filter(Boolean).length;
+    }
+
+    function refreshEssay() {
+      const words = countWords(el("paper").value);
+      el("wc").textContent = words + (words === 1 ? " word" : " words");
+      setMeter("bar", "fill", words, task.minWords);
+      el("submit").disabled = words < task.minWords || task.status === "done";
+    }
+
+    function setUpEssay() {
+      el("essay-view").hidden = false;
+      el("goal").textContent = "of " + task.minWords + " needed";
+      el("paper").value = task.submission || "";
+      el("paper").addEventListener("input", refreshEssay);
+
+      el("submit").addEventListener("click", async () => {
+        const err = el("essay-error");
+        err.hidden = true;
+        el("submit").disabled = true;
+        const res = await fetch("/api/tasks/" + encodeURIComponent(task.id) + "/essay", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ submission: el("paper").value }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok) {
+          task = data.task;
+          showDone("Handed in, " + data.words + " words.");
+          refreshEssay();
+        } else {
+          err.textContent = data.error || "That didn't go through.";
+          err.hidden = false;
+          el("submit").disabled = false;
+        }
+      });
+
+      refreshEssay();
+    }
+
+    /* --- repetition -------------------------------------------------- */
+    let typed = 0;
+    let locked = false;
+
+    function renderTarget() {
+      const t = el("target");
+      const done = task.text.slice(0, typed);
+      const next = task.text.slice(typed, typed + 1);
+      const rest = task.text.slice(typed + 1);
+      t.replaceChildren();
+      const d = document.createElement("span");
+      d.className = "done";
+      d.textContent = done;
+      const c = document.createElement("span");
+      c.className = "cursor";
+      c.textContent = next;
+      t.append(d, c, document.createTextNode(rest));
+    }
+
+    function refreshReps() {
+      el("rep-count").textContent = task.repsDone + " of " + task.reps;
+      setMeter("rep-bar", "rep-fill", task.repsDone, task.reps);
+    }
+
+    async function finishRep() {
+      locked = true;
+      const res = await fetch("/api/tasks/" + encodeURIComponent(task.id) + "/rep", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: task.text }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        el("rep-error").textContent = data.error || "That didn't go through.";
+        el("rep-error").hidden = false;
+        locked = false;
+        return;
+      }
+      task = data.task;
+      refreshReps();
+      if (task.status === "done") {
+        showDone("All " + task.reps + " done.");
+        el("rep-status").textContent = "Finished.";
+        el("rep-status").classList.add("win");
+        return;
+      }
+      typed = 0;
+      locked = false;
+      renderTarget();
+      el("rep-status").textContent = "Again. " + (task.reps - task.repsDone) + " to go.";
+    }
+
+    function setUpRepetition() {
+      el("rep-view").hidden = false;
+      refreshReps();
+      renderTarget();
+      if (task.status === "done") {
+        el("rep-status").textContent = "Finished.";
+        el("rep-status").classList.add("win");
+        locked = true;
+      }
+
+      el("restart").addEventListener("click", () => {
+        if (task.status === "done") return;
+        typed = 0;
+        renderTarget();
+        el("rep-status").textContent = "Start typing.";
+      });
+
+      // Same rules as the Writing game: no backspace, no pasting.
+      document.addEventListener("keydown", (e) => {
+        if (locked || task.status === "done") return;
+        if (e.metaKey || e.ctrlKey || e.altKey) return;
+        if (e.key === "Backspace") { e.preventDefault(); return; }
+
+        let key = e.key;
+        if (key === "Enter") key = "\n";
+        if (key.length !== 1 && key !== "\n") return;
+        e.preventDefault();
+
+        const t = el("target");
+        if (key === task.text[typed]) {
+          typed++;
+          t.classList.remove("wrong");
+          renderTarget();
+          if (typed === task.text.length) finishRep();
+        } else {
+          t.classList.remove("wrong");
+          void t.offsetWidth;      // reflow so the shake replays
+          t.classList.add("wrong");
+        }
+      });
+
+      ["paste", "drop"].forEach((evt) =>
+        document.addEventListener(evt, (e) => e.preventDefault())
+      );
+    }
+
+    /* --- shared ------------------------------------------------------ */
+    function showDone(message) {
+      const note = el("done-note");
+      note.textContent = message + (task.points ? " " + task.points + " points awarded." : "");
+      note.hidden = false;
+    }
+
+    function render() {
+      el("card").hidden = false;
+      if (!task) {
+        el("missing").hidden = false;
+        el("title").textContent = "Task";
+        return;
+      }
+      el("title").textContent = task.title;
+      const bits = [];
+      if (task.type === "essay") bits.push("Essay, at least " + task.minWords + " words");
+      else bits.push("Write it out " + task.reps + (task.reps === 1 ? " time" : " times"));
+      if (task.detail) bits.push(task.detail);
+      el("sub").textContent = bits.join(" · ");
+      if (task.points) {
+        const tag = document.createElement("span");
+        tag.className = "reward";
+        tag.textContent = task.points + " pts";
+        el("sub").append(tag);
+      }
+
+      if (task.status === "done") {
+        showDone(task.type === "essay" ? "Handed in." : "Finished.");
+      }
+
+      if (task.type === "essay") setUpEssay();
+      else setUpRepetition();
+    }
+
+    window.siteMe()
+      .then(() => fetch("/api/tasks"))
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((d) => {
+        task = (d.tasks || []).find((t) => t.id === taskId) || null;
+        render();
+      })
+      .catch(() => (window.location.href = "/"));
+  </script>
+  <script src="/nav.js" defer></script>
+  <script src="/notifications.js" defer></script>
+</body>
+</html>

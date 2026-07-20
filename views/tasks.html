@@ -88,6 +88,22 @@
     }
     .tag.assigned { background: var(--button-bg); color: var(--button-text); }
     .tag.auto { background: var(--table-border); color: var(--muted-color); }
+    .tag.kind {
+      background: var(--notif-item-bg, rgba(251, 195, 211, 0.15));
+      color: var(--text-color);
+    }
+    .task .open {
+      flex-shrink: 0;
+      align-self: center;
+      padding: 0.42rem 1rem;
+      border-radius: 999px;
+      background: var(--button-bg);
+      color: var(--button-text);
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-decoration: none;
+    }
+    .task .open:hover { background: var(--button-hover-bg); }
     .tag.reward {
       background: transparent;
       border: 1px solid var(--button-bg);
@@ -123,8 +139,6 @@
   </section>
 
   <script>
-
-
     function tag(text, className) {
       const el = document.createElement("span");
       el.className = "tag " + className;
@@ -165,10 +179,24 @@
           ? tag("Automatic", "auto")
           : tag("Set by Hermione", "assigned")
       );
+      if (task.type === "essay") meta.append(tag(task.minWords + " words", "kind"));
+      if (task.type === "repetition") {
+        meta.append(tag(task.repsDone + " of " + task.reps, "kind"));
+      }
       if (task.points) meta.append(tag(task.points + " pts", "reward"));
       bodyEl.append(meta);
 
       row.append(bodyEl);
+
+      // anything with a doing-surface gets a way in
+      if (task.type === "essay" || task.type === "repetition") {
+        const go = document.createElement("a");
+        go.className = "open";
+        go.href = "/task?id=" + encodeURIComponent(task.id);
+        go.textContent = task.status === "done" ? "Review" : "Open";
+        row.append(go);
+      }
+
       return row;
     }
 

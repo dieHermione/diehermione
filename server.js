@@ -1143,13 +1143,216 @@ app.post("/api/notifications/clear", (req, res) => {
 
 // --- tasks: assigned by hermione or granted automatically. Read-only for now;
 // the assignment and auto-award flows come later.
+// --- tasks Hermione sets ---
+//
+// Stored on the user record as `tasks`, so a task travels with its owner and
+// there is no join to do. Two kinds so far:
+//
+//   essay      { topic, minWords }        -> written on /task, submission kept
+//   repetition { text, reps }             -> typed on /task, reps counted
+//
+// Shared keys: id, type, status ("active" | "done"), points, assignedAt,
+// completedAt. `source` marks them apart from the automatic dailies.
+const TASK_TOPIC_MAX = 200;
+const TASK_TEXT_MAX = 2000;
+const ESSAY_MAX = 50000;
+const TASK_MAX_WORDS = 100000;
+const TASK_MAX_REPS = 500;
+
+function countWords(text) {
+  return String(text || "").trim().split(/\s+/).filter(Boolean).length;
+}
+
+function ownTasks(user) {
+  return Array.isArray(user.tasks) ? user.tasks : [];
+}
+
+// what the assignee is allowed to see: never another person's business, and
+// the essay they wrote comes back so they can reread it
+function taskForPlayer(t) {
+  return {
+    id: t.id,
+    type: t.type,
+    title: t.title,
+    detail: t.detail || "",
+    source: t.source || "hermione",
+    status: t.status,
+    points: t.points || 0,
+    assignedAt: t.assignedAt,
+    completedAt: t.completedAt || null,
+    minWords: t.minWords || 0,
+    text: t.text || "",
+    reps: t.reps || 0,
+    repsDone: t.repsDone || 0,
+    submission: t.submission || "",
+  };
+}
+
 app.get("/api/tasks", (req, res) => {
   if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
   const users = loadUsers();
   const key = req.session.username.toLowerCase();
   const user = users[key];
   if (!user) return res.status(401).json({ error: "Not logged in." });
-  res.json({ tasks: Array.isArray(user.tasks) ? user.tasks : [] });
+  res.json({ tasks: ownTasks(user).map(taskForPlayer) });
+});
+
+// Hermione assigns a task
+app.post("/api/users/:username/tasks", (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });
+
+  const users = loadUsers();
+  const key = req.params.username.toLowerCase();
+  const user = users[key];
+  if (!user) return res.status(404).json({ error: "No such account." });
+  if (key === "hermione") return res.status(400).json({ error: "Hermione sets her own agenda." });
+  if (isPending(user)) return res.status(400).json({ error: "Approve that account first." });
+
+  const type = String(req.body.type || "");
+  if (type !== "essay" && type !== "repetition") {
+    return res.status(400).json({ error: "Pick a task type." });
+  }
+  const points = Number(req.body.points || 0);
+  if (!Number.isInteger(points) || points < 0) {
+    return res.status(400).json({ error: "Reward must be a whole number, zero or more." });
+  }
+
+  const task = {
+    id: "task-" + Date.now(),
+    type,
+    source: "hermione",
+    status: "active",
+    points,
+    assignedAt: new Date().toISOString(),
+    completedAt: null,
+    detail: String(req.body.detail || "").trim().slice(0, TASK_TOPIC_MAX),
+  };
+
+  if (type === "essay") {
+    const topic = String(req.body.topic || "").trim();
+    if (!topic) return res.status(400).json({ error: "Give the essay a topic." });
+    if (topic.length > TASK_TOPIC_MAX) {
+      return res.status(400).json({ error: "Topic must be " + TASK_TOPIC_MAX + " characters or fewer." });
+    }
+    const minWords = Number(req.body.minWords);
+    if (!Number.isInteger(minWords) || minWords < 1 || minWords > TASK_MAX_WORDS) {
+      return res.status(400).json({ error: "Set a word count between 1 and " + TASK_MAX_WORDS + "." });
+    }
+    task.title = topic;
+    task.minWords = minWords;
+    task.submission = "";
+  } else {
+    const text = String(req.body.text || "").trim();
+    if (!text) return res.status(400).json({ error: "Give her something to write." });
+    if (text.length > TASK_TEXT_MAX) {
+      return res.status(400).json({ error: "Text must be " + TASK_TEXT_MAX + " characters or fewer." });
+    }
+    const reps = Number(req.body.reps);
+    if (!Number.isInteger(reps) || reps < 1 || reps > TASK_MAX_REPS) {
+      return res.status(400).json({ error: "Set a repetition count between 1 and " + TASK_MAX_REPS + "." });
+    }
+    task.title = "Write it out " + reps + (reps === 1 ? " time" : " times");
+    task.text = text;
+    task.reps = reps;
+    task.repsDone = 0;
+  }
+
+  user.tasks = [...ownTasks(user), task];
+  pushNotification(
+    user,
+    task.id,
+    "Hermione has set you a task: " + task.title + ".",
+    "/tasks"
+  );
+  saveUsers(users);
+  res.json({ ok: true, task: taskForPlayer(task) });
+});
+
+// Hermione removes one
+app.delete("/api/users/:username/tasks/:id", (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });
+  const users = loadUsers();
+  const key = req.params.username.toLowerCase();
+  const user = users[key];
+  if (!user) return res.status(404).json({ error: "No such account." });
+  const before = ownTasks(user).length;
+  user.tasks = ownTasks(user).filter((t) => t.id !== req.params.id);
+  if (user.tasks.length === before) return res.status(404).json({ error: "No such task." });
+  dropNotification(user, req.params.id);
+  saveUsers(users);
+  res.json({ ok: true });
+});
+
+// Hermione reads someone's tasks, submissions included
+app.get("/api/users/:username/tasks", (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });
+  const users = loadUsers();
+  const user = users[req.params.username.toLowerCase()];
+  if (!user) return res.status(404).json({ error: "No such account." });
+  res.json({ tasks: ownTasks(user).map(taskForPlayer) });
+});
+
+// awards the reward once, when a task first reaches done
+function completeTask(user, task) {
+  if (task.status === "done") return;
+  task.status = "done";
+  task.completedAt = new Date().toISOString();
+  if (task.points) user.points = (user.points || 0) + task.points;
+}
+
+// submit an essay: the word count is checked here, not in the browser
+app.post("/api/tasks/:id/essay", (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  const users = loadUsers();
+  const user = users[req.session.username.toLowerCase()];
+  if (!user) return res.status(401).json({ error: "Not logged in." });
+  const task = ownTasks(user).find((t) => t.id === req.params.id);
+  if (!task || task.type !== "essay") return res.status(404).json({ error: "No such task." });
+
+  const submission = String(req.body.submission || "");
+  if (submission.length > ESSAY_MAX) {
+    return res.status(400).json({ error: "That is longer than this box can hold." });
+  }
+  const words = countWords(submission);
+  if (words < task.minWords) {
+    return res.status(400).json({
+      error: "You need " + task.minWords + " words. You have " + words + ".",
+      words,
+    });
+  }
+  task.submission = submission;
+  completeTask(user, task);
+  saveUsers(users);
+  res.json({ ok: true, words, task: taskForPlayer(task), points: user.points || 0 });
+});
+
+// record one finished repetition. The typed text is sent back and must match,
+// which is a light check rather than a real one: the same honest-boundary
+// posture as snake, since the client is refereeing the typing.
+app.post("/api/tasks/:id/rep", (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  const users = loadUsers();
+  const user = users[req.session.username.toLowerCase()];
+  if (!user) return res.status(401).json({ error: "Not logged in." });
+  const task = ownTasks(user).find((t) => t.id === req.params.id);
+  if (!task || task.type !== "repetition") return res.status(404).json({ error: "No such task." });
+  if (task.status === "done") return res.json({ ok: true, task: taskForPlayer(task) });
+
+  if (String(req.body.text || "") !== task.text) {
+    return res.status(400).json({ error: "That is not what she asked for." });
+  }
+  task.repsDone = Math.min(task.reps, (task.repsDone || 0) + 1);
+  if (task.repsDone >= task.reps) completeTask(user, task);
+  saveUsers(users);
+  res.json({ ok: true, task: taskForPlayer(task), points: user.points || 0 });
+});
+
+// one page for doing a task; it branches on the task's type
+app.get("/task", requireLogin, (req, res) => {
+  res.sendFile(path.join(__dirname, "views", "task.html"));
 });
 
 app.get("/tasks", requireLogin, (req, res) => {

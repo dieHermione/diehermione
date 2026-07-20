@@ -37,6 +37,7 @@ Node 18+ required (the start script uses `--env-file-if-exists`). Dependencies:
 | `public/notifications.js` | Shared: injects the notification bell into the nav |
 | `public/ranks.js` | Shared: the rank legend modal |
 | `public/pieces/` | Chess piece SVGs |
+| `views/task.html` | Doing one task: the essay surface or the repetition drill |
 | `views/*.html` | Every logged-in page: profile, admin, tasks, guide, tech, games |
 
 `public/` is served statically, so anything in it is reachable without a
@@ -82,7 +83,24 @@ local testing can't touch production data and a deploy can't overwrite it.
 
 Tasks, the signup `intro`, the pending `status`, and all per-day bookkeeping
 (`lastCheckIn`, `wheelDay`, `snakeDay`, `snakeToday`) live on the user record,
-not in separate files.
+not in separate files. A task travelling with its owner means there is no join
+to do, and it is also the authorisation: you can only ever address a task in
+your own list.
+
+## Tasks
+
+Hermione assigns tasks from the admin panel. Two kinds so far:
+
+- **Essay**: a topic and a minimum word count. The assignee writes on `/task`,
+  which shows a live word count and a progress bar to the minimum. The count is
+  re-checked server-side on submit, and the text is kept so hermione can read it.
+- **Write it out**: a line of text and a repetition count, typed with the same
+  rules as the Writing game: no backspace, no pasting. Each finished repetition
+  is posted to the server, which counts them.
+
+Both can carry a points reward, awarded once, when the task first reaches done.
+The repetition count is client-refereed like Snake, so the server checks the
+submitted text matches and caps at the assigned count.
 
 Fields are read defensively (`user.points || 0`) because records predate most
 of them. Adding a field needs no migration; removing one means tolerating stale
@@ -147,8 +165,8 @@ Chess is currently hidden from the nav but still fully wired up.
 
 ## Pages
 
-`/` · `/dashboard` · `/profile` · `/tasks` · `/snake` · `/wheel` · `/deathroll` ·
-`/writing` · `/chess` · `/guide` · `/tech` · `/admin` (hermione only)
+`/` · `/dashboard` · `/profile` · `/tasks` · `/task?id=` · `/snake` · `/wheel` ·
+`/deathroll` · `/writing` · `/chess` · `/guide` · `/tech` · `/admin` (hermione only)
 
 ## API
 
@@ -176,6 +194,10 @@ Everything under `/api` returns JSON and answers `401` when signed out.
 | `/api/notifications` | GET · DELETE · POST | List, dismiss one, clear all |
 | `/api/site` | GET · PUT | Dashboard copy; PUT admin only |
 | `/api/tasks` | GET | The signed-in user's task list |
+| `/api/tasks/:id/essay` | POST | Hand in an essay; the word count is checked server-side |
+| `/api/tasks/:id/rep` | POST | Record one finished repetition |
+| `/api/users/:username/tasks` | GET · POST | Read or assign someone's tasks, admin only |
+| `/api/users/:username/tasks/:id` | DELETE | Unassign a task, admin only |
 
 ## Known limits
 
