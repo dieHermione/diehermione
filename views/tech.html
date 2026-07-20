@@ -103,7 +103,7 @@
 
     <h2 id="shape">Shape of the thing</h2>
     <p>A single Express server (<code>server.js</code>, roughly 1,200 lines) serving static HTML pages and a JSON API. No database, no build step, no framework, no bundler. Data lives in JSON files on disk. Each page is a self-contained HTML file with its own inline <code>&lt;style&gt;</code> and <code>&lt;script&gt;</code>.</p>
-    <p>That means you can edit any page and reload — nothing to compile. It also means duplication: the nav markup, the theme system and the CSS variable block are copied into every page. Changes to those must be applied everywhere, which is usually done with a small script rather than by hand.</p>
+    <p>That means you can edit any page and reload — nothing to compile. What each page still owns is its own layout, its own logic and its own page-specific variables. The parts every page shares — the nav, the theme, the base CSS variables — live in <code>public/</code> and are pulled in, not copied.</p>
     <div class="note"><strong>Node 18+</strong> is required (the start script uses <code>--env-file-if-exists</code>). Dependencies: <code>express</code>, <code>express-session</code>, <code>bcryptjs</code>, <code>chess.js</code>.</div>
 
     <h2 id="layout">File layout</h2>
@@ -112,6 +112,9 @@
       <tr><td><code>server.js</code></td><td>Everything server-side: routes, storage helpers, game rules</td></tr>
       <tr><td><code>public/index.html</code></td><td>Sign-in and registration. The only page without the nav</td></tr>
       <tr><td><code>public/dashboard.html</code></td><td>Dailies, welcome, leaderboard, profile card</td></tr>
+      <tr><td><code>public/site.css</code></td><td>Shared: theme variables, base layout, nav and theme-toggle styles</td></tr>
+      <tr><td><code>public/me.js</code></td><td>Shared: single-flight <code>/api/me</code>, exposed as <code>window.siteMe()</code></td></tr>
+      <tr><td><code>public/nav.js</code></td><td>Shared: injects the nav bar and the theme toggle</td></tr>
       <tr><td><code>public/notifications.js</code></td><td>Shared: injects the bell <em>and</em> the mail button into any nav it finds</td></tr>
       <tr><td><code>public/ranks.js</code></td><td>Shared: the rank legend modal</td></tr>
       <tr><td><code>public/pieces/</code></td><td>Chess piece SVGs (Cburnett set, CC BY-SA)</td></tr>
@@ -173,11 +176,15 @@
 
     <h2 id="frontend">Front-end conventions</h2>
     <h3>Theming</h3>
-    <p>Every page declares the same CSS variables twice: once in <code>:root</code> for light, once in <code>body[data-theme="dark"]</code> for dark. Components reference variables, never literals — a hardcoded colour is a bug waiting for the next palette change, and the greyscale conversion had to hunt down a dozen of them.</p>
+    <p>The CSS variables are declared once, in <code>site.css</code>: <code>:root</code> for light, <code>body[data-theme="dark"]</code> for dark. Components reference variables, never literals — a hardcoded colour is a bug waiting for the next palette change, and the greyscale conversion had to hunt down a dozen of them.</p>
+    <p>Page-specific variables (<code>--board-*</code>, <code>--wedge-*</code>, <code>--picker-*</code>, <code>--heart-color</code>) still live on the page that uses them. Because <code>site.css</code> is linked before a page's own <code>&lt;style&gt;</code>, a page can still override anything shared at equal specificity.</p>
     <p>Theme selection is deliberately three-state: no stored preference means <em>follow the system</em> and keep following it; clicking the toggle stores a choice that wins from then on. <code>applyTheme(theme, persist)</code> only writes to <code>localStorage</code> when <code>persist</code> is true — page load must never persist, or the site stops tracking the system.</p>
 
     <h3>Shared scripts</h3>
-    <p><code>notifications.js</code> and <code>ranks.js</code> inject their own styles and markup into whatever page includes them, rather than each page carrying copies. <code>notifications.js</code> finds <code>.top-nav .nav-links</code> and appends the bell and envelope; it polls every 15 seconds and rides that one request for both notification content and the mail unread count.</p>
+    <p><code>nav.js</code>, <code>notifications.js</code> and <code>ranks.js</code> inject their own styles and markup into whatever page includes them, rather than each page carrying copies.</p>
+    <p><code>nav.js</code> builds the nav and the theme toggle. It only injects the nav on pages whose <code>&lt;body&gt;</code> carries <code>has-top-nav</code> — that gate is what keeps the login page nav-free and stops it running the signed-in redirect. Adding a nav item is one line in its <code>NAV_LINKS</code> or <code>GAMES</code> array.</p>
+    <p><code>notifications.js</code> finds <code>.top-nav .nav-links</code> and appends the bell and envelope; it polls every 15 seconds and rides that one request for both notification content and the mail unread count. It must load <em>after</em> <code>nav.js</code>, or there is no nav to append to. Both are <code>defer</code>, and defer scripts run in document order, so the tag order is the whole mechanism.</p>
+    <div class="note"><strong>One <code>/api/me</code> per page.</strong> <code>me.js</code> exposes <code>window.siteMe()</code>, a promise fetched once and shared. The page, the nav and the bell all want the same identity, but the server reports the daily check-in exactly once — so independent callers raced and the notice vanished at random. Never call <code>/api/me</code> directly; use <code>siteMe()</code>. It is loaded without <code>defer</code> so it exists before any page's inline script runs.</div>
     <p>The meow is synthesised with Web Audio — a sawtooth swept 620→880→500 Hz through a moving bandpass formant, with vibrato. No audio file to host, and it fails silently if the browser hasn't allowed audio yet.</p>
 
     <h3>Rendering</h3>
@@ -216,18 +223,20 @@
       <li><strong>Hover gaps break dropdowns.</strong> A menu offset below its toggle leaves dead space the cursor must cross. A transparent <code>::after</code> bridging the gap keeps <code>:hover</code> alive.</li>
       <li><strong>CSS specificity in grids.</strong> <code>.dr-grid &gt; .card</code> (two classes) beats <code>.player-card</code> (one), which silently sized the deathroll side cards like the board.</li>
       <li><strong>Selects can't show a value they don't have.</strong> Setting a <code>&lt;select&gt;</code> to a value with no matching option leaves it blank — legacy free-text pronouns would have silently cleared on save, which is why values are canonicalised server-side.</li>
-      <li><strong>Two callers, one-shot data.</strong> The dashboard once called <code>/api/me</code> twice; whichever landed first consumed the once-per-day check-in result and the notice vanished at random.</li>
+      <li><strong>Two callers, one-shot data.</strong> The dashboard once called <code>/api/me</code> twice; whichever landed first consumed the once-per-day check-in result and the notice vanished at random. Now structurally prevented by <code>siteMe()</code> — but the shape recurs with any endpoint that reports something only once, so reach for the same single-flight pattern rather than hoping callers stay disciplined.</li>
     </ul>
     <h3>When editing many pages at once</h3>
-    <p>Sweeping edits across the ten HTML files are usually scripted. Prefer Python with explicit string replacement over <code>perl -pi -e</code>: a malformed perl substitution prepended text to every line of <code>dashboard.html</code> and required restoring the file from git. Always verify with a grep count afterwards, and keep the working tree committed before a bulk edit.</p>
+    <p>There are twelve HTML files, and sweeping edits across them are usually scripted. Prefer Python with explicit string replacement over <code>perl -pi -e</code>: a malformed perl substitution prepended text to every line of <code>dashboard.html</code> and required restoring the file from git. Always verify with a grep count afterwards, and keep the working tree committed before a bulk edit.</p>
+    <p>Two lessons from the sweep that extracted the shared shell. Make the script <em>report</em> anything it does not recognise instead of silently skipping it — a rule deleted on a wrong assumption is invisible afterwards. And remember a CSS rule's preceding comment is not part of its selector: matching on selector text alone missed every rule that had a comment above it.</p>
 
     <h2 id="recipes">Recipes</h2>
     <h3>Adding a page</h3>
     <ol>
-      <li>Copy an existing view — the shell (variables, nav, theme script) is the point.</li>
+      <li>Copy an existing view for the boilerplate, then delete its body — the shell now comes from the shared files, so there is little to inherit.</li>
+      <li>Give <code>&lt;body&gt;</code> the <code>has-top-nav</code> class, or no nav is injected.</li>
+      <li>Include the four shared tags in this order: <code>/site.css</code>, <code>/me.js</code> (no <code>defer</code>), then <code>/nav.js</code> and <code>/notifications.js</code> (both <code>defer</code>).</li>
       <li>Add <code>app.get("/thing", requireLogin, …)</code> pointing at it.</li>
-      <li>Add the nav link to <em>every</em> page, scripted.</li>
-      <li>Include <code>/notifications.js</code> so the bell and mail follow.</li>
+      <li>If it belongs in the nav, add one entry to <code>NAV_LINKS</code> or <code>GAMES</code> in <code>nav.js</code>. No sweep.</li>
     </ol>
     <h3>Adding a daily objective</h3>
     <p>Append an object to the array in <code>GET /api/dailies</code> with <code>label</code>, <code>detail</code>, <code>reward</code>, <code>done</code>, and optionally <code>progress</code>. The dashboard card renders whatever it's given. Store its state on the user record with a day key compared against <code>todayKey()</code>.</p>
@@ -245,7 +254,7 @@
       <li><strong>Avatars are base64 inside <code>users.json</code></strong>, which is why they're shrunk to 256px. Many large images would bloat every read of the file.</li>
       <li><strong>Snake and Writing are client-refereed</strong> — see the trust notes above.</li>
       <li><strong>No rate limiting on login</strong>, so passwords could be brute-forced given time.</li>
-      <li><strong>Ten copies of the nav and theme block.</strong> The single biggest source of drift; a shared include would repay itself.</li>
+      <li><strong>Each page still owns its own layout CSS and logic.</strong> The shared shell covers the nav, the theme and the base variables, but page styles are still per-file. Much smaller than the old duplication, and no longer the dominant cost of a change.</li>
     </ul>
   </main>
 
