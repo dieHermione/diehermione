@@ -10,7 +10,7 @@
   <style>
     :root {
       color-scheme: light;
-      --bg1: #ff90b0;
+      --bg1: #FBC3D3;
       --bg2: #f6f6f6;
       --panel-bg: rgba(255, 255, 255, 0.95);
       --header-color: #ffffff;
@@ -106,6 +106,7 @@
     .top-nav a,
     .top-nav button,
     .top-nav .dropdown-toggle {
+      font-family: inherit;   /* buttons don't inherit the page font on their own */
       padding: 0.45rem 0.85rem;
       border-radius: 999px;
       border: none;
@@ -196,7 +197,7 @@
       padding: 0.9rem;
       border: 1px solid var(--table-border);
       border-radius: 12px;
-      background: rgba(255, 144, 176, 0.08);
+      background: rgba(251, 195, 211, 0.08);
       color: var(--text-color);
       font-family: inherit;
       text-align: left;
@@ -252,7 +253,7 @@
     .editor .error {
       display: none;
       color: #d4607f;
-      background: rgba(255, 144, 176, 0.15);
+      background: rgba(251, 195, 211, 0.15);
       border-radius: 8px;
       padding: 0.5rem 0.75rem;
       font-size: 0.85rem;

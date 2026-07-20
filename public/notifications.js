@@ -44,7 +44,7 @@
       gap: 0.5rem;
       padding: 0.55rem 0.65rem;
       border-radius: 8px;
-      background: rgba(255, 144, 176, 0.1);
+      background: rgba(251, 195, 211, 0.1);
       color: var(--text-color);
       font-size: 0.85rem;
       font-weight: 500;
@@ -177,13 +177,87 @@
     panel.append(clear);
   }
 
+  // A synthesised meow — a swept tone through a moving formant filter. No asset
+  // to ship, and it fails quietly if the browser hasn't allowed audio yet.
+  let audioCtx = null;
+  function playMeow() {
+    try {
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return;
+      audioCtx = audioCtx || new Ctx();
+      if (audioCtx.state === "suspended") audioCtx.resume();
+      const now = audioCtx.currentTime;
+
+      const osc = audioCtx.createOscillator();
+      osc.type = "sawtooth";
+      osc.frequency.setValueAtTime(620, now);
+      osc.frequency.linearRampToValueAtTime(880, now + 0.13);
+      osc.frequency.linearRampToValueAtTime(500, now + 0.42);
+
+      // wobble, so it sounds animal rather than electronic
+      const vib = audioCtx.createOscillator();
+      const vibGain = audioCtx.createGain();
+      vib.frequency.value = 15;
+      vibGain.gain.value = 22;
+      vib.connect(vibGain).connect(osc.frequency);
+
+      // the vowel: "ee" opening to "ow"
+      const formant = audioCtx.createBiquadFilter();
+      formant.type = "bandpass";
+      formant.Q.value = 5;
+      formant.frequency.setValueAtTime(1100, now);
+      formant.frequency.linearRampToValueAtTime(1750, now + 0.12);
+      formant.frequency.linearRampToValueAtTime(750, now + 0.45);
+
+      const gain = audioCtx.createGain();
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.16, now + 0.05);
+      gain.gain.setValueAtTime(0.16, now + 0.28);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.5);
+
+      osc.connect(formant).connect(gain).connect(audioCtx.destination);
+      osc.start(now); vib.start(now);
+      osc.stop(now + 0.52); vib.stop(now + 0.52);
+    } catch {}
+  }
+
+  // remembers what the bell has already shown, so only genuinely new lines meow
+  let seen = null;
+
+  function signature(notifications) {
+    return notifications.map((n) => n.id + ":" + n.text).join("|");
+  }
+
+  function refresh(ui, { silent } = {}) {
+    return fetch("/api/notifications")
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((d) => {
+        let list = d.notifications || [];
+        // you're already watching the rolls land, so don't nag about them here
+        if (window.location.pathname === "/deathroll") {
+          const stale = list.filter((n) => String(n.id).startsWith("deathroll-"));
+          if (stale.length) {
+            list = list.filter((n) => !String(n.id).startsWith("deathroll-"));
+            stale.forEach((n) =>
+              fetch("/api/notifications/" + encodeURIComponent(n.id), { method: "DELETE" })
+            );
+          }
+        }
+        const sig = signature(list);
+        const isNew = seen !== null && sig !== seen && list.length > 0;
+        seen = sig;
+        render(ui, list);
+        if (isNew && !silent) playMeow();
+      })
+      .catch(() => {});
+  }
+
   function init() {
     const ui = build();
     if (!ui) return;
-    fetch("/api/notifications")
-      .then((r) => (r.ok ? r.json() : Promise.reject()))
-      .then((d) => render(ui, d.notifications || []))
-      .catch(() => ui.wrap.remove());
+    refresh(ui, { silent: true }).then(() => {
+      setInterval(() => refresh(ui), 15000);
+    });
   }
 
   if (document.readyState === "loading") {

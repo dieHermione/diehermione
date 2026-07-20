@@ -656,6 +656,23 @@ app.post("/api/deathroll/roll", (req, res) => {
   }
   game.updatedAt = new Date().toISOString();
   saveRolls(games);
+
+  // tell the other player, so they hear about it wherever they are on the site
+  const users = loadUsers();
+  const otherKey = side === "hermione" ? key : "hermione";
+  const other = users[otherKey];
+  if (other) {
+    const roller = side === "hermione" ? "Hermione" : game.opponent;
+    pushNotification(
+      other,
+      "deathroll-" + key,
+      result === 1
+        ? roller + " rolled a 1 — you win the deathroll!"
+        : roller + " rolled " + result + " — your roll is 1d" + result + "."
+    );
+    saveUsers(users);
+  }
+
   res.json({ game: deathrollState(game, admin), rolled: result });
 });
 
@@ -841,6 +858,15 @@ app.post("/api/tithe", (req, res) => {
 // Placeholder until real triggers exist: cleared notifications come back on the
 // next login, so the bell always has something to show after signing in.
 const PLACEHOLDER_NOTIFICATION_ID = "placeholder";
+
+// One id per subject, so repeat events refresh a single line instead of piling up.
+function pushNotification(user, id, text) {
+  const list = Array.isArray(user.notifications) ? user.notifications : [];
+  user.notifications = [
+    { id, text, createdAt: new Date().toISOString() },
+    ...list.filter((n) => n.id !== id),
+  ].slice(0, 20);
+}
 
 function seedNotifications(user) {
   const list = Array.isArray(user.notifications) ? user.notifications : [];
