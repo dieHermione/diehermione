@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Guide — angeldom.me</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cause:wght@400..700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      color-scheme: light;
+      --bg1: #FBC3D3;
+      --bg2: #f6f6f6;
+      --panel-bg: rgba(255, 255, 255, 0.95);
+      --header-color: #ffffff;
+      --heading-color: #FBC3D3;
+      --text-color: #333;
+      --muted-color: #777;
+      --table-border: #eee;
+      --table-header-color: #888;
+      --button-bg: #FBC3D3;
+      --button-text: #ffffff;
+      --button-hover-bg: #f7b8c8;
+      --shadow: rgba(0, 0, 0, 0.2);
+      --input-border: #ddd;
+      --input-bg: #fff;
+      --input-text: #333;
+      --toggle-bg: rgba(255, 255, 255, 0.9);
+      --toggle-text: #333;
+    }
+    body[data-theme="dark"] {
+      --notif-item-bg: rgba(255, 255, 255, 0.07);
+      color-scheme: dark;
+      --bg1: #141414;
+      --bg2: #242424;
+      --panel-bg: rgba(32, 32, 32, 0.94);
+      --header-color: #f2f2f2;
+      --heading-color: #d6d6d6;
+      --text-color: #ececec;
+      --muted-color: #9e9e9e;
+      --table-border: #3a3a3a;
+      --table-header-color: #9e9e9e;
+      --button-bg: #4a4a4a;
+      --button-text: #f2f2f2;
+      --button-hover-bg: #5f5f5f;
+      --shadow: rgba(0, 0, 0, 0.5);
+      --input-border: #4a4a4a;
+      --input-bg: #2a2a2a;
+      --input-text: #ececec;
+      --toggle-bg: rgba(38, 38, 38, 0.95);
+      --toggle-text: #ececec;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Cause", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      flex-direction: column;
+      gap: 1rem;
+      background: linear-gradient(135deg, var(--bg1) 0%, var(--bg2) 100%);
+      padding: 1rem;
+      color: var(--text-color);
+    }
+    body.has-top-nav { justify-content: flex-start; padding-top: 1.75rem; gap: 1rem; }
+    .top-nav {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+      align-items: center;
+      gap: 0.55rem;
+      position: relative;
+      width: min(100%, 720px);
+      padding: 0.65rem 1rem;
+      margin: 0 0 0.75rem;
+      border-radius: 999px;
+      background: var(--panel-bg);
+      box-shadow: 0 8px 24px var(--shadow);
+      backdrop-filter: blur(8px);
+    }
+    .top-nav .nav-links {
+      grid-column: 2;
+      justify-self: center;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      gap: 0.45rem;
+    }
+    .top-nav a,
+    .top-nav button,
+    .top-nav .dropdown-toggle {
+      font-family: inherit;
+      padding: 0.45rem 0.85rem;
+      border-radius: 999px;
+      border: none;
+      background: var(--button-bg);
+      color: var(--button-text);
+      font-size: 0.9rem;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .top-nav a:hover, .top-nav button:hover, .top-nav .dropdown-toggle:hover { background: var(--button-hover-bg); }
+    .top-nav a.active { background: var(--button-hover-bg); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.3); }
+    .top-nav .dropdown[hidden] { display: none; }
+    .top-nav a[hidden] { display: none; }
+    .top-nav .dropdown { position: relative; display: inline-flex; }
+    .top-nav .dropdown::after { content: ""; position: absolute; top: 100%; left: 0; right: 0; height: 0.5rem; }
+    .top-nav .dropdown-menu {
+      position: absolute;
+      top: calc(100% + 0.35rem);
+      left: 0;
+      display: none;
+      flex-direction: column;
+      gap: 0.35rem;
+      padding: 0.45rem;
+      background: var(--panel-bg);
+      border-radius: 8px;
+      box-shadow: 0 8px 24px var(--shadow);
+      min-width: 8rem;
+    }
+    .top-nav .dropdown:hover .dropdown-menu,
+    .top-nav .dropdown:focus-within .dropdown-menu { display: flex; }
+    .top-nav .dropdown-menu a { width: 100%; }
+    .card {
+      background: var(--panel-bg);
+      border-radius: 12px;
+      box-shadow: 0 10px 40px var(--shadow);
+      width: 100%;
+      max-width: 820px;
+      padding: 2rem 2.25rem;
+      color: var(--text-color);
+    }
+    h1 {
+      font-family: "Cause", sans-serif;
+      font-size: 1.5rem;
+      color: var(--heading-color);
+      margin-bottom: 0.4rem;
+    }
+    h2 {
+      font-family: "Cause", sans-serif;
+      font-size: 1.15rem;
+      color: var(--heading-color);
+      margin: 2rem 0 0.75rem;
+      padding-top: 1.25rem;
+      border-top: 1px solid var(--table-border);
+    }
+    h2:first-of-type { border-top: none; padding-top: 0; margin-top: 1.5rem; }
+    h3 { font-size: 0.98rem; margin: 1.15rem 0 0.4rem; }
+    p, li { line-height: 1.6; font-size: 0.92rem; }
+    p { margin-bottom: 0.75rem; }
+    ul, ol { margin: 0 0 0.85rem 1.15rem; }
+    li { margin-bottom: 0.3rem; }
+    .lede { color: var(--muted-color); margin-bottom: 1.5rem; }
+    strong { font-weight: 700; }
+    code {
+      font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+      font-size: 0.85em;
+      padding: 0.1rem 0.35rem;
+      border-radius: 5px;
+      background: var(--notif-item-bg, rgba(251, 195, 211, 0.15));
+    }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 1rem; font-size: 0.88rem; }
+    th, td { text-align: left; padding: 0.5rem 0.65rem; vertical-align: top; }
+    th { color: var(--table-header-color); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    tr + tr td { border-top: 1px solid var(--table-border); }
+    .toc {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1.25rem;
+      border-bottom: 1px solid var(--table-border);
+    }
+    .toc a {
+      padding: 0.3rem 0.7rem;
+      border-radius: 999px;
+      background: var(--notif-item-bg, rgba(251, 195, 211, 0.15));
+      color: var(--text-color);
+      text-decoration: none;
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+    .toc a:hover { background: var(--button-bg); color: var(--button-text); }
+    .note {
+      border-left: 3px solid var(--button-bg);
+      padding: 0.6rem 0.9rem;
+      margin: 0.85rem 0;
+      background: var(--notif-item-bg, rgba(251, 195, 211, 0.1));
+      border-radius: 0 8px 8px 0;
+      font-size: 0.88rem;
+    }
+    .theme-toggle {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      z-index: 10;
+      width: 3rem;
+      height: 1.6rem;
+      padding: 0;
+      border: 1px solid var(--input-border);
+      border-radius: 999px;
+      background: var(--toggle-bg);
+      color: transparent;
+      box-shadow: 0 6px 16px var(--shadow);
+      cursor: pointer;
+      overflow: hidden;
+    }
+    .theme-toggle .thumb {
+      position: absolute;
+      top: 0.15rem;
+      left: 0.15rem;
+      width: 1.15rem;
+      height: 1.15rem;
+      border-radius: 50%;
+      background: var(--button-bg);
+      display: block;
+      transition: left 0.2s ease, background-color 0.2s ease;
+    }
+    .theme-toggle.is-dark .thumb { left: calc(100% - 1.15rem - 0.15rem); background: var(--button-hover-bg); }
+  </style>
+</head>
+<body class="has-top-nav">
+  <button id="theme-toggle" class="theme-toggle" type="button" aria-pressed="false" aria-label="Toggle dark mode"><span class="thumb"></span></button>
+  <nav id="top-nav" class="top-nav" hidden>
+    <div class="nav-links">
+      <a id="nav-dashboard" href="/dashboard">Dashboard</a>
+      <a id="nav-admin" href="/admin" hidden>Admin</a>
+      <a id="nav-profile" href="/profile">Profile</a>
+      <a id="nav-tasks" href="/tasks">Tasks</a>
+      <div class="dropdown" id="games-dropdown">
+        <button class="dropdown-toggle" type="button">Games ▾</button>
+        <div class="dropdown-menu">
+          <a id="nav-snake" href="/snake">Snake</a>
+          <a id="nav-writing" href="/writing">Writing</a>
+          <a id="nav-wheel" href="/wheel">Wheel</a>
+          <a id="nav-deathroll" href="/deathroll">Deathroll</a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <main class="card">
+    <h1>Guide</h1>
+    <p class="lede">How angeldom.me works from the outside — everything a person using the site can see, earn, or do.</p>
+
+    <div class="toc">
+      <a href="#accounts">Accounts</a>
+      <a href="#nav">Getting around</a>
+      <a href="#dashboard">Dashboard</a>
+      <a href="#profiles">Profiles</a>
+      <a href="#ranks">Ranks</a>
+      <a href="#currency">Points &amp; dollars</a>
+      <a href="#dailies">Dailies</a>
+      <a href="#games">Games</a>
+      <a href="#mail">Mail &amp; notifications</a>
+      <a href="#hermione">Hermione's powers</a>
+      <a href="#faq">Odds and ends</a>
+    </div>
+
+    <h2 id="accounts">Accounts</h2>
+    <p>Registering asks for four things: a username (3–30 characters), a password (8 or more), your <strong>pronouns</strong>, and whether you're a <strong>Visitor</strong> or a <strong>Citizen</strong>. The last two are chosen at sign-up; hover either rank button to read what it means.</p>
+    <p>Passwords are hashed with bcrypt before storage — nobody, including Hermione, can read them back. Sessions last a day, and staying signed in is normal; there is no need to log in fresh each visit.</p>
+    <p><strong>Logging out</strong> lives on your Profile page, next to Edit profile. It is deliberately not in the navigation bar.</p>
+
+    <h2 id="nav">Getting around</h2>
+    <p>Every page except the sign-in screen carries the same pill-shaped navigation: Dashboard, Profile, Tasks, a <strong>Games</strong> dropdown, and — for Hermione only — an Admin button. To its right sit the notification bell and the mail envelope. The light/dark toggle floats at the very top-right of the page, outside the nav.</p>
+    <p>The Games menu opens on hover and stays open as you move down into it. Chess exists and still works at <code>/chess</code>, but is currently hidden from the menu.</p>
+
+    <h3>Light and dark</h3>
+    <p>On your first visit the site follows your browser or system setting. The moment you click the toggle, your choice is remembered and overrides the system from then on. Dark mode is a full greyscale palette; light mode is pink.</p>
+
+    <h2 id="dashboard">Dashboard</h2>
+    <p>Three panels, with the middle column centred on the page:</p>
+    <ul>
+      <li><strong>Dailies</strong> (left) — the once-a-day rewards and whether you've claimed them.</li>
+      <li><strong>Welcome + Leaderboard</strong> (middle) — a greeting, and the ranked points table.</li>
+      <li><strong>Your profile</strong> (right) — a summary card with a shortcut to the full page.</li>
+    </ul>
+    <p>Below 1100px wide these stack into one column instead.</p>
+    <p>The <strong>Tithe</strong> button hands $5 to Hermione. It refuses if you have less than $5, so your balance can never go negative, and it doesn't appear on Hermione's own dashboard.</p>
+    <p>The <strong>leaderboard</strong> only lists accounts Hermione has chosen to show, ranked by points. If you aren't listed, that's a setting on her side, not a bug.</p>
+
+    <h2 id="profiles">Profiles</h2>
+    <p>Your profile holds a picture, a bio, your pronouns, your rank, and your points and dollars, plus the date you joined and how old the account is.</p>
+    <ul>
+      <li><strong>Picture</strong> — click it to open your file picker; it uploads the moment you choose. Images are shrunk to a 256px square automatically, so large photos are fine.</li>
+      <li><strong>Bio</strong> — up to 500 characters, via Edit profile.</li>
+      <li><strong>Pronouns</strong> — She/Her, He/Him or They/Them.</li>
+      <li><strong>Rank</strong> — see below; you can't set your own.</li>
+    </ul>
+    <p>Anyone signed in can view anyone else's profile — usernames on the leaderboard link straight to them — but only you (and Hermione) can edit yours.</p>
+
+    <h2 id="ranks">Ranks</h2>
+    <p>Click any rank badge to open the legend. The ladder runs:</p>
+    <table>
+      <tr><th>#</th><th>Rank</th><th></th></tr>
+      <tr><td>1</td><td><strong>Princess</strong></td><td>Hers alone.</td></tr>
+      <tr><td>2</td><td><strong>??</strong></td><td>Not yet spoken of.</td></tr>
+      <tr><td>3</td><td>Disciple</td><td></td></tr>
+      <tr><td>4</td><td>Worshipper</td><td></td></tr>
+      <tr><td>5</td><td>Devoted</td><td></td></tr>
+      <tr><td>6</td><td>Follower</td><td></td></tr>
+      <tr><td>7</td><td>Servant</td><td></td></tr>
+      <tr><td>—</td><td>Visitor</td><td>Separate from the ladder.</td></tr>
+    </table>
+    <p>Ranks are cosmetic for now — they change what your badge says and nothing else. Only Hermione can hand them out, which she does by opening the legend from someone's profile and clicking a rank.</p>
+
+    <h2 id="currency">Points and dollars</h2>
+    <p>Two separate currencies that do not convert into each other.</p>
+    <h3>Points</h3>
+    <p>Granted by Hermione alone. They decide your position on the leaderboard, and can go down as well as up — you'll get a notification either way. Hermione keeps no points herself.</p>
+    <h3>Dollars</h3>
+    <p>Earned by playing, and spendable on nothing yet. Sources:</p>
+    <table>
+      <tr><th>Source</th><th>Amount</th><th>Limit</th></tr>
+      <tr><td>Daily check-in</td><td>$5</td><td>Once a day, automatic</td></tr>
+      <tr><td>Spinning the wheel</td><td>$1–$25</td><td>One spin a day</td></tr>
+      <tr><td>Snake, per heart</td><td>$1</td><td>$20 a day</td></tr>
+      <tr><td>Tithing</td><td>−$5</td><td>Whenever you like</td></tr>
+    </table>
+
+    <h2 id="dailies">Dailies and the reset</h2>
+    <p>Daily things reset at <strong>noon Eastern</strong>, not midnight. A "day" therefore runs noon to noon: claim something at 1pm and it's available again at noon the next day.</p>
+    <p>The check-in is automatic — simply opening the site once a day pays $5, whether or not you log in fresh. The Dailies panel tracks each objective and shows progress where it applies.</p>
+
+    <h2 id="games">Games</h2>
+
+    <h3>Wheel</h3>
+    <p>Eight wedges from $1 to $25, weighted so the big prizes are rare (roughly 22% for $1, about 2% for $25). One spin a day. The result is decided the moment you press Spin — the animation is just showing you what already happened.</p>
+
+    <h3>Snake</h3>
+    <p>Arrow keys or WASD. Walls <strong>wrap</strong>, so leaving one edge brings you back on the opposite side; only running into yourself ends the run. Each heart is worth $1, up to $20 a day.</p>
+    <div class="note">The food is shy. Come within one square of it and it will usually bolt somewhere far away — 90% of the time, and it lands at least eight squares off. Eating one is meant to be difficult.</div>
+
+    <h3>Writing</h3>
+    <p>Pick a category and type its passages out exactly, one after another. The passages inside are hidden until you start, and are shuffled fresh each attempt.</p>
+    <ul>
+      <li>No pasting, and <strong>backspace does nothing</strong>.</li>
+      <li>A wrong key doesn't send you back to the start — it counts as a mistake and you carry on.</li>
+      <li>Your mistake tally is shown as you go and summarised at the end.</li>
+    </ul>
+
+    <h3>Deathroll</h3>
+    <p>Hermione picks a number and rolls it. You then roll a die of whatever she rolled, she rolls yours, and so on down. Whoever rolls a <strong>1</strong> loses.</p>
+    <p>Turns are enforced, so you can only roll when it's genuinely your turn. When the other player rolls while you're elsewhere on the site, you'll get a notification. Both players' profile cards flank the board.</p>
+
+    <h3>Chess</h3>
+    <p>Still playable at <code>/chess</code> — you play white, Hermione plays black — but hidden from the Games menu for now. Hermione can remove your pieces at will.</p>
+
+    <h2 id="mail">Mail and notifications</h2>
+    <p>The <strong>bell</strong> collects notifications: your daily objectives, points changes, deathroll turns, and new mail. A white dot appears when something is waiting, and a sound plays when a new one arrives while you're on the site. Dismiss them individually or clear them all.</p>
+    <p>The <strong>envelope</strong> beside it opens a thread between you and Hermione. Type and press Enter (Shift+Enter for a new line). Opening the thread marks her messages read.</p>
+    <div class="note">Notifications are polled every 15 seconds, so something may take up to that long to appear. The deathroll page clears its own notifications, since you're watching the rolls there anyway.</div>
+
+    <h2 id="hermione">What Hermione can do</h2>
+    <p>The <code>hermione</code> account is the site's admin. Beyond the Admin panel she can:</p>
+    <ul>
+      <li>Grant or remove points, and show or hide accounts on the leaderboard</li>
+      <li>Delete accounts, on a 15-second timer that can be cancelled</li>
+      <li>Edit anyone's profile, and hand out ranks</li>
+      <li>Rewrite the Writing categories and the dashboard's greeting text</li>
+      <li>Spin the wheel without a daily limit, and start deathrolls</li>
+      <li>Remove chess pieces mid-game</li>
+    </ul>
+    <p>She holds the rank Princess permanently and keeps no points.</p>
+
+    <h2 id="faq">Odds and ends</h2>
+    <ul>
+      <li><strong>Nothing here is real money.</strong> Dollars are a number on your profile.</li>
+      <li><strong>Your data</strong> is a username, a hashed password, and whatever you choose to put on your profile. Pictures are stored with your account.</li>
+      <li><strong>Tasks</strong> exists as a page but has no assignments yet.</li>
+      <li><strong>If a page looks empty</strong>, you're probably signed out — most pages send you back to sign-in when your session ends.</li>
+      <li><strong>Windows users</strong>: the decorative bows on the sign-in page need a font that Windows lacks, so the site loads one for you.</li>
+    </ul>
+  </main>
+
+  <script>
+    const body = document.body;
+    const toggle = document.getElementById("theme-toggle");
+    const storedTheme = localStorage.getItem("site-theme");
+    const systemDark = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
+    const savedTheme = storedTheme || (systemDark && systemDark.matches ? "dark" : "light");
+    const topNav = document.getElementById("top-nav");
+    const adminLink = document.getElementById("nav-admin");
+
+    function applyTheme(theme, persist) {
+      body.dataset.theme = theme;
+      if (toggle) {
+        toggle.classList.toggle("is-dark", theme === "dark");
+        toggle.setAttribute("aria-pressed", String(theme === "dark"));
+      }
+      if (persist) localStorage.setItem("site-theme", theme);
+    }
+
+    applyTheme(savedTheme);
+    systemDark?.addEventListener?.("change", (e) => {
+      if (!localStorage.getItem("site-theme")) applyTheme(e.matches ? "dark" : "light");
+    });
+    toggle?.addEventListener("click", () => {
+      applyTheme(body.dataset.theme === "dark" ? "light" : "dark", true);
+    });
+
+    fetch("/api/me")
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((d) => {
+        topNav.hidden = false;
+        adminLink.hidden = !d.isAdmin;
+      })
+      .catch(() => (window.location.href = "/"));
+  </script>
+  <script src="/notifications.js" defer></script>
+</body>
+</html>

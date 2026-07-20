@@ -204,6 +204,17 @@
       margin-bottom: 1rem;
       text-align: center;
     }
+    .doc-links { display: flex; gap: 0.6rem; justify-content: center; margin-bottom: 0.5rem; }
+    .doc-links a {
+      padding: 0.5rem 1.25rem;
+      border-radius: 999px;
+      background: var(--button-bg);
+      color: var(--button-text);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+    .doc-links a:hover { background: var(--button-hover-bg); }
     .panel-empty {
       color: var(--muted-color);
       font-style: italic;
@@ -387,6 +398,14 @@
         </thead>
         <tbody id="rows"></tbody>
       </table>
+    </section>
+    <section class="card">
+      <h2>Documentation</h2>
+      <div class="doc-links">
+        <a href="/guide">Guide</a>
+        <a href="/tech">Technical notes</a>
+      </div>
+      <p class="panel-empty">The guide covers what people see; the technical notes cover how it's built.</p>
     </section>
     <section class="card">
       <h2>Tasks</h2>

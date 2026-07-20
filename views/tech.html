@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Technical notes — angeldom.me</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cause:wght@400..700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      color-scheme: light;
+      --bg1: #FBC3D3;
+      --bg2: #f6f6f6;
+      --panel-bg: rgba(255, 255, 255, 0.95);
+      --header-color: #ffffff;
+      --heading-color: #FBC3D3;
+      --text-color: #333;
+      --muted-color: #777;
+      --table-border: #eee;
+      --table-header-color: #888;
+      --button-bg: #FBC3D3;
+      --button-text: #ffffff;
+      --button-hover-bg: #f7b8c8;
+      --shadow: rgba(0, 0, 0, 0.2);
+      --input-border: #ddd;
+      --input-bg: #fff;
+      --input-text: #333;
+      --toggle-bg: rgba(255, 255, 255, 0.9);
+      --toggle-text: #333;
+    }
+    body[data-theme="dark"] {
+      --notif-item-bg: rgba(255, 255, 255, 0.07);
+      color-scheme: dark;
+      --bg1: #141414;
+      --bg2: #242424;
+      --panel-bg: rgba(32, 32, 32, 0.94);
+      --header-color: #f2f2f2;
+      --heading-color: #d6d6d6;
+      --text-color: #ececec;
+      --muted-color: #9e9e9e;
+      --table-border: #3a3a3a;
+      --table-header-color: #9e9e9e;
+      --button-bg: #4a4a4a;
+      --button-text: #f2f2f2;
+      --button-hover-bg: #5f5f5f;
+      --shadow: rgba(0, 0, 0, 0.5);
+      --input-border: #4a4a4a;
+      --input-bg: #2a2a2a;
+      --input-text: #ececec;
+      --toggle-bg: rgba(38, 38, 38, 0.95);
+      --toggle-text: #ececec;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Cause", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      flex-direction: column;
+      gap: 1rem;
+      background: linear-gradient(135deg, var(--bg1) 0%, var(--bg2) 100%);
+      padding: 1rem;
+      color: var(--text-color);
+    }
+    body.has-top-nav { justify-content: flex-start; padding-top: 1.75rem; gap: 1rem; }
+    .top-nav {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+      align-items: center;
+      gap: 0.55rem;
+      position: relative;
+      width: min(100%, 720px);
+      padding: 0.65rem 1rem;
+      margin: 0 0 0.75rem;
+      border-radius: 999px;
+      background: var(--panel-bg);
+      box-shadow: 0 8px 24px var(--shadow);
+      backdrop-filter: blur(8px);
+    }
+    .top-nav .nav-links {
+      grid-column: 2;
+      justify-self: center;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      gap: 0.45rem;
+    }
+    .top-nav a,
+    .top-nav button,
+    .top-nav .dropdown-toggle {
+      font-family: inherit;
+      padding: 0.45rem 0.85rem;
+      border-radius: 999px;
+      border: none;
+      background: var(--button-bg);
+      color: var(--button-text);
+      font-size: 0.9rem;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .top-nav a:hover, .top-nav button:hover, .top-nav .dropdown-toggle:hover { background: var(--button-hover-bg); }
+    .top-nav a.active { background: var(--button-hover-bg); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.3); }
+    .top-nav .dropdown[hidden] { display: none; }
+    .top-nav a[hidden] { display: none; }
+    .top-nav .dropdown { position: relative; display: inline-flex; }
+    .top-nav .dropdown::after { content: ""; position: absolute; top: 100%; left: 0; right: 0; height: 0.5rem; }
+    .top-nav .dropdown-menu {
+      position: absolute;
+      top: calc(100% + 0.35rem);
+      left: 0;
+      display: none;
+      flex-direction: column;
+      gap: 0.35rem;
+      padding: 0.45rem;
+      background: var(--panel-bg);
+      border-radius: 8px;
+      box-shadow: 0 8px 24px var(--shadow);
+      min-width: 8rem;
+    }
+    .top-nav .dropdown:hover .dropdown-menu,
+    .top-nav .dropdown:focus-within .dropdown-menu { display: flex; }
+    .top-nav .dropdown-menu a { width: 100%; }
+    .card {
+      background: var(--panel-bg);
+      border-radius: 12px;
+      box-shadow: 0 10px 40px var(--shadow);
+      width: 100%;
+      max-width: 820px;
+      padding: 2rem 2.25rem;
+      color: var(--text-color);
+    }
+    h1 {
+      font-family: "Cause", sans-serif;
+      font-size: 1.5rem;
+      color: var(--heading-color);
+      margin-bottom: 0.4rem;
+    }
+    h2 {
+      font-family: "Cause", sans-serif;
+      font-size: 1.15rem;
+      color: var(--heading-color);
+      margin: 2rem 0 0.75rem;
+      padding-top: 1.25rem;
+      border-top: 1px solid var(--table-border);
+    }
+    h2:first-of-type { border-top: none; padding-top: 0; margin-top: 1.5rem; }
+    h3 { font-size: 0.98rem; margin: 1.15rem 0 0.4rem; }
+    p, li { line-height: 1.6; font-size: 0.92rem; }
+    p { margin-bottom: 0.75rem; }
+    ul, ol { margin: 0 0 0.85rem 1.15rem; }
+    li { margin-bottom: 0.3rem; }
+    .lede { color: var(--muted-color); margin-bottom: 1.5rem; }
+    strong { font-weight: 700; }
+    code {
+      font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+      font-size: 0.85em;
+      padding: 0.1rem 0.35rem;
+      border-radius: 5px;
+      background: var(--notif-item-bg, rgba(251, 195, 211, 0.15));
+    }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 1rem; font-size: 0.88rem; }
+    th, td { text-align: left; padding: 0.5rem 0.65rem; vertical-align: top; }
+    th { color: var(--table-header-color); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    tr + tr td { border-top: 1px solid var(--table-border); }
+    .toc {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1.25rem;
+      border-bottom: 1px solid var(--table-border);
+    }
+    .toc a {
+      padding: 0.3rem 0.7rem;
+      border-radius: 999px;
+      background: var(--notif-item-bg, rgba(251, 195, 211, 0.15));
+      color: var(--text-color);
+      text-decoration: none;
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+    .toc a:hover { background: var(--button-bg); color: var(--button-text); }
+    .note {
+      border-left: 3px solid var(--button-bg);
+      padding: 0.6rem 0.9rem;
+      margin: 0.85rem 0;
+      background: var(--notif-item-bg, rgba(251, 195, 211, 0.1));
+      border-radius: 0 8px 8px 0;
+      font-size: 0.88rem;
+    }
+    .theme-toggle {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      z-index: 10;
+      width: 3rem;
+      height: 1.6rem;
+      padding: 0;
+      border: 1px solid var(--input-border);
+      border-radius: 999px;
+      background: var(--toggle-bg);
+      color: transparent;
+      box-shadow: 0 6px 16px var(--shadow);
+      cursor: pointer;
+      overflow: hidden;
+    }
+    .theme-toggle .thumb {
+      position: absolute;
+      top: 0.15rem;
+      left: 0.15rem;
+      width: 1.15rem;
+      height: 1.15rem;
+      border-radius: 50%;
+      background: var(--button-bg);
+      display: block;
+      transition: left 0.2s ease, background-color 0.2s ease;
+    }
+    .theme-toggle.is-dark .thumb { left: calc(100% - 1.15rem - 0.15rem); background: var(--button-hover-bg); }
+  </style>
+</head>
+<body class="has-top-nav">
+  <button id="theme-toggle" class="theme-toggle" type="button" aria-pressed="false" aria-label="Toggle dark mode"><span class="thumb"></span></button>
+  <nav id="top-nav" class="top-nav" hidden>
+    <div class="nav-links">
+      <a id="nav-dashboard" href="/dashboard">Dashboard</a>
+      <a id="nav-admin" href="/admin" hidden>Admin</a>
+      <a id="nav-profile" href="/profile">Profile</a>
+      <a id="nav-tasks" href="/tasks">Tasks</a>
+      <div class="dropdown" id="games-dropdown">
+        <button class="dropdown-toggle" type="button">Games ▾</button>
+        <div class="dropdown-menu">
+          <a id="nav-snake" href="/snake">Snake</a>
+          <a id="nav-writing" href="/writing">Writing</a>
+          <a id="nav-wheel" href="/wheel">Wheel</a>
+          <a id="nav-deathroll" href="/deathroll">Deathroll</a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <main class="card">
+    <h1>Technical notes</h1>
+    <p class="lede">How the site is built, why it's built that way, and the traps to avoid when changing it.</p>
+
+    <div class="toc">
+      <a href="#shape">Shape</a>
+      <a href="#layout">File layout</a>
+      <a href="#storage">Storage</a>
+      <a href="#auth">Auth</a>
+      <a href="#routes">Routes</a>
+      <a href="#frontend">Front end</a>
+      <a href="#day">The day key</a>
+      <a href="#currency">Currency</a>
+      <a href="#games">Games</a>
+      <a href="#traps">Traps</a>
+      <a href="#recipes">Recipes</a>
+      <a href="#deploy">Deploying</a>
+      <a href="#limits">Known limits</a>
+    </div>
+
+    <h2 id="shape">Shape of the thing</h2>
+    <p>A single Express server (<code>server.js</code>, roughly 1,200 lines) serving static HTML pages and a JSON API. No database, no build step, no framework, no bundler. Data lives in JSON files on disk. Each page is a self-contained HTML file with its own inline <code>&lt;style&gt;</code> and <code>&lt;script&gt;</code>.</p>
+    <p>That means you can edit any page and reload — nothing to compile. It also means duplication: the nav markup, the theme system and the CSS variable block are copied into every page. Changes to those must be applied everywhere, which is usually done with a small script rather than by hand.</p>
+    <div class="note"><strong>Node 18+</strong> is required (the start script uses <code>--env-file-if-exists</code>). Dependencies: <code>express</code>, <code>express-session</code>, <code>bcryptjs</code>, <code>chess.js</code>.</div>
+
+    <h2 id="layout">File layout</h2>
+    <table>
+      <tr><th>Path</th><th>What it is</th></tr>
+      <tr><td><code>server.js</code></td><td>Everything server-side: routes, storage helpers, game rules</td></tr>
+      <tr><td><code>public/index.html</code></td><td>Sign-in and registration. The only page without the nav</td></tr>
+      <tr><td><code>public/dashboard.html</code></td><td>Dailies, welcome, leaderboard, profile card</td></tr>
+      <tr><td><code>public/notifications.js</code></td><td>Shared: injects the bell <em>and</em> the mail button into any nav it finds</td></tr>
+      <tr><td><code>public/ranks.js</code></td><td>Shared: the rank legend modal</td></tr>
+      <tr><td><code>public/pieces/</code></td><td>Chess piece SVGs (Cburnett set, CC BY-SA)</td></tr>
+      <tr><td><code>views/*.html</code></td><td>Every logged-in page: profile, admin, tasks, guide, and the games</td></tr>
+    </table>
+    <p><code>public/</code> is served statically; <code>views/</code> is not — those pages are sent explicitly by routes guarded with <code>requireLogin</code>. Anything in <code>public/</code> is reachable without a session, so nothing sensitive belongs there.</p>
+
+    <h2 id="storage">Storage</h2>
+    <p>Six JSON files, each read and written whole. All resolve to <code>process.env.DATA_DIR</code> when set, falling back to the repo directory:</p>
+    <table>
+      <tr><th>File</th><th>Shape</th></tr>
+      <tr><td><code>users.json</code></td><td><code>{ [lowercaseName]: user }</code> — the username is the key</td></tr>
+      <tr><td><code>games.json</code></td><td>Chess, keyed by the non-hermione player</td></tr>
+      <tr><td><code>deathroll.json</code></td><td>Deathroll, keyed the same way</td></tr>
+      <tr><td><code>mail.json</code></td><td>Threads, keyed the same way</td></tr>
+      <tr><td><code>writing.json</code></td><td>Array of categories, each holding passages</td></tr>
+      <tr><td><code>site.json</code></td><td>The editable dashboard copy</td></tr>
+    </table>
+    <p>All six are gitignored. Production keeps its own copies on a Railway volume, so local testing can never affect live data — and a deploy never overwrites live data either.</p>
+
+    <h3>The user record</h3>
+    <p>Written keys: <code>username</code>, <code>passwordHash</code>, <code>createdAt</code>, <code>pronouns</code>, <code>rank</code>, <code>points</code>, <code>dollars</code>, <code>icon</code>, <code>bio</code>, <code>flagged</code>, <code>notifications</code>, plus per-day bookkeeping: <code>lastCheckIn</code>, <code>wheelDay</code>, <code>snakeDay</code>, <code>snakeToday</code>, <code>dailiesNotifiedOn</code>.</p>
+    <p>Everything is read defensively (<code>user.dollars || 0</code>) because records predate most fields. Adding a field needs no migration; removing one means tolerating stale keys. Rank does this already — <code>rankFor()</code> still maps the retired <code>role</code> values <code>domme</code>/<code>sub</code> onto Visitor/Citizen.</p>
+    <div class="note"><strong>Read-modify-write.</strong> Every handler loads the whole file, mutates, and saves. Node's single thread plus synchronous <code>fs</code> makes each handler atomic, so concurrent requests can't interleave — but two handlers that both load users must not run <code>await</code> between load and save, or the later write will clobber the earlier.</div>
+
+    <h2 id="auth">Auth and permissions</h2>
+    <p>Passwords are bcrypt-hashed (cost 10). Sessions come from <code>express-session</code> with an in-memory store — a server restart signs everyone out, which is fine here but is also why the daily check-in can't depend on login alone.</p>
+    <p>There is exactly one permission check in the whole codebase:</p>
+    <p><code>isAdmin(req)</code> — true when the session username lowercases to <code>"hermione"</code>.</p>
+    <p>Admin is an identity, not a flag on the record, so it can't be granted by editing data. Every privileged route calls it server-side. The client hides admin controls too, but that's cosmetic — the server is the boundary.</p>
+    <p>Permission patterns worth knowing:</p>
+    <ul>
+      <li><code>canEditProfile()</code> — the owner or Hermione</li>
+      <li>Rank changes — Hermione only, even on your own profile</li>
+      <li>Games keyed by player — the key <em>is</em> the authorisation; a player can only ever address their own row</li>
+    </ul>
+
+    <h2 id="routes">Routes</h2>
+    <p>Page routes send HTML; everything under <code>/api</code> returns JSON and answers <code>401</code> when signed out.</p>
+    <table>
+      <tr><th>Route</th><th>Notes</th></tr>
+      <tr><td><code>POST /api/register</code></td><td>Requires pronouns and a signup rank</td></tr>
+      <tr><td><code>POST /api/login</code> · <code>POST /api/logout</code></td><td>Login also runs check-in and seeds notifications</td></tr>
+      <tr><td><code>GET /api/me</code></td><td>Identity, dollars, and the daily check-in result</td></tr>
+      <tr><td><code>GET|PUT /api/profile/:username</code></td><td>PUT is owner-or-admin; rank is admin-only</td></tr>
+      <tr><td><code>GET /api/ranks</code></td><td>The ladder, plus which ranks are assignable</td></tr>
+      <tr><td><code>GET /api/users</code> · <code>POST .../points</code> · <code>POST .../flag</code> · <code>DELETE</code></td><td>Admin only</td></tr>
+      <tr><td><code>GET /api/leaderboard</code></td><td>Flagged users only, Hermione excluded</td></tr>
+      <tr><td><code>GET /api/dailies</code></td><td>Objectives with done state and progress</td></tr>
+      <tr><td><code>GET|POST /api/wheel</code></td><td>Server picks the wedge and awards it</td></tr>
+      <tr><td><code>POST /api/snake/food</code></td><td>Rate limited and daily capped</td></tr>
+      <tr><td><code>GET|PUT /api/writing[/:id]</code></td><td>List hides passages; PUT is admin only</td></tr>
+      <tr><td><code>/api/deathroll/{game,games,start,roll}</code></td><td>Turn order enforced server-side</td></tr>
+      <tr><td><code>GET|POST /api/mail</code></td><td>Thread read marks messages seen</td></tr>
+      <tr><td><code>GET|DELETE|POST /api/notifications[...]</code></td><td>GET also carries <code>mailUnread</code></td></tr>
+      <tr><td><code>GET|PUT /api/site</code></td><td>Dashboard copy; PUT admin only</td></tr>
+      <tr><td><code>POST /api/tithe</code></td><td>$5 to Hermione; refuses below $5</td></tr>
+    </table>
+
+    <h2 id="frontend">Front-end conventions</h2>
+    <h3>Theming</h3>
+    <p>Every page declares the same CSS variables twice: once in <code>:root</code> for light, once in <code>body[data-theme="dark"]</code> for dark. Components reference variables, never literals — a hardcoded colour is a bug waiting for the next palette change, and the greyscale conversion had to hunt down a dozen of them.</p>
+    <p>Theme selection is deliberately three-state: no stored preference means <em>follow the system</em> and keep following it; clicking the toggle stores a choice that wins from then on. <code>applyTheme(theme, persist)</code> only writes to <code>localStorage</code> when <code>persist</code> is true — page load must never persist, or the site stops tracking the system.</p>
+
+    <h3>Shared scripts</h3>
+    <p><code>notifications.js</code> and <code>ranks.js</code> inject their own styles and markup into whatever page includes them, rather than each page carrying copies. <code>notifications.js</code> finds <code>.top-nav .nav-links</code> and appends the bell and envelope; it polls every 15 seconds and rides that one request for both notification content and the mail unread count.</p>
+    <p>The meow is synthesised with Web Audio — a sawtooth swept 620→880→500 Hz through a moving bandpass formant, with vibrato. No audio file to host, and it fails silently if the browser hasn't allowed audio yet.</p>
+
+    <h3>Rendering</h3>
+    <p>DOM is built with <code>createElement</code> and <code>textContent</code>, not <code>innerHTML</code> with interpolated values. Usernames, bios and messages are all user-controlled; <code>textContent</code> makes injection structurally impossible. The one place <code>innerHTML</code> appears is for fixed SVG icon markup.</p>
+
+    <h2 id="day">The day key</h2>
+    <p>Every daily thing hangs off <code>todayKey()</code>, which returns a <code>YYYY-MM-DD</code> string that rolls over at <strong>noon America/New_York</strong>, not midnight. It reads the Eastern wall clock via <code>Intl.DateTimeFormat</code> and subtracts 12 hours before taking the date, so the label only changes at midday. Using the zone rather than a fixed offset means it survives daylight saving.</p>
+    <p>Anything daily compares a stored key against this one. Testing a rollover is a matter of backdating the stored key rather than waiting.</p>
+    <div class="note">Don't compute day keys any other way. A plain <code>toISOString().slice(0,10)</code> disagrees with this function for twelve hours out of every day — which is exactly how one test appeared to fail when the code was correct.</div>
+
+    <h2 id="currency">Currency and trust</h2>
+    <p>Points are admin-granted only. Dollars are earned, and two of the three sources are browser-reported, which can't be trusted outright. The defences are deliberately economic rather than cryptographic:</p>
+    <ul>
+      <li><strong>Daily cap</strong> — Snake pays at most $20/day, so farming gains nothing over honest play.</li>
+      <li><strong>Token bucket</strong> — 8 pickups burst, refilling one per 2s. A fixed minimum gap was tried first and rejected: food can legitimately spawn in front of the snake and be eaten on the next 120ms tick, so a hard floor would reject honest pickups.</li>
+      <li><strong>Server-side outcomes</strong> — the wheel and deathroll pick their results on the server; the client only animates what it's told.</li>
+    </ul>
+    <p>If dollars ever buy something worth cheating for, the real fix is server-authoritative gameplay — the client sends inputs, the server owns the state. Until then the cap is the honest boundary.</p>
+
+    <h2 id="games">Game implementations</h2>
+    <table>
+      <tr><th>Game</th><th>Where the logic lives</th></tr>
+      <tr><td>Chess</td><td>Server, via <code>chess.js</code> — legality, checkmate and FEN all validated server-side</td></tr>
+      <tr><td>Deathroll</td><td>Server — RNG, turn order, and the losing roll</td></tr>
+      <tr><td>Wheel</td><td>Server — weighted pick; client animates to the returned index</td></tr>
+      <tr><td>Snake</td><td>Client — the loop is local; only payouts touch the server</td></tr>
+      <tr><td>Writing</td><td>Split — passages and shuffling from the server, typing checked locally</td></tr>
+    </table>
+    <p>Two-player games (chess, deathroll) are keyed by the non-Hermione player and polled every 3–4 seconds. Deathroll additionally pushes a notification on each roll, using a fixed id per game so repeat rolls update one line rather than stacking twenty.</p>
+
+    <h2 id="traps">Traps this codebase has already sprung</h2>
+    <p>Each of these cost real debugging time. They will recur.</p>
+    <ul>
+      <li><strong><code>hidden</code> loses to <code>display</code>.</strong> An element styled <code>display: flex</code> ignores the <code>hidden</code> attribute. This leaked the admin nav dropdown to every user, and the deathroll opponent picker to players. Any component that might be hidden needs an explicit <code>[hidden] { display: none; }</code> rule.</li>
+      <li><strong>Buttons don't inherit fonts.</strong> A <code>&lt;button&gt;</code> falls back to the browser UI font unless given <code>font-family: inherit</code>. That's why "Games" looked wrong next to its neighbours.</li>
+      <li><strong>Hover gaps break dropdowns.</strong> A menu offset below its toggle leaves dead space the cursor must cross. A transparent <code>::after</code> bridging the gap keeps <code>:hover</code> alive.</li>
+      <li><strong>CSS specificity in grids.</strong> <code>.dr-grid &gt; .card</code> (two classes) beats <code>.player-card</code> (one), which silently sized the deathroll side cards like the board.</li>
+      <li><strong>Selects can't show a value they don't have.</strong> Setting a <code>&lt;select&gt;</code> to a value with no matching option leaves it blank — legacy free-text pronouns would have silently cleared on save, which is why values are canonicalised server-side.</li>
+      <li><strong>Two callers, one-shot data.</strong> The dashboard once called <code>/api/me</code> twice; whichever landed first consumed the once-per-day check-in result and the notice vanished at random.</li>
+    </ul>
+    <h3>When editing many pages at once</h3>
+    <p>Sweeping edits across the ten HTML files are usually scripted. Prefer Python with explicit string replacement over <code>perl -pi -e</code>: a malformed perl substitution prepended text to every line of <code>dashboard.html</code> and required restoring the file from git. Always verify with a grep count afterwards, and keep the working tree committed before a bulk edit.</p>
+
+    <h2 id="recipes">Recipes</h2>
+    <h3>Adding a page</h3>
+    <ol>
+      <li>Copy an existing view — the shell (variables, nav, theme script) is the point.</li>
+      <li>Add <code>app.get("/thing", requireLogin, …)</code> pointing at it.</li>
+      <li>Add the nav link to <em>every</em> page, scripted.</li>
+      <li>Include <code>/notifications.js</code> so the bell and mail follow.</li>
+    </ol>
+    <h3>Adding a daily objective</h3>
+    <p>Append an object to the array in <code>GET /api/dailies</code> with <code>label</code>, <code>detail</code>, <code>reward</code>, <code>done</code>, and optionally <code>progress</code>. The dashboard card renders whatever it's given. Store its state on the user record with a day key compared against <code>todayKey()</code>.</p>
+    <h3>Adding a currency source</h3>
+    <p>Award server-side, cap it per day, and read the balance back from the response rather than trusting the client's arithmetic.</p>
+
+    <h2 id="deploy">Deploying</h2>
+    <p>Pushing to <code>main</code> triggers a Railway build; the site is live at angeldom.me within a minute or two. <code>SESSION_SECRET</code> must be set in production or sessions reset on every deploy. <code>DATA_DIR</code> must point at the mounted volume or data is lost on redeploy.</p>
+    <p>Because data files are gitignored, a deploy never touches live data — and local experiments never reach production. Verify a deploy landed by fetching something the new code serves, not just by checking the site responds.</p>
+
+    <h2 id="limits">Known limits</h2>
+    <ul>
+      <li><strong>Sessions are in-memory</strong> — every restart signs everyone out.</li>
+      <li><strong>JSON files don't scale</strong> and have no transactions. Fine for a handful of accounts; swap for a database before it's more.</li>
+      <li><strong>Avatars are base64 inside <code>users.json</code></strong>, which is why they're shrunk to 256px. Many large images would bloat every read of the file.</li>
+      <li><strong>Snake and Writing are client-refereed</strong> — see the trust notes above.</li>
+      <li><strong>No rate limiting on login</strong>, so passwords could be brute-forced given time.</li>
+      <li><strong>Ten copies of the nav and theme block.</strong> The single biggest source of drift; a shared include would repay itself.</li>
+    </ul>
+  </main>
+
+  <script>
+    const body = document.body;
+    const toggle = document.getElementById("theme-toggle");
+    const storedTheme = localStorage.getItem("site-theme");
+    const systemDark = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
+    const savedTheme = storedTheme || (systemDark && systemDark.matches ? "dark" : "light");
+    const topNav = document.getElementById("top-nav");
+    const adminLink = document.getElementById("nav-admin");
+
+    function applyTheme(theme, persist) {
+      body.dataset.theme = theme;
+      if (toggle) {
+        toggle.classList.toggle("is-dark", theme === "dark");
+        toggle.setAttribute("aria-pressed", String(theme === "dark"));
+      }
+      if (persist) localStorage.setItem("site-theme", theme);
+    }
+
+    applyTheme(savedTheme);
+    systemDark?.addEventListener?.("change", (e) => {
+      if (!localStorage.getItem("site-theme")) applyTheme(e.matches ? "dark" : "light");
+    });
+    toggle?.addEventListener("click", () => {
+      applyTheme(body.dataset.theme === "dark" ? "light" : "dark", true);
+    });
+
+    fetch("/api/me")
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((d) => {
+        topNav.hidden = false;
+        adminLink.hidden = !d.isAdmin;
+      })
+      .catch(() => (window.location.href = "/"));
+  </script>
+  <script src="/notifications.js" defer></script>
+</body>
+</html>
