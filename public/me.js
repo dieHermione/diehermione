@@ -1,7 +1,7 @@
 /* Single-flight /api/me.
  *
  * GET /api/me reports the daily check-in award, and the server only reports it
- * ONCE per day — whichever caller lands first consumes it. When the dashboard,
+ * ONCE per day, and whichever caller lands first consumes it. When the dashboard,
  * the nav and the notification bell each fetched it independently, the check-in
  * notice went to whoever won the race and appeared to vanish at random.
  *

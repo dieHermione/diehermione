@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Deathroll — angeldom.me</title>
+  <title>Deathroll - angeldom.me</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cause:wght@400..700&display=swap" rel="stylesheet" />
@@ -206,7 +206,7 @@
 
     <div class="die" id="die">
       <span class="cap" id="die-cap">rolling</span>
-      <span class="value" id="die-value">—</span>
+      <span class="value" id="die-value">-</span>
     </div>
 
     <div class="log" id="log"></div>
@@ -266,7 +266,7 @@
           : "Hermione hasn't started a roll with you yet.";
         statusEl.className = "status";
         dieCap.textContent = "waiting";
-        dieValue.textContent = "—";
+        dieValue.textContent = "-";
         dieEl.classList.remove("dead");
         rollBtn.disabled = true;
         renderLog();
@@ -284,11 +284,11 @@
         const loserName = game.loser === "hermione" ? "Hermione" : game.opponent;
         statusEl.textContent = iLost
           ? "You rolled a 1. You lose."
-          : loserName + " rolled a 1 — you win!";
+          : loserName + " rolled a 1, you win!";
         statusEl.className = "status " + (iLost ? "lost" : "won");
         rollBtn.disabled = true;
       } else if (game.yourTurn) {
-        statusEl.textContent = "Your roll — 1d" + game.sides + ".";
+        statusEl.textContent = "Your roll: 1d" + game.sides + ".";
         statusEl.className = "status";
         rollBtn.disabled = rolling;
       } else {
@@ -378,7 +378,7 @@
         parts.push(badge);
       }
 
-      const stats = [["Pronouns", p.pronouns || "—"]];
+      const stats = [["Pronouns", p.pronouns || "-"]];
       if (p.points !== null) stats.push(["Points", p.points]);   // hermione has none
       stats.forEach(([k, v]) => {
           const row = document.createElement("div");

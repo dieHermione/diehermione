@@ -242,7 +242,7 @@ app.get("/dashboard", requireLogin, (req, res) => {
 
 // --- profiles: viewable by any logged-in user, editable by the owner or hermione ---
 const PRONOUN_OPTIONS = ["She/Her", "He/Him", "They/Them"];
-// Rank replaces the old domme/sub role and the old Princess/User badge — one
+// Rank replaces the old domme/sub role and the old Princess/User badge. One
 // value covers both. Princess is hermione's alone and isn't offered at signup.
 // The ladder, highest first. Rank 2 is deliberately unnamed for now.
 const RANK_LADDER = [
@@ -784,8 +784,8 @@ app.post("/api/deathroll/roll", (req, res) => {
       other,
       "deathroll-" + key,
       result === 1
-        ? roller + " rolled a 1 — you win the deathroll!"
-        : roller + " rolled " + result + " — your roll is 1d" + result + "."
+        ? roller + " rolled a 1, you win the deathroll!"
+        : roller + " rolled " + result + ". Your roll is 1d" + result + "."
     );
     saveUsers(users);
   }
@@ -1000,8 +1000,8 @@ app.put("/api/writing/:id", (req, res) => {
 });
 
 // --- tithe: give up points ---
-// The points are burned, not transferred. Hermione doesn't keep points — they
-// read as null on her profile and she can't be granted them — so crediting her
+// The points are burned, not transferred. Hermione doesn't keep points: they
+// read as null on her profile and she can't be granted them, so crediting her
 // would contradict that. A tithe is a cost, not a transfer.
 const TITHE_POINTS = 5;
 

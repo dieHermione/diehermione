@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sign in — angeldom.me</title>
+  <title>Sign in - angeldom.me</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cause:wght@400..700&family=Noto+Sans+Bengali&family=Noto+Sans+Saurashtra&display=swap" rel="stylesheet" />
@@ -205,13 +205,13 @@
         </div>
         <label for="intro">Who are you?</label>
         <textarea id="intro" maxlength="500" rows="3" placeholder="Tell Hermione a little about yourself. She reads these before approving accounts."></textarea>
-        <p class="hint">This site is invite only — Hermione approves each account by hand.</p>
+        <p class="hint">This site is invite only, so Hermione approves each account by hand.</p>
       </div>
       <button class="submit" id="submit" type="submit">Log in</button>
     </form>
     <div id="pending" class="pending" hidden>
       <h2>Thank you.</h2>
-      <p>Your account has been created, but you can't sign in yet — Hermione approves each one by hand. Come back and log in once she has.</p>
+      <p>Your account has been created, but you can't sign in yet. Hermione approves each one by hand. Come back and log in once she has.</p>
       <button class="submit" type="button" onclick="window.location.reload()">Back to sign in</button>
     </div>
   </main>
@@ -275,7 +275,7 @@
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok && data.pending) {
-        // registering no longer signs you in — the account waits for approval
+        // registering no longer signs you in, the account waits for approval
         showPending();
       } else if (res.ok) {
         window.location.href = "/dashboard";

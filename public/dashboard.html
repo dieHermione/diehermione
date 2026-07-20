@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dashboard — angeldom.me</title>
+  <title>Dashboard - angeldom.me</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cause:wght@400..700&display=swap" rel="stylesheet" />
@@ -82,7 +82,7 @@
       font-size: 0.72rem;
       line-height: 1;
       cursor: pointer;
-      /* Laid out even when hidden, so it stays keyboard-focusable — a
+      /* Laid out even when hidden, so it stays keyboard-focusable. A
          display:none button cannot be tabbed to at all. Sits above the
          bridge so the bridge never swallows the click. */
       display: inline-flex;
@@ -350,8 +350,8 @@
       <div id="pc-badge"></div>
       <p class="bio" id="pc-bio"></p>
       <div class="mini-details">
-        <div class="mini-detail"><span class="label">Pronouns</span><span class="value" id="pc-pronouns">—</span></div>
-        <div class="mini-detail"><span class="label">Rank</span><span class="value" id="pc-rank">—</span></div>
+        <div class="mini-detail"><span class="label">Pronouns</span><span class="value" id="pc-pronouns">-</span></div>
+        <div class="mini-detail"><span class="label">Rank</span><span class="value" id="pc-rank">-</span></div>
         <div class="mini-detail"><span class="label">Points</span><span class="value" id="pc-points">0</span></div>
       </div>
       <p class="joined" id="pc-joined"></p>
@@ -367,7 +367,7 @@
       .then((d) => {
         if (d.checkIn) {
           const notice = document.getElementById("checkin-notice");
-          notice.textContent = "Daily check-in: +" + d.checkIn.amount + " points — you now have " + d.checkIn.points + ".";
+          notice.textContent = "Daily check-in: +" + d.checkIn.amount + " points. You now have " + d.checkIn.points + ".";
           notice.hidden = false;
         }
         const isHermione = Boolean(d.isAdmin ?? (d.username && d.username.toLowerCase() === "hermione"));
@@ -443,8 +443,8 @@
       const bio = document.getElementById("pc-bio");
       bio.textContent = p.bio || "No bio yet.";
       bio.classList.toggle("empty", !p.bio);
-      document.getElementById("pc-pronouns").textContent = p.pronouns || "—";
-      document.getElementById("pc-rank").textContent = p.rank || "—";
+      document.getElementById("pc-pronouns").textContent = p.pronouns || "-";
+      document.getElementById("pc-rank").textContent = p.rank || "-";
       const pcPoints = document.getElementById("pc-points").closest(".mini-detail");
       if (p.points === null) {
         pcPoints.hidden = true;
@@ -560,7 +560,7 @@
         const detail = document.createElement("div");
         detail.className = "detail";
         detail.textContent = d.progress && !d.done
-          ? d.detail + " — " + d.progress.current + " of " + d.progress.max + " points today"
+          ? d.detail + ", " + d.progress.current + " of " + d.progress.max + " points today"
           : d.detail;
         bodyEl.append(detail);
         if (d.progress) {

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Chess — angeldom.me</title>
+  <title>Chess - angeldom.me</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cause:wght@400..700&display=swap" rel="stylesheet" />
@@ -190,12 +190,12 @@
       if (removeMode) return "Click one of " + game.opponent + "'s pieces to remove it.";
       if (game.checkmate) {
         const winner = game.winner === "w" ? "White" : "Black";
-        return "Checkmate — " + winner + " wins!";
+        return "Checkmate. " + winner + " wins!";
       }
       if (game.draw || game.gameOver) return "Draw.";
       const mine = game.turn === mySide;
       let text = mine ? "Your move" : "Waiting for " + (isAdmin ? game.opponent : "Hermione") + "…";
-      if (game.check) text += " — check!";
+      if (game.check) text += ", check!";
       return text;
     }
 
@@ -305,7 +305,7 @@
         select.append(opt);
       }
       if (data.games.length === 0) {
-        statusEl.textContent = "No games yet — players start games from their dashboards.";
+        statusEl.textContent = "No games yet. Players start games from their dashboards.";
         boardEl.replaceChildren();
         game = null;
         return;

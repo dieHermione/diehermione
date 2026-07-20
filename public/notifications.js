@@ -197,7 +197,7 @@
     panel.append(clear);
   }
 
-  // A synthesised meow — a swept tone through a moving formant filter. No asset
+  // A synthesised meow, a swept tone through a moving formant filter. No asset
   // to ship, and it fails quietly if the browser hasn't allowed audio yet.
   let audioCtx = null;
   function playMeow() {

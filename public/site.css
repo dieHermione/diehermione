@@ -97,7 +97,7 @@ body.has-top-nav {
   backdrop-filter: blur(8px);
 }
 
-/* The nav is display:grid, so the `hidden` attribute alone would not hide it —
+/* The nav is display:grid, so the `hidden` attribute alone would not hide it,
  * display always beats hidden. Same for the links and the dropdown below.
  * This is what once leaked the admin link to every user. */
 .top-nav[hidden] { display: none; }

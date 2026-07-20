@@ -1,6 +1,6 @@
 /* Shared shell script: the theme toggle and the top nav.
  *
- * Follows the notifications.js pattern — the page includes this file and gets
+ * Follows the notifications.js pattern. The page includes this file and gets
  * the markup injected, rather than every page carrying its own copy. Styles for
  * both live in /site.css.
  *
@@ -22,7 +22,7 @@
     { id: "nav-mail", href: "/mail", label: "Mail" },
   ];
 
-  // Chess is deliberately absent — the page and its API are still live, it is
+  // Chess is deliberately absent. The page and its API are still live, it is
   // just not linked for now.
   var GAMES = [
     { id: "nav-snake", href: "/snake", label: "Snake" },

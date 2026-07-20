@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Guide — angeldom.me</title>
+  <title>Guide - angeldom.me</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cause:wght@400..700&display=swap" rel="stylesheet" />
@@ -83,7 +83,7 @@
 <body class="has-top-nav">
   <main class="card">
     <h1>Guide</h1>
-    <p class="lede">How angeldom.me works from the outside — everything a person using the site can see, earn, or do.</p>
+    <p class="lede">How angeldom.me works from the outside: everything a person using the site can see, earn, or do.</p>
 
     <div class="toc">
       <a href="#accounts">Accounts</a>
@@ -101,12 +101,12 @@
 
     <h2 id="accounts">Accounts</h2>
     <p>Registering asks for five things: a username (3–30 characters), a password (8 or more), your <strong>pronouns</strong>, whether you're a <strong>Visitor</strong> or a <strong>Citizen</strong>, and a short note saying <strong>who you are</strong>. Hover either rank button to read what it means.</p>
-    <p>The site is invite only, so registering does not sign you in. Your account is created and then waits: Hermione reads your note and either approves it or turns it away. Until she approves it, signing in is refused. Once she has, log in normally — there's no second step.</p>
-    <p>Passwords are hashed with bcrypt before storage — nobody, including Hermione, can read them back. Sessions last a day, and staying signed in is normal; there is no need to log in fresh each visit.</p>
+    <p>The site is invite only, so registering does not sign you in. Your account is created and then waits: Hermione reads your note and either approves it or turns it away. Until she approves it, signing in is refused. Once she has, log in normally. There's no second step.</p>
+    <p>Passwords are hashed with bcrypt before storage, so nobody, including Hermione, can read them back. Sessions last a day, and staying signed in is normal; there is no need to log in fresh each visit.</p>
     <p><strong>Logging out</strong> lives on your Profile page, next to Edit profile. It is deliberately not in the navigation bar.</p>
 
     <h2 id="nav">Getting around</h2>
-    <p>Every page except the sign-in screen carries the same pill-shaped navigation: Dashboard, Profile, Tasks, Mail, a <strong>Games</strong> dropdown, and — for Hermione only — an Admin button. To its right sit the notification bell and the mail envelope. The light/dark toggle floats at the very top-right of the page, outside the nav.</p>
+    <p>Every page except the sign-in screen carries the same pill-shaped navigation: Dashboard, Profile, Tasks, Mail, a <strong>Games</strong> dropdown, and, for Hermione only, an Admin button. To its right sit the notification bell and the mail envelope. The light/dark toggle floats at the very top-right of the page, outside the nav.</p>
     <p>The Games menu opens on hover and stays open as you move down into it. Chess exists and still works at <code>/chess</code>, but is currently hidden from the menu.</p>
 
     <h3>Light and dark</h3>
@@ -115,9 +115,9 @@
     <h2 id="dashboard">Dashboard</h2>
     <p>Three panels, with the middle column centred on the page:</p>
     <ul>
-      <li><strong>Dailies</strong> (left) — the once-a-day rewards and whether you've claimed them.</li>
-      <li><strong>Welcome + Leaderboard</strong> (middle) — a greeting, and the ranked points table.</li>
-      <li><strong>Your profile</strong> (right) — a summary card with a shortcut to the full page.</li>
+      <li><strong>Dailies</strong> (left), the once-a-day rewards and whether you've claimed them.</li>
+      <li><strong>Welcome + Leaderboard</strong> (middle), a greeting, and the ranked points table.</li>
+      <li><strong>Your profile</strong> (right), a summary card with a shortcut to the full page.</li>
     </ul>
     <p>Below 1100px wide these stack into one column instead.</p>
     <p>The <strong>Tithe</strong> button gives up 5 points. They are burned, not handed to anyone. It refuses if you have fewer than 5, so tithing can never take you below zero, and it doesn't appear on Hermione's own dashboard.</p>
@@ -126,12 +126,12 @@
     <h2 id="profiles">Profiles</h2>
     <p>Your profile holds a picture, a bio, your pronouns, your rank and your points, plus the date you joined and how old the account is.</p>
     <ul>
-      <li><strong>Picture</strong> — click it to open your file picker; it uploads the moment you choose. Images are shrunk to a 256px square automatically, so large photos are fine.</li>
-      <li><strong>Bio</strong> — up to 500 characters, via Edit profile.</li>
-      <li><strong>Pronouns</strong> — She/Her, He/Him or They/Them.</li>
-      <li><strong>Rank</strong> — see below; you can't set your own.</li>
+      <li><strong>Picture</strong>: click it to open your file picker; it uploads the moment you choose. Images are shrunk to a 256px square automatically, so large photos are fine.</li>
+      <li><strong>Bio</strong>: up to 500 characters, via Edit profile.</li>
+      <li><strong>Pronouns</strong>: She/Her, He/Him or They/Them.</li>
+      <li><strong>Rank</strong>: see below; you can't set your own.</li>
     </ul>
-    <p>Anyone signed in can view anyone else's profile — usernames on the leaderboard link straight to them — but only you (and Hermione) can edit yours.</p>
+    <p>Anyone signed in can view anyone else's profile, and usernames on the leaderboard link straight to them, but only you (and Hermione) can edit yours.</p>
 
     <h2 id="ranks">Ranks</h2>
     <p>Click any rank badge to open the legend. The ladder runs:</p>
@@ -144,13 +144,13 @@
       <tr><td>5</td><td>Devoted</td><td></td></tr>
       <tr><td>6</td><td>Follower</td><td></td></tr>
       <tr><td>7</td><td>Servant</td><td></td></tr>
-      <tr><td>—</td><td>Visitor</td><td>Separate from the ladder.</td></tr>
+      <tr><td>-</td><td>Visitor</td><td>Separate from the ladder.</td></tr>
     </table>
-    <p>Ranks are cosmetic for now — they change what your badge says and nothing else. Only Hermione can hand them out, which she does by opening the legend from someone's profile and clicking a rank.</p>
+    <p>Ranks are cosmetic for now. They change what your badge says and nothing else. Only Hermione can hand them out, which she does by opening the legend from someone's profile and clicking a rank.</p>
 
     <h2 id="currency">Points</h2>
     <p>Points are the only currency. They decide your position on the leaderboard, and can go down as well as up.</p>
-    <p>They come from two places. Hermione grants them directly — you'll get a notification either way, including when they go down — and you earn them by playing:</p>
+    <p>They come from two places. Hermione grants them directly, and you'll get a notification either way, including when they go down. You also earn them by playing:</p>
     <table>
       <tr><th>Source</th><th>Amount</th><th>Limit</th></tr>
       <tr><td>Daily check-in</td><td>5</td><td>Once a day, automatic</td></tr>
@@ -162,22 +162,22 @@
 
     <h2 id="dailies">Dailies and the reset</h2>
     <p>Daily things reset at <strong>noon Eastern</strong>, not midnight. A "day" therefore runs noon to noon: claim something at 1pm and it's available again at noon the next day.</p>
-    <p>The check-in is automatic — simply opening the site once a day pays 5 points, whether or not you log in fresh. The Dailies panel tracks each objective and shows progress where it applies.</p>
+    <p>The check-in is automatic. Simply opening the site once a day pays 5 points, whether or not you log in fresh. The Dailies panel tracks each objective and shows progress where it applies.</p>
 
     <h2 id="games">Games</h2>
 
     <h3>Wheel</h3>
-    <p>Eight wedges from 1 to 25 points, weighted so the big prizes are rare (roughly 22% for 1 point, about 2% for 25). One spin a day. The result is decided the moment you press Spin — the animation is just showing you what already happened.</p>
+    <p>Eight wedges from 1 to 25 points, weighted so the big prizes are rare (roughly 22% for 1 point, about 2% for 25). One spin a day. The result is decided the moment you press Spin, and the animation is just showing you what already happened.</p>
 
     <h3>Snake</h3>
     <p>Arrow keys or WASD. Walls <strong>wrap</strong>, so leaving one edge brings you back on the opposite side; only running into yourself ends the run. Each heart is worth 1 point, up to 20 a day.</p>
-    <div class="note">The food is shy. Come within one square of it and it will usually bolt somewhere far away — 90% of the time, and it lands at least eight squares off. Eating one is meant to be difficult.</div>
+    <div class="note">The food is shy. Come within one square of it and it will usually bolt somewhere far away, 90% of the time, and it lands at least eight squares off. Eating one is meant to be difficult.</div>
 
     <h3>Writing</h3>
     <p>Pick a category and type its passages out exactly, one after another. The passages inside are hidden until you start, and are shuffled fresh each attempt.</p>
     <ul>
       <li>No pasting, and <strong>backspace does nothing</strong>.</li>
-      <li>A wrong key doesn't send you back to the start — it counts as a mistake and you carry on.</li>
+      <li>A wrong key doesn't send you back to the start; it counts as a mistake and you carry on.</li>
       <li>Your mistake tally is shown as you go and summarised at the end.</li>
     </ul>
 
@@ -186,7 +186,7 @@
     <p>Turns are enforced, so you can only roll when it's genuinely your turn. When the other player rolls while you're elsewhere on the site, you'll get a notification. Both players' profile cards flank the board.</p>
 
     <h3>Chess</h3>
-    <p>Still playable at <code>/chess</code> — you play white, Hermione plays black — but hidden from the Games menu for now. Hermione can remove your pieces at will.</p>
+    <p>Still playable at <code>/chess</code>, where you play white and Hermione plays black, but hidden from the Games menu for now. Hermione can remove your pieces at will.</p>
 
     <h2 id="mail">Mail and notifications</h2>
     <p>The <strong>bell</strong> collects notifications: your daily objectives, points changes, deathroll turns, and new mail. A white dot appears when something is waiting, and a sound plays when a new one arrives while you're on the site. Dismiss them individually or clear them all.</p>
@@ -211,7 +211,7 @@
       <li><strong>Nothing here is real money.</strong> Points are a number on your profile.</li>
       <li><strong>Your data</strong> is a username, a hashed password, and whatever you choose to put on your profile. Pictures are stored with your account.</li>
       <li><strong>Tasks</strong> exists as a page but has no assignments yet.</li>
-      <li><strong>If a page looks empty</strong>, you're probably signed out — most pages send you back to sign-in when your session ends.</li>
+      <li><strong>If a page looks empty</strong>, you're probably signed out. Most pages send you back to sign-in when your session ends.</li>
       <li><strong>Windows users</strong>: the decorative bows on the sign-in page need a font that Windows lacks, so the site loads one for you.</li>
     </ul>
   </main>

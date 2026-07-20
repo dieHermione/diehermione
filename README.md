@@ -5,7 +5,7 @@ currency, and a handful of games. One admin account (`hermione`); everyone else
 is a regular user. Deployed at [angeldom.me](https://angeldom.me) via Railway.
 
 For architecture, storage shapes, and the bugs this codebase has already sprung,
-see the `/tech` page (`views/tech.html`) — it's the deeper reference. This file
+see the `/tech` page (`views/tech.html`). It's the deeper reference. This file
 is the orientation.
 
 ## Run
@@ -41,7 +41,7 @@ Node 18+ required (the start script uses `--env-file-if-exists`). Dependencies:
 | `views/*.html` | Every logged-in page: profile, admin, tasks, guide, tech, games |
 
 `public/` is served statically, so anything in it is reachable without a
-session — nothing sensitive belongs there. `views/` is not static; those pages
+session, so nothing sensitive belongs there. `views/` is not static; those pages
 are sent by routes guarded with `requireLogin`.
 
 ### The shared shell
@@ -75,7 +75,7 @@ local testing can't touch production data and a deploy can't overwrite it.
 
 | File | Shape |
 |---|---|
-| `users.json` | `{ [lowercaseUsername]: user }` — the key is the identity |
+| `users.json` | `{ [lowercaseUsername]: user }`, the key is the identity |
 | `games.json` | Chess games, keyed by the non-hermione player |
 | `deathroll.json` | Deathroll games, keyed the same way |
 | `mail.json` | Threads, keyed the same way |
@@ -88,7 +88,7 @@ not in separate files.
 
 Fields are read defensively (`user.points || 0`) because records predate most
 of them. Adding a field needs no migration; removing one means tolerating stale
-keys — `rankFor()` still maps the retired `role` values onto ranks.
+keys. `rankFor()` still maps the retired `role` values onto ranks.
 
 ## Auth and permissions
 
@@ -98,7 +98,7 @@ in-memory store, so a restart signs everyone out.
 There is exactly one permission check in the codebase: `isAdmin(req)`, true when
 the session username lowercases to `"hermione"`. **Admin is an identity, not a
 flag on the record**, so it can't be granted by editing data. The client hides
-admin controls too, but that's cosmetic — the server is the boundary.
+admin controls too, but that's cosmetic. The server is the boundary.
 
 Two-player games are keyed by the non-hermione player, which means the key *is*
 the authorisation: a regular user can only ever address their own row.
@@ -119,7 +119,7 @@ aside as the two options at signup. Only hermione can change a rank afterwards,
 including on her own profile.
 
 **Points** are the only currency. They drive the leaderboard, and come from two
-places: hermione grants them directly, and playing earns them — 5 for the daily
+places: hermione grants them directly, and playing earns them: 5 for the daily
 check-in, 1 per Snake pickup up to 20 a day, and 1–25 from one wheel spin a day.
 `/api/tithe` burns 5. Hermione keeps no points of her own.
 
@@ -139,11 +139,11 @@ returns the `YYYY-MM-DD` label; compute day keys no other way, since a plain
 
 | Game | Where the logic lives |
 |---|---|
-| Chess | Server, via `chess.js` — legality, checkmate and FEN validated server-side |
-| Deathroll | Server — RNG, turn order, the losing roll |
+| Chess | Server, via `chess.js`. Legality, checkmate and FEN validated server-side |
+| Deathroll | Server. RNG, turn order, the losing roll |
 | Wheel | Server picks the weighted wedge; the client animates to the returned index |
-| Snake | Client — the loop is local; only payouts touch the server |
-| Writing | Split — passages from the server, typing checked locally |
+| Snake | Client. The loop is local; only payouts touch the server |
+| Writing | Split. Passages from the server, typing checked locally |
 
 Chess is currently hidden from the nav but still fully wired up.
 
@@ -163,10 +163,10 @@ Everything under `/api` returns JSON and answers `401` when signed out.
 | `/api/me` | GET | Identity, points, and the once-per-day check-in result |
 | `/api/ranks` | GET | The ladder, plus which ranks are assignable |
 | `/api/profile/:username` | GET · PUT | PUT is owner-or-admin; rank is admin-only |
-| `/api/users` | GET | All accounts — admin only |
-| `/api/users/:username/points` · `/flag` | POST | Grant points, toggle leaderboard flag — admin only |
-| `/api/users/:username/approve` | POST | Let a pending account in — admin only |
-| `/api/users/:username` | DELETE | Remove an account, and turn away a pending one — admin only |
+| `/api/users` | GET | All accounts, admin only |
+| `/api/users/:username/points` · `/flag` | POST | Grant points, toggle leaderboard flag, admin only |
+| `/api/users/:username/approve` | POST | Let a pending account in, admin only |
+| `/api/users/:username` | DELETE | Remove an account, and turn away a pending one, admin only |
 | `/api/leaderboard` | GET | Flagged users ranked by points, hermione excluded |
 | `/api/dailies` | GET | Daily objectives with done state and progress |
 | `/api/tithe` | POST | Burns 5 points; refuses below 5 |
@@ -182,7 +182,7 @@ Everything under `/api` returns JSON and answers `401` when signed out.
 
 ## Known limits
 
-- Sessions are in-memory — every restart signs everyone out.
+- Sessions are in-memory, so every restart signs everyone out.
 - JSON files have no transactions and don't scale. Fine for a handful of
   accounts; swap for a database before it's more.
 - Avatars are base64 inside `users.json`, so they're shrunk to 256px.

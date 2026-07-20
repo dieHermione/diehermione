@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Profile — angeldom.me</title>
+  <title>Profile - angeldom.me</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cause:wght@400..700&display=swap" rel="stylesheet" />
@@ -204,7 +204,7 @@
       <div id="p-badge"></div>
       <p class="bio" id="p-bio"></p>
       <div class="details">
-        <div class="detail"><span class="label">Pronouns</span><span class="value" id="p-pronouns">—</span></div>
+        <div class="detail"><span class="label">Pronouns</span><span class="value" id="p-pronouns">-</span></div>
         <div class="detail stat"><span class="label">Points</span><span class="value" id="p-points">0</span></div>
       </div>
       <p class="joined" id="p-joined"></p>
@@ -308,7 +308,7 @@
       const bio = document.getElementById("p-bio");
       bio.textContent = profile.bio || "No bio yet.";
       bio.classList.toggle("empty", !profile.bio);
-      document.getElementById("p-pronouns").textContent = profile.pronouns || "—";
+      document.getElementById("p-pronouns").textContent = profile.pronouns || "-";
       // hermione keeps no points, so the server sends null and the tile goes away
       const pointsTile = document.getElementById("p-points").closest(".detail");
       if (profile.points === null) {
@@ -322,7 +322,7 @@
         "Joined " + created.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" }) +
         " · account is " + ageString(profile.createdAt);
       document.getElementById("edit-btn").hidden = !profile.canEdit;
-      document.title = profile.username + " — Profile";
+      document.title = profile.username + " - Profile";
     }
 
     async function loadProfile() {
