@@ -44,7 +44,7 @@
       gap: 0.5rem;
       padding: 0.55rem 0.65rem;
       border-radius: 8px;
-      background: rgba(251, 195, 211, 0.1);
+      background: var(--notif-item-bg, rgba(251, 195, 211, 0.1));
       color: var(--text-color);
       font-size: 0.85rem;
       font-weight: 500;
