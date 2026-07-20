@@ -1092,25 +1092,38 @@ function mailKeyFor(req, withWhom) {
   return req.session.username.toLowerCase();
 }
 
+// Summarises a thread for the mailbox list: who it's with, how many of their
+// messages are unread, and a preview of the latest line.
+function threadSummary(name, thread, admin) {
+  const last = thread.length ? thread[thread.length - 1] : null;
+  const theirs = admin ? "player" : "hermione";
+  return {
+    username: name,
+    unread: thread.filter((m) => m.from === theirs && !(admin ? m.readByHermione : m.readByPlayer)).length,
+    lastText: last ? last.text : "",
+    lastAt: last ? last.at : null,
+    lastFromMe: last ? last.from !== theirs : false,
+  };
+}
+
 app.get("/api/mail", (req, res) => {
   if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
   const key = mailKeyFor(req, req.query.with);
   const mail = loadMail();
   const admin = isAdmin(req);
+  const users = loadUsers();
 
-  if (admin && !key) {
-    // no thread picked: list everyone hermione can write to
-    const users = loadUsers();
-    return res.json({
-      threads: Object.keys(users)
-        .filter((k) => k !== "hermione")
-        .map((k) => ({
-          username: users[k].username,
-          unread: (mail[k] || []).filter((m) => m.from === "player" && !m.readByHermione).length,
-        })),
-      messages: null,
-    });
-  }
+  // The mailbox list, always sent so the page can render its sidebar in one
+  // request. Hermione has one thread per player; a player has only hermione.
+  const threads = admin
+    ? Object.keys(users)
+        .filter((k) => k !== "hermione" && !isPending(users[k]))
+        .map((k) => threadSummary(users[k].username, mail[k] || [], true))
+        .sort((a, b) => String(b.lastAt || "").localeCompare(String(a.lastAt || "")) ||
+                        a.username.localeCompare(b.username))
+    : [threadSummary("Hermione", mail[req.session.username.toLowerCase()] || [], false)];
+
+  if (admin && !key) return res.json({ threads, with: null, messages: null });
   if (!key) return res.status(400).json({ error: "Pick someone to write to." });
 
   const thread = mail[key] || [];
@@ -1120,10 +1133,23 @@ app.get("/api/mail", (req, res) => {
     if (admin && m.from === "player" && !m.readByHermione) { m.readByHermione = true; touched = true; }
     if (!admin && m.from === "hermione" && !m.readByPlayer) { m.readByPlayer = true; touched = true; }
   });
-  if (touched) { mail[key] = thread; saveMail(mail); }
+  if (touched) {
+    mail[key] = thread;
+    saveMail(mail);
+    // the thread we just opened is no longer unread in the list we're returning
+    const opened = threads.find((t) => t.username.toLowerCase() === (admin ? key : "hermione"));
+    if (opened) opened.unread = 0;
+    // and the bell's "new message" line has served its purpose
+    const reader = users[req.session.username.toLowerCase()];
+    if (reader) {
+      dropNotification(reader, "mail-" + key);
+      saveUsers(users);
+    }
+  }
 
   res.json({
-    with: admin ? key : "hermione",
+    threads,
+    with: admin ? (users[key] ? users[key].username : key) : "Hermione",
     messages: thread.map((m) => ({ from: m.from, text: m.text, at: m.at })),
   });
 });
@@ -1266,6 +1292,10 @@ app.get("/guide", requireLogin, (req, res) => {
 
 app.get("/tech", requireLogin, (req, res) => {
   res.sendFile(path.join(__dirname, "views", "tech.html"));
+});
+
+app.get("/mail", requireLogin, (req, res) => {
+  res.sendFile(path.join(__dirname, "views", "mail.html"));
 });
 
 app.get("/profile", requireLogin, (req, res) => {

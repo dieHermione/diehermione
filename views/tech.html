@@ -115,10 +115,10 @@
       <tr><td><code>public/site.css</code></td><td>Shared: theme variables, base layout, nav and theme-toggle styles</td></tr>
       <tr><td><code>public/me.js</code></td><td>Shared: single-flight <code>/api/me</code>, exposed as <code>window.siteMe()</code></td></tr>
       <tr><td><code>public/nav.js</code></td><td>Shared: injects the nav bar and the theme toggle</td></tr>
-      <tr><td><code>public/notifications.js</code></td><td>Shared: injects the bell <em>and</em> the mail button into any nav it finds</td></tr>
+      <tr><td><code>public/notifications.js</code></td><td>Shared: injects the bell and the envelope link into any nav it finds</td></tr>
       <tr><td><code>public/ranks.js</code></td><td>Shared: the rank legend modal</td></tr>
       <tr><td><code>public/pieces/</code></td><td>Chess piece SVGs (Cburnett set, CC BY-SA)</td></tr>
-      <tr><td><code>views/*.html</code></td><td>Every logged-in page: profile, admin, tasks, guide, and the games</td></tr>
+      <tr><td><code>views/*.html</code></td><td>Every logged-in page: profile, admin, tasks, mail, guide, and the games</td></tr>
     </table>
     <p><code>public/</code> is served statically; <code>views/</code> is not — those pages are sent explicitly by routes guarded with <code>requireLogin</code>. Anything in <code>public/</code> is reachable without a session, so nothing sensitive belongs there.</p>
 
@@ -173,7 +173,7 @@
       <tr><td><code>POST /api/snake/food</code></td><td>Rate limited and daily capped</td></tr>
       <tr><td><code>GET|PUT /api/writing[/:id]</code></td><td>List hides passages; PUT is admin only</td></tr>
       <tr><td><code>/api/deathroll/{game,games,start,roll}</code></td><td>Turn order enforced server-side</td></tr>
-      <tr><td><code>GET|POST /api/mail</code></td><td>Thread read marks messages seen</td></tr>
+      <tr><td><code>GET|POST /api/mail</code></td><td>Always returns the mailbox list; reading a thread marks it seen and drops its bell line</td></tr>
       <tr><td><code>GET|DELETE|POST /api/notifications[...]</code></td><td>GET also carries <code>mailUnread</code></td></tr>
       <tr><td><code>GET|PUT /api/site</code></td><td>Dashboard copy; PUT admin only</td></tr>
       <tr><td><code>POST /api/tithe</code></td><td>Burns 5 points; refuses below 5</td></tr>
@@ -188,7 +188,7 @@
     <h3>Shared scripts</h3>
     <p><code>nav.js</code>, <code>notifications.js</code> and <code>ranks.js</code> inject their own styles and markup into whatever page includes them, rather than each page carrying copies.</p>
     <p><code>nav.js</code> builds the nav and the theme toggle. It only injects the nav on pages whose <code>&lt;body&gt;</code> carries <code>has-top-nav</code> — that gate is what keeps the login page nav-free and stops it running the signed-in redirect. Adding a nav item is one line in its <code>NAV_LINKS</code> or <code>GAMES</code> array.</p>
-    <p><code>notifications.js</code> finds <code>.top-nav .nav-links</code> and appends the bell and envelope; it polls every 15 seconds and rides that one request for both notification content and the mail unread count. It must load <em>after</em> <code>nav.js</code>, or there is no nav to append to. Both are <code>defer</code>, and defer scripts run in document order, so the tag order is the whole mechanism.</p>
+    <p><code>notifications.js</code> finds <code>.top-nav .nav-links</code> and appends the bell and the envelope; it polls every 15 seconds and rides that one request for both notification content and the mail unread count. The envelope is a plain link to <code>/mail</code> — the conversation itself lives on that page, not in a dropdown. It must load <em>after</em> <code>nav.js</code>, or there is no nav to append to. Both are <code>defer</code>, and defer scripts run in document order, so the tag order is the whole mechanism.</p>
     <div class="note"><strong>One <code>/api/me</code> per page.</strong> <code>me.js</code> exposes <code>window.siteMe()</code>, a promise fetched once and shared. The page, the nav and the bell all want the same identity, but the server reports the daily check-in exactly once — so independent callers raced and the notice vanished at random. Never call <code>/api/me</code> directly; use <code>siteMe()</code>. It is loaded without <code>defer</code> so it exists before any page's inline script runs.</div>
     <p>The meow is synthesised with Web Audio — a sawtooth swept 620→880→500 Hz through a moving bandpass formant, with vibrato. No audio file to host, and it fails silently if the browser hasn't allowed audio yet.</p>
 
