@@ -208,6 +208,53 @@
       margin: 0;
     }
     .mini-detail[hidden] { display: none; }
+    /* hermione's edit affordances: invisible until you hover the text */
+    .editable { position: relative; display: inline-block; }
+    .editable .pencil {
+      position: absolute;
+      top: 50%;
+      right: -1.9rem;
+      transform: translateY(-50%);
+      width: 1.45rem;
+      height: 1.45rem;
+      padding: 0;
+      border: none;
+      border-radius: 50%;
+      background: var(--button-bg);
+      color: var(--button-text);
+      font-size: 0.72rem;
+      line-height: 1;
+      cursor: pointer;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+    .editable:hover .pencil, .editable .pencil:focus-visible { display: inline-flex; }
+    .copy-editor { display: none; margin-bottom: 1rem; text-align: left; }
+    .copy-editor.open { display: block; }
+    .copy-editor label {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--table-header-color);
+      margin-bottom: 0.25rem;
+    }
+    .copy-editor input {
+      width: 100%;
+      padding: 0.5rem 0.65rem;
+      margin-bottom: 0.7rem;
+      border: 1px solid var(--input-border);
+      border-radius: 8px;
+      background: var(--input-bg);
+      color: var(--input-text);
+      font-family: inherit;
+      font-size: 0.9rem;
+    }
+    .copy-editor input:focus { outline: none; border-color: var(--button-hover-bg); }
+    .copy-editor .row { display: flex; gap: 0.5rem; justify-content: center; }
+    .copy-editor .hint { color: var(--muted-color); font-size: 0.72rem; margin: -0.4rem 0 0.7rem; }
     /* +10px under the heading, taken back off the paragraph so the card keeps its height */
     #welcome { margin-bottom: 1.125rem; }
     #dashboard-message { margin-bottom: 0.875rem; }
@@ -460,8 +507,9 @@
       </aside>
     <div class="dashboard-col">
       <main class="card">
-        <h1 id="welcome">Welcome!</h1>
-        <p id="dashboard-message">There is no text here yet.</p>
+        <h1><span class="editable" id="welcome-wrap"><span id="welcome">Welcome!</span></span></h1>
+        <p><span class="editable" id="message-wrap"><span id="dashboard-message">There is no text here yet.</span></span></p>
+        <div class="copy-editor" id="copy-editor"></div>
         <p class="checkin-notice" id="checkin-notice" hidden></p>
         <div class="dashboard-actions">
           <button id="tithe" type="button" hidden>Tithe $5</button>
@@ -552,12 +600,8 @@
           notice.hidden = false;
         }
         const isHermione = Boolean(d.isAdmin ?? (d.username && d.username.toLowerCase() === "hermione"));
-        const greeting = isHermione ? "Welcome, Princess!" : "Welcome, " + d.username + "!";
-        document.getElementById("welcome").textContent = greeting;
-        document.getElementById("dashboard-message").textContent = isHermione
-          ? "mirror mirror on the wall."
-          : "There is no text here yet.";
         document.getElementById("tithe").hidden = isHermione;
+        loadCopy(isHermione);
       })
       .catch(() => (window.location.href = "/"));
 
@@ -645,6 +689,84 @@
       document.getElementById("profile-card").hidden = false;
     }
     loadProfileCard();
+
+    // --- the two lines of dashboard copy, editable in place by hermione ---
+    let siteRaw = null;
+
+    async function loadCopy(isHermione) {
+      const res = await fetch("/api/site");
+      if (!res.ok) return;
+      const site = await res.json();
+      document.getElementById("welcome").textContent = site.welcome;
+      document.getElementById("dashboard-message").textContent = site.message;
+      siteRaw = site.raw || null;
+      if (isHermione && siteRaw) addPencils();
+    }
+
+    function addPencils() {
+      [["welcome-wrap", "welcome"], ["message-wrap", "message"]].forEach(([wrapId, which]) => {
+        const wrap = document.getElementById(wrapId);
+        if (!wrap || wrap.querySelector(".pencil")) return;
+        const pencil = document.createElement("button");
+        pencil.type = "button";
+        pencil.className = "pencil";
+        pencil.textContent = "✎";
+        pencil.title = "Edit this text";
+        pencil.addEventListener("click", () => openCopyEditor(which));
+        wrap.append(pencil);
+      });
+    }
+
+    function openCopyEditor(which) {
+      const editor = document.getElementById("copy-editor");
+      const adminKey = which === "welcome" ? "welcomeAdmin" : "messageAdmin";
+      const userKey = which === "welcome" ? "welcomeUser" : "messageUser";
+      editor.replaceChildren();
+
+      const mineLabel = document.createElement("label");
+      mineLabel.textContent = "What you see";
+      const mine = document.createElement("input");
+      mine.type = "text";
+      mine.maxLength = 200;
+      mine.value = siteRaw[adminKey];
+
+      const theirsLabel = document.createElement("label");
+      theirsLabel.textContent = "What everyone else sees";
+      const theirs = document.createElement("input");
+      theirs.type = "text";
+      theirs.maxLength = 200;
+      theirs.value = siteRaw[userKey];
+
+      const hint = document.createElement("p");
+      hint.className = "hint";
+      hint.textContent = "{name} becomes their username.";
+
+      const row = document.createElement("div");
+      row.className = "row";
+      const save = document.createElement("button");
+      save.type = "button";
+      save.textContent = "Save";
+      const cancel = document.createElement("button");
+      cancel.type = "button";
+      cancel.textContent = "Cancel";
+      cancel.addEventListener("click", () => editor.classList.remove("open"));
+      save.addEventListener("click", async () => {
+        const res = await fetch("/api/site", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ [adminKey]: mine.value, [userKey]: theirs.value }),
+        });
+        if (res.ok) {
+          siteRaw = (await res.json()).raw;
+          editor.classList.remove("open");
+          loadCopy(true);
+        }
+      });
+      row.append(save, cancel);
+
+      editor.append(mineLabel, mine, theirsLabel, theirs, hint, row);
+      editor.classList.add("open");
+    }
 
     async function loadDailies() {
       const res = await fetch("/api/dailies");

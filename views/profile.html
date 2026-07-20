@@ -175,6 +175,8 @@
       text-align: center;
       color: var(--text-color);
     }
+    .avatar.clickable, .avatar-fallback.clickable { cursor: pointer; }
+    .avatar.clickable:hover, .avatar-fallback.clickable:hover { filter: brightness(0.94); }
     .avatar {
       width: 120px;
       height: 120px;
@@ -389,6 +391,7 @@
   <main class="card">
     <div id="view-mode">
       <div id="avatar-slot"></div>
+      <input type="file" id="quick-icon" accept="image/*" hidden />
       <h1 class="username" id="p-username">…</h1>
       <div id="p-badge"></div>
       <p class="bio" id="p-bio"></p>
@@ -500,7 +503,13 @@
 
     function renderProfile() {
       const slot = document.getElementById("avatar-slot");
-      slot.replaceChildren(avatarEl(profile));
+      const pic = avatarEl(profile);
+      if (profile.canEdit) {
+        pic.classList.add("clickable");
+        pic.title = "Click to change the picture";
+        pic.addEventListener("click", () => document.getElementById("quick-icon").click());
+      }
+      slot.replaceChildren(pic);
       document.getElementById("p-username").textContent = profile.username;
       const badge = document.createElement("span");
       const rank = profile.rank || "";
@@ -561,6 +570,21 @@
       }
     }
 
+    // picking a file from the avatar uploads straight away, no form needed
+    document.getElementById("quick-icon").addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      shrink(file, async (dataUrl) => {
+        const res = await fetch("/api/profile/" + encodeURIComponent(profileUser), {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ icon: dataUrl }),
+        });
+        if (res.ok) await loadProfile();
+        e.target.value = "";
+      });
+    });
+
     document.getElementById("edit-btn").addEventListener("click", () => setEditing(true));
     document.getElementById("logout-btn").addEventListener("click", async () => {
       await fetch("/api/logout", { method: "POST" });
@@ -569,9 +593,7 @@
     document.getElementById("cancel-btn").addEventListener("click", () => setEditing(false));
 
     // downscale the chosen image to a 256px square so uploads stay tiny
-    document.getElementById("f-icon").addEventListener("change", (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
+    function shrink(file, done) {
       const img = new Image();
       img.onload = () => {
         const size = 256;
@@ -581,13 +603,21 @@
         const scale = Math.max(size / img.width, size / img.height);
         const w = img.width * scale, h = img.height * scale;
         ctx.drawImage(img, (size - w) / 2, (size - h) / 2, w, h);
-        pendingIcon = canvas.toDataURL("image/jpeg", 0.85);
-        document.getElementById("edit-avatar-slot").replaceChildren(
-          avatarEl({ username: profile.username, icon: pendingIcon })
-        );
+        done(canvas.toDataURL("image/jpeg", 0.85));
         URL.revokeObjectURL(img.src);
       };
       img.src = URL.createObjectURL(file);
+    }
+
+    document.getElementById("f-icon").addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      shrink(file, (dataUrl) => {
+        pendingIcon = dataUrl;
+        document.getElementById("edit-avatar-slot").replaceChildren(
+          avatarEl({ username: profile.username, icon: pendingIcon })
+        );
+      });
     });
 
     document.getElementById("edit-form").addEventListener("submit", async (e) => {

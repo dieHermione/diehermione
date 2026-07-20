@@ -13,6 +13,7 @@ const GAMES_FILE = path.join(process.env.DATA_DIR || __dirname, "games.json");
 const WRITING_FILE = path.join(process.env.DATA_DIR || __dirname, "writing.json");
 const DEATHROLL_FILE = path.join(process.env.DATA_DIR || __dirname, "deathroll.json");
 const MAIL_FILE = path.join(process.env.DATA_DIR || __dirname, "mail.json");
+const SITE_FILE = path.join(process.env.DATA_DIR || __dirname, "site.json");
 
 // --- simple JSON-file user store (fine for testing; swap for a DB later) ---
 function loadUsers() {
@@ -941,6 +942,54 @@ app.post("/api/tithe", (req, res) => {
   hermione.dollars = (hermione.dollars || 0) + TITHE_DOLLARS;
   saveUsers(users);
   res.json({ ok: true, amount: TITHE_DOLLARS, dollars: user.dollars });
+});
+
+// --- editable site copy ---
+// Two audiences, so hermione can word her own dashboard differently from
+// everyone else's. {name} stands in for the viewer's username.
+const SITE_DEFAULTS = {
+  welcomeAdmin: "Welcome, Princess!",
+  welcomeUser: "Welcome, {name}!",
+  messageAdmin: "mirror mirror on the wall.",
+  messageUser: "There is no text here yet.",
+};
+
+function loadSite() {
+  try {
+    return { ...SITE_DEFAULTS, ...JSON.parse(fs.readFileSync(SITE_FILE, "utf8")) };
+  } catch {
+    return { ...SITE_DEFAULTS };
+  }
+}
+function saveSite(site) {
+  fs.writeFileSync(SITE_FILE, JSON.stringify(site, null, 2));
+}
+
+app.get("/api/site", (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  const site = loadSite();
+  const admin = isAdmin(req);
+  res.json({
+    // what this viewer should see, already filled in
+    welcome: (admin ? site.welcomeAdmin : site.welcomeUser).replace(/\{name\}/g, req.session.username),
+    message: admin ? site.messageAdmin : site.messageUser,
+    raw: admin ? site : undefined,     // hermione also gets the templates to edit
+  });
+});
+
+app.put("/api/site", (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });
+  const site = loadSite();
+  for (const key of Object.keys(SITE_DEFAULTS)) {
+    if (req.body[key] === undefined) continue;
+    const value = String(req.body[key]).trim();
+    if (!value) return res.status(400).json({ error: "Text can't be empty." });
+    if (value.length > 200) return res.status(400).json({ error: "Keep it under 200 characters." });
+    site[key] = value;
+  }
+  saveSite(site);
+  res.json({ ok: true, raw: site });
 });
 
 // --- mail: threads between hermione and each player ---
