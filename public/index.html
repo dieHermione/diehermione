@@ -6,7 +6,7 @@
   <title>Sign in — angeldom.me</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cause:wght@400..700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Cause:wght@400..700&family=Noto+Sans+Bengali&family=Noto+Sans+Saurashtra&display=swap" rel="stylesheet" />
   <style>
     :root {
       color-scheme: light;
@@ -78,7 +78,12 @@
       margin-bottom: 1.25rem;
       padding: 20px 0;
     }
-    .bow { display: inline-block; }
+    /* U+A8D1 (Saurashtra) and U+09CE (Bengali) have no font on Windows, so the
+       bows rendered as tofu. Ship the Noto faces that cover them. */
+    .bow {
+      display: inline-block;
+      font-family: "Noto Sans Saurashtra", "Noto Sans Bengali", "Cause", sans-serif;
+    }
     .bow.flip { transform: scaleX(-1); }
     .card {
       background: var(--panel-bg);
