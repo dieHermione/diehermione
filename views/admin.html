@@ -377,7 +377,7 @@
         </div>
         <div class="field narrow" id="f-words">
           <label for="t-words">Minimum words</label>
-          <input id="t-words" type="number" min="1" step="1" value="250" />
+          <input id="t-words" type="number" min="1" step="1" placeholder="words" />
         </div>
 
         <!-- repetition fields -->
@@ -387,7 +387,7 @@
         </div>
         <div class="field narrow" id="f-reps" hidden>
           <label for="t-reps">Repetitions</label>
-          <input id="t-reps" type="number" min="1" step="1" value="10" />
+          <input id="t-reps" type="number" min="1" step="1" placeholder="times" />
         </div>
 
         <div class="field">
@@ -413,7 +413,25 @@
   <script>
 
     // --- assigning tasks ---
-    let accounts = [];   // approved, non-hermione, filled by loadAccounts
+    let accounts = [];          // approved, non-hermione, filled by loadAccounts
+    let pronounsByName = {};     // username -> "She/Her" | "He/Him" | "They/Them"
+
+    // The assign-form hints describe the selected assignee, so they use that
+    // person's pronouns rather than a hardcoded "she". "They" takes "are".
+    function subjectPronoun(pronouns) {
+      if (pronouns === "He/Him") return { subject: "he", isAre: "is" };
+      if (pronouns === "They/Them") return { subject: "they", isAre: "are" };
+      return { subject: "she", isAre: "is" };   // She/Her, and the safe default
+    }
+
+    function applyPronouns() {
+      const who = document.getElementById("t-who").value;
+      const { subject, isAre } = subjectPronoun(pronounsByName[who]);
+      document.getElementById("t-topic").placeholder = "What " + subject + " " + isAre + " to write about";
+      document.getElementById("t-text").placeholder = "The line " + subject + " must copy out";
+      document.getElementById("t-detail").placeholder = "Anything else " + subject + " should know";
+    }
+    document.getElementById("t-who").addEventListener("change", applyPronouns);
 
     function refreshAssignForm() {
       const essay = document.getElementById("t-type").value === "essay";
@@ -477,6 +495,8 @@
       document.getElementById("t-text").value = "";
       document.getElementById("t-detail").value = "";
       document.getElementById("t-points").value = "";
+      document.getElementById("t-words").value = "";
+      document.getElementById("t-reps").value = "";
       loadAllTasks();
     });
 
@@ -697,10 +717,12 @@
           const approved = d.users.filter((u) => !u.pending);
           renderApprovals(waiting);
 
-          accounts = approved
-            .map((u) => u.username)
-            .filter((n) => n.toLowerCase() !== "hermione");
+          const assignable = approved.filter((u) => u.username.toLowerCase() !== "hermione");
+          accounts = assignable.map((u) => u.username);
+          pronounsByName = {};
+          for (const u of assignable) pronounsByName[u.username] = u.pronouns || "";
           fillWhoOptions();
+          applyPronouns();
           loadAllTasks();
 
           document.getElementById("count").textContent =

@@ -374,6 +374,7 @@ app.get("/api/users", (req, res) => {
       points: u.username.toLowerCase() === "hermione" ? null : u.points || 0,
       flagged: !!u.flagged,
       pending: isPending(u),
+      pronouns: canonical(u.pronouns, PRONOUN_OPTIONS),
       intro: u.intro || "",
     })),
   });
