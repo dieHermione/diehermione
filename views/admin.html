@@ -178,7 +178,7 @@
       border-radius: 12px;
       box-shadow: 0 10px 40px var(--shadow);
       width: 100%;
-      max-width: 700px;
+      max-width: 860px;
       padding: 2rem;
       color: var(--text-color);
     }
@@ -232,7 +232,42 @@
       color: var(--input-text);
     }
     .pts-input:focus { outline: none; border-color: var(--focus-color); }
-    .action-row { display: flex; flex-wrap: wrap; gap: 0.35rem; align-items: center; }
+    .action-row { display: flex; flex-wrap: wrap; gap: 0.3rem; align-items: center; }
+    .pts-group { display: inline-flex; gap: 0.25rem; align-items: center; }
+    .pts-select {
+      padding: 0.3rem 0.4rem;
+      border: 1px solid var(--input-border);
+      border-radius: 999px;
+      font-family: inherit;
+      font-size: 0.76rem;
+      font-weight: 700;
+      background: var(--input-bg);
+      color: var(--input-text);
+      cursor: pointer;
+    }
+    .pts-select:focus { outline: none; border-color: var(--focus-color); }
+    .chip.quick { padding: 0.32rem 0.6rem; }
+    /* delete runs on a timer you can call off */
+    .pending {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--text-color);
+    }
+    .pending .countdown {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 1.9rem;
+      padding: 0.15rem 0.4rem;
+      border-radius: 999px;
+      background: var(--table-border);
+      color: var(--text-color);
+      font-variant-numeric: tabular-nums;
+    }
     .chip {
       flex: 0 0 auto;
       padding: 0.32rem 0.75rem;
@@ -451,18 +486,36 @@
             const row = document.createElement("div");
             row.className = "action-row";
 
-            const amount = document.createElement("input");
-            amount.type = "number";
-            amount.step = "1";
-            amount.className = "pts-input";
-            amount.placeholder = "pts";
+            if (u.username.toLowerCase() !== "hermione") {
+              // pick an amount, or use a one-tap preset
+              const group = document.createElement("div");
+              group.className = "pts-group";
+              const select = document.createElement("select");
+              select.className = "pts-select";
+              [1, 5, 10, 25, 100, 250].forEach((n) => {
+                const opt = document.createElement("option");
+                opt.value = n;
+                opt.textContent = "+" + n;
+                select.append(opt);
+              });
+              const give = document.createElement("button");
+              give.type = "button";
+              give.className = "chip give";
+              give.textContent = "Give";
+              give.addEventListener("click", () => addPoints(u.username, select.value));
+              group.append(select, give);
+              row.append(group);
 
-            const give = document.createElement("button");
-            give.type = "button";
-            give.className = "chip give";
-            give.textContent = "Give";
-            give.title = "Add points";
-            give.addEventListener("click", () => addPoints(u.username, amount.value));
+              [5, 10, 25, 100].forEach((n) => {
+                const quick = document.createElement("button");
+                quick.type = "button";
+                quick.className = "chip quick";
+                quick.textContent = "+" + n;
+                quick.title = "Give " + n + " points";
+                quick.addEventListener("click", () => addPoints(u.username, n));
+                row.append(quick);
+              });
+            }
 
             const flag = document.createElement("button");
             flag.type = "button";
@@ -470,8 +523,7 @@
             flag.textContent = u.flagged ? "Hide" : "Show";
             flag.title = u.flagged ? "Hide from leaderboard" : "Show on leaderboard";
             flag.addEventListener("click", () => setFlag(u.username, !u.flagged));
-
-            row.append(amount, give, flag);
+            row.append(flag);
 
             if (u.username.toLowerCase() !== "hermione") {
               const del = document.createElement("button");
@@ -479,7 +531,7 @@
               del.className = "chip danger";
               del.textContent = "Delete";
               del.title = "Delete account";
-              del.addEventListener("click", () => deleteAccount(u.username));
+              del.addEventListener("click", () => armDelete(u.username, row));
               row.append(del);
             }
             actions.append(row);
@@ -492,10 +544,7 @@
 
     async function addPoints(username, value) {
       const amount = parseInt(value, 10);
-      if (!Number.isInteger(amount) || amount === 0) {
-        alert("Enter a whole number of points first.");
-        return;
-      }
+      if (!Number.isInteger(amount) || amount === 0) return;
       const res = await fetch("/api/users/" + encodeURIComponent(username) + "/points", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -521,12 +570,55 @@
       loadAccounts();
     }
 
+    // Deleting is armed rather than confirmed: the row turns into a countdown
+    // you can call off, and only fires if you let it run out.
+    const DELETE_DELAY = 15;
+
+    function armDelete(username, row) {
+      const original = [...row.childNodes];
+      let left = DELETE_DELAY;
+
+      const pending = document.createElement("div");
+      pending.className = "pending";
+      const label = document.createElement("span");
+      label.textContent = "Deleting " + username + " in";
+      const clock = document.createElement("span");
+      clock.className = "countdown";
+      clock.textContent = left + "s";
+      const cancel = document.createElement("button");
+      cancel.type = "button";
+      cancel.className = "chip";
+      cancel.textContent = "Cancel";
+      const now = document.createElement("button");
+      now.type = "button";
+      now.className = "chip danger";
+      now.textContent = "Delete now";
+      pending.append(label, clock, cancel, now);
+      row.replaceChildren(pending);
+
+      const stop = () => {
+        clearInterval(timer);
+        row.replaceChildren(...original);
+      };
+      cancel.addEventListener("click", stop);
+      now.addEventListener("click", () => { clearInterval(timer); deleteAccount(username); });
+
+      const timer = setInterval(() => {
+        left--;
+        clock.textContent = left + "s";
+        if (left <= 0) {
+          clearInterval(timer);
+          deleteAccount(username);
+        }
+      }, 1000);
+    }
+
     async function deleteAccount(username) {
-      if (!confirm('Delete the account "' + username + '"? This cannot be undone.')) return;
       const res = await fetch("/api/users/" + encodeURIComponent(username), { method: "DELETE" });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        alert(data.error || "Delete failed.");
+        const count = document.getElementById("count");
+        count.textContent = data.error || "Delete failed.";
       }
       loadAccounts();
     }
