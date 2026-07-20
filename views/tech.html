@@ -136,8 +136,8 @@
     <p>All six are gitignored. Production keeps its own copies on a Railway volume, so local testing can never affect live data — and a deploy never overwrites live data either.</p>
 
     <h3>The user record</h3>
-    <p>Written keys: <code>username</code>, <code>passwordHash</code>, <code>createdAt</code>, <code>pronouns</code>, <code>rank</code>, <code>points</code>, <code>dollars</code>, <code>icon</code>, <code>bio</code>, <code>flagged</code>, <code>notifications</code>, plus per-day bookkeeping: <code>lastCheckIn</code>, <code>wheelDay</code>, <code>snakeDay</code>, <code>snakeToday</code>, <code>dailiesNotifiedOn</code>.</p>
-    <p>Everything is read defensively (<code>user.dollars || 0</code>) because records predate most fields. Adding a field needs no migration; removing one means tolerating stale keys. Rank does this already — <code>rankFor()</code> still maps the retired <code>role</code> values <code>domme</code>/<code>sub</code> onto Visitor/Citizen.</p>
+    <p>Written keys: <code>username</code>, <code>passwordHash</code>, <code>createdAt</code>, <code>pronouns</code>, <code>rank</code>, <code>points</code>, <code>icon</code>, <code>bio</code>, <code>flagged</code>, <code>notifications</code>, plus per-day bookkeeping: <code>lastCheckIn</code>, <code>wheelDay</code>, <code>snakeDay</code>, <code>snakeToday</code>, <code>dailiesNotifiedOn</code>.</p>
+    <p>Everything is read defensively (<code>user.points || 0</code>) because records predate most fields. Adding a field needs no migration. Removing one is a choice between tolerating stale keys and migrating: <code>rankFor()</code> still maps the retired <code>role</code> values <code>domme</code>/<code>sub</code> onto Visitor/Citizen, whereas the retired <code>dollars</code> balance was folded into <code>points</code> by <code>migrateDollars()</code>, which runs inside <code>loadUsers()</code> and rewrites the file once. Migrate when a stale key would be read as real data; tolerate it when it is merely unused.</p>
     <div class="note"><strong>Read-modify-write.</strong> Every handler loads the whole file, mutates, and saves. Node's single thread plus synchronous <code>fs</code> makes each handler atomic, so concurrent requests can't interleave — but two handlers that both load users must not run <code>await</code> between load and save, or the later write will clobber the earlier.</div>
 
     <h2 id="auth">Auth and permissions</h2>
@@ -158,7 +158,7 @@
       <tr><th>Route</th><th>Notes</th></tr>
       <tr><td><code>POST /api/register</code></td><td>Requires pronouns and a signup rank</td></tr>
       <tr><td><code>POST /api/login</code> · <code>POST /api/logout</code></td><td>Login also runs check-in and seeds notifications</td></tr>
-      <tr><td><code>GET /api/me</code></td><td>Identity, dollars, and the daily check-in result</td></tr>
+      <tr><td><code>GET /api/me</code></td><td>Identity, points, and the daily check-in result</td></tr>
       <tr><td><code>GET|PUT /api/profile/:username</code></td><td>PUT is owner-or-admin; rank is admin-only</td></tr>
       <tr><td><code>GET /api/ranks</code></td><td>The ladder, plus which ranks are assignable</td></tr>
       <tr><td><code>GET /api/users</code> · <code>POST .../points</code> · <code>POST .../flag</code> · <code>DELETE</code></td><td>Admin only</td></tr>
@@ -171,7 +171,7 @@
       <tr><td><code>GET|POST /api/mail</code></td><td>Thread read marks messages seen</td></tr>
       <tr><td><code>GET|DELETE|POST /api/notifications[...]</code></td><td>GET also carries <code>mailUnread</code></td></tr>
       <tr><td><code>GET|PUT /api/site</code></td><td>Dashboard copy; PUT admin only</td></tr>
-      <tr><td><code>POST /api/tithe</code></td><td>$5 to Hermione; refuses below $5</td></tr>
+      <tr><td><code>POST /api/tithe</code></td><td>Burns 5 points; refuses below 5</td></tr>
     </table>
 
     <h2 id="frontend">Front-end conventions</h2>
@@ -196,13 +196,14 @@
     <div class="note">Don't compute day keys any other way. A plain <code>toISOString().slice(0,10)</code> disagrees with this function for twelve hours out of every day — which is exactly how one test appeared to fail when the code was correct.</div>
 
     <h2 id="currency">Currency and trust</h2>
-    <p>Points are admin-granted only. Dollars are earned, and two of the three sources are browser-reported, which can't be trusted outright. The defences are deliberately economic rather than cryptographic:</p>
+    <p>Points are the only currency: both granted by Hermione and earned by playing. Two of the three earned sources are browser-reported, which can't be trusted outright. The defences are deliberately economic rather than cryptographic:</p>
     <ul>
-      <li><strong>Daily cap</strong> — Snake pays at most $20/day, so farming gains nothing over honest play.</li>
+      <li><strong>Daily cap</strong> — Snake pays at most 20 points/day, so farming gains nothing over honest play.</li>
       <li><strong>Token bucket</strong> — 8 pickups burst, refilling one per 2s. A fixed minimum gap was tried first and rejected: food can legitimately spawn in front of the snake and be eaten on the next 120ms tick, so a hard floor would reject honest pickups.</li>
       <li><strong>Server-side outcomes</strong> — the wheel and deathroll pick their results on the server; the client only animates what it's told.</li>
     </ul>
-    <p>If dollars ever buy something worth cheating for, the real fix is server-authoritative gameplay — the client sends inputs, the server owns the state. Until then the cap is the honest boundary.</p>
+    <p>If points ever buy something worth cheating for, the real fix is server-authoritative gameplay — the client sends inputs, the server owns the state. Until then the cap is the honest boundary.</p>
+    <div class="note"><strong>Merging the currencies had a side effect worth knowing.</strong> Points used to be admin-granted only, so the leaderboard ranked what Hermione had chosen to award. Now that playing earns points too, it ranks grinding as well. If those ever need separating again, track earned and granted totals as distinct fields and rank on the granted one — do not try to infer the split after the fact.</div>
 
     <h2 id="games">Game implementations</h2>
     <table>

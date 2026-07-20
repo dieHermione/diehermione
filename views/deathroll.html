@@ -380,7 +380,6 @@
 
       const stats = [["Pronouns", p.pronouns || "—"]];
       if (p.points !== null) stats.push(["Points", p.points]);   // hermione has none
-      stats.push(["Dollars", "$" + p.dollars]);
       stats.forEach(([k, v]) => {
           const row = document.createElement("div");
           row.className = "stat";

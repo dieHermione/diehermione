@@ -105,7 +105,7 @@
     }
 
     let snake, dir, nextDir, food, score, timer = null, alive = false;
-    let earned = 0;     // dollars earned this run
+    let earned = 0;     // points earned this run
     let cappedAt = 0;   // set once the server says the daily limit is spent
 
     function reset() {
@@ -210,7 +210,7 @@
       draw();
     }
 
-    // each pickup is worth $1; the server is the one that actually credits it
+    // each pickup is worth a point; the server is the one that actually credits it
     async function awardFood() {
       try {
         const res = await fetch("/api/snake/food", { method: "POST" });
@@ -226,8 +226,8 @@
     }
 
     function showScore() {
-      let text = "Score: " + score + (earned ? " · earned $" + earned : "");
-      if (cappedAt) text += " · daily $" + cappedAt + " limit reached";
+      let text = "Score: " + score + (earned ? " · earned " + earned + " points" : "");
+      if (cappedAt) text += " · daily " + cappedAt + " point limit reached";
       statusEl.textContent = text;
     }
 
@@ -237,7 +237,7 @@
       timer = null;
       statusEl.textContent =
         "Game over — final score " + score +
-        (earned ? ", earned $" + earned : "") + ". Press Start to try again!";
+        (earned ? ", earned " + earned + " points" : "") + ". Press Start to try again!";
       document.getElementById("start").textContent = "Start";
     }
 

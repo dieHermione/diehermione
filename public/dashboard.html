@@ -308,7 +308,7 @@
         <div class="copy-editor" id="copy-editor"></div>
         <p class="checkin-notice" id="checkin-notice" hidden></p>
         <div class="dashboard-actions">
-          <button id="tithe" type="button" hidden>Tithe $5</button>
+          <button id="tithe" type="button" hidden>Tithe 5 points</button>
         </div>
       </main>
       <section class="card">
@@ -330,7 +330,6 @@
         <div class="mini-detail"><span class="label">Pronouns</span><span class="value" id="pc-pronouns">—</span></div>
         <div class="mini-detail"><span class="label">Rank</span><span class="value" id="pc-rank">—</span></div>
         <div class="mini-detail"><span class="label">Points</span><span class="value" id="pc-points">0</span></div>
-        <div class="mini-detail"><span class="label">Dollars</span><span class="value" id="pc-dollars">$0</span></div>
       </div>
       <p class="joined" id="pc-joined"></p>
       <button id="pc-view" type="button">View profile</button>
@@ -345,7 +344,7 @@
       .then((d) => {
         if (d.checkIn) {
           const notice = document.getElementById("checkin-notice");
-          notice.textContent = "Daily check-in: +$" + d.checkIn.amount + " — you now have $" + d.checkIn.dollars + ".";
+          notice.textContent = "Daily check-in: +" + d.checkIn.amount + " points — you now have " + d.checkIn.points + ".";
           notice.hidden = false;
         }
         const isHermione = Boolean(d.isAdmin ?? (d.username && d.username.toLowerCase() === "hermione"));
@@ -430,7 +429,6 @@
         pcPoints.hidden = false;
         document.getElementById("pc-points").textContent = p.points;
       }
-      document.getElementById("pc-dollars").textContent = "$" + p.dollars;
       document.getElementById("pc-joined").textContent =
         "Joined " + new Date(p.createdAt).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" }) +
         " · " + pcAgeString(p.createdAt);
@@ -539,7 +537,7 @@
         const detail = document.createElement("div");
         detail.className = "detail";
         detail.textContent = d.progress && !d.done
-          ? d.detail + " — $" + d.progress.current + " of $" + d.progress.max + " today"
+          ? d.detail + " — " + d.progress.current + " of " + d.progress.max + " points today"
           : d.detail;
         bodyEl.append(detail);
         if (d.progress) {
@@ -567,7 +565,7 @@
       const data = await res.json().catch(() => ({}));
       const notice = document.getElementById("checkin-notice");
       notice.textContent = res.ok
-        ? "Tithed $" + data.amount + " to Hermione. You have $" + data.dollars + " left."
+        ? "Tithed " + data.amount + " points. You have " + data.points + " left."
         : data.error || "That didn't work.";
       notice.hidden = false;
       if (res.ok) loadProfileCard();

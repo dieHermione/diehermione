@@ -133,7 +133,7 @@
     }
 
     // task shape: { id, title, detail, source: "hermione" | "auto",
-    //               status: "active" | "done", points, dollars }
+    //               status: "active" | "done", points }
     function renderTask(task) {
       const row = document.createElement("div");
       row.className = "task" + (task.status === "done" ? " done" : "");
@@ -166,7 +166,6 @@
           : tag("Set by Hermione", "assigned")
       );
       if (task.points) meta.append(tag(task.points + " pts", "reward"));
-      if (task.dollars) meta.append(tag("$" + task.dollars, "reward"));
       bodyEl.append(meta);
 
       row.append(bodyEl);

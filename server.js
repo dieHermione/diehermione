@@ -17,11 +17,28 @@ const SITE_FILE = path.join(process.env.DATA_DIR || __dirname, "site.json");
 
 // --- simple JSON-file user store (fine for testing; swap for a DB later) ---
 function loadUsers() {
+  let users;
   try {
-    return JSON.parse(fs.readFileSync(USERS_FILE, "utf8"));
+    users = JSON.parse(fs.readFileSync(USERS_FILE, "utf8"));
   } catch {
     return {};
   }
+  return migrateDollars(users);
+}
+
+// Dollars and points were merged into a single currency at 1:1. Folds any
+// leftover balance into points and drops the key. Idempotent: once no record
+// carries `dollars` it does nothing and never writes.
+function migrateDollars(users) {
+  let changed = false;
+  for (const user of Object.values(users)) {
+    if (!user || user.dollars === undefined) continue;
+    user.points = (user.points || 0) + (user.dollars || 0);
+    delete user.dollars;
+    changed = true;
+  }
+  if (changed) saveUsers(users);
+  return users;
 }
 function saveUsers(users) {
   fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
@@ -92,7 +109,6 @@ app.post("/api/register", async (req, res) => {
     pronouns,
     rank,
     points: 0,
-    dollars: 0,
   };
   saveUsers(users);
   req.session.username = username;
@@ -100,8 +116,11 @@ app.post("/api/register", async (req, res) => {
 });
 
 // --- currency ---
-const DAILY_CHECKIN_DOLLARS = 5;
-const SNAKE_FOOD_DOLLARS = 1;
+// Points are the only currency. They used to be admin-granted only, with a
+// separate earned "dollars" balance; the two were merged 1:1, so points are now
+// both granted and earned, and the leaderboard reflects both.
+const DAILY_CHECKIN_POINTS = 5;
+const SNAKE_FOOD_POINTS = 1;
 // Snake pickups are reported by the browser, so they can't be trusted outright.
 // These bound the damage: a daily ceiling makes farming pointless, and a token
 // bucket caps the sustained rate while still allowing honest bursts (food can
@@ -130,16 +149,17 @@ function todayKey(now = new Date()) {
   return shifted.toISOString().slice(0, 10);
 }
 
-// grants $5 the first time an account is seen each day; returns null otherwise
+// grants the daily points the first time an account is seen each day;
+// returns null otherwise
 function awardDailyCheckIn(users, key) {
   const user = users[key];
   if (!user) return null;
   const today = todayKey();
   if (user.lastCheckIn === today) return null;
   user.lastCheckIn = today;
-  user.dollars = (user.dollars || 0) + DAILY_CHECKIN_DOLLARS;
+  user.points = (user.points || 0) + DAILY_CHECKIN_POINTS;
   saveUsers(users);
-  return { amount: DAILY_CHECKIN_DOLLARS, dollars: user.dollars };
+  return { amount: DAILY_CHECKIN_POINTS, points: user.points };
 }
 
 app.post("/api/login", async (req, res) => {
@@ -173,7 +193,7 @@ app.get("/api/me", (req, res) => {
   res.json({
     username: req.session.username,
     isAdmin: isAdmin(req),
-    dollars: users[key].dollars || 0,
+    points: users[key].points || 0,
     checkIn,
   });
 });
@@ -246,7 +266,6 @@ app.get("/api/profile/:username", (req, res) => {
       bio: user.bio || "",
       pronouns: canonical(user.pronouns, PRONOUN_OPTIONS),
       points: key === "hermione" ? null : user.points || 0,   // hermione doesn't keep points
-      dollars: user.dollars || 0,
       createdAt: user.createdAt,
       canEdit: canEditProfile(req, key),
     },
@@ -560,17 +579,17 @@ app.post("/api/snake/food", (req, res) => {
       earned: 0,
       capped: true,
       cap: SNAKE_DAILY_CAP,
-      dollars: user.dollars || 0,
+      points: user.points || 0,
     });
   }
 
-  user.snakeToday += SNAKE_FOOD_DOLLARS;
-  user.dollars = (user.dollars || 0) + SNAKE_FOOD_DOLLARS;
+  user.snakeToday += SNAKE_FOOD_POINTS;
+  user.points = (user.points || 0) + SNAKE_FOOD_POINTS;
   saveUsers(users);
   res.json({
     ok: true,
-    earned: SNAKE_FOOD_DOLLARS,
-    dollars: user.dollars,
+    earned: SNAKE_FOOD_POINTS,
+    points: user.points,
     remaining: SNAKE_DAILY_CAP - user.snakeToday,
   });
 });
@@ -717,14 +736,14 @@ app.post("/api/deathroll/roll", (req, res) => {
 // --- wheel: one spin a day for everyone except hermione ---
 // The server picks the winning wedge; the page only animates to it.
 const WHEEL_SEGMENTS = [
-  { label: "$1", dollars: 1, weight: 10 },
-  { label: "$2", dollars: 2, weight: 9 },
-  { label: "$3", dollars: 3, weight: 8 },
-  { label: "$5", dollars: 5, weight: 7 },
-  { label: "$8", dollars: 8, weight: 5 },
-  { label: "$10", dollars: 10, weight: 4 },
-  { label: "$15", dollars: 15, weight: 2 },
-  { label: "$25", dollars: 25, weight: 1 },
+  { label: "1", points: 1, weight: 10 },
+  { label: "2", points: 2, weight: 9 },
+  { label: "3", points: 3, weight: 8 },
+  { label: "5", points: 5, weight: 7 },
+  { label: "8", points: 8, weight: 5 },
+  { label: "10", points: 10, weight: 4 },
+  { label: "15", points: 15, weight: 2 },
+  { label: "25", points: 25, weight: 1 },
 ];
 
 function pickSegment() {
@@ -740,7 +759,7 @@ function pickSegment() {
 function wheelState(user, key) {
   const unlimited = key === "hermione";
   return {
-    segments: WHEEL_SEGMENTS.map((s) => ({ label: s.label, dollars: s.dollars })),
+    segments: WHEEL_SEGMENTS.map((s) => ({ label: s.label, points: s.points })),
     unlimited,
     spunToday: user.wheelDay === todayKey(),
     canSpin: unlimited || user.wheelDay !== todayKey(),
@@ -771,14 +790,14 @@ app.post("/api/wheel/spin", (req, res) => {
   // hermione still records the day so the daily objective completes; it just
   // doesn't gate her next spin
   user.wheelDay = todayKey();
-  user.dollars = (user.dollars || 0) + prize.dollars;
+  user.points = (user.points || 0) + prize.points;
   saveUsers(users);
   res.json({
     ok: true,
     index,
     label: prize.label,
-    won: prize.dollars,
-    dollars: user.dollars,
+    won: prize.points,
+    points: user.points,
     canSpin: unlimited,
   });
 });
@@ -799,21 +818,21 @@ app.get("/api/dailies", (req, res) => {
         id: "checkin",
         label: "Daily check-in",
         detail: "Open the site once a day.",
-        reward: "$" + DAILY_CHECKIN_DOLLARS,
+        reward: DAILY_CHECKIN_POINTS + " points",
         done: user.lastCheckIn === today,
       },
       {
         id: "wheel",
         label: "Spin the wheel",
         detail: "One spin a day.",
-        reward: "up to $" + Math.max(...WHEEL_SEGMENTS.map((s) => s.dollars)),
+        reward: "up to " + Math.max(...WHEEL_SEGMENTS.map((s) => s.points)) + " points",
         done: user.wheelDay === today,
       },
       {
         id: "snake",
         label: "Snake earnings",
-        detail: "$" + SNAKE_FOOD_DOLLARS + " for every heart eaten.",
-        reward: "$" + SNAKE_DAILY_CAP,
+        detail: SNAKE_FOOD_POINTS + " point for every heart eaten.",
+        reward: SNAKE_DAILY_CAP + " points",
         done: snakeToday >= SNAKE_DAILY_CAP,
         progress: { current: snakeToday, max: SNAKE_DAILY_CAP },
       },
@@ -920,8 +939,11 @@ app.put("/api/writing/:id", (req, res) => {
   res.json({ ok: true, category: { id: category.id, title: category.title, count: category.passages.length } });
 });
 
-// --- tithe: hand $5 to hermione ---
-const TITHE_DOLLARS = 5;
+// --- tithe: give up points ---
+// The points are burned, not transferred. Hermione doesn't keep points — they
+// read as null on her profile and she can't be granted them — so crediting her
+// would contradict that. A tithe is a cost, not a transfer.
+const TITHE_POINTS = 5;
 
 app.post("/api/tithe", (req, res) => {
   if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
@@ -931,17 +953,14 @@ app.post("/api/tithe", (req, res) => {
   }
   const users = loadUsers();
   const user = users[key];
-  const hermione = users["hermione"];
   if (!user) return res.status(401).json({ error: "Not logged in." });
-  if (!hermione) return res.status(500).json({ error: "There is no one to tithe to." });
-  const balance = user.dollars || 0;
-  if (balance < TITHE_DOLLARS) {
-    return res.status(400).json({ error: "You need $" + TITHE_DOLLARS + " to tithe." });
+  const balance = user.points || 0;
+  if (balance < TITHE_POINTS) {
+    return res.status(400).json({ error: "You need " + TITHE_POINTS + " points to tithe." });
   }
-  user.dollars = balance - TITHE_DOLLARS;
-  hermione.dollars = (hermione.dollars || 0) + TITHE_DOLLARS;
+  user.points = balance - TITHE_POINTS;
   saveUsers(users);
-  res.json({ ok: true, amount: TITHE_DOLLARS, dollars: user.dollars });
+  res.json({ ok: true, amount: TITHE_POINTS, points: user.points });
 });
 
 // --- editable site copy ---

@@ -203,7 +203,7 @@
 
       wheelEl.addEventListener("transitionend", () => {
         spinning = false;
-        statusEl.textContent = "You won " + data.label + "! You now have $" + data.dollars + ".";
+        statusEl.textContent = "You won " + data.label + "! You now have " + data.points + " points.";
         statusEl.classList.add("win");
         setLocked({ canSpin: data.canSpin, unlimited: data.canSpin, spunToday: !data.canSpin });
       }, { once: true });

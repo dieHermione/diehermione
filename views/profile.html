@@ -206,7 +206,6 @@
       <div class="details">
         <div class="detail"><span class="label">Pronouns</span><span class="value" id="p-pronouns">—</span></div>
         <div class="detail stat"><span class="label">Points</span><span class="value" id="p-points">0</span></div>
-        <div class="detail stat"><span class="label">Dollars</span><span class="value" id="p-dollars">$0</span></div>
       </div>
       <p class="joined" id="p-joined"></p>
       <button id="edit-btn" type="button" hidden>Edit profile</button>
@@ -318,7 +317,6 @@
         pointsTile.hidden = false;
         document.getElementById("p-points").textContent = profile.points;
       }
-      document.getElementById("p-dollars").textContent = "$" + profile.dollars;
       const created = new Date(profile.createdAt);
       document.getElementById("p-joined").textContent =
         "Joined " + created.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" }) +

@@ -84,7 +84,7 @@ local testing can't touch production data and a deploy can't overwrite it.
 Tasks and all per-day bookkeeping (`lastCheckIn`, `wheelDay`, `snakeDay`,
 `snakeToday`) live on the user record, not in separate files.
 
-Fields are read defensively (`user.dollars || 0`) because records predate most
+Fields are read defensively (`user.points || 0`) because records predate most
 of them. Adding a field needs no migration; removing one means tolerating stale
 keys — `rankFor()` still maps the retired `role` values onto ranks.
 
@@ -108,13 +108,16 @@ Disciple, Worshipper, Devoted, Follower, Servant. **Visitor** and **Citizen** si
 aside as the two options at signup. Only hermione can change a rank afterwards,
 including on her own profile.
 
-Two currencies, deliberately separate:
+**Points** are the only currency. They drive the leaderboard, and come from two
+places: hermione grants them directly, and playing earns them — 5 for the daily
+check-in, 1 per Snake pickup up to 20 a day, and 1–25 from one wheel spin a day.
+`/api/tithe` burns 5. Hermione keeps no points of her own.
 
-- **Points** — admin-granted only. They drive the leaderboard.
-- **Dollars** — earned: $5 for the daily check-in, $1 per Snake pickup up to $20
-  a day, one wheel spin a day. Spent via `/api/tithe` ($5 to hermione).
+Points and an earned "dollars" balance used to be separate; they were merged
+1:1, so the leaderboard now reflects earned points as well as granted ones.
+`migrateDollars()` folds any leftover balance in on load.
 
-Two of the three dollar sources are browser-reported, so Snake is bounded by a
+Two of the three earned sources are browser-reported, so Snake is bounded by a
 daily cap plus a token bucket rather than trusted. The wheel and deathroll pick
 their outcomes server-side.
 
@@ -147,7 +150,7 @@ Everything under `/api` returns JSON and answers `401` when signed out.
 |---|---|---|
 | `/api/register` | POST | Create account (username 3–30, password ≥ 8, pronouns, signup rank) |
 | `/api/login` · `/api/logout` | POST | Sign in / out. Login also runs check-in and seeds notifications |
-| `/api/me` | GET | Identity, dollars, and the once-per-day check-in result |
+| `/api/me` | GET | Identity, points, and the once-per-day check-in result |
 | `/api/ranks` | GET | The ladder, plus which ranks are assignable |
 | `/api/profile/:username` | GET · PUT | PUT is owner-or-admin; rank is admin-only |
 | `/api/users` | GET | All accounts — admin only |
@@ -155,7 +158,7 @@ Everything under `/api` returns JSON and answers `401` when signed out.
 | `/api/users/:username` | DELETE | Remove an account — admin only |
 | `/api/leaderboard` | GET | Flagged users ranked by points, hermione excluded |
 | `/api/dailies` | GET | Daily objectives with done state and progress |
-| `/api/tithe` | POST | $5 to hermione; refuses below $5 |
+| `/api/tithe` | POST | Burns 5 points; refuses below 5 |
 | `/api/wheel` · `/api/wheel/spin` | GET · POST | Server picks the wedge and awards it |
 | `/api/snake/food` | POST | Rate-limited and daily-capped payout |
 | `/api/writing[/:id]` | GET · PUT | List hides passages; PUT is admin only |
