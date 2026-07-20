@@ -88,6 +88,12 @@
     }
     .tag.assigned { background: var(--button-bg); color: var(--button-text); }
     .tag.auto { background: var(--table-border); color: var(--muted-color); }
+    .tag.waiting {
+      background: transparent;
+      border: 1px solid var(--muted-color);
+      color: var(--muted-color);
+    }
+    .tag.sentback { background: var(--error-bg); color: var(--error-color); }
     .tag.kind {
       background: var(--notif-item-bg, rgba(251, 195, 211, 0.15));
       color: var(--text-color);
@@ -146,8 +152,10 @@
       return el;
     }
 
-    // task shape: { id, title, detail, source: "hermione" | "auto",
-    //               status: "active" | "done", points }
+    // task shape: { id, type, title, detail, source: "hermione" | "auto",
+    //               status: "active" | "submitted" | "done", points, ... }
+    // "submitted" is an essay sitting with Hermione; an active task carrying a
+    // reviewNote is one she sent back.
     function renderTask(task) {
       const row = document.createElement("div");
       row.className = "task" + (task.status === "done" ? " done" : "");
@@ -179,6 +187,8 @@
           ? tag("Automatic", "auto")
           : tag("Set by Hermione", "assigned")
       );
+      if (task.status === "submitted") meta.append(tag("With Hermione", "waiting"));
+      if (task.status === "active" && task.reviewNote) meta.append(tag("Sent back", "sentback"));
       if (task.type === "essay") meta.append(tag(task.minWords + " words", "kind"));
       if (task.type === "repetition") {
         meta.append(tag(task.repsDone + " of " + task.reps, "kind"));
@@ -193,7 +203,9 @@
         const go = document.createElement("a");
         go.className = "open";
         go.href = "/task?id=" + encodeURIComponent(task.id);
-        go.textContent = task.status === "done" ? "Review" : "Open";
+        go.textContent = task.status === "done"
+          ? "Review"
+          : task.status === "submitted" ? "View" : "Open";
         row.append(go);
       }
 

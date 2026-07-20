@@ -140,6 +140,15 @@
       margin-bottom: 1rem;
     }
     .done-note[hidden] { display: none; }
+    .sent-back {
+      padding: 0.85rem 1rem;
+      border-radius: 10px;
+      border: 1px solid var(--error-color);
+      background: var(--error-bg);
+      color: var(--text-color);
+      font-size: 0.9rem;
+      margin-bottom: 1rem;
+    }
   </style>
 </head>
 <body class="has-top-nav">
@@ -148,6 +157,7 @@
     <p class="sub" id="sub"></p>
 
     <div class="done-note" id="done-note" hidden></div>
+    <div class="sent-back" id="sent-back" hidden></div>
 
     <!-- essay -->
     <section id="essay-view" hidden>
@@ -210,7 +220,13 @@
       const words = countWords(el("paper").value);
       el("wc").textContent = words + (words === 1 ? " word" : " words");
       setMeter("bar", "fill", words, task.minWords);
-      el("submit").disabled = words < task.minWords || task.status === "done";
+      // locked once it is with her, and once she has accepted it
+      const settled = task.status === "done" || task.status === "submitted";
+      el("paper").readOnly = settled;
+      el("submit").disabled = settled || words < task.minWords;
+      el("submit").textContent = task.status === "active" && task.reviewNote
+        ? "Hand it in again"
+        : "Hand it in";
     }
 
     function setUpEssay() {
@@ -231,7 +247,8 @@
         const data = await res.json().catch(() => ({}));
         if (res.ok) {
           task = data.task;
-          showDone("Handed in, " + data.words + " words.");
+          el("sent-back").hidden = true;   // superseded by this hand-in
+          showDone("Handed in, " + data.words + " words. Hermione will read it.");
           refreshEssay();
         } else {
           err.textContent = data.error || "That didn't go through.";
@@ -342,9 +359,12 @@
     }
 
     /* --- shared ------------------------------------------------------ */
+    // Only claim the reward when it has actually been paid. An essay sitting
+    // with Hermione has earned nothing yet.
     function showDone(message) {
       const note = el("done-note");
-      note.textContent = message + (task.points ? " " + task.points + " points awarded." : "");
+      const paid = task.status === "done" && task.points;
+      note.textContent = message + (paid ? " " + task.points + " points awarded." : "");
       note.hidden = false;
     }
 
@@ -369,7 +389,16 @@
       }
 
       if (task.status === "done") {
-        showDone(task.type === "essay" ? "Handed in." : "Finished.");
+        showDone(task.type === "essay" ? "Accepted by Hermione." : "Finished.");
+      } else if (task.status === "submitted") {
+        showDone("Handed in. Waiting for Hermione to read it.");
+      }
+
+      // whatever she said when sending it back
+      if (task.status === "active" && task.reviewNote) {
+        const back = el("sent-back");
+        back.textContent = "Sent back: " + task.reviewNote;
+        back.hidden = false;
       }
 
       if (task.type === "essay") setUpEssay();

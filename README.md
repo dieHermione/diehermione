@@ -93,14 +93,20 @@ Hermione assigns tasks from the admin panel. Two kinds so far:
 
 - **Essay**: a topic and a minimum word count. The assignee writes on `/task`,
   which shows a live word count and a progress bar to the minimum. The count is
-  re-checked server-side on submit, and the text is kept so hermione can read it.
+  re-checked server-side on submit. Handing in puts the task in a review queue
+  rather than completing it: hermione reads it and either accepts it, which pays
+  the reward, or sends it back with a note. A sent-back task returns to active
+  with the text intact so it can be revised rather than rewritten.
 - **Write it out**: a line of text and a repetition count, typed with the same
   rules as the Writing game: no backspace, no pasting. Each finished repetition
   is posted to the server, which counts them.
 
-Both can carry a points reward, awarded once, when the task first reaches done.
-The repetition count is client-refereed like Snake, so the server checks the
-submitted text matches and caps at the assigned count.
+A repetition has nothing to judge, so it completes as soon as the count is met.
+
+Both carry a points reward, set explicitly at assignment (there is no default,
+so a reward is never given by accident) and paid once, when the task first
+reaches done. The repetition count is client-refereed like Snake, so the server
+checks the submitted text matches and caps at the assigned count.
 
 Fields are read defensively (`user.points || 0`) because records predate most
 of them. Adding a field needs no migration; removing one means tolerating stale
@@ -198,6 +204,7 @@ Everything under `/api` returns JSON and answers `401` when signed out.
 | `/api/tasks/:id/rep` | POST | Record one finished repetition |
 | `/api/users/:username/tasks` | GET · POST | Read or assign someone's tasks, admin only |
 | `/api/users/:username/tasks/:id` | DELETE | Unassign a task, admin only |
+| `/api/users/:username/tasks/:id/review` | POST | Accept or send back a handed-in essay, admin only |
 
 ## Known limits
 

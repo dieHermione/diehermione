@@ -224,6 +224,20 @@
     }
     .task-admin .row-actions { display: flex; gap: 0.4rem; margin-top: 0.55rem; }
 
+    .review .note-row { display: flex; gap: 0.4rem; margin-top: 0.55rem; flex-wrap: wrap; }
+    .review .note-row input {
+      flex: 1;
+      min-width: 10rem;
+      padding: 0.4rem 0.6rem;
+      border: 1px solid var(--input-border);
+      border-radius: 8px;
+      background: var(--input-bg);
+      color: var(--input-text);
+      font-family: inherit;
+      font-size: 0.82rem;
+    }
+    .review .note-row input:focus { outline: none; border-color: var(--focus-color); }
+
     /* --- signup approvals (note: .pending above is the delete countdown) --- */
     #approvals-card[hidden] { display: none; }
     .approval-list { display: flex; flex-direction: column; gap: 0.75rem; }
@@ -334,6 +348,11 @@
       </div>
       <p class="panel-empty">The guide covers what people see; the technical notes cover how it's built.</p>
     </section>
+    <section class="card" id="review-card" hidden>
+      <h2>Waiting to be read</h2>
+      <p class="count" id="review-count"></p>
+      <div class="approval-list" id="review-list"></div>
+    </section>
     <section class="card">
       <h2>Tasks</h2>
 
@@ -377,7 +396,7 @@
         </div>
         <div class="field narrow">
           <label for="t-points">Reward</label>
-          <input id="t-points" type="number" min="0" step="1" value="0" />
+          <input id="t-points" type="number" min="0" step="1" required placeholder="points" />
         </div>
 
         <div class="assign-actions">
@@ -430,7 +449,8 @@
       const body = {
         type,
         detail: document.getElementById("t-detail").value,
-        points: Number(document.getElementById("t-points").value || 0),
+        // sent raw: an empty box is an error, not a silent zero
+        points: document.getElementById("t-points").value,
       };
       if (type === "essay") {
         body.topic = document.getElementById("t-topic").value;
@@ -456,8 +476,79 @@
       document.getElementById("t-topic").value = "";
       document.getElementById("t-text").value = "";
       document.getElementById("t-detail").value = "";
+      document.getElementById("t-points").value = "";
       loadAllTasks();
     });
+
+    // Essays wait here until she reads them. Approving pays the reward; sending
+    // one back returns it to the assignee with the text intact.
+    async function renderReviews(rows) {
+      const card = document.getElementById("review-card");
+      const list = document.getElementById("review-list");
+      const waiting = rows.filter(({ task }) => task.status === "submitted");
+      card.hidden = waiting.length === 0;
+      document.getElementById("review-count").textContent =
+        waiting.length + (waiting.length === 1 ? " essay is" : " essays are") + " waiting";
+      list.replaceChildren();
+
+      for (const { name, task } of waiting) {
+        const item = document.createElement("div");
+        item.className = "approval review";
+
+        const who = document.createElement("div");
+        who.className = "who";
+        const strong = document.createElement("strong");
+        strong.textContent = name;
+        const meta = document.createElement("span");
+        meta.className = "meta";
+        meta.textContent = task.title +
+          (task.submittedAt ? " · handed in " + new Date(task.submittedAt).toLocaleString() : "");
+        who.append(strong, meta);
+        item.append(who);
+
+        const body = document.createElement("p");
+        body.className = "intro";
+        body.textContent = task.submission || "(nothing written)";
+        item.append(body);
+
+        const noteRow = document.createElement("div");
+        noteRow.className = "note-row";
+        const note = document.createElement("input");
+        note.placeholder = "A note, if you want to say why";
+        note.maxLength = 200;
+        noteRow.append(note);
+        item.append(noteRow);
+
+        const actions = document.createElement("div");
+        actions.className = "action-row";
+        const send = async (approve) => {
+          const res = await fetch(
+            "/api/users/" + encodeURIComponent(name) + "/tasks/" +
+              encodeURIComponent(task.id) + "/review",
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ approve, note: note.value }),
+            }
+          );
+          if (res.ok) loadAllTasks();
+        };
+        const yes = document.createElement("button");
+        yes.type = "button";
+        yes.className = "chip";
+        yes.textContent = task.points ? "Accept, pay " + task.points : "Accept";
+        yes.addEventListener("click", () => send(true));
+        const no = document.createElement("button");
+        no.type = "button";
+        no.className = "chip refuse";
+        no.textContent = "Send back";
+        no.addEventListener("click", () => send(false));
+        actions.append(yes, no);
+        item.append(actions);
+
+        list.append(item);
+      }
+    }
 
     async function loadAllTasks() {
       const list = document.getElementById("task-list");
@@ -473,6 +564,7 @@
 
       // newest first, so what she just set is at the top
       rows.sort((a, b) => String(b.task.assignedAt || "").localeCompare(String(a.task.assignedAt || "")));
+      renderReviews(rows);
       document.getElementById("tasks-empty").hidden = rows.length > 0;
 
       for (const { name, task } of rows) {
@@ -491,7 +583,9 @@
           : task.title + " · " + task.repsDone + " of " + task.reps;
         const state = document.createElement("span");
         state.className = "state";
-        state.textContent = task.status === "done" ? "Done" : "Active";
+        state.textContent = task.status === "done"
+          ? "Done"
+          : task.status === "submitted" ? "Waiting" : "Active";
         top.append(who, kind, state);
         item.append(top);
 

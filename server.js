@@ -1151,8 +1151,13 @@ app.post("/api/notifications/clear", (req, res) => {
 //   essay      { topic, minWords }        -> written on /task, submission kept
 //   repetition { text, reps }             -> typed on /task, reps counted
 //
-// Shared keys: id, type, status ("active" | "done"), points, assignedAt,
-// completedAt. `source` marks them apart from the automatic dailies.
+// Shared keys: id, type, status, points, assignedAt, completedAt. `source`
+// marks them apart from the automatic dailies.
+//
+// status runs active -> submitted -> done for essays, because Hermione reads
+// them before they count. A repetition has nothing to judge, so it goes
+// straight to done once the count is met. Sending an essay back returns it to
+// active with the text intact and a note explaining why.
 const TASK_TOPIC_MAX = 200;
 const TASK_TEXT_MAX = 2000;
 const ESSAY_MAX = 50000;
@@ -1185,6 +1190,8 @@ function taskForPlayer(t) {
     reps: t.reps || 0,
     repsDone: t.repsDone || 0,
     submission: t.submission || "",
+    reviewNote: t.reviewNote || "",
+    submittedAt: t.submittedAt || null,
   };
 }
 
@@ -1213,7 +1220,12 @@ app.post("/api/users/:username/tasks", (req, res) => {
   if (type !== "essay" && type !== "repetition") {
     return res.status(400).json({ error: "Pick a task type." });
   }
-  const points = Number(req.body.points || 0);
+  // Deliberate every time: no default, so a reward is never assigned by
+  // accident just because a field was left alone.
+  if (req.body.points === undefined || req.body.points === null || req.body.points === "") {
+    return res.status(400).json({ error: "Set a reward, even if it is zero." });
+  }
+  const points = Number(req.body.points);
   if (!Number.isInteger(points) || points < 0) {
     return res.status(400).json({ error: "Reward must be a whole number, zero or more." });
   }
@@ -1295,6 +1307,52 @@ app.get("/api/users/:username/tasks", (req, res) => {
   res.json({ tasks: ownTasks(user).map(taskForPlayer) });
 });
 
+// Hermione reads a handed-in essay and either takes it or sends it back
+app.post("/api/users/:username/tasks/:id/review", (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });
+
+  const users = loadUsers();
+  const key = req.params.username.toLowerCase();
+  const user = users[key];
+  if (!user) return res.status(404).json({ error: "No such account." });
+  const task = ownTasks(user).find((t) => t.id === req.params.id);
+  if (!task) return res.status(404).json({ error: "No such task." });
+  if (task.status !== "submitted") {
+    return res.status(400).json({ error: "That is not waiting to be read." });
+  }
+
+  const note = String(req.body.note || "").trim().slice(0, TASK_TOPIC_MAX);
+
+  if (req.body.approve) {
+    task.reviewNote = note;
+    completeTask(user, task);
+    pushNotification(
+      user,
+      "task-reviewed-" + task.id,
+      "Hermione accepted your work on " + task.title + "." +
+        (task.points ? " " + task.points + " points." : ""),
+      "/tasks"
+    );
+  } else {
+    // back to the assignee, text kept so they can revise rather than restart
+    task.status = "active";
+    task.submittedAt = null;
+    task.reviewNote = note || "Hermione has sent this back.";
+    pushNotification(
+      user,
+      "task-reviewed-" + task.id,
+      "Hermione sent back " + task.title + ". " + task.reviewNote,
+      "/task?id=" + task.id
+    );
+  }
+
+  const hermione = users["hermione"];
+  if (hermione) dropNotification(hermione, "review-" + task.id);
+  saveUsers(users);
+  res.json({ ok: true, task: taskForPlayer(task) });
+});
+
 // awards the reward once, when a task first reaches done
 function completeTask(user, task) {
   if (task.status === "done") return;
@@ -1324,7 +1382,18 @@ app.post("/api/tasks/:id/essay", (req, res) => {
     });
   }
   task.submission = submission;
-  completeTask(user, task);
+  task.status = "submitted";
+  task.submittedAt = new Date().toISOString();
+  task.reviewNote = "";        // a fresh hand-in clears the last knockback
+  const hermione = users["hermione"];
+  if (hermione) {
+    pushNotification(
+      hermione,
+      "review-" + task.id,
+      user.username + " has handed in " + task.title + ".",
+      "/admin"
+    );
+  }
   saveUsers(users);
   res.json({ ok: true, words, task: taskForPlayer(task), points: user.points || 0 });
 });
