@@ -55,6 +55,18 @@
     .mini-detail[hidden] { display: none; }
     /* hermione's edit affordances: invisible until you hover the text */
     .editable { position: relative; display: inline-block; }
+    /* The pencil sits outside the text box, with a gap between the two. Without
+       a bridge across that gap the cursor leaves .editable on its way to the
+       button, the button hides, and it can never actually be clicked. Same
+       trap as the nav dropdown menu. */
+    .editable::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 100%;
+      width: 2.1rem;
+    }
     .editable .pencil {
       position: absolute;
       top: 50%;
@@ -70,11 +82,22 @@
       font-size: 0.72rem;
       line-height: 1;
       cursor: pointer;
-      display: none;
+      /* Laid out even when hidden, so it stays keyboard-focusable — a
+         display:none button cannot be tabbed to at all. Sits above the
+         bridge so the bridge never swallows the click. */
+      display: inline-flex;
       align-items: center;
       justify-content: center;
+      z-index: 1;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.12s ease;
     }
-    .editable:hover .pencil, .editable .pencil:focus-visible { display: inline-flex; }
+    .editable:hover .pencil,
+    .editable:focus-within .pencil {
+      opacity: 1;
+      pointer-events: auto;
+    }
     .copy-editor { display: none; margin-bottom: 1rem; text-align: left; }
     .copy-editor.open { display: block; }
     .copy-editor label {
