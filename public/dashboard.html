@@ -560,7 +560,7 @@
         const detail = document.createElement("div");
         detail.className = "detail";
         detail.textContent = d.progress && !d.done
-          ? d.detail + ", " + d.progress.current + " of " + d.progress.max + " points today"
+          ? d.detail + " " + d.progress.current + " of " + d.progress.max + " points today"
           : d.detail;
         bodyEl.append(detail);
         if (d.progress) {

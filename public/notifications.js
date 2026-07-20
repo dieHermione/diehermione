@@ -29,7 +29,10 @@
       z-index: 20;
       width: min(19rem, 78vw);
       padding: 0.5rem;
-      background: var(--panel-bg);
+      /* solid, not the translucent --panel-bg: text behind the panel showed
+         through and made notifications hard to read */
+      background: var(--panel-solid, #ffffff);
+      border: 1px solid var(--table-border);
       border-radius: 12px;
       box-shadow: 0 10px 30px var(--shadow);
       display: none;

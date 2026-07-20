@@ -12,6 +12,8 @@
   --bg1: #FBC3D3;
   --bg2: #f6f6f6;
   --panel-bg: rgba(255, 255, 255, 0.95);
+  /* opaque twin of --panel-bg, for popovers that must not show the page through */
+  --panel-solid: #ffffff;
   --header-color: #ffffff;
   --heading-color: #FBC3D3;
   --text-color: #333;
@@ -38,6 +40,7 @@ body[data-theme="dark"] {
   --bg1: #141414;
   --bg2: #242424;
   --panel-bg: rgba(32, 32, 32, 0.94);
+  --panel-solid: #202020;
   --header-color: #f2f2f2;
   --heading-color: #d6d6d6;
   --text-color: #ececec;
@@ -60,6 +63,19 @@ body[data-theme="dark"] {
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* The `hidden` attribute must always win.
+ *
+ * Any component with its own `display` rule silently ignores `hidden`, because
+ * the browser's default `[hidden] { display: none }` is only a plain element
+ * rule and loses to almost anything. Worse, a per-page `.thing[hidden]` fix
+ * ties with a `.parent .thing` rule on specificity and then loses on source
+ * order, which is exactly how hermione's points tile stayed visible.
+ *
+ * This has leaked the admin nav link to every user, the deathroll opponent
+ * picker to players, and a points counter to someone who keeps no points.
+ * One !important here ends the whole category. */
+[hidden] { display: none !important; }
 
 body {
   font-family: "Cause", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
