@@ -444,8 +444,9 @@
     const ui = build();
     if (!ui) return;
     mailUi = ui;
-    fetch("/api/me")
-      .then((r) => (r.ok ? r.json() : Promise.reject()))
+    // shared single-flight fetch (/me.js): a second /api/me here would race the
+    // page for the once-a-day check-in result
+    window.siteMe()
       .then((d) => { mailIsAdmin = Boolean(d.isAdmin); })
       .catch(() => {});
     refresh(ui, { silent: true }).then(() => {

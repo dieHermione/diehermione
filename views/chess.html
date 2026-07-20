@@ -7,20 +7,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cause:wght@400..700&display=swap" rel="stylesheet" />
-  <style>
-    :root {
-      color-scheme: light;
-      --bg1: #FBC3D3;
-      --bg2: #f6f6f6;
-      --panel-bg: rgba(255, 255, 255, 0.95);
-      --header-color: #ffffff;
-      --heading-color: #FBC3D3;
-      --text-color: #333;
-      --muted-color: #999;
-      --button-bg: #FBC3D3;
-      --button-text: #ffffff;
-      --button-hover-bg: #f7b8c8;
-      --shadow: rgba(0, 0, 0, 0.2);
+  <link rel="stylesheet" href="/site.css" />
+  <script src="/me.js"></script>
+  <style>    :root {
       --picker-bg: #fff;
       --picker-text: #333;
       --border-color: #444444;
@@ -28,23 +17,7 @@
       --board-dark: #b0b0b0;
       --board-selected: #f5c542;
       --board-last: #fce9b8;
-      --toggle-bg: rgba(255, 255, 255, 0.9);
-      --toggle-text: #333;
-    }
-    body[data-theme="dark"] {
-      --notif-item-bg: rgba(255, 255, 255, 0.07);
-      color-scheme: dark;
-      --bg1: #141414;
-      --bg2: #242424;
-      --panel-bg: rgba(32, 32, 32, 0.94);
-      --header-color: #f2f2f2;
-      --heading-color: #d6d6d6;
-      --text-color: #ececec;
-      --muted-color: #9e9e9e;
-      --button-bg: #4a4a4a;
-      --button-text: #f2f2f2;
-      --button-hover-bg: #5f5f5f;
-      --shadow: rgba(0, 0, 0, 0.5);
+    }    body[data-theme="dark"] {
       --picker-bg: #2a2a2a;
       --picker-text: #ececec;
       --border-color: #1f1f1f;
@@ -52,21 +25,6 @@
       --board-dark: #6e6e6e;
       --board-selected: #f5c542;
       --board-last: #d9c27a;
-      --toggle-bg: rgba(38, 38, 38, 0.95);
-      --toggle-text: #ececec;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: "Cause", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
-      gap: 1.5rem;
-      background: linear-gradient(135deg, var(--bg1) 0%, var(--bg2) 100%);
-      padding: 1rem;
-      color: var(--text-color);
     }
     .site-header {
       font-family: "Cause", sans-serif;
@@ -80,101 +38,6 @@
     }
     .bow { display: inline-block; }
     .bow.flip { transform: scaleX(-1); }
-    body.has-top-nav {
-      justify-content: flex-start;
-      padding-top: 1.75rem;
-      gap: 1rem;
-    }
-    .top-nav {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-      align-items: center;
-      gap: 0.55rem;
-      position: relative;
-      width: min(100%, 720px);
-      padding: 0.65rem 1rem;
-      margin: 0 0 0.75rem;
-      border-radius: 999px;
-      background: var(--panel-bg);
-      box-shadow: 0 8px 24px var(--shadow);
-      backdrop-filter: blur(8px);
-    }
-    .top-nav .greeting {
-      color: var(--heading-color);
-      font-weight: 700;
-      font-size: 0.95rem;
-      margin-right: 0.25rem;
-    }
-    .top-nav .nav-links {
-      grid-column: 2;
-      justify-self: center;
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      align-items: center;
-      gap: 0.45rem;
-    }
-    .top-nav a,
-    .top-nav button,
-    .top-nav .dropdown-toggle {
-      font-family: inherit;   /* buttons don't inherit the page font on their own */
-      padding: 0.45rem 0.85rem;
-      border-radius: 999px;
-      border: none;
-      background: var(--button-bg);
-      color: var(--button-text);
-      font-size: 0.9rem;
-      font-weight: 600;
-      text-decoration: none;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .top-nav a:hover,
-    .top-nav button:hover,
-    .top-nav .dropdown-toggle:hover {
-      background: var(--button-hover-bg);
-    }
-    .top-nav a.active {
-      background: var(--button-hover-bg);
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.3);
-    }
-    .top-nav .dropdown[hidden] { display: none; }
-    .top-nav a[hidden] { display: none; }
-    .top-nav .dropdown {
-      position: relative;
-      display: inline-flex;
-    }
-    /* invisible bridge across the gap so hover survives the trip to the menu */
-    .top-nav .dropdown::after {
-      content: "";
-      position: absolute;
-      top: 100%;
-      left: 0;
-      right: 0;
-      height: 0.5rem;
-    }
-    .top-nav .dropdown-menu {
-      position: absolute;
-      top: calc(100% + 0.35rem);
-      left: 0;
-      display: none;
-      flex-direction: column;
-      gap: 0.35rem;
-      padding: 0.45rem;
-      background: var(--panel-bg);
-      border-radius: 8px;
-      box-shadow: 0 8px 24px var(--shadow);
-      min-width: 8rem;
-    }
-    .top-nav .dropdown:hover .dropdown-menu,
-    .top-nav .dropdown:focus-within .dropdown-menu {
-      display: flex;
-    }
-    .top-nav .dropdown-menu a {
-      width: 100%;
-    }
     .card {
       background: var(--panel-bg);
       border-radius: 12px;
@@ -237,59 +100,10 @@
     }
     button:hover { background: var(--button-hover-bg); }
     .note { color: var(--muted-color); font-size: 0.85rem; margin-top: 1rem; }
-    .theme-toggle {
-      position: fixed;
-      top: 1rem;
-      right: 1rem;
-      z-index: 10;
-      width: 3rem;
-      height: 1.6rem;
-      padding: 0;
-      border: 1px solid var(--input-border);
-      border-radius: 999px;
-      background: var(--toggle-bg);
-      color: transparent;
-      box-shadow: 0 6px 16px var(--shadow);
-      cursor: pointer;
-      overflow: hidden;
-    }
-    .theme-toggle .thumb {
-      position: absolute;
-      top: 0.15rem;
-      left: 0.15rem;
-      width: 1.15rem;
-      height: 1.15rem;
-      border-radius: 50%;
-      background: var(--button-bg);
-      display: block;
-      transition: left 0.2s ease, background-color 0.2s ease;
-    }
-    .theme-toggle.is-dark .thumb {
-      left: calc(100% - 1.15rem - 0.15rem);
-      background: var(--button-hover-bg);
-    }
   </style>
 </head>
 <body class="has-top-nav">
-    <button id="theme-toggle" class="theme-toggle" type="button" aria-pressed="false" aria-label="Toggle dark mode"><span class="thumb"></span></button>
-  <nav id="top-nav" class="top-nav" hidden>
-    <div class="nav-links">
-      <a id="nav-dashboard" href="/dashboard">Dashboard</a>
-      <a id="nav-admin" href="/admin" hidden>Admin</a>
-      <a id="nav-profile" href="/profile">Profile</a>
-      <a id="nav-tasks" href="/tasks">Tasks</a>
-      <div class="dropdown" id="games-dropdown">
-        <button class="dropdown-toggle" type="button">Games ▾</button>
-        <div class="dropdown-menu">
-          <a id="nav-snake" href="/snake">Snake</a>
-          <a id="nav-writing" href="/writing">Writing</a>
-          <a id="nav-wheel" href="/wheel">Wheel</a>
-          <a id="nav-deathroll" href="/deathroll">Deathroll</a>
-        </div>
-      </div>
-    </div>
-  </nav>
-  <main class="card">
+    <main class="card">
     <div class="picker" id="picker" hidden>
       <label for="opponent">Game vs </label>
       <select id="opponent"></select>
@@ -304,70 +118,6 @@
     <p class="note" id="note" hidden>You play white; Hermione plays black. Click a piece, then its destination. Pawns promote to queens.</p>
   </main>
   <script>
-    const body = document.body;
-    const toggle = document.getElementById("theme-toggle");
-    const storedTheme = localStorage.getItem("site-theme");
-    const systemDark = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
-    // no explicit choice yet? follow whatever the browser/OS is set to
-    const savedTheme = storedTheme || (systemDark && systemDark.matches ? "dark" : "light");
-    const topNav = document.getElementById("top-nav");
-    const navDashboard = document.getElementById("nav-dashboard");
-    const navAdmin = document.getElementById("nav-admin");
-    const navChess = document.getElementById("nav-chess");
-    const navSnake = document.getElementById("nav-snake");
-    const adminDropdown = document.getElementById("nav-admin");
-
-    function applyTheme(theme, persist) {
-      body.dataset.theme = theme;
-      if (toggle) {
-        toggle.classList.toggle("is-dark", theme === "dark");
-        toggle.setAttribute("aria-pressed", String(theme === "dark"));
-      }
-      if (persist) localStorage.setItem("site-theme", theme);
-    }
-
-    applyTheme(savedTheme);
-    systemDark?.addEventListener?.("change", (e) => {
-      if (!localStorage.getItem("site-theme")) applyTheme(e.matches ? "dark" : "light");
-    });
-    toggle?.addEventListener("click", () => {
-      const nextTheme = body.dataset.theme === "dark" ? "light" : "dark";
-      applyTheme(nextTheme, true);
-    });
-
-    function setActiveNav(path) {
-      const links = [navDashboard, navAdmin, navChess, navSnake];
-      links.forEach((link) => link?.classList.toggle("active", link?.getAttribute("href") === path));
-    }
-
-    async function initTopNav() {
-      if (!topNav) return;
-      if (adminDropdown) {
-        adminDropdown.hidden = true;
-      }
-      try {
-        const res = await fetch("/api/me");
-        if (!res.ok) {
-          topNav.hidden = true;
-          return;
-        }
-        const data = await res.json().catch(() => ({}));
-        const username = data.username || "there";
-        const isAdmin = Boolean(data.isAdmin ?? (username && username.toLowerCase() === "hermione"));
-        topNav.hidden = false;
-        if (adminDropdown) {
-          adminDropdown.hidden = !isAdmin;
-        }
-        setActiveNav(window.location.pathname);
-      } catch {
-        topNav.hidden = true;
-        if (adminDropdown) {
-          adminDropdown.hidden = true;
-        }
-      }
-    }
-
-    initTopNav();
 
     let mySide = "w";      // players are white; hermione is black ("b")
     let isAdmin = false;
@@ -600,8 +350,7 @@
       window.location.href = "/dashboard";
     });
 
-    fetch("/api/me")
-      .then((r) => (r.ok ? r.json() : Promise.reject()))
+    window.siteMe()
       .then(async (d) => {
         isAdmin = d.username.toLowerCase() === "hermione";
         mySide = isAdmin ? "b" : "w";
@@ -618,6 +367,7 @@
       })
       .catch(() => (window.location.href = "/"));
   </script>
+  <script src="/nav.js" defer></script>
   <script src="/notifications.js" defer></script>
 </body>
 </html>

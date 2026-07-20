@@ -31,6 +31,9 @@ Node 18+ required (the start script uses `--env-file-if-exists`). Dependencies:
 | `server.js` | Everything server-side: routes, storage helpers, game rules |
 | `public/index.html` | Sign-in and registration. The only page without the nav |
 | `public/dashboard.html` | Dailies, welcome copy, leaderboard, profile card |
+| `public/site.css` | Shared: theme variables, base layout, nav and theme-toggle styles |
+| `public/me.js` | Shared: single-flight `/api/me` (`window.siteMe()`) |
+| `public/nav.js` | Shared: injects the nav bar and the theme toggle |
 | `public/notifications.js` | Shared: injects the bell and the mail button into the nav |
 | `public/ranks.js` | Shared: the rank legend modal |
 | `public/pieces/` | Chess piece SVGs |
@@ -39,6 +42,29 @@ Node 18+ required (the start script uses `--env-file-if-exists`). Dependencies:
 `public/` is served statically, so anything in it is reachable without a
 session — nothing sensitive belongs there. `views/` is not static; those pages
 are sent by routes guarded with `requireLogin`.
+
+### The shared shell
+
+The nav, the theme block and the CSS variables used to be copied into all
+twelve pages, which made "add a nav item" a scripted sweep across every file
+and was the main source of drift. They now live in three shared files, so a
+page only carries what is unique to it:
+
+```html
+<link rel="stylesheet" href="/site.css" />
+<script src="/me.js"></script>          <!-- no defer: page scripts use it -->
+...
+<script src="/nav.js" defer></script>   <!-- must precede notifications.js -->
+<script src="/notifications.js" defer></script>
+```
+
+`nav.js` injects the nav only on pages whose `<body>` has `has-top-nav`, which
+is what keeps the login page nav-free. Adding a nav item is now a one-line edit
+to the `NAV_LINKS` or `GAMES` array in `public/nav.js`.
+
+Page-specific variables (`--board-*`, `--wedge-*`, `--picker-*`, …) still live
+on their own page, and because `site.css` loads before a page's inline
+`<style>`, any page can still override the shared rules.
 
 ## Storage
 
