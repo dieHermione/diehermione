@@ -208,6 +208,9 @@
       margin: 0;
     }
     .mini-detail[hidden] { display: none; }
+    /* +10px under the heading, taken back off the paragraph so the card keeps its height */
+    #welcome { margin-bottom: 1.125rem; }
+    #dashboard-message { margin-bottom: 0.875rem; }
     .daily-list { display: flex; flex-direction: column; gap: 0.6rem; text-align: left; }
     .daily {
       display: flex;
@@ -617,6 +620,12 @@
       badge.className = "badge " + (princess ? "princess" : "user");
       badge.textContent = p.rank;
       document.getElementById("pc-badge").replaceChildren(badge);
+      window.RankLegend?.attach(badge, () => ({
+        rank: p.rank,
+        username: p.username,
+        canEdit: false,          // your own card; ranks are handed out on profiles
+        onChange: () => loadProfileCard(),
+      }));
       const bio = document.getElementById("pc-bio");
       bio.textContent = p.bio || "No bio yet.";
       bio.classList.toggle("empty", !p.bio);
@@ -698,6 +707,7 @@
       window.location.href = "/profile";
     });
   </script>
+  <script src="/ranks.js"></script>
   <script src="/notifications.js" defer></script>
 </body>
 </html>

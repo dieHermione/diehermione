@@ -185,9 +185,35 @@ app.get("/dashboard", requireLogin, (req, res) => {
 const PRONOUN_OPTIONS = ["She/Her", "He/Him", "They/Them"];
 // Rank replaces the old domme/sub role and the old Princess/User badge — one
 // value covers both. Princess is hermione's alone and isn't offered at signup.
-const RANK_OPTIONS = ["Visitor", "Citizen", "Princess"];
+// The ladder, highest first. Rank 2 is deliberately unnamed for now.
+const RANK_LADDER = [
+  { name: "Princess", note: "Hers alone." },
+  { name: "??", note: "Not yet spoken of.", unassignable: true },
+  { name: "Disciple", note: "" },
+  { name: "Worshipper", note: "" },
+  { name: "Devoted", note: "" },
+  { name: "Follower", note: "" },
+  { name: "Servant", note: "" },
+];
+const RANK_ASIDE = { name: "Visitor", note: "Just passing through." };
+const RANK_OPTIONS = [...RANK_LADDER.map((r) => r.name), RANK_ASIDE.name, "Citizen"];
 const SIGNUP_RANKS = ["Visitor", "Citizen"];
 const LEGACY_RANKS = { domme: "Visitor", sub: "Citizen" };
+
+// what hermione may hand out: everything except Princess and the unnamed rank
+const ASSIGNABLE_RANKS = [
+  ...RANK_LADDER.filter((r) => r.name !== "Princess" && !r.unassignable).map((r) => r.name),
+  RANK_ASIDE.name,
+];
+
+app.get("/api/ranks", (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  res.json({
+    ladder: RANK_LADDER.map((r, i) => ({ position: i + 1, name: r.name, note: r.note })),
+    aside: RANK_ASIDE,
+    assignable: ASSIGNABLE_RANKS,
+  });
+});
 
 // tolerate legacy free-text values like "she/her" from before these were dropdowns
 function canonical(value, options) {
@@ -317,6 +343,13 @@ app.post("/api/users/:username/points", (req, res) => {
   const key = req.params.username.toLowerCase();
   if (!users[key]) return res.status(404).json({ error: "No such account." });
   users[key].points = (users[key].points || 0) + amount;
+  pushNotification(
+    users[key],
+    "points-" + Date.now(),
+    (amount > 0 ? "Hermione gave you " + amount : "Hermione took " + Math.abs(amount)) +
+      (Math.abs(amount) === 1 ? " point" : " points") +
+      ". You now have " + users[key].points + "."
+  );
   saveUsers(users);
   res.json({ ok: true, points: users[key].points });
 });

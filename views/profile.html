@@ -507,6 +507,13 @@
       badge.className = "badge " + (rank === "Princess" ? "princess" : "user");
       badge.textContent = rank || "Unranked";
       document.getElementById("p-badge").replaceChildren(badge);
+      window.RankLegend?.attach(badge, () => ({
+        rank: profile.rank,
+        username: profile.username,
+        // hermione can hand out ranks, but not to herself
+        canEdit: Boolean(me && me.isAdmin) && profile.username.toLowerCase() !== "hermione",
+        onChange: () => loadProfile(),
+      }));
       const bio = document.getElementById("p-bio");
       bio.textContent = profile.bio || "No bio yet.";
       bio.classList.toggle("empty", !profile.bio);
@@ -622,6 +629,7 @@
       })
       .catch(() => (window.location.href = "/"));
   </script>
+  <script src="/ranks.js"></script>
   <script src="/notifications.js" defer></script>
 </body>
 </html>

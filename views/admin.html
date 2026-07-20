@@ -247,6 +247,8 @@
     }
     .pts-select:focus { outline: none; border-color: var(--focus-color); }
     .chip.quick { padding: 0.32rem 0.6rem; }
+    .chip.sign { padding: 0.32rem 0.65rem; min-width: 2rem; font-size: 0.95rem; line-height: 1; }
+    .pts-group .pts-input { width: 3.6rem; margin-right: 0; }
     /* delete runs on a timer you can call off */
     .pending {
       display: flex;
@@ -490,30 +492,50 @@
               // pick an amount, or use a one-tap preset
               const group = document.createElement("div");
               group.className = "pts-group";
-              const select = document.createElement("select");
-              select.className = "pts-select";
-              [1, 5, 10, 25, 100, 250].forEach((n) => {
-                const opt = document.createElement("option");
-                opt.value = n;
-                opt.textContent = "+" + n;
-                select.append(opt);
-              });
+              // sign flips every button in the row, so the presets can take away too
+              let negative = false;
+              const sign = document.createElement("button");
+              sign.type = "button";
+              sign.className = "chip sign";
+              sign.textContent = "+";
+              sign.title = "Switch to taking points away";
+
+              const amount = document.createElement("input");
+              amount.type = "number";
+              amount.step = "1";
+              amount.min = "1";
+              amount.className = "pts-input";
+              amount.placeholder = "pts";
+
               const give = document.createElement("button");
               give.type = "button";
               give.className = "chip give";
               give.textContent = "Give";
-              give.addEventListener("click", () => addPoints(u.username, select.value));
-              group.append(select, give);
+              give.addEventListener("click", () => {
+                const n = parseInt(amount.value, 10);
+                if (!Number.isInteger(n) || n === 0) return;
+                addPoints(u.username, negative ? -Math.abs(n) : Math.abs(n));
+              });
+              group.append(sign, amount, give);
               row.append(group);
 
-              [5, 10, 25, 100].forEach((n) => {
+              const quicks = [5, 10, 25, 100].map((n) => {
                 const quick = document.createElement("button");
                 quick.type = "button";
                 quick.className = "chip quick";
                 quick.textContent = "+" + n;
-                quick.title = "Give " + n + " points";
-                quick.addEventListener("click", () => addPoints(u.username, n));
+                quick.addEventListener("click", () => addPoints(u.username, negative ? -n : n));
                 row.append(quick);
+                return { el: quick, n };
+              });
+
+              sign.addEventListener("click", () => {
+                negative = !negative;
+                sign.textContent = negative ? "−" : "+";
+                sign.classList.toggle("danger", negative);
+                sign.title = negative ? "Switch to giving points" : "Switch to taking points away";
+                quicks.forEach(({ el, n }) => { el.textContent = (negative ? "−" : "+") + n; });
+                give.textContent = negative ? "Take" : "Give";
               });
             }
 

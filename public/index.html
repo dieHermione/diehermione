@@ -61,11 +61,12 @@
       min-height: 100vh;
       display: flex;
       align-items: center;
-      justify-content: center;
+      /* start near the top, level with where the nav sits on the other pages */
+      justify-content: flex-start;
       flex-direction: column;
-      gap: 1.5rem;
+      gap: 1rem;
       background: linear-gradient(135deg, var(--bg1) 0%, var(--bg2) 100%);
-      padding: 1rem;
+      padding: 1.75rem 1rem 1rem;
       color: var(--text-color);
     }
     .site-header {
@@ -75,8 +76,8 @@
       color: var(--header-color);
       text-shadow: 0 2px 12px rgba(255, 255, 255, 0.6);
       text-align: center;
-      margin-bottom: 1.25rem;
-      padding: 20px 0;
+      margin-bottom: 0.75rem;
+      padding: 0;
     }
     /* U+A8D1 (Saurashtra) and U+09CE (Bengali) have no font on Windows, so the
        bows rendered as tofu. Ship the Noto faces that cover them. */
