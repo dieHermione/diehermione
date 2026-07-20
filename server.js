@@ -781,53 +781,103 @@ app.get("/api/dailies", (req, res) => {
   });
 });
 
-// --- writing: passages the player has to type out exactly ---
-// Seeded once, then stored on disk so hermione can rewrite them in-site.
-const DEFAULT_PASSAGES = Array.from({ length: 9 }, (_, i) => ({
-  id: "placeholder-" + (i + 1),
-  title: "Placeholder #" + (i + 1),
-  text: "This is placeholder passage number " + (i + 1) +
-    ". Type it exactly as it appears, with no mistakes and no going back.",
-}));
+// --- writing: categories of passages, typed one after another ---
+// The player only sees the category; what's inside is shuffled per attempt.
+const DEFAULT_CATEGORIES = [
+  {
+    id: "main",
+    title: "Main",
+    passages: Array.from({ length: 9 }, (_, i) => ({
+      id: "main-" + (i + 1),
+      text: "This is placeholder passage number " + (i + 1) +
+        ". Type it exactly as it appears, with no mistakes and no going back.",
+    })),
+  },
+  ...[1, 2, 3].map((n) => ({
+    id: "placeholder-" + n,
+    title: "Placeholder " + n,
+    passages: [
+      {
+        id: "placeholder-" + n + "-1",
+        text: "Placeholder category " + n + ", first passage. Replace this with something worth writing.",
+      },
+    ],
+  })),
+];
 
-function loadPassages() {
+function loadCategories() {
   try {
     const stored = JSON.parse(fs.readFileSync(WRITING_FILE, "utf8"));
-    if (Array.isArray(stored) && stored.length) return stored;
+    if (Array.isArray(stored) && stored.length && stored[0].passages) return stored;
   } catch {}
-  return DEFAULT_PASSAGES;
+  return DEFAULT_CATEGORIES;
 }
 
-function savePassages(passages) {
-  fs.writeFileSync(WRITING_FILE, JSON.stringify(passages, null, 2));
+function saveCategories(categories) {
+  fs.writeFileSync(WRITING_FILE, JSON.stringify(categories, null, 2));
 }
 
+function shuffled(list) {
+  const out = [...list];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
+// the shelf: titles and counts only, never the passages themselves
 app.get("/api/writing", (req, res) => {
   if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
-  res.json({ passages: loadPassages() });
+  res.json({
+    categories: loadCategories().map((c) => ({
+      id: c.id,
+      title: c.title,
+      count: c.passages.length,
+    })),
+  });
 });
 
+// starting a category hands over its passages in a fresh random order
+app.get("/api/writing/:id", (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  const category = loadCategories().find((c) => c.id === req.params.id);
+  if (!category) return res.status(404).json({ error: "No such category." });
+  res.json({
+    category: { id: category.id, title: category.title },
+    passages: shuffled(category.passages),
+  });
+});
+
+// hermione edits a whole category at once
 app.put("/api/writing/:id", (req, res) => {
   if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
   if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });
-  const passages = loadPassages();
-  const passage = passages.find((p) => p.id === req.params.id);
-  if (!passage) return res.status(404).json({ error: "No such passage." });
+  const categories = loadCategories();
+  const category = categories.find((c) => c.id === req.params.id);
+  if (!category) return res.status(404).json({ error: "No such category." });
 
   if (req.body.title !== undefined) {
     const title = String(req.body.title).trim();
     if (!title) return res.status(400).json({ error: "Give it a title." });
     if (title.length > 80) return res.status(400).json({ error: "Title must be 80 characters or fewer." });
-    passage.title = title;
+    category.title = title;
   }
-  if (req.body.text !== undefined) {
-    const text = String(req.body.text).replace(/\r\n/g, "\n").trim();
-    if (!text) return res.status(400).json({ error: "The passage can't be empty." });
-    if (text.length > 2000) return res.status(400).json({ error: "Passage must be 2000 characters or fewer." });
-    passage.text = text;
+  if (req.body.passages !== undefined) {
+    if (!Array.isArray(req.body.passages)) {
+      return res.status(400).json({ error: "Passages must be a list." });
+    }
+    const cleaned = req.body.passages
+      .map((t) => String(t).replace(/\r\n/g, "\n").trim())
+      .filter(Boolean);
+    if (!cleaned.length) return res.status(400).json({ error: "A category needs at least one passage." });
+    if (cleaned.some((t) => t.length > 2000)) {
+      return res.status(400).json({ error: "Each passage must be 2000 characters or fewer." });
+    }
+    category.passages = cleaned.map((text, i) => ({ id: category.id + "-" + (i + 1), text }));
   }
-  savePassages(passages);
-  res.json({ ok: true, passage });
+  saveCategories(categories);
+  res.json({ ok: true, category: { id: category.id, title: category.title, count: category.passages.length } });
 });
 
 // --- tithe: hand $5 to hermione ---
