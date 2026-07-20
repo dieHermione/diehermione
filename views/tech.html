@@ -118,22 +118,21 @@
       <tr><td><code>public/notifications.js</code></td><td>Shared: injects the bell and the envelope link into any nav it finds</td></tr>
       <tr><td><code>public/ranks.js</code></td><td>Shared: the rank legend modal</td></tr>
       <tr><td><code>public/pieces/</code></td><td>Chess piece SVGs (Cburnett set, CC BY-SA)</td></tr>
-      <tr><td><code>views/*.html</code></td><td>Every logged-in page: profile, admin, tasks, mail, guide, and the games</td></tr>
+      <tr><td><code>views/*.html</code></td><td>Every logged-in page: profile, admin, tasks, guide, and the games</td></tr>
     </table>
     <p><code>public/</code> is served statically; <code>views/</code> is not. Those pages are sent explicitly by routes guarded with <code>requireLogin</code>. Anything in <code>public/</code> is reachable without a session, so nothing sensitive belongs there.</p>
 
     <h2 id="storage">Storage</h2>
-    <p>Six JSON files, each read and written whole. All resolve to <code>process.env.DATA_DIR</code> when set, falling back to the repo directory:</p>
+    <p>Five JSON files, each read and written whole. All resolve to <code>process.env.DATA_DIR</code> when set, falling back to the repo directory:</p>
     <table>
       <tr><th>File</th><th>Shape</th></tr>
       <tr><td><code>users.json</code></td><td><code>{ [lowercaseName]: user }</code>, the username is the key</td></tr>
       <tr><td><code>games.json</code></td><td>Chess, keyed by the non-hermione player</td></tr>
       <tr><td><code>deathroll.json</code></td><td>Deathroll, keyed the same way</td></tr>
-      <tr><td><code>mail.json</code></td><td>Threads, keyed the same way</td></tr>
       <tr><td><code>writing.json</code></td><td>Array of categories, each holding passages</td></tr>
       <tr><td><code>site.json</code></td><td>The editable dashboard copy</td></tr>
     </table>
-    <p>All six are gitignored. Production keeps its own copies on a Railway volume, so local testing can never affect live data, and a deploy never overwrites live data either.</p>
+    <p>All five are gitignored. Production keeps its own copies on a Railway volume, so local testing can never affect live data, and a deploy never overwrites live data either.</p>
 
     <h3>The user record</h3>
     <p>Written keys: <code>username</code>, <code>passwordHash</code>, <code>createdAt</code>, <code>pronouns</code>, <code>rank</code>, <code>points</code>, <code>status</code>, <code>intro</code>, <code>icon</code>, <code>bio</code>, <code>flagged</code>, <code>notifications</code>, plus per-day bookkeeping: <code>lastCheckIn</code>, <code>wheelDay</code>, <code>snakeDay</code>, <code>snakeToday</code>, <code>dailiesNotifiedOn</code>.</p>
@@ -173,8 +172,7 @@
       <tr><td><code>POST /api/snake/food</code></td><td>Rate limited and daily capped</td></tr>
       <tr><td><code>GET|PUT /api/writing[/:id]</code></td><td>List hides passages; PUT is admin only</td></tr>
       <tr><td><code>/api/deathroll/{game,games,start,roll}</code></td><td>Turn order enforced server-side</td></tr>
-      <tr><td><code>GET|POST /api/mail</code></td><td>Always returns the mailbox list; reading a thread marks it seen and drops its bell line</td></tr>
-      <tr><td><code>GET|DELETE|POST /api/notifications[...]</code></td><td>GET also carries <code>mailUnread</code></td></tr>
+      <tr><td><code>GET|DELETE|POST /api/notifications[...]</code></td><td>List, dismiss one, clear all</td></tr>
       <tr><td><code>GET|PUT /api/site</code></td><td>Dashboard copy; PUT admin only</td></tr>
       <tr><td><code>POST /api/tithe</code></td><td>Burns 5 points; refuses below 5</td></tr>
     </table>
@@ -188,7 +186,7 @@
     <h3>Shared scripts</h3>
     <p><code>nav.js</code>, <code>notifications.js</code> and <code>ranks.js</code> inject their own styles and markup into whatever page includes them, rather than each page carrying copies.</p>
     <p><code>nav.js</code> builds the nav and the theme toggle. It only injects the nav on pages whose <code>&lt;body&gt;</code> carries <code>has-top-nav</code>, and that gate is what keeps the login page nav-free and stops it running the signed-in redirect. Adding a nav item is one line in its <code>NAV_LINKS</code> or <code>GAMES</code> array.</p>
-    <p><code>notifications.js</code> finds <code>.top-nav .nav-links</code> and appends the bell and the envelope; it polls every 15 seconds and rides that one request for both notification content and the mail unread count. The envelope is a plain link to <code>/mail</code>, and the conversation itself lives on that page, not in a dropdown. It must load <em>after</em> <code>nav.js</code>, or there is no nav to append to. Both are <code>defer</code>, and defer scripts run in document order, so the tag order is the whole mechanism.</p>
+    <p><code>notifications.js</code> finds <code>.top-nav .nav-links</code> and appends the bell, then polls every 15 seconds. It must load <em>after</em> <code>nav.js</code>, or there is no nav to append to. Both are <code>defer</code>, and defer scripts run in document order, so the tag order is the whole mechanism.</p>
     <div class="note"><strong>One <code>/api/me</code> per page.</strong> <code>me.js</code> exposes <code>window.siteMe()</code>, a promise fetched once and shared. The page, the nav and the bell all want the same identity, but the server reports the daily check-in exactly once, so independent callers raced and the notice vanished at random. Never call <code>/api/me</code> directly; use <code>siteMe()</code>. It is loaded without <code>defer</code> so it exists before any page's inline script runs.</div>
     <p>The meow is synthesised with Web Audio: a sawtooth swept 620→880→500 Hz through a moving bandpass formant, with vibrato. No audio file to host, and it fails silently if the browser hasn't allowed audio yet.</p>
 

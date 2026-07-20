@@ -19,7 +19,6 @@
     { id: "nav-admin", href: "/admin", label: "Admin", adminOnly: true },
     { id: "nav-profile", href: "/profile", label: "Profile" },
     { id: "nav-tasks", href: "/tasks", label: "Tasks" },
-    { id: "nav-mail", href: "/mail", label: "Mail" },
   ];
 
   // Chess is deliberately absent. The page and its API are still live, it is

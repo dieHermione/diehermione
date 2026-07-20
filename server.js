@@ -12,7 +12,6 @@ const USERS_FILE = path.join(process.env.DATA_DIR || __dirname, "users.json");
 const GAMES_FILE = path.join(process.env.DATA_DIR || __dirname, "games.json");
 const WRITING_FILE = path.join(process.env.DATA_DIR || __dirname, "writing.json");
 const DEATHROLL_FILE = path.join(process.env.DATA_DIR || __dirname, "deathroll.json");
-const MAIL_FILE = path.join(process.env.DATA_DIR || __dirname, "mail.json");
 const SITE_FILE = path.join(process.env.DATA_DIR || __dirname, "site.json");
 
 // --- simple JSON-file user store (fine for testing; swap for a DB later) ---
@@ -1071,125 +1070,6 @@ app.put("/api/site", (req, res) => {
   res.json({ ok: true, raw: site });
 });
 
-// --- mail: threads between hermione and each player ---
-// Keyed by the non-hermione participant, same shape as the games.
-function loadMail() {
-  try {
-    return JSON.parse(fs.readFileSync(MAIL_FILE, "utf8"));
-  } catch {
-    return {};
-  }
-}
-function saveMail(mail) {
-  fs.writeFileSync(MAIL_FILE, JSON.stringify(mail, null, 2));
-}
-
-function mailKeyFor(req, withWhom) {
-  if (isAdmin(req)) {
-    const key = String(withWhom || "").toLowerCase();
-    return key && key !== "hermione" ? key : null;
-  }
-  return req.session.username.toLowerCase();
-}
-
-// Summarises a thread for the mailbox list: who it's with, how many of their
-// messages are unread, and a preview of the latest line.
-function threadSummary(name, thread, admin) {
-  const last = thread.length ? thread[thread.length - 1] : null;
-  const theirs = admin ? "player" : "hermione";
-  return {
-    username: name,
-    unread: thread.filter((m) => m.from === theirs && !(admin ? m.readByHermione : m.readByPlayer)).length,
-    lastText: last ? last.text : "",
-    lastAt: last ? last.at : null,
-    lastFromMe: last ? last.from !== theirs : false,
-  };
-}
-
-app.get("/api/mail", (req, res) => {
-  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
-  const key = mailKeyFor(req, req.query.with);
-  const mail = loadMail();
-  const admin = isAdmin(req);
-  const users = loadUsers();
-
-  // The mailbox list, always sent so the page can render its sidebar in one
-  // request. Hermione has one thread per player; a player has only hermione.
-  const threads = admin
-    ? Object.keys(users)
-        .filter((k) => k !== "hermione" && !isPending(users[k]))
-        .map((k) => threadSummary(users[k].username, mail[k] || [], true))
-        .sort((a, b) => String(b.lastAt || "").localeCompare(String(a.lastAt || "")) ||
-                        a.username.localeCompare(b.username))
-    : [threadSummary("Hermione", mail[req.session.username.toLowerCase()] || [], false)];
-
-  if (admin && !key) return res.json({ threads, with: null, messages: null });
-  if (!key) return res.status(400).json({ error: "Pick someone to write to." });
-
-  const thread = mail[key] || [];
-  // opening a thread marks the other side's messages read
-  let touched = false;
-  thread.forEach((m) => {
-    if (admin && m.from === "player" && !m.readByHermione) { m.readByHermione = true; touched = true; }
-    if (!admin && m.from === "hermione" && !m.readByPlayer) { m.readByPlayer = true; touched = true; }
-  });
-  if (touched) {
-    mail[key] = thread;
-    saveMail(mail);
-    // the thread we just opened is no longer unread in the list we're returning
-    const opened = threads.find((t) => t.username.toLowerCase() === (admin ? key : "hermione"));
-    if (opened) opened.unread = 0;
-    // and the bell's "new message" line has served its purpose
-    const reader = users[req.session.username.toLowerCase()];
-    if (reader) {
-      dropNotification(reader, "mail-" + key);
-      saveUsers(users);
-    }
-  }
-
-  res.json({
-    threads,
-    with: admin ? (users[key] ? users[key].username : key) : "Hermione",
-    messages: thread.map((m) => ({ from: m.from, text: m.text, at: m.at })),
-  });
-});
-
-app.post("/api/mail", (req, res) => {
-  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
-  const key = mailKeyFor(req, req.body.with);
-  if (!key) return res.status(400).json({ error: "Pick someone to write to." });
-  const users = loadUsers();
-  if (!users[key]) return res.status(404).json({ error: "No such account." });
-
-  const text = String(req.body.text || "").trim();
-  if (!text) return res.status(400).json({ error: "Write something first." });
-  if (text.length > 2000) return res.status(400).json({ error: "Message must be 2000 characters or fewer." });
-
-  const admin = isAdmin(req);
-  const mail = loadMail();
-  const thread = mail[key] || [];
-  thread.push({
-    from: admin ? "hermione" : "player",
-    text,
-    at: new Date().toISOString(),
-    readByHermione: admin,
-    readByPlayer: !admin,
-  });
-  mail[key] = thread.slice(-200);
-  saveMail(mail);
-
-  // ping the recipient wherever they are
-  const recipientKey = admin ? key : "hermione";
-  const recipient = users[recipientKey];
-  if (recipient) {
-    const sender = admin ? "Hermione" : users[key].username;
-    pushNotification(recipient, "mail-" + key, "New message from " + sender + ".");
-    saveUsers(users);
-  }
-
-  res.json({ ok: true });
-});
-
 // --- notifications ---
 // Placeholder until real triggers exist: cleared notifications come back on the
 // next login, so the bell always has something to show after signing in.
@@ -1224,17 +1104,8 @@ app.get("/api/notifications", (req, res) => {
   const user = users[key];
   if (!user) return res.status(401).json({ error: "Not logged in." });
 
-  // the bell already polls, so the mail badge rides along on the same request
-  const mail = loadMail();
-  const admin = isAdmin(req);
-  const mailUnread = admin
-    ? Object.values(mail).reduce(
-        (n, thread) => n + thread.filter((m) => m.from === "player" && !m.readByHermione).length, 0)
-    : (mail[key] || []).filter((m) => m.from === "hermione" && !m.readByPlayer).length;
-
   res.json({
     notifications: Array.isArray(user.notifications) ? user.notifications : [],
-    mailUnread,
   });
 });
 
@@ -1292,10 +1163,6 @@ app.get("/guide", requireLogin, (req, res) => {
 
 app.get("/tech", requireLogin, (req, res) => {
   res.sendFile(path.join(__dirname, "views", "tech.html"));
-});
-
-app.get("/mail", requireLogin, (req, res) => {
-  res.sendFile(path.join(__dirname, "views", "mail.html"));
 });
 
 app.get("/profile", requireLogin, (req, res) => {

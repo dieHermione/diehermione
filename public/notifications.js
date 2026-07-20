@@ -83,12 +83,6 @@
     }
   `;
 
-  const ENVELOPE = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-      stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-      <rect x="2" y="4" width="20" height="16" rx="2" />
-      <path d="m22 7-10 6L2 7" />
-    </svg>`;
-
   const BELL = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
       stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
       <path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
@@ -130,22 +124,8 @@
       if (!wrap.contains(e.target)) wrap.classList.remove("open");
     });
 
-    // --- mail: a link to the mail page, keeping the unread dot ---
-    const mailWrap = document.createElement("div");
-    mailWrap.className = "notif-wrap";
-    const mailBtn = document.createElement("a");
-    mailBtn.href = "/mail";
-    mailBtn.className = "notif-btn";
-    mailBtn.setAttribute("aria-label", "Messages");
-    mailBtn.innerHTML = ENVELOPE + '<span class="notif-dot"></span>';
-    mailWrap.append(mailBtn);
-    wrap.after(mailWrap);
-
-    return { wrap, panel, mailWrap };
+    return { wrap, panel };
   }
-
-  // The mail page owns the conversation now; all that is left here is the
-  // unread dot on the envelope, fed by the same poll as the bell.
 
   function render(ui, notifications) {
     const { wrap, panel } = ui;
@@ -266,11 +246,10 @@
             );
           }
         }
-        const sig = signature(list) + "|mail:" + (d.mailUnread || 0);
-        const isNew = seen !== null && sig !== seen && (list.length > 0 || d.mailUnread > 0);
+        const sig = signature(list);
+        const isNew = seen !== null && sig !== seen && list.length > 0;
         seen = sig;
         render(ui, list);
-        if (ui.mailWrap) ui.mailWrap.classList.toggle("has-unread", (d.mailUnread || 0) > 0);
         if (isNew && !silent) playMeow();
       })
       .catch(() => {});

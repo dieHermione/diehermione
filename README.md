@@ -34,10 +34,9 @@ Node 18+ required (the start script uses `--env-file-if-exists`). Dependencies:
 | `public/site.css` | Shared: theme variables, base layout, nav and theme-toggle styles |
 | `public/me.js` | Shared: single-flight `/api/me` (`window.siteMe()`) |
 | `public/nav.js` | Shared: injects the nav bar and the theme toggle |
-| `public/notifications.js` | Shared: injects the bell and the mail button into the nav |
+| `public/notifications.js` | Shared: injects the notification bell into the nav |
 | `public/ranks.js` | Shared: the rank legend modal |
 | `public/pieces/` | Chess piece SVGs |
-| `views/mail.html` | Mail, laid out as a mail client: conversation list plus reading pane |
 | `views/*.html` | Every logged-in page: profile, admin, tasks, guide, tech, games |
 
 `public/` is served statically, so anything in it is reachable without a
@@ -69,7 +68,7 @@ on their own page, and because `site.css` loads before a page's inline
 
 ## Storage
 
-No database. Six JSON files, each read and written whole, resolved against
+No database. Five JSON files, each read and written whole, resolved against
 `DATA_DIR` (falling back to the repo directory). All six are gitignored, so
 local testing can't touch production data and a deploy can't overwrite it.
 
@@ -78,7 +77,6 @@ local testing can't touch production data and a deploy can't overwrite it.
 | `users.json` | `{ [lowercaseUsername]: user }`, the key is the identity |
 | `games.json` | Chess games, keyed by the non-hermione player |
 | `deathroll.json` | Deathroll games, keyed the same way |
-| `mail.json` | Threads, keyed the same way |
 | `writing.json` | Array of categories, each holding passages |
 | `site.json` | The admin-editable dashboard copy |
 
@@ -149,8 +147,8 @@ Chess is currently hidden from the nav but still fully wired up.
 
 ## Pages
 
-`/` · `/dashboard` · `/profile` · `/tasks` · `/mail` · `/snake` · `/wheel` ·
-`/deathroll` · `/writing` · `/chess` · `/guide` · `/tech` · `/admin` (hermione only)
+`/` · `/dashboard` · `/profile` · `/tasks` · `/snake` · `/wheel` · `/deathroll` ·
+`/writing` · `/chess` · `/guide` · `/tech` · `/admin` (hermione only)
 
 ## API
 
@@ -175,8 +173,7 @@ Everything under `/api` returns JSON and answers `401` when signed out.
 | `/api/writing[/:id]` | GET · PUT | List hides passages; PUT is admin only |
 | `/api/chess/{game,games,move,remove,reset}` | GET · POST | Moves validated server-side |
 | `/api/deathroll/{game,games,start,roll}` | GET · POST | Turn order enforced server-side |
-| `/api/mail` | GET · POST | GET always returns the mailbox list; reading a thread marks it seen |
-| `/api/notifications` | GET · DELETE · POST | GET also carries `mailUnread` |
+| `/api/notifications` | GET · DELETE · POST | List, dismiss one, clear all |
 | `/api/site` | GET · PUT | Dashboard copy; PUT admin only |
 | `/api/tasks` | GET | The signed-in user's task list |
 
