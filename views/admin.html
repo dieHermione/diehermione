@@ -134,6 +134,34 @@
       color: var(--text-color);
       font-variant-numeric: tabular-nums;
     }
+    /* --- signup approvals (note: .pending above is the delete countdown) --- */
+    #approvals-card[hidden] { display: none; }
+    .approval-list { display: flex; flex-direction: column; gap: 0.75rem; }
+    .approval {
+      border: 1px solid var(--button-bg);
+      border-radius: 10px;
+      padding: 0.75rem 0.85rem;
+      background: var(--notif-item-bg, rgba(251, 195, 211, 0.12));
+    }
+    .approval .who {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 0.5rem;
+      margin-bottom: 0.4rem;
+    }
+    .approval .who strong { font-size: 0.95rem; }
+    .approval .who .meta { color: var(--muted-color); font-size: 0.76rem; }
+    .approval .intro {
+      font-size: 0.85rem;
+      line-height: 1.5;
+      white-space: pre-wrap;   /* keep the paragraphing they typed */
+      overflow-wrap: anywhere; /* and don't let one long word blow out the card */
+      margin-bottom: 0.7rem;
+      color: var(--text-color);
+    }
+    .approval .chip.refuse { background: var(--table-border); color: var(--text-color); }
+    .approval .chip.refuse:hover { background: var(--muted-color); color: var(--panel-bg); }
     .chip {
       flex: 0 0 auto;
       padding: 0.32rem 0.75rem;
@@ -193,6 +221,11 @@
 </head>
 <body class="has-top-nav">
     <div class="admin-grid">
+    <section class="card" id="approvals-card" hidden>
+      <h2>Pending approvals</h2>
+      <p class="count" id="approvals-count"></p>
+      <div class="approval-list" id="approvals"></div>
+    </section>
     <section class="card">
       <h2>Accounts</h2>
       <p class="count" id="count">Loading…</p>
@@ -218,15 +251,84 @@
   </div>
   <script>
 
+    // --- signup approvals ---
+    function renderApprovals(waiting) {
+      const card = document.getElementById("approvals-card");
+      const list = document.getElementById("approvals");
+      card.hidden = waiting.length === 0;
+      document.getElementById("approvals-count").textContent =
+        waiting.length + (waiting.length === 1 ? " person is" : " people are") + " waiting to be let in";
+      list.replaceChildren();
+
+      for (const u of waiting) {
+        const item = document.createElement("div");
+        item.className = "approval";
+
+        const who = document.createElement("div");
+        who.className = "who";
+        const name = document.createElement("strong");
+        name.textContent = u.username;
+        const meta = document.createElement("span");
+        meta.className = "meta";
+        meta.textContent = "asked " + new Date(u.createdAt).toLocaleDateString();
+        who.append(name, meta);
+
+        const intro = document.createElement("p");
+        intro.className = "intro";
+        // textContent, not innerHTML — this is text a stranger wrote
+        intro.textContent = u.intro || "They didn't say anything.";
+
+        const actions = document.createElement("div");
+        actions.className = "action-row";
+        const approve = document.createElement("button");
+        approve.type = "button";
+        approve.className = "chip";
+        approve.textContent = "Approve";
+        approve.addEventListener("click", () => approveAccount(u.username));
+        const refuse = document.createElement("button");
+        refuse.type = "button";
+        refuse.className = "chip refuse";
+        refuse.textContent = "Turn away";
+        refuse.title = "Deletes the account outright";
+        refuse.addEventListener("click", () => {
+          if (confirm("Turn away " + u.username + "? Their account is deleted.")) {
+            deleteAccount(u.username);
+          }
+        });
+        actions.append(approve, refuse);
+
+        item.append(who, intro, actions);
+        list.append(item);
+      }
+    }
+
+    async function approveAccount(username) {
+      const res = await fetch("/api/users/" + encodeURIComponent(username) + "/approve", {
+        method: "POST",
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        document.getElementById("approvals-count").textContent = data.error || "Approve failed.";
+        return;
+      }
+      loadAccounts();
+    }
+
     function loadAccounts() {
       fetch("/api/users")
         .then((r) => (r.ok ? r.json() : Promise.reject()))
         .then((d) => {
+          // accounts awaiting approval get their own panel and stay out of the
+          // main table until they're let in
+          const waiting = d.users.filter((u) => u.pending);
+          const approved = d.users.filter((u) => !u.pending);
+          renderApprovals(waiting);
+
           document.getElementById("count").textContent =
-            d.users.length + " registered account" + (d.users.length === 1 ? "" : "s");
+            approved.length + " registered account" + (approved.length === 1 ? "" : "s");
           const rows = document.getElementById("rows");
           rows.replaceChildren();
-          for (const u of d.users) {
+          for (const u of approved) {
             const tr = document.createElement("tr");
             const name = document.createElement("td");
             const profileLink = document.createElement("a");

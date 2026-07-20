@@ -97,6 +97,13 @@ app.post("/api/register", async (req, res) => {
   if (!rank) {
     return res.status(400).json({ error: "Pick visitor or citizen." });
   }
+  const intro = String(req.body.intro || "").trim();
+  if (!intro) {
+    return res.status(400).json({ error: "Tell Hermione who you are." });
+  }
+  if (intro.length > INTRO_MAX) {
+    return res.status(400).json({ error: "Keep it under " + INTRO_MAX + " characters." });
+  }
   const users = loadUsers();
   const key = username.toLowerCase();
   if (users[key]) {
@@ -109,11 +116,30 @@ app.post("/api/register", async (req, res) => {
     pronouns,
     rank,
     points: 0,
+    // Registration does not sign you in. The account waits here until hermione
+    // approves it from the admin panel; login is refused until then.
+    status: "pending",
+    intro,
   };
+  const hermione = users["hermione"];
+  if (hermione) {
+    pushNotification(
+      hermione,
+      "signup-" + key,
+      username + " has asked to join. Approve or turn them away in the admin panel."
+    );
+  }
   saveUsers(users);
-  req.session.username = username;
-  res.json({ ok: true });
+  // deliberately no req.session.username here
+  res.json({ ok: true, pending: true });
 });
+
+// An account is usable only once hermione has approved it. Records that predate
+// approval have no status and are treated as already approved.
+const INTRO_MAX = 500;
+function isPending(user) {
+  return Boolean(user) && user.status === "pending";
+}
 
 // --- currency ---
 // Points are the only currency. They used to be admin-granted only, with a
@@ -172,6 +198,14 @@ app.post("/api/login", async (req, res) => {
   if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
     return res.status(401).json({ error: "Invalid username or password." });
   }
+  // Checked after the password so a wrong guess can't reveal that the account
+  // exists and is waiting.
+  if (isPending(user)) {
+    return res.status(403).json({
+      error: "Hermione hasn't approved this account yet. Try again once she has.",
+      pending: true,
+    });
+  }
   req.session.username = user.username;
   const checkIn = awardDailyCheckIn(users, user.username.toLowerCase());
   seedNotifications(user);
@@ -188,6 +222,10 @@ app.get("/api/me", (req, res) => {
   const users = loadUsers();
   const key = req.session.username.toLowerCase();
   if (!users[key]) return res.status(401).json({ error: "Not logged in." });
+  // an account put back to pending loses its existing session on the next view
+  if (isPending(users[key])) {
+    return req.session.destroy(() => res.status(401).json({ error: "Not logged in." }));
+  }
   // sessions outlive a day, so check in on the first page view of each day too
   const checkIn = awardDailyCheckIn(users, key);
   res.json({
@@ -335,8 +373,28 @@ app.get("/api/users", (req, res) => {
       createdAt: u.createdAt,
       points: u.username.toLowerCase() === "hermione" ? null : u.points || 0,
       flagged: !!u.flagged,
+      pending: isPending(u),
+      intro: u.intro || "",
     })),
   });
+});
+
+// --- approving new accounts ---
+app.post("/api/users/:username/approve", (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });
+  const users = loadUsers();
+  const key = req.params.username.toLowerCase();
+  const user = users[key];
+  if (!user) return res.status(404).json({ error: "No such account." });
+  if (!isPending(user)) {
+    return res.status(400).json({ error: "That account is already approved." });
+  }
+  delete user.status;
+  const hermione = users["hermione"];
+  if (hermione) dropNotification(hermione, "signup-" + key);
+  saveUsers(users);
+  res.json({ ok: true, username: user.username });
 });
 
 app.get("/api/leaderboard", (req, res) => {
@@ -395,6 +453,8 @@ app.delete("/api/users/:username", (req, res) => {
   const users = loadUsers();
   if (!users[key]) return res.status(404).json({ error: "No such account." });
   delete users[key];
+  // also clears the signup request if this is how a pending account was refused
+  if (users["hermione"]) dropNotification(users["hermione"], "signup-" + key);
   saveUsers(users);
   const games = loadGames();
   if (games[key]) {
@@ -1114,6 +1174,12 @@ function pushNotification(user, id, text) {
     { id, text, createdAt: new Date().toISOString() },
     ...list.filter((n) => n.id !== id),
   ].slice(0, 20);
+}
+
+// removes a notification once whatever it was asking about is dealt with
+function dropNotification(user, id) {
+  if (!user || !Array.isArray(user.notifications)) return;
+  user.notifications = user.notifications.filter((n) => n.id !== id);
 }
 
 // Nudge about the day's objectives once per noon-Eastern day, so it lands when

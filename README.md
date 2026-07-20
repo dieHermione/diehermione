@@ -81,8 +81,9 @@ local testing can't touch production data and a deploy can't overwrite it.
 | `writing.json` | Array of categories, each holding passages |
 | `site.json` | The admin-editable dashboard copy |
 
-Tasks and all per-day bookkeeping (`lastCheckIn`, `wheelDay`, `snakeDay`,
-`snakeToday`) live on the user record, not in separate files.
+Tasks, the signup `intro`, the pending `status`, and all per-day bookkeeping
+(`lastCheckIn`, `wheelDay`, `snakeDay`, `snakeToday`) live on the user record,
+not in separate files.
 
 Fields are read defensively (`user.points || 0`) because records predate most
 of them. Adding a field needs no migration; removing one means tolerating stale
@@ -100,6 +101,14 @@ admin controls too, but that's cosmetic — the server is the boundary.
 
 Two-player games are keyed by the non-hermione player, which means the key *is*
 the authorisation: a regular user can only ever address their own row.
+
+The site is invite only, so registration creates the account with
+`status: "pending"` and deliberately does not start a session. Login refuses a
+pending account, and `/api/me` destroys the session of one that has been put
+back to pending. Hermione approves or turns people away from the admin panel,
+reading the intro they wrote at sign-up. The pending check runs *after* the
+password comparison so it can't be used to enumerate accounts. Records that
+predate the flow have no `status` and count as approved.
 
 ## Ranks and currency
 
@@ -148,14 +157,15 @@ Everything under `/api` returns JSON and answers `401` when signed out.
 
 | Route | Method | Purpose |
 |---|---|---|
-| `/api/register` | POST | Create account (username 3–30, password ≥ 8, pronouns, signup rank) |
+| `/api/register` | POST | Create a *pending* account (username 3–30, password ≥ 8, pronouns, signup rank, intro). Does not sign you in |
 | `/api/login` · `/api/logout` | POST | Sign in / out. Login also runs check-in and seeds notifications |
 | `/api/me` | GET | Identity, points, and the once-per-day check-in result |
 | `/api/ranks` | GET | The ladder, plus which ranks are assignable |
 | `/api/profile/:username` | GET · PUT | PUT is owner-or-admin; rank is admin-only |
 | `/api/users` | GET | All accounts — admin only |
 | `/api/users/:username/points` · `/flag` | POST | Grant points, toggle leaderboard flag — admin only |
-| `/api/users/:username` | DELETE | Remove an account — admin only |
+| `/api/users/:username/approve` | POST | Let a pending account in — admin only |
+| `/api/users/:username` | DELETE | Remove an account, and turn away a pending one — admin only |
 | `/api/leaderboard` | GET | Flagged users ranked by points, hermione excluded |
 | `/api/dailies` | GET | Daily objectives with done state and progress |
 | `/api/tithe` | POST | Burns 5 points; refuses below 5 |

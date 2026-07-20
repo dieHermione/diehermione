@@ -145,6 +145,35 @@
       font-size: 0.9rem;
     }
     .hint { font-size: 0.8rem; color: var(--heading-color); margin-top: -0.5rem; margin-bottom: 1rem; }
+    textarea {
+      width: 100%;
+      padding: 0.6rem 0.75rem;
+      margin-bottom: 0.75rem;
+      border: 1px solid var(--input-border);
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-family: inherit;   /* textareas fall back to a monospace UI font */
+      background: var(--input-bg);
+      color: var(--input-text);
+      resize: vertical;
+      min-height: 4.5rem;
+    }
+    textarea:focus { outline: none; border-color: var(--active-color); }
+    .pending[hidden] { display: none; }
+    .pending { text-align: center; }
+    .pending h2 {
+      font-family: "Cause", sans-serif;
+      font-size: 1.25rem;
+      color: var(--heading-color);
+      margin-bottom: 0.6rem;
+    }
+    .pending p {
+      font-size: 0.9rem;
+      line-height: 1.55;
+      color: var(--text-color);
+      margin-bottom: 1.25rem;
+    }
+    #register-fields[hidden], #form[hidden], .tabs[hidden] { display: none; }
   </style>
 </head>
 <body>
@@ -174,9 +203,17 @@
           <button type="button" class="role-option" data-role="Visitor" data-tip="Just passing through. Browse the site and play the games, without signing up for anything more.">Visitor</button>
           <button type="button" class="role-option" data-role="Citizen" data-tip="Here to stay. Citizens take on tasks set by Hermione and earn points for them.">Citizen</button>
         </div>
+        <label for="intro">Who are you?</label>
+        <textarea id="intro" maxlength="500" rows="3" placeholder="Tell Hermione a little about yourself. She reads these before approving accounts."></textarea>
+        <p class="hint">This site is invite only — Hermione approves each account by hand.</p>
       </div>
       <button class="submit" id="submit" type="submit">Log in</button>
     </form>
+    <div id="pending" class="pending" hidden>
+      <h2>Thank you.</h2>
+      <p>Your account has been created, but you can't sign in yet — Hermione approves each one by hand. Come back and log in once she has.</p>
+      <button class="submit" type="button" onclick="window.location.reload()">Back to sign in</button>
+    </div>
   </main>
   <script>
 
@@ -210,6 +247,14 @@
     tabLogin.addEventListener("click", () => setMode("login"));
     tabRegister.addEventListener("click", () => setMode("register"));
 
+    // Registration ends here rather than on the dashboard: the account exists
+    // but can't sign in until hermione approves it.
+    function showPending() {
+      document.getElementById("form").hidden = true;
+      document.querySelector(".tabs").hidden = true;
+      document.getElementById("pending").hidden = false;
+    }
+
     document.getElementById("form").addEventListener("submit", async (e) => {
       e.preventDefault();
       errorBox.style.display = "none";
@@ -220,6 +265,7 @@
       if (mode === "register") {
         payload.pronouns = document.getElementById("pronouns").value;
         payload.rank = selectedRole;
+        payload.intro = document.getElementById("intro").value.trim();
       }
       const body = JSON.stringify(payload);
       const res = await fetch("/api/" + mode, {
@@ -228,7 +274,10 @@
         body,
       });
       const data = await res.json().catch(() => ({}));
-      if (res.ok) {
+      if (res.ok && data.pending) {
+        // registering no longer signs you in — the account waits for approval
+        showPending();
+      } else if (res.ok) {
         window.location.href = "/dashboard";
       } else {
         errorBox.textContent = data.error || "Something went wrong.";

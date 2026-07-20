@@ -136,7 +136,7 @@
     <p>All six are gitignored. Production keeps its own copies on a Railway volume, so local testing can never affect live data — and a deploy never overwrites live data either.</p>
 
     <h3>The user record</h3>
-    <p>Written keys: <code>username</code>, <code>passwordHash</code>, <code>createdAt</code>, <code>pronouns</code>, <code>rank</code>, <code>points</code>, <code>icon</code>, <code>bio</code>, <code>flagged</code>, <code>notifications</code>, plus per-day bookkeeping: <code>lastCheckIn</code>, <code>wheelDay</code>, <code>snakeDay</code>, <code>snakeToday</code>, <code>dailiesNotifiedOn</code>.</p>
+    <p>Written keys: <code>username</code>, <code>passwordHash</code>, <code>createdAt</code>, <code>pronouns</code>, <code>rank</code>, <code>points</code>, <code>status</code>, <code>intro</code>, <code>icon</code>, <code>bio</code>, <code>flagged</code>, <code>notifications</code>, plus per-day bookkeeping: <code>lastCheckIn</code>, <code>wheelDay</code>, <code>snakeDay</code>, <code>snakeToday</code>, <code>dailiesNotifiedOn</code>.</p>
     <p>Everything is read defensively (<code>user.points || 0</code>) because records predate most fields. Adding a field needs no migration. Removing one is a choice between tolerating stale keys and migrating: <code>rankFor()</code> still maps the retired <code>role</code> values <code>domme</code>/<code>sub</code> onto Visitor/Citizen, whereas the retired <code>dollars</code> balance was folded into <code>points</code> by <code>migrateDollars()</code>, which runs inside <code>loadUsers()</code> and rewrites the file once. Migrate when a stale key would be read as real data; tolerate it when it is merely unused.</p>
     <div class="note"><strong>Read-modify-write.</strong> Every handler loads the whole file, mutates, and saves. Node's single thread plus synchronous <code>fs</code> makes each handler atomic, so concurrent requests can't interleave — but two handlers that both load users must not run <code>await</code> between load and save, or the later write will clobber the earlier.</div>
 
@@ -145,6 +145,11 @@
     <p>There is exactly one permission check in the whole codebase:</p>
     <p><code>isAdmin(req)</code> — true when the session username lowercases to <code>"hermione"</code>.</p>
     <p>Admin is an identity, not a flag on the record, so it can't be granted by editing data. Every privileged route calls it server-side. The client hides admin controls too, but that's cosmetic — the server is the boundary.</p>
+    <h3>Approval</h3>
+    <p>Registration creates the record with <code>status: "pending"</code> and deliberately does not set <code>req.session.username</code>. Login refuses a pending account, and <code>/api/me</code> destroys the session of one that has been put back to pending, so an account can be revoked mid-session. <code>POST /api/users/:username/approve</code> deletes the <code>status</code> key; turning someone away is just the existing DELETE.</p>
+    <p>The pending check in login sits <em>after</em> the bcrypt comparison, on purpose. Checking it first would let anyone learn which usernames exist and are waiting, without knowing the password.</p>
+    <p>Records that predate the flow have no <code>status</code>, and <code>isPending()</code> treats absence as approved — so no migration was needed.</p>
+
     <p>Permission patterns worth knowing:</p>
     <ul>
       <li><code>canEditProfile()</code> — the owner or Hermione</li>
@@ -156,12 +161,12 @@
     <p>Page routes send HTML; everything under <code>/api</code> returns JSON and answers <code>401</code> when signed out.</p>
     <table>
       <tr><th>Route</th><th>Notes</th></tr>
-      <tr><td><code>POST /api/register</code></td><td>Requires pronouns and a signup rank</td></tr>
+      <tr><td><code>POST /api/register</code></td><td>Requires pronouns, a signup rank and an intro. Creates the account <em>pending</em> and does not sign you in</td></tr>
       <tr><td><code>POST /api/login</code> · <code>POST /api/logout</code></td><td>Login also runs check-in and seeds notifications</td></tr>
       <tr><td><code>GET /api/me</code></td><td>Identity, points, and the daily check-in result</td></tr>
       <tr><td><code>GET|PUT /api/profile/:username</code></td><td>PUT is owner-or-admin; rank is admin-only</td></tr>
       <tr><td><code>GET /api/ranks</code></td><td>The ladder, plus which ranks are assignable</td></tr>
-      <tr><td><code>GET /api/users</code> · <code>POST .../points</code> · <code>POST .../flag</code> · <code>DELETE</code></td><td>Admin only</td></tr>
+      <tr><td><code>GET /api/users</code> · <code>POST .../points</code> · <code>POST .../flag</code> · <code>POST .../approve</code> · <code>DELETE</code></td><td>Admin only</td></tr>
       <tr><td><code>GET /api/leaderboard</code></td><td>Flagged users only, Hermione excluded</td></tr>
       <tr><td><code>GET /api/dailies</code></td><td>Objectives with done state and progress</td></tr>
       <tr><td><code>GET|POST /api/wheel</code></td><td>Server picks the wedge and awards it</td></tr>
