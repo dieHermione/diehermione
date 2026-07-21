@@ -121,22 +121,10 @@ body.has-top-nav {
      wheel SVG, which otherwise paints over the open menu */
   z-index: 40;
 }
-/* Puffs at each end of the top edge turn the pill into a cloud. Anchored to the
-   ends so they hold up at any nav width; painted behind the bar (z-index -1). */
-.top-nav::before,
-.top-nav::after {
-  content: "";
-  position: absolute;
-  top: -13px;
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  background: var(--panel-bg);
-  z-index: -1;
-}
-.top-nav::before { left: 28px; box-shadow: 46px 7px 0 -5px var(--panel-bg), 90px -3px 0 -10px var(--panel-bg); }
-.top-nav::after { right: 28px; box-shadow: -46px 7px 0 -5px var(--panel-bg), -90px -3px 0 -10px var(--panel-bg); }
-
+/* Cloud puffs, behind the bar (z-index -1). Deliberately lumpy and asymmetric,
+   not a mirrored pair: ::before scatters bigger bumps across the top edge,
+   ::after adds a few along the bottom. Offsets are tuned for the ~720px desktop
+   nav; on narrow widths some bumps sit off the ends, which is fine. */
 /* The nav is display:flex, so the `hidden` attribute alone would not hide it,
  * display always beats hidden. Same for the links and the dropdown below.
  * This is what once leaked the admin link to every user. */

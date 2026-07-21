@@ -374,6 +374,69 @@ app.put("/api/profile/:username", (req, res) => {
   res.json({ ok: true });
 });
 
+// --- guestbook: comments any approved account may leave on a profile ---
+const GUESTBOOK_CAP = 200;
+const GUESTBOOK_TEXT_MAX = 1000;
+
+app.get("/api/profile/:username/guestbook", (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  const users = loadUsers();
+  const owner = users[req.params.username.toLowerCase()];
+  if (!owner) return res.status(404).json({ error: "No such account." });
+  const meKey = req.session.username.toLowerCase();
+  const entries = (Array.isArray(owner.guestbook) ? owner.guestbook : []).map((e) => ({
+    id: e.id,
+    author: e.author,
+    text: e.text,
+    at: e.at,
+    canDelete: isAdmin(req) || req.params.username.toLowerCase() === meKey ||
+               String(e.author).toLowerCase() === meKey,
+  }));
+  res.json({ entries });
+});
+
+app.post("/api/profile/:username/guestbook", (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  const users = loadUsers();
+  const key = req.params.username.toLowerCase();
+  const owner = users[key];
+  if (!owner) return res.status(404).json({ error: "No such account." });
+  const me = users[req.session.username.toLowerCase()];
+  if (!me || isPending(me)) return res.status(403).json({ error: "Not allowed." });
+
+  const text = String(req.body.text || "").trim();
+  if (!text) return res.status(400).json({ error: "Write something first." });
+  if (text.length > GUESTBOOK_TEXT_MAX) {
+    return res.status(400).json({ error: "Keep it under " + GUESTBOOK_TEXT_MAX + " characters." });
+  }
+  const entry = { id: "gb-" + Date.now(), author: me.username, text, at: new Date().toISOString() };
+  owner.guestbook = [...(Array.isArray(owner.guestbook) ? owner.guestbook : []), entry].slice(-GUESTBOOK_CAP);
+  // let the owner know, unless they are signing their own book
+  if (key !== req.session.username.toLowerCase()) {
+    pushNotification(owner, "guestbook-" + entry.id, me.username + " signed your guestbook.", "/profile");
+  }
+  saveUsers(users);
+  res.json({ ok: true, entry });
+});
+
+app.delete("/api/profile/:username/guestbook/:id", (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  const users = loadUsers();
+  const key = req.params.username.toLowerCase();
+  const owner = users[key];
+  if (!owner) return res.status(404).json({ error: "No such account." });
+  const list = Array.isArray(owner.guestbook) ? owner.guestbook : [];
+  const entry = list.find((e) => e.id === req.params.id);
+  if (!entry) return res.status(404).json({ error: "No such entry." });
+  const meKey = req.session.username.toLowerCase();
+  // the profile owner, hermione, or the comment's own author may remove it
+  const canDelete = isAdmin(req) || key === meKey || String(entry.author).toLowerCase() === meKey;
+  if (!canDelete) return res.status(403).json({ error: "Not allowed." });
+  owner.guestbook = list.filter((e) => e.id !== req.params.id);
+  saveUsers(users);
+  res.json({ ok: true });
+});
+
 app.get("/api/users", (req, res) => {
   if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
   if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });
