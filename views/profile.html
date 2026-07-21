@@ -286,6 +286,7 @@
       document.getElementById("p-username").textContent = profile.username;
       const badge = document.createElement("span");
       const rank = profile.rank || "";
+      document.querySelector("main.card").classList.toggle("princess-glow", rank === "Princess");
       badge.className = "badge " + (rank === "Princess" ? "princess" : "user");
       badge.textContent = rank || "Unranked";
       document.getElementById("p-badge").replaceChildren(badge);

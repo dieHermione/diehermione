@@ -96,6 +96,13 @@ body.has-top-nav {
   gap: 1rem;
 }
 
+/* Hermione's profile (Princess) gets a soft white halo, used on both the main
+   profile card and the dashboard profile card. Compound selector so it beats
+   each page's own .card box-shadow regardless of stylesheet order. */
+.card.princess-glow {
+  box-shadow: 0 0 26px 5px rgba(255, 255, 255, 0.85), 0 10px 40px var(--shadow);
+}
+
 /* --- nav bar (injected by nav.js) --- */
 
 .top-nav {

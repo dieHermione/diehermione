@@ -436,6 +436,7 @@
       document.getElementById("pc-username").textContent = p.username;
       const badge = document.createElement("span");
       const princess = p.rank === "Princess";
+      document.getElementById("profile-card").classList.toggle("princess-glow", princess);
       badge.className = "badge " + (princess ? "princess" : "user");
       badge.textContent = p.rank;
       document.getElementById("pc-badge").replaceChildren(badge);
