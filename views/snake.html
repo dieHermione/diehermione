@@ -31,8 +31,8 @@
       border-radius: 12px;
       box-shadow: 0 10px 40px var(--shadow);
       width: 100%;
-      max-width: 520px;
-      padding: 2rem;
+      max-width: 572px;
+      padding: 2.2rem;
       text-align: center;
       color: var(--text-color);
     }
@@ -105,7 +105,6 @@
 
     let snake, dir, nextDir, food, score, timer = null, alive = false;
     let earned = 0;     // points earned this run
-    let cappedAt = 0;   // set once the server says the daily limit is spent
 
     function reset() {
       snake = [{ x: 9, y: 10 }, { x: 8, y: 10 }, { x: 7, y: 10 }];
@@ -215,19 +214,14 @@
         const res = await fetch("/api/snake/food", { method: "POST" });
         if (!res.ok) return;
         const data = await res.json();
-        if (data.capped) {
-          cappedAt = data.cap;
-        } else {
-          earned += data.earned;
-        }
+        earned += data.earned;
+        if (data.bonus) earned += data.bonus;   // daily-completion bonus
         showScore();
       } catch {}
     }
 
     function showScore() {
-      let text = "Score: " + score + (earned ? " · earned " + earned + " points" : "");
-      if (cappedAt) text += " · daily " + cappedAt + " point limit reached";
-      statusEl.textContent = text;
+      statusEl.textContent = "Score: " + score + (earned ? " · earned " + earned + " points" : "");
     }
 
     function gameOver() {

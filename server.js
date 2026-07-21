@@ -152,7 +152,8 @@ const WRITING_DAILY_POINTS = 5;
 // These bound the damage: a daily ceiling makes farming pointless, and a token
 // bucket caps the sustained rate while still allowing honest bursts (food can
 // spawn right in front of the snake and be eaten on the very next 120ms tick).
-const SNAKE_DAILY_CAP = 20;
+const SNAKE_DAILY_TARGET = 20;   // eat this many to complete the daily
+const SNAKE_COMPLETION_BONUS = 10; // extra payout for completing it, once a day
 const SNAKE_BURST = 8;
 const SNAKE_REFILL_MS = 2000;
 
@@ -638,34 +639,32 @@ app.post("/api/snake/food", (req, res) => {
   }
   req.session.snakeBucket = { tokens: refilled - 1, at: now };
 
-  // lifetime tally, counted whether or not the daily point cap has been hit
-  user.foodEaten = (user.foodEaten || 0) + 1;
+  user.foodEaten = (user.foodEaten || 0) + 1;   // lifetime
 
-  // daily ceiling, on the same noon-Eastern day as the check-in bonus
+  // food eaten today, tracked for the daily objective (no longer a point cap)
   const today = todayKey();
   if (user.snakeDay !== today) {
     user.snakeDay = today;
     user.snakeToday = 0;
   }
-  if (user.snakeToday >= SNAKE_DAILY_CAP) {
-    saveUsers(users);
-    return res.json({
-      ok: true,
-      earned: 0,
-      capped: true,
-      cap: SNAKE_DAILY_CAP,
-      points: user.points || 0,
-    });
-  }
+  user.snakeToday += 1;
+  user.points = (user.points || 0) + SNAKE_FOOD_POINTS;   // every pickup pays
 
-  user.snakeToday += SNAKE_FOOD_POINTS;
-  user.points = (user.points || 0) + SNAKE_FOOD_POINTS;
+  // completing the daily (20 eaten) triggers an extra payout, once per day
+  let bonus = 0;
+  if (user.snakeToday >= SNAKE_DAILY_TARGET && user.snakeBonusDay !== today) {
+    user.snakeBonusDay = today;
+    bonus = SNAKE_COMPLETION_BONUS;
+    user.points += bonus;
+  }
   saveUsers(users);
   res.json({
     ok: true,
     earned: SNAKE_FOOD_POINTS,
+    bonus,
     points: user.points,
-    remaining: SNAKE_DAILY_CAP - user.snakeToday,
+    eaten: user.snakeToday,
+    target: SNAKE_DAILY_TARGET,
   });
 });
 
@@ -912,9 +911,9 @@ app.get("/api/dailies", (req, res) => {
         id: "snake",
         label: "Snake earnings",
         detail: "",
-        reward: SNAKE_DAILY_CAP + " points",
-        done: snakeToday >= SNAKE_DAILY_CAP,
-        progress: { current: snakeToday, max: SNAKE_DAILY_CAP },
+        reward: "+" + SNAKE_COMPLETION_BONUS + " points",
+        done: snakeToday >= SNAKE_DAILY_TARGET,
+        progress: { current: snakeToday, max: SNAKE_DAILY_TARGET },
       },
       {
         id: "writing",

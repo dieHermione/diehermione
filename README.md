@@ -148,7 +148,7 @@ including on her own profile.
 
 **Points** are the only currency. They drive the leaderboard, and come from two
 places: hermione grants them directly, and playing earns them: 5 for the daily
-check-in, 1 per Snake pickup up to 20 a day, and 1–10 from one wheel spin a day (low values much likelier).
+check-in, 1 per Snake pickup (no cap) plus a +10 bonus for eating 20 in a day, and 1–10 from one wheel spin a day (low values much likelier).
 `/api/tithe` burns 5 and is a daily obligation: miss a day and 25 points are taken at the next reset. Points may go negative; while negative the tithe is suspended until the balance is back to zero. Hermione keeps no points of her own.
 
 Points and an earned "dollars" balance used to be separate; they were merged

@@ -15,8 +15,8 @@
       border-radius: 12px;
       box-shadow: 0 10px 40px var(--shadow);
       width: 100%;
-      max-width: 820px;
-      padding: 2rem 2.25rem;
+      max-width: 902px;
+      padding: 2.2rem 2.475rem;
       color: var(--text-color);
     }
     h1 {
@@ -211,7 +211,7 @@
     <h2 id="currency">Currency and trust</h2>
     <p>Points are the only currency: both granted by Hermione and earned by playing. Two of the three earned sources are browser-reported, which can't be trusted outright. The defences are deliberately economic rather than cryptographic:</p>
     <ul>
-      <li><strong>Daily cap</strong>: Snake pays at most 20 points/day, so farming gains nothing over honest play.</li>
+      <li><strong>Snake</strong>: every pickup pays 1 point (no daily cap), and eating 20 in a day adds a one-time +10 completion bonus. The token bucket below is still the only brake on farming rate.</li>
       <li><strong>Token bucket</strong>: 8 pickups burst, refilling one per 2s. A fixed minimum gap was tried first and rejected: food can legitimately spawn in front of the snake and be eaten on the next 120ms tick, so a hard floor would reject honest pickups.</li>
       <li><strong>Server-side outcomes</strong>: the wheel and deathroll pick their results on the server; the client only animates what it's told.</li>
     </ul>

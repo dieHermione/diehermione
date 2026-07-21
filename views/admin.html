@@ -31,8 +31,8 @@
       border-radius: 12px;
       box-shadow: 0 10px 40px var(--shadow);
       width: 100%;
-      max-width: 860px;
-      padding: 2rem;
+      max-width: 946px;
+      padding: 2.2rem;
       color: var(--text-color);
     }
     table { width: 100%; border-collapse: collapse; margin-bottom: 1.5rem; }
@@ -44,11 +44,32 @@
     td a:hover { color: var(--button-hover-bg); }
     .count { color: var(--muted-color); font-size: 0.85rem; margin-bottom: 1rem; }
     .admin-grid {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: start;
       gap: 1.5rem;
       width: 100%;
+      max-width: 1240px;
+    }
+    .admin-cards {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 1.5rem;
+      min-width: 0;
+    }
+    .admin-profile { width: 380px; position: sticky; top: 1.5rem; }
+    .admin-profile iframe {
+      width: 100%;
+      height: 620px;
+      border: none;
+      border-radius: 12px;
+      background: transparent;
+      display: block;
+    }
+    @media (max-width: 1040px) {
+      .admin-grid { display: flex; flex-direction: column; align-items: stretch; }
+      .admin-profile { width: 100%; position: static; }
     }
     h2 {
       font-family: "Cause", sans-serif;
@@ -113,6 +134,18 @@
     .chip.quick { padding: 0.32rem 0.6rem; }
     .chip.sign { padding: 0.32rem 0.65rem; min-width: 2rem; font-size: 0.95rem; line-height: 1; }
     .pts-group .pts-input { width: 3.6rem; margin-right: 0; }
+    .pts-reveal {
+      border-radius: 999px;
+      border: 1.5px solid var(--button-bg);
+      background: var(--input-bg);
+      text-align: center;
+      font-weight: 700;
+      animation: pts-open 0.14s ease;
+    }
+    @keyframes pts-open {
+      from { opacity: 0; transform: scaleX(0.6); transform-origin: left; }
+      to { opacity: 1; transform: scaleX(1); }
+    }
     /* delete runs on a timer you can call off */
     .pending {
       display: flex;
@@ -325,6 +358,7 @@
 </head>
 <body class="has-top-nav">
     <div class="admin-grid">
+    <div class="admin-cards">
     <section class="card" id="approvals-card" hidden>
       <h2>Pending approvals</h2>
       <p class="count" id="approvals-count"></p>
@@ -339,13 +373,6 @@
         </thead>
         <tbody id="rows"></tbody>
       </table>
-    </section>
-    <section class="card">
-      <h2>Documentation</h2>
-      <div class="doc-links">
-        <a href="/guide">Guide</a>
-        <a href="/tech">Technical notes</a>
-      </div>
     </section>
     <section class="card" id="review-card" hidden>
       <h2>Waiting to be read</h2>
@@ -413,6 +440,17 @@
       <p class="panel-empty" id="writing-empty">No writing series finished yet.</p>
       <div class="task-admin-list" id="writing-list"></div>
     </section>
+    <section class="card">
+      <h2>Documentation</h2>
+      <div class="doc-links">
+        <a href="/guide">Guide</a>
+        <a href="/tech">Technical notes</a>
+      </div>
+    </section>
+    </div>
+    <aside class="admin-profile">
+      <iframe src="/profile?embed=1" title="Your profile" loading="lazy"></iframe>
+    </aside>
   </div>
   <script>
 
@@ -807,23 +845,36 @@
               sign.textContent = "+";
               sign.title = "Switch to taking points away";
 
+              // the amount field is hidden until Give/Take is pressed, then it
+              // slides open to its right; pressing again (or Enter) applies it
               const amount = document.createElement("input");
               amount.type = "number";
               amount.step = "1";
               amount.min = "1";
-              amount.className = "pts-input";
-              amount.placeholder = "pts";
+              amount.className = "pts-input pts-reveal";
+              amount.placeholder = "amount";
+              amount.hidden = true;
 
               const give = document.createElement("button");
               give.type = "button";
               give.className = "chip give";
               give.textContent = "Give";
-              give.addEventListener("click", () => {
+              const applyAmount = () => {
                 const n = parseInt(amount.value, 10);
                 if (!Number.isInteger(n) || n === 0) return;
                 addPoints(u.username, negative ? -Math.abs(n) : Math.abs(n));
+                amount.value = "";
+                amount.hidden = true;
+              };
+              give.addEventListener("click", () => {
+                if (amount.hidden) { amount.hidden = false; amount.focus(); return; }
+                applyAmount();
               });
-              group.append(sign, amount, give);
+              amount.addEventListener("keydown", (e) => {
+                if (e.key === "Enter") { e.preventDefault(); applyAmount(); }
+                if (e.key === "Escape") { amount.value = ""; amount.hidden = true; }
+              });
+              group.append(sign, give, amount);   // input sits to the right of the button
               row.append(group);
 
               const quicks = [5, 10, 25, 100].map((n) => {
