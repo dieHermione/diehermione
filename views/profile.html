@@ -201,6 +201,10 @@
       <div class="details">
         <div class="detail"><span class="label">Pronouns</span><span class="value" id="p-pronouns">-</span></div>
         <div class="detail stat"><span class="label">Points</span><span class="value" id="p-points">0</span></div>
+        <div class="detail"><span class="label">Food eaten</span><span class="value" id="p-food">0</span></div>
+        <div class="detail"><span class="label">Letters typed</span><span class="value" id="p-letters">0</span></div>
+        <div class="detail"><span class="label">Writing tasks</span><span class="value" id="p-writing">0</span></div>
+        <div class="detail"><span class="label">Custom tasks</span><span class="value" id="p-custom">0</span></div>
       </div>
       <p class="joined" id="p-joined"></p>
       <button id="edit-btn" type="button" hidden>Edit profile</button>
@@ -297,6 +301,12 @@
       bio.classList.toggle("empty", !profile.bio);
       document.getElementById("p-pronouns").textContent = profile.pronouns || "-";
       // hermione keeps no points, so the server sends null and the tile goes away
+      const st = profile.stats || {};
+      document.getElementById("p-food").textContent = st.foodEaten || 0;
+      document.getElementById("p-letters").textContent = (st.lettersTyped || 0).toLocaleString();
+      document.getElementById("p-writing").textContent = st.writingTasksCompleted || 0;
+      document.getElementById("p-custom").textContent = st.customTasksCompleted || 0;
+
       const pointsTile = document.getElementById("p-points").closest(".detail");
       if (profile.points === null) {
         pointsTile.hidden = true;

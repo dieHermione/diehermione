@@ -111,6 +111,9 @@ body.has-top-nav {
   background: var(--panel-bg);
   box-shadow: 0 8px 24px var(--shadow);
   backdrop-filter: blur(8px);
+  /* keep the whole nav (and its Games dropdown) above page content such as the
+     wheel SVG, which otherwise paints over the open menu */
+  z-index: 40;
 }
 
 /* The nav is display:grid, so the `hidden` attribute alone would not hide it,

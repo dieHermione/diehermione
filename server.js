@@ -147,6 +147,7 @@ function isPending(user) {
 // both granted and earned, and the leaderboard reflects both.
 const DAILY_CHECKIN_POINTS = 5;
 const SNAKE_FOOD_POINTS = 1;
+const WRITING_DAILY_POINTS = 5;
 // Snake pickups are reported by the browser, so they can't be trusted outright.
 // These bound the damage: a daily ceiling makes farming pointless, and a token
 // bucket caps the sustained rate while still allowing honest bursts (food can
@@ -307,6 +308,12 @@ app.get("/api/profile/:username", (req, res) => {
       bio: user.bio || "",
       pronouns: canonical(user.pronouns, PRONOUN_OPTIONS),
       points: key === "hermione" ? null : user.points || 0,   // hermione doesn't keep points
+      stats: {
+        foodEaten: user.foodEaten || 0,
+        lettersTyped: user.lettersTyped || 0,
+        writingTasksCompleted: user.writingTasksCompleted || 0,
+        customTasksCompleted: user.customTasksCompleted || 0,
+      },
       createdAt: user.createdAt,
       canEdit: canEditProfile(req, key),
     },
@@ -631,6 +638,9 @@ app.post("/api/snake/food", (req, res) => {
   }
   req.session.snakeBucket = { tokens: refilled - 1, at: now };
 
+  // lifetime tally, counted whether or not the daily point cap has been hit
+  user.foodEaten = (user.foodEaten || 0) + 1;
+
   // daily ceiling, on the same noon-Eastern day as the check-in bonus
   const today = todayKey();
   if (user.snakeDay !== today) {
@@ -906,6 +916,13 @@ app.get("/api/dailies", (req, res) => {
         done: snakeToday >= SNAKE_DAILY_CAP,
         progress: { current: snakeToday, max: SNAKE_DAILY_CAP },
       },
+      {
+        id: "writing",
+        label: "Write for Princess",
+        detail: "",
+        reward: WRITING_DAILY_POINTS + " points",
+        done: user.writingDay === today,
+      },
     ],
   });
 });
@@ -970,6 +987,7 @@ app.get("/api/writing", (req, res) => {
     categories: loadCategories().map((c) => ({
       id: c.id,
       title: c.title,
+      description: c.description || "",
       count: c.passages.length,
     })),
   });
@@ -1001,6 +1019,13 @@ app.put("/api/writing/:id", (req, res) => {
     if ([...title].length > 120) return res.status(400).json({ error: "Title must be 120 characters or fewer." });
     category.title = title;
   }
+  if (req.body.description !== undefined) {
+    const description = String(req.body.description).trim();
+    if ([...description].length > 200) {
+      return res.status(400).json({ error: "Description must be 200 characters or fewer." });
+    }
+    category.description = description;
+  }
   if (req.body.passages !== undefined) {
     if (!Array.isArray(req.body.passages)) {
       return res.status(400).json({ error: "Passages must be a list." });
@@ -1015,7 +1040,7 @@ app.put("/api/writing/:id", (req, res) => {
     category.passages = cleaned.map((text, i) => ({ id: category.id + "-" + (i + 1), text }));
   }
   saveCategories(categories);
-  res.json({ ok: true, category: { id: category.id, title: category.title, count: category.passages.length } });
+  res.json({ ok: true, category: { id: category.id, title: category.title, description: category.description || "", count: category.passages.length } });
 });
 
 // A finished writing series, reported by the client. The Writing game is
@@ -1039,6 +1064,15 @@ app.post("/api/writing/complete", (req, res) => {
     at: new Date().toISOString(),
   };
   user.writingLog = [entry, ...(Array.isArray(user.writingLog) ? user.writingLog : [])].slice(0, WRITING_LOG_CAP);
+  user.writingTasksCompleted = (user.writingTasksCompleted || 0) + 1;
+  user.lettersTyped = (user.lettersTyped || 0) + clampInt(req.body.letters, 100000000);
+
+  // the daily writing objective: first finished series of the day pays out
+  const today = todayKey();
+  if (user.writingDay !== today) {
+    user.writingDay = today;
+    user.points = (user.points || 0) + WRITING_DAILY_POINTS;
+  }
 
   // tell Hermione, but never about her own practice runs
   const hermione = users["hermione"];
@@ -1450,6 +1484,7 @@ function completeTask(user, task) {
   if (task.status === "done") return;
   task.status = "done";
   task.completedAt = new Date().toISOString();
+  user.customTasksCompleted = (user.customTasksCompleted || 0) + 1;
   if (task.points) user.points = (user.points || 0) + task.points;
 }
 
@@ -1506,6 +1541,7 @@ app.post("/api/tasks/:id/rep", (req, res) => {
     return res.status(400).json({ error: "That is not what she asked for." });
   }
   task.repsDone = Math.min(task.reps, (task.repsDone || 0) + 1);
+  user.lettersTyped = (user.lettersTyped || 0) + [...task.text].length;
   if (task.repsDone >= task.reps) completeTask(user, task);
   saveUsers(users);
   res.json({ ok: true, task: taskForPlayer(task), points: user.points || 0 });

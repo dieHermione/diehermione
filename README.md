@@ -103,6 +103,12 @@ Hermione assigns tasks from the admin panel. Two kinds so far:
 
 A repetition has nothing to judge, so it completes as soon as the count is met.
 
+Profiles show lifetime stats: food eaten, letters typed, writing series completed,
+and custom (assigned) tasks completed. The Writing minigame runs 50 passages
+(looping the chosen category); only Hermione can exit a series early, and
+finishing one logs a result (mistakes + time) for her to review in the admin
+panel. A daily objective pays out the first writing series of each day.
+
 Both carry a points reward, set explicitly at assignment (there is no default,
 so a reward is never given by accident) and paid once, when the task first
 reaches done. The repetition count is client-refereed like Snake, so the server

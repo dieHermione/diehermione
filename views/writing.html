@@ -147,6 +147,32 @@
       color: #d4607f;
     }
     .progress-note { color: var(--muted-color); font-size: 0.8rem; margin-bottom: 0.75rem; }
+    /* hover hint describing what a category holds, like the signup rank tips */
+    .passage-card[data-tip]::after {
+      content: attr(data-tip);
+      position: absolute;
+      bottom: calc(100% + 0.4rem);
+      left: 1rem;
+      right: 1rem;
+      padding: 0.55rem 0.7rem;
+      border-radius: 8px;
+      background: var(--panel-solid, #ffffff);
+      color: var(--text-color);
+      box-shadow: 0 8px 24px var(--shadow);
+      border: 1px solid var(--table-border);
+      font-size: 0.78rem;
+      font-weight: 500;
+      line-height: 1.35;
+      text-align: left;
+      white-space: normal;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity 0.15s ease;
+      z-index: 30;
+    }
+    .passage-card[data-tip]:hover::after,
+    .passage-card[data-tip]:focus-visible::after { opacity: 1; visibility: visible; }
     /* --- the typing game --- */
     #game[hidden] { display: none; }
     .target {
@@ -240,6 +266,8 @@
     <div class="error" id="edit-error"></div>
     <label for="edit-title">Title</label>
     <input type="text" id="edit-title" maxlength="120" />
+    <label for="edit-desc">Description (shown on hover)</label>
+    <input type="text" id="edit-desc" maxlength="200" />
     <label for="edit-text">Passages, leave a blank line between each</label>
     <textarea id="edit-text" maxlength="2000"></textarea>
     <div class="actions">
@@ -279,6 +307,14 @@
     let categoryTitle = "";
     let startedAt = 0;     // when this series began, for the results screen
     let passagesDone = 0;  // successful passages this series
+    let lettersThisSeries = 0;
+    const REQUIRED_PASSAGES = 50;   // a series is 50 passages, looping the category
+    function shuffleInPlace(a) {
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+    }
 
     const targetEl = document.getElementById("target");
     const statusEl = document.getElementById("status");
@@ -297,6 +333,7 @@
         count.className = "count";
         count.textContent = c.count + (c.count === 1 ? " passage" : " passages");
         card.append(name, count);
+        if (c.description) card.setAttribute("data-tip", c.description);
         card.addEventListener("click", () => openCategory(c));
         if (isAdmin) {
           const pencil = document.createElement("button");
@@ -341,6 +378,7 @@
       index = 0;
       mistakes = 0;
       passagesDone = 0;
+      lettersThisSeries = 0;
       startedAt = Date.now();
       document.getElementById("results").hidden = true;
       document.getElementById("target").hidden = false;
@@ -364,7 +402,7 @@
 
     function renderProgress() {
       const el = document.getElementById("progress");
-      el.textContent = "Passage " + (index + 1) + " of " + queue.length;
+      el.textContent = "Passage " + (passagesDone + 1) + " of " + REQUIRED_PASSAGES;
       if (mistakes) {
         const m = document.createElement("span");
         m.className = "mistakes";
@@ -391,9 +429,11 @@
     }
 
     function finish() {
+      lettersThisSeries += [...current.text].length;
       passagesDone++;
-      if (index < queue.length - 1) {
+      if (passagesDone < REQUIRED_PASSAGES) {
         index++;
+        if (index >= queue.length) { shuffleInPlace(queue); index = 0; }  // loop the category
         startPassage();
         statusEl.textContent = "Next one.";
         return;
@@ -425,7 +465,7 @@
       fetch("/api/writing/complete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ category: categoryTitle, passages, mistakes: misses, elapsedMs }),
+        body: JSON.stringify({ category: categoryTitle, passages, mistakes: misses, elapsedMs, letters: lettersThisSeries }),
       }).catch(() => {});
     }
 
@@ -470,6 +510,7 @@
       document.getElementById("editor").hidden = false;
       document.getElementById("edit-error").style.display = "none";
       document.getElementById("edit-title").value = c.title;
+      document.getElementById("edit-desc").value = c.description || "";
       // fetch the passages only when actually editing them
       fetch("/api/writing/" + encodeURIComponent(c.id))
         .then((r) => (r.ok ? r.json() : Promise.reject()))
@@ -499,6 +540,7 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: document.getElementById("edit-title").value,
+          description: document.getElementById("edit-desc").value,
           passages,
         }),
       });
@@ -532,6 +574,7 @@
     window.siteMe()
       .then((d) => {
         isAdmin = Boolean(d.isAdmin);
+        document.getElementById("exit-early").hidden = !isAdmin;   // only she may bail out
         return fetch("/api/writing");
       })
       .then((r) => (r.ok ? r.json() : Promise.reject()))
