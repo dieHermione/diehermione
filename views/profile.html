@@ -169,11 +169,6 @@
     }
     .field textarea { min-height: 90px; resize: vertical; }
     .field input:focus, .field textarea:focus { outline: none; border-color: var(--button-hover-bg); }
-    .picture-row { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
-    .picture-row .avatar, .picture-row .avatar-fallback {
-      width: 72px; height: 72px; margin: 0; font-size: 1.8rem; flex-shrink: 0;
-    }
-    .picture-row input[type="file"] { font-size: 0.85rem; color: var(--muted-color); max-width: 100%; }
     .form-actions { text-align: center; margin-top: 1.25rem; }
     .form-error {
       display: none;
@@ -215,13 +210,6 @@
     <form id="edit-form">
       <div class="form-error" id="form-error"></div>
       <div class="field">
-        <label>Profile picture</label>
-        <div class="picture-row">
-          <div id="edit-avatar-slot"></div>
-          <input type="file" id="f-icon" accept="image/*" />
-        </div>
-      </div>
-      <div class="field">
         <label for="f-bio">Bio</label>
         <textarea id="f-bio" maxlength="500" placeholder="Tell everyone a little about yourself…"></textarea>
       </div>
@@ -256,7 +244,6 @@
     let me = null;
     let profileUser = null; // whose profile is shown
     let profile = null;
-    let pendingIcon = undefined; // data URL chosen in the edit form
 
     function avatarEl(p, small) {
       if (p.icon) {
@@ -340,14 +327,11 @@
       document.getElementById("edit-form").classList.toggle("open", on);
       document.getElementById("view-mode").classList.toggle("closed", on);
       if (on) {
-        pendingIcon = undefined;
         document.getElementById("form-error").style.display = "none";
         document.getElementById("f-bio").value = profile.bio;
         document.getElementById("f-pronouns").value = profile.pronouns;
         document.getElementById("rank-field").hidden = !me.isAdmin;
         document.getElementById("f-rank").value = profile.rank;
-        document.getElementById("f-icon").value = "";
-        document.getElementById("edit-avatar-slot").replaceChildren(avatarEl(profile));
       }
     }
 
@@ -390,17 +374,6 @@
       img.src = URL.createObjectURL(file);
     }
 
-    document.getElementById("f-icon").addEventListener("change", (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      shrink(file, (dataUrl) => {
-        pendingIcon = dataUrl;
-        document.getElementById("edit-avatar-slot").replaceChildren(
-          avatarEl({ username: profile.username, icon: pendingIcon })
-        );
-      });
-    });
-
     document.getElementById("edit-form").addEventListener("submit", async (e) => {
       e.preventDefault();
       const bodyData = {
@@ -408,7 +381,6 @@
         pronouns: document.getElementById("f-pronouns").value,
       };
       if (me.isAdmin) bodyData.rank = document.getElementById("f-rank").value;
-      if (pendingIcon !== undefined) bodyData.icon = pendingIcon;
       const res = await fetch("/api/profile/" + encodeURIComponent(profileUser), {
         method: "PUT",
         headers: { "Content-Type": "application/json" },

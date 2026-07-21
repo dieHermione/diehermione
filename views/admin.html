@@ -346,7 +346,6 @@
         <a href="/guide">Guide</a>
         <a href="/tech">Technical notes</a>
       </div>
-      <p class="panel-empty">The guide covers what people see; the technical notes cover how it's built.</p>
     </section>
     <section class="card" id="review-card" hidden>
       <h2>Waiting to be read</h2>
@@ -373,11 +372,11 @@
         <!-- essay fields -->
         <div class="field" id="f-topic">
           <label for="t-topic">Topic</label>
-          <input id="t-topic" maxlength="200" placeholder="What she is to write about" />
+          <input id="t-topic" maxlength="200" />
         </div>
         <div class="field narrow" id="f-words">
           <label for="t-words">Minimum words</label>
-          <input id="t-words" type="number" min="1" step="1" placeholder="words" />
+          <input id="t-words" type="number" min="1" step="1" />
         </div>
 
         <!-- repetition fields -->
@@ -392,11 +391,11 @@
 
         <div class="field">
           <label for="t-detail">Note (optional)</label>
-          <input id="t-detail" maxlength="200" placeholder="Anything else she should know" />
+          <input id="t-detail" maxlength="200" />
         </div>
         <div class="field narrow">
           <label for="t-points">Reward</label>
-          <input id="t-points" type="number" min="0" step="1" required placeholder="points" />
+          <input id="t-points" type="number" min="0" step="1" required />
         </div>
 
         <div class="assign-actions">
@@ -427,9 +426,7 @@
     function applyPronouns() {
       const who = document.getElementById("t-who").value;
       const { subject, isAre } = subjectPronoun(pronounsByName[who]);
-      document.getElementById("t-topic").placeholder = "What " + subject + " " + isAre + " to write about";
       document.getElementById("t-text").placeholder = "The line " + subject + " must copy out";
-      document.getElementById("t-detail").placeholder = "Anything else " + subject + " should know";
     }
     document.getElementById("t-who").addEventListener("change", applyPronouns);
 

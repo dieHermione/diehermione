@@ -170,13 +170,7 @@
 
     function setLocked(state) {
       spinBtn.disabled = !state.canSpin || spinning;
-      if (state.unlimited) {
-        noteEl.textContent = "Spin as often as you like.";
-      } else if (state.spunToday) {
-        noteEl.textContent = "You've had your spin. The wheel resets at noon Eastern.";
-      } else {
-        noteEl.textContent = "One spin a day. Resets at noon Eastern.";
-      }
+      noteEl.textContent = "";
     }
 
     async function spin() {

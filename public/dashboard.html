@@ -124,7 +124,7 @@
     .copy-editor .row { display: flex; gap: 0.5rem; justify-content: center; }
     .copy-editor .hint { color: var(--muted-color); font-size: 0.72rem; margin: -0.4rem 0 0.7rem; }
     /* +10px under the heading, taken back off the paragraph so the card keeps its height */
-    #welcome { margin-bottom: 1.125rem; }
+    #welcome { margin-bottom: 2.5rem; }
     #dashboard-message { margin-bottom: 0.875rem; }
     .daily-list { display: flex; flex-direction: column; gap: 0.6rem; text-align: left; }
     .daily {
@@ -557,12 +557,17 @@
         label.className = "label";
         label.textContent = d.label;
         bodyEl.append(label);
-        const detail = document.createElement("div");
-        detail.className = "detail";
-        detail.textContent = d.progress && !d.done
-          ? d.detail + " " + d.progress.current + " of " + d.progress.max + " points today"
+        // detail may be blank now that the flavour lines are gone; only the
+        // progress readout remains for a task that has one
+        const detailText = d.progress && !d.done
+          ? (d.detail ? d.detail + " " : "") + d.progress.current + " of " + d.progress.max + " points today"
           : d.detail;
-        bodyEl.append(detail);
+        if (detailText) {
+          const detail = document.createElement("div");
+          detail.className = "detail";
+          detail.textContent = detailText;
+          bodyEl.append(detail);
+        }
         if (d.progress) {
           const bar = document.createElement("div");
           bar.className = "mini-bar";

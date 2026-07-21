@@ -246,15 +246,15 @@ const PRONOUN_OPTIONS = ["She/Her", "He/Him", "They/Them"];
 // value covers both. Princess is hermione's alone and isn't offered at signup.
 // The ladder, highest first. Rank 2 is deliberately unnamed for now.
 const RANK_LADDER = [
-  { name: "Princess", note: "Hers alone." },
-  { name: "??", note: "Not yet spoken of.", unassignable: true },
+  { name: "Princess", note: "" },
+  { name: "??", note: "", unassignable: true },
   { name: "Disciple", note: "" },
   { name: "Worshipper", note: "" },
   { name: "Devoted", note: "" },
   { name: "Follower", note: "" },
   { name: "Servant", note: "" },
 ];
-const RANK_ASIDE = { name: "Visitor", note: "Just passing through." };
+const RANK_ASIDE = { name: "Visitor", note: "Not a sub." };
 const RANK_OPTIONS = [...RANK_LADDER.map((r) => r.name), RANK_ASIDE.name, "Citizen"];
 const SIGNUP_RANKS = ["Visitor", "Citizen"];
 const LEGACY_RANKS = { domme: "Visitor", sub: "Citizen" };
@@ -880,21 +880,21 @@ app.get("/api/dailies", (req, res) => {
       {
         id: "checkin",
         label: "Daily check-in",
-        detail: "Open the site once a day.",
+        detail: "",
         reward: DAILY_CHECKIN_POINTS + " points",
         done: user.lastCheckIn === today,
       },
       {
         id: "wheel",
         label: "Spin the wheel",
-        detail: "One spin a day.",
+        detail: "",
         reward: "up to " + Math.max(...WHEEL_SEGMENTS.map((s) => s.points)) + " points",
         done: user.wheelDay === today,
       },
       {
         id: "snake",
         label: "Snake earnings",
-        detail: SNAKE_FOOD_POINTS + " point for every heart eaten.",
+        detail: "",
         reward: SNAKE_DAILY_CAP + " points",
         done: snakeToday >= SNAKE_DAILY_CAP,
         progress: { current: snakeToday, max: SNAKE_DAILY_CAP },

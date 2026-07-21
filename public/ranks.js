@@ -209,7 +209,7 @@
 
     const divider = document.createElement("div");
     divider.className = "rank-divider";
-    divider.textContent = "separately";
+    divider.textContent = "";
     modal.append(divider);
 
     const aside = document.createElement("div");
