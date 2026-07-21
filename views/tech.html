@@ -184,7 +184,7 @@
       <tr><td><code>/api/deathroll/{game,games,start,roll}</code></td><td>Turn order enforced server-side</td></tr>
       <tr><td><code>GET|DELETE|POST /api/notifications[...]</code></td><td>List, dismiss one, clear all</td></tr>
       <tr><td><code>GET|PUT /api/site</code></td><td>Dashboard copy; PUT admin only</td></tr>
-      <tr><td><code>POST /api/tithe</code></td><td>Burns 5 points; refuses below 5</td></tr>
+      <tr><td><code>POST /api/tithe</code></td><td>Burns 5 points, a daily obligation; refused while negative or already tithed today</td></tr>
     </table>
 
     <h2 id="frontend">Front-end conventions</h2>
@@ -215,8 +215,11 @@
       <li><strong>Token bucket</strong>: 8 pickups burst, refilling one per 2s. A fixed minimum gap was tried first and rejected: food can legitimately spawn in front of the snake and be eaten on the next 120ms tick, so a hard floor would reject honest pickups.</li>
       <li><strong>Server-side outcomes</strong>: the wheel and deathroll pick their results on the server; the client only animates what it's told.</li>
     </ul>
+    <div class="note"><strong>Tithing is a daily obligation.</strong> <code>settleTithe()</code> runs on login and on the first <code>/api/me</code> of a new day: if the account went the previous day without tithing and is not already negative, 25 points are taken. Points may go negative, and while negative the obligation is suspended and the button disabled until the balance returns to zero. The tithe day is tracked with <code>tithedOn</code>, the settle day with <code>titheCheckedOn</code>, both noon-Eastern keys.</div>
     <p>If points ever buy something worth cheating for, the real fix is server-authoritative gameplay, where the client sends inputs and the server owns the state. Until then the cap is the honest boundary.</p>
     <div class="note"><strong>Merging the currencies had a side effect worth knowing.</strong> Points used to be admin-granted only, so the leaderboard ranked what Hermione had chosen to award. Now that playing earns points too, it ranks grinding as well. If those ever need separating again, track earned and granted totals as distinct fields and rank on the granted one. Do not try to infer the split after the fact.</div>
+
+    <div class="note"><strong>Writing categories seed once, then the file wins.</strong> <code>loadCategories()</code> returns the stored <code>writing.json</code> whenever it is valid; only when there is no usable file does it write the in-code defaults to disk and return a deep clone. After that first seed the stored copy is authoritative, so Hermione's edits can never be reverted by the defaults, and the defaults constant is never mutated.</div>
 
     <h2 id="games">Game implementations</h2>
     <table>

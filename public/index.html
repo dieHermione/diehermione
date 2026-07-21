@@ -9,6 +9,27 @@
   <link href="https://fonts.googleapis.com/css2?family=Cause:wght@400..700&family=Noto+Sans+Bengali&family=Noto+Sans+Saurashtra&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/site.css" />
   <style>
+    /* This page has no nav, so it would fall to the shared centred body in
+       site.css. Pull the header and card up to the top the way it was before
+       the shared shell centralised body layout. */
+    body { justify-content: flex-start; padding: 1.75rem 1rem 1rem; }
+    /* Browsers (notably on Linux) paint autofilled fields with their own
+       yellow/blue background. Force our own colours so the fields stay on
+       theme. The long transition delay is the standard trick to stop the UA
+       background ever showing. */
+    input:-webkit-autofill,
+    input:-webkit-autofill:hover,
+    input:-webkit-autofill:focus {
+      -webkit-text-fill-color: var(--input-text);
+      -webkit-box-shadow: 0 0 0 1000px var(--input-bg) inset;
+      box-shadow: 0 0 0 1000px var(--input-bg) inset;
+      caret-color: var(--input-text);
+      transition: background-color 100000s ease-in-out 0s;
+    }
+    input:autofill {
+      background: var(--input-bg);
+      -webkit-text-fill-color: var(--input-text);
+    }
     .site-header {
       font-family: "Cause", sans-serif;
       font-size: 3rem;

@@ -208,6 +208,7 @@ app.post("/api/login", async (req, res) => {
   }
   req.session.username = user.username;
   const checkIn = awardDailyCheckIn(users, user.username.toLowerCase());
+  settleTithe(users, user.username.toLowerCase());
   seedNotifications(user);
   saveUsers(users);
   res.json({ ok: true, checkIn });
@@ -228,10 +229,12 @@ app.get("/api/me", (req, res) => {
   }
   // sessions outlive a day, so check in on the first page view of each day too
   const checkIn = awardDailyCheckIn(users, key);
+  settleTithe(users, key);
   res.json({
     username: req.session.username,
     isAdmin: isAdmin(req),
     points: users[key].points || 0,
+    tithedToday: users[key].tithedOn === todayKey(),
     checkIn,
   });
 });
@@ -798,15 +801,19 @@ app.post("/api/deathroll/roll", (req, res) => {
 
 // --- wheel: one spin a day for everyone except hermione ---
 // The server picks the winning wedge; the page only animates to it.
+// Every value 1..10 is reachable, but the low ones dominate (1 is ~40%,
+// 10 is ~1%). Weights sum to 100 so the percentages read directly.
 const WHEEL_SEGMENTS = [
-  { label: "1", points: 1, weight: 10 },
-  { label: "2", points: 2, weight: 9 },
-  { label: "3", points: 3, weight: 8 },
-  { label: "5", points: 5, weight: 7 },
-  { label: "8", points: 8, weight: 5 },
-  { label: "10", points: 10, weight: 4 },
-  { label: "15", points: 15, weight: 2 },
-  { label: "25", points: 25, weight: 1 },
+  { label: "1", points: 1, weight: 40 },
+  { label: "2", points: 2, weight: 22 },
+  { label: "3", points: 3, weight: 13 },
+  { label: "4", points: 4, weight: 8 },
+  { label: "5", points: 5, weight: 6 },
+  { label: "6", points: 6, weight: 4 },
+  { label: "7", points: 7, weight: 3 },
+  { label: "8", points: 8, weight: 2 },
+  { label: "9", points: 9, weight: 1 },
+  { label: "10", points: 10, weight: 1 },
 ];
 
 function pickSegment() {
@@ -927,12 +934,20 @@ const DEFAULT_CATEGORIES = [
   })),
 ];
 
+// The stored file is authoritative once it exists. On the very first read we
+// seed it from the in-code defaults and write it to disk, so from then on
+// Hermione's edits are the only source and can never be shadowed or reverted by
+// the defaults. Deep-cloned so the DEFAULT_CATEGORIES constant is never mutated.
 function loadCategories() {
   try {
     const stored = JSON.parse(fs.readFileSync(WRITING_FILE, "utf8"));
-    if (Array.isArray(stored) && stored.length && stored[0].passages) return stored;
+    if (Array.isArray(stored) && stored.length && stored.every((c) => Array.isArray(c.passages))) {
+      return stored;
+    }
   } catch {}
-  return DEFAULT_CATEGORIES;
+  const seeded = JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
+  try { saveCategories(seeded); } catch {}
+  return seeded;
 }
 
 function saveCategories(categories) {
@@ -982,7 +997,8 @@ app.put("/api/writing/:id", (req, res) => {
   if (req.body.title !== undefined) {
     const title = String(req.body.title).trim();
     if (!title) return res.status(400).json({ error: "Give it a title." });
-    if (title.length > 80) return res.status(400).json({ error: "Title must be 80 characters or fewer." });
+    // count by code point so decorative/astral unicode is not double-counted
+    if ([...title].length > 120) return res.status(400).json({ error: "Title must be 120 characters or fewer." });
     category.title = title;
   }
   if (req.body.passages !== undefined) {
@@ -1007,6 +1023,31 @@ app.put("/api/writing/:id", (req, res) => {
 // read as null on her profile and she can't be granted them, so crediting her
 // would contradict that. A tithe is a cost, not a transfer.
 const TITHE_POINTS = 5;
+const TITHE_MISS_PENALTY = 25;
+
+// Tithing is a daily obligation. On the first view of a new day, if the account
+// went the previous day without tithing and is not already in the red, the miss
+// penalty is taken. Once negative the obligation is suspended (and the button
+// disabled) until the balance is back to zero or above.
+function settleTithe(users, key) {
+  const user = users[key];
+  if (!user || key === "hermione") return;
+  const today = todayKey();
+  if (user.titheCheckedOn === today) return;
+  const firstEver = !user.titheCheckedOn;
+  const tithedLastWindow = user.tithedOn === user.titheCheckedOn;
+  if (!firstEver && (user.points || 0) >= 0 && !tithedLastWindow) {
+    user.points = (user.points || 0) - TITHE_MISS_PENALTY;
+    pushNotification(
+      user,
+      "tithe-miss",
+      "You did not tithe. " + TITHE_MISS_PENALTY + " points have been taken.",
+      "/dashboard"
+    );
+  }
+  user.titheCheckedOn = today;
+  saveUsers(users);
+}
 
 app.post("/api/tithe", (req, res) => {
   if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
@@ -1017,13 +1058,17 @@ app.post("/api/tithe", (req, res) => {
   const users = loadUsers();
   const user = users[key];
   if (!user) return res.status(401).json({ error: "Not logged in." });
-  const balance = user.points || 0;
-  if (balance < TITHE_POINTS) {
-    return res.status(400).json({ error: "You need " + TITHE_POINTS + " points to tithe." });
+  if ((user.points || 0) < 0) {
+    return res.status(400).json({ error: "You are in the red. Earn your points back first." });
   }
-  user.points = balance - TITHE_POINTS;
+  if (user.tithedOn === todayKey()) {
+    return res.status(400).json({ error: "You have already tithed today." });
+  }
+  // a tithe may take the balance negative; that is the point of it being a cost
+  user.points = (user.points || 0) - TITHE_POINTS;
+  user.tithedOn = todayKey();
   saveUsers(users);
-  res.json({ ok: true, amount: TITHE_POINTS, points: user.points });
+  res.json({ ok: true, amount: TITHE_POINTS, points: user.points, tithedToday: true });
 });
 
 // --- editable site copy ---

@@ -124,7 +124,8 @@
     .copy-editor .row { display: flex; gap: 0.5rem; justify-content: center; }
     .copy-editor .hint { color: var(--muted-color); font-size: 0.72rem; margin: -0.4rem 0 0.7rem; }
     /* +10px under the heading, taken back off the paragraph so the card keeps its height */
-    #welcome { margin-bottom: 2.5rem; }
+    .welcome-line { margin-bottom: 2.5rem; }
+    #tithe:disabled { opacity: 0.55; cursor: default; }
     #dashboard-message { margin-bottom: 0.875rem; }
     .daily-list { display: flex; flex-direction: column; gap: 0.6rem; text-align: left; }
     .daily {
@@ -326,7 +327,7 @@
       </aside>
     <div class="dashboard-col">
       <main class="card">
-        <h1><span class="editable" id="welcome-wrap"><span id="welcome">Welcome!</span></span></h1>
+        <h1 class="welcome-line"><span class="editable" id="welcome-wrap"><span id="welcome">Welcome!</span></span></h1>
         <p><span class="editable" id="message-wrap"><span id="dashboard-message">There is no text here yet.</span></span></p>
         <div class="copy-editor" id="copy-editor"></div>
         <p class="checkin-notice" id="checkin-notice" hidden></p>
@@ -371,7 +372,11 @@
           notice.hidden = false;
         }
         const isHermione = Boolean(d.isAdmin ?? (d.username && d.username.toLowerCase() === "hermione"));
-        document.getElementById("tithe").hidden = isHermione;
+        const tithe = document.getElementById("tithe");
+        tithe.hidden = isHermione;
+        // in the red? the obligation is suspended and the button waits until the
+        // balance is back to zero. already given today? nothing more to do.
+        if (!isHermione) applyTitheState(d.points, d.tithedToday);
         loadCopy(isHermione);
       })
       .catch(() => (window.location.href = "/"));
@@ -588,6 +593,15 @@
     }
     loadDailies();
 
+    function applyTitheState(points, tithedToday) {
+      const tithe = document.getElementById("tithe");
+      const negative = (points || 0) < 0;
+      tithe.disabled = negative || tithedToday;
+      tithe.textContent = tithedToday
+        ? "Tithed today"
+        : negative ? "Tithe (in the red)" : "Tithe " + 5 + " points";
+    }
+
     document.getElementById("tithe").addEventListener("click", async () => {
       const res = await fetch("/api/tithe", { method: "POST" });
       const data = await res.json().catch(() => ({}));
@@ -596,7 +610,10 @@
         ? "Tithed " + data.amount + " points. You have " + data.points + " left."
         : data.error || "That didn't work.";
       notice.hidden = false;
-      if (res.ok) loadProfileCard();
+      if (res.ok) {
+        applyTitheState(data.points, true);
+        loadProfileCard();
+      }
     });
 
     document.getElementById("pc-view").addEventListener("click", () => {

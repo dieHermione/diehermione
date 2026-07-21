@@ -214,7 +214,7 @@
         segments = state.segments;
         drawWheel();
         setLocked(state);
-        statusEl.textContent = state.canSpin ? "Give it a spin." : "Come back tomorrow.";
+        statusEl.textContent = state.canSpin ? "" : "Come back tomorrow.";
       })
       .catch(() => (window.location.href = "/"));
   </script>

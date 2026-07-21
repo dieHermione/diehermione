@@ -70,7 +70,7 @@ on their own page, and because `site.css` loads before a page's inline
 ## Storage
 
 No database. Five JSON files, each read and written whole, resolved against
-`DATA_DIR` (falling back to the repo directory). All six are gitignored, so
+`DATA_DIR` (falling back to the repo directory). All five are gitignored, so
 local testing can't touch production data and a deploy can't overwrite it.
 
 | File | Shape |
@@ -142,8 +142,8 @@ including on her own profile.
 
 **Points** are the only currency. They drive the leaderboard, and come from two
 places: hermione grants them directly, and playing earns them: 5 for the daily
-check-in, 1 per Snake pickup up to 20 a day, and 1–25 from one wheel spin a day.
-`/api/tithe` burns 5. Hermione keeps no points of her own.
+check-in, 1 per Snake pickup up to 20 a day, and 1–10 from one wheel spin a day (low values much likelier).
+`/api/tithe` burns 5 and is a daily obligation: miss a day and 25 points are taken at the next reset. Points may go negative; while negative the tithe is suspended until the balance is back to zero. Hermione keeps no points of her own.
 
 Points and an earned "dollars" balance used to be separate; they were merged
 1:1, so the leaderboard now reflects earned points as well as granted ones.
@@ -191,7 +191,7 @@ Everything under `/api` returns JSON and answers `401` when signed out.
 | `/api/users/:username` | DELETE | Remove an account, and turn away a pending one, admin only |
 | `/api/leaderboard` | GET | Flagged users ranked by points, hermione excluded |
 | `/api/dailies` | GET | Daily objectives with done state and progress |
-| `/api/tithe` | POST | Burns 5 points; refuses below 5 |
+| `/api/tithe` | POST | Burns 5 points, once a day; refused while negative or already tithed today |
 | `/api/wheel` · `/api/wheel/spin` | GET · POST | Server picks the wedge and awards it |
 | `/api/snake/food` | POST | Rate-limited and daily-capped payout |
 | `/api/writing[/:id]` | GET · PUT | List hides passages; PUT is admin only |
