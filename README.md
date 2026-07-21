@@ -163,6 +163,22 @@ their outcomes server-side.
 returns the `YYYY-MM-DD` label; compute day keys no other way, since a plain
 `toISOString().slice(0,10)` disagrees with it for twelve hours out of every day.
 
+## Profiles
+
+Each profile shows a card (avatar, bio, pronouns, points) plus lifetime stats:
+food eaten, letters typed, writing series completed, custom tasks completed.
+Hermione keeps no points or stats, so those tiles are hidden for her, and her
+(Princess) card carries a soft white glow (`.card.princess-glow`).
+
+A **Guestbook** tab lets any approved account leave a comment; the owner, the
+comment's author, or Hermione can delete one. Comments live on the owner's
+record.
+
+`/profile?embed=1` renders just the card (nav and toggle hidden). The admin
+panel iframes it so Hermione's live profile sits to the right of the admin
+cards, always identical to the real page. Above 1040px the admin is two
+columns (cards left, profile right); it stacks below that.
+
 ## Games
 
 | Game | Where the logic lives |
@@ -211,6 +227,11 @@ Everything under `/api` returns JSON and answers `401` when signed out.
 | `/api/users/:username/tasks` | GET · POST | Read or assign someone's tasks, admin only |
 | `/api/users/:username/tasks/:id` | DELETE | Unassign a task, admin only |
 | `/api/users/:username/tasks/:id/review` | POST | Accept or send back a handed-in essay, admin only |
+| `/api/writing` · `/api/writing/:id` | GET · PUT | Category shelf; PUT (edit) is admin only |
+| `/api/writing/complete` | POST | Log a finished writing series; notifies Hermione |
+| `/api/users/:username/writing` | GET | A player's writing history, admin only |
+| `/api/profile/:username/guestbook` | GET · POST | Read / sign a profile's guestbook |
+| `/api/profile/:username/guestbook/:id` | DELETE | Owner, author, or Hermione removes a comment |
 
 ## Known limits
 

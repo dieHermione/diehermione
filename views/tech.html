@@ -178,6 +178,8 @@
       <tr><td><code>POST /api/tasks/:id/{essay,rep}</code></td><td>Hand in an essay, or count one repetition</td></tr>
       <tr><td><code>GET|POST /api/users/:name/tasks</code> · <code>DELETE .../:id</code></td><td>Assign, read and unassign. Admin only</td></tr>
       <tr><td><code>POST /api/users/:name/tasks/:id/review</code></td><td>Accept or send back a handed-in essay. Admin only</td></tr>
+      <tr><td><code>GET|PUT /api/writing[/:id]</code> · <code>POST /api/writing/complete</code></td><td>Category shelf, edit (admin), and logging a finished writing series</td></tr>
+      <tr><td><code>GET|POST /api/profile/:name/guestbook</code> · <code>DELETE .../:id</code></td><td>Read, sign, and remove guestbook comments</td></tr>
       <tr><td><code>GET|POST /api/wheel</code></td><td>Server picks the wedge and awards it</td></tr>
       <tr><td><code>POST /api/snake/food</code></td><td>Rate limited and daily capped</td></tr>
       <tr><td><code>GET|PUT /api/writing[/:id]</code></td><td>List hides passages; PUT is admin only</td></tr>
@@ -199,6 +201,10 @@
     <p><code>notifications.js</code> finds <code>.top-nav .nav-links</code> and appends the bell, then polls every 15 seconds. It must load <em>after</em> <code>nav.js</code>, or there is no nav to append to. Both are <code>defer</code>, and defer scripts run in document order, so the tag order is the whole mechanism.</p>
     <div class="note"><strong>One <code>/api/me</code> per page.</strong> <code>me.js</code> exposes <code>window.siteMe()</code>, a promise fetched once and shared. The page, the nav and the bell all want the same identity, but the server reports the daily check-in exactly once, so independent callers raced and the notice vanished at random. Never call <code>/api/me</code> directly; use <code>siteMe()</code>. It is loaded without <code>defer</code> so it exists before any page's inline script runs.</div>
     <p>The meow is synthesised with Web Audio: a sawtooth swept 620→880→500 Hz through a moving bandpass formant, with vibrato. No audio file to host, and it fails silently if the browser hasn't allowed audio yet.</p>
+
+    <h3>The profile card, reused</h3>
+    <p>Profiles carry lifetime stats (food eaten, letters typed, writing series, custom tasks) and a guestbook tab any approved account may sign; the owner, the author, or Hermione may delete a comment. Hermione's card hides its points and stats and gains a white halo through the shared <code>.card.princess-glow</code> rule (a compound selector, so it beats each page's own <code>.card</code> box-shadow regardless of load order).</p>
+    <p>Rather than re-implement that card in the admin panel, the admin <em>iframes</em> <code>/profile?embed=1</code> so the copy is literally the page and can never drift. Embed mode hides the nav and toggle and pads the body so the halo is not clipped; logout from inside the frame targets <code>window.top</code> so it lands on the real login screen rather than a login card in a box. The admin is two columns above 1040px (cards left, that profile right) and stacks below.</p>
 
     <h3>Rendering</h3>
     <p>DOM is built with <code>createElement</code> and <code>textContent</code>, not <code>innerHTML</code> with interpolated values. Usernames, bios and messages are all user-controlled; <code>textContent</code> makes injection structurally impossible. The one place <code>innerHTML</code> appears is for fixed SVG icon markup.</p>

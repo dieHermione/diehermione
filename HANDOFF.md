@@ -167,6 +167,48 @@ synthetic `KeyboardEvent`s (`dispatchEvent`) instead.
 
 ---
 
+## Lessons and mistakes from this session (read before repeating them)
+
+- **The cloud nav is unsolved and shelved.** Two attempts failed: box-shadow
+  "puffs" on `.top-nav::before/::after` either sat *on top of* the bar or left
+  large uncovered stretches, and offsets in px don't scale with the
+  `min(100%,720px)` width. What the user actually wants: the **entire** bar
+  reads as one cloud (puffs wrapping the whole perimeter, sides included), while
+  the nav stays functionally the plain pill (left buttons, right bell). Consider
+  an SVG cloud background or a mask instead of scattered box-shadows, and
+  verify at real desktop width. It is reverted to the plain pill for now.
+- **`margin` on an inline element does nothing.** The dashboard welcome spacing
+  "fix" silently failed the first time because the margin was on an inline
+  `<span>`; it had to move to the block heading. Check `display` before trusting
+  a margin.
+- **Glow/box-shadow inside an iframe gets clipped at the frame edge.** The admin
+  profile embed needed body padding in embed mode so the halo had room. Any
+  outward shadow on iframed content needs interior padding.
+- **Logout inside an iframe must target `window.top`.** Otherwise it navigates
+  the frame to `/` and a login card appears inside the box.
+- **Verify deploys, don't assume.** A push can land on GitHub while Railway lags
+  or stalls (it happened this session, via a GitHub incident). Confirm what's
+  live by fetching a static asset for a version marker, e.g. WebFetch
+  `angeldom.me/site.css` and check whether a recently added/removed selector is
+  present. WebFetch caches per-URL for 15 minutes.
+- **`git push` output can be trusted, but confirm anyway.** `git rev-parse HEAD`
+  vs `origin/main` after `git fetch` is the definitive check when asked "did you
+  push?".
+- **Read the user's exact intent on UI details.** The points input was built as
+  reveal-on-click; the user wanted a *dropdown* that hides again, labelled
+  "Custom". First interpretation was wrong. Same with the cloud.
+- **Testing gotchas:** Snake's token bucket (8 burst, 1/2s) 429s a rapid loop,
+  so stage `snakeToday` directly instead of hammering it. When testing a task by
+  type, filter to the *exact* task (an older active one with different text
+  fails the match silently). `computer{type}` sends no keydown, so drive the
+  typing games with synthetic `KeyboardEvent`s.
+- **Don't document a pending rename.** "Writing" -> "Lines" is still pending;
+  the docs and code both say "writing" until that lands. Renaming docs early
+  makes them lie.
+- **Screenshots are the dominant token cost.** This session got far more
+  efficient once verification moved to curl/JSON and DOM queries, screenshotting
+  only genuinely visual things. Keep doing that.
+
 ## Pending, the batch that was in flight when this handoff was written
 
 The user gave a large list; these are **not done** (tracked in the task list):
