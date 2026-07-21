@@ -212,6 +212,15 @@
     }
     button.pill:hover { background: var(--button-hover-bg); }
     .note { color: var(--muted-color); font-size: 0.85rem; margin-top: 1rem; text-align: center; }
+    .results { text-align: center; }
+    .results[hidden] { display: none; }
+    .results-line {
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--heading-color);
+      margin-bottom: 1rem;
+    }
+    #target[hidden], #play-actions[hidden] { display: none; }
 
     /* greyscale dark mode */
     body[data-theme="dark"] .mistakes { color: #bdbdbd; }
@@ -245,9 +254,13 @@
     <p class="status" id="status">Start typing.</p>
     <div class="bar"><span id="bar-fill"></span></div>
     <div class="target" id="target"></div>
-    <div class="actions">
+    <div class="actions" id="play-actions">
       <button class="pill" id="restart" type="button">Restart</button>
-      <button class="pill" id="back" type="button">Pick another</button>
+      <button class="pill" id="exit-early" type="button" hidden>Exit early</button>
+    </div>
+    <div class="results" id="results" hidden>
+      <p class="results-line" id="results-summary"></p>
+      <button class="pill" id="results-done" type="button">Back to categories</button>
     </div>
   </section>
 
@@ -264,6 +277,8 @@
     let mistakes = 0;      // wrong keys across the whole category
     let finished = false;
     let categoryTitle = "";
+    let startedAt = 0;     // when this series began, for the results screen
+    let passagesDone = 0;  // successful passages this series
 
     const targetEl = document.getElementById("target");
     const statusEl = document.getElementById("status");
@@ -325,6 +340,11 @@
       categoryTitle = data.category.title;
       index = 0;
       mistakes = 0;
+      passagesDone = 0;
+      startedAt = Date.now();
+      document.getElementById("results").hidden = true;
+      document.getElementById("target").hidden = false;
+      document.getElementById("play-actions").hidden = false;
       startPassage();
       document.getElementById("picker").hidden = true;
       document.getElementById("game").hidden = false;
@@ -371,6 +391,7 @@
     }
 
     function finish() {
+      passagesDone++;
       if (index < queue.length - 1) {
         index++;
         startPassage();
@@ -380,9 +401,32 @@
       finished = true;
       targetEl.classList.remove("armed");
       statusEl.textContent = mistakes
-        ? "Category complete with " + mistakes + (mistakes === 1 ? " mistake." : " mistakes.")
-        : "Category complete, flawlessly.";
+        ? "Complete with " + mistakes + (mistakes === 1 ? " mistake." : " mistakes.")
+        : "Complete, flawlessly.";
       statusEl.classList.add("win");
+      showResults(passagesDone, mistakes, Date.now() - startedAt);
+    }
+
+    function fmtDuration(ms) {
+      const total = Math.round(ms / 1000);
+      const m = Math.floor(total / 60);
+      const sec = total % 60;
+      return m ? m + "m " + sec + "s" : sec + "s";
+    }
+
+    function showResults(passages, misses, elapsedMs) {
+      document.getElementById("play-actions").hidden = true;
+      document.getElementById("target").hidden = true;
+      document.getElementById("results-summary").textContent =
+        passages + (passages === 1 ? " passage" : " passages") + " · " +
+        misses + (misses === 1 ? " mistake" : " mistakes") + " · " + fmtDuration(elapsedMs);
+      document.getElementById("results").hidden = false;
+      // report the finished series so Hermione can see it
+      fetch("/api/writing/complete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ category: categoryTitle, passages, mistakes: misses, elapsedMs }),
+      }).catch(() => {});
     }
 
     document.addEventListener("keydown", (e) => {
@@ -471,11 +515,19 @@
     });
 
     document.getElementById("restart").addEventListener("click", () => restart());
-    document.getElementById("back").addEventListener("click", () => {
+    // control only returns once the series is finished (or Hermione exits early)
+    function leaveGame() {
       current = null;
+      finished = true;
       document.getElementById("game").hidden = true;
+      document.getElementById("results").hidden = true;
+      document.getElementById("target").hidden = false;
+      document.getElementById("play-actions").hidden = false;
       document.getElementById("picker").hidden = false;
-    });
+    }
+    document.getElementById("results-done").addEventListener("click", leaveGame);
+    // shown only for Hermione (set up on load); lets her bail out of a series
+    document.getElementById("exit-early").addEventListener("click", leaveGame);
 
     window.siteMe()
       .then((d) => {

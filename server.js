@@ -1018,6 +1018,52 @@ app.put("/api/writing/:id", (req, res) => {
   res.json({ ok: true, category: { id: category.id, title: category.title, count: category.passages.length } });
 });
 
+// A finished writing series, reported by the client. The Writing game is
+// client-refereed already (see the trust notes), so this is the same honest
+// boundary: the numbers are taken on trust and kept for Hermione to look at.
+const WRITING_LOG_CAP = 25;
+app.post("/api/writing/complete", (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  const users = loadUsers();
+  const key = req.session.username.toLowerCase();
+  const user = users[key];
+  if (!user) return res.status(401).json({ error: "Not logged in." });
+
+  const clampInt = (v, hi) => Math.max(0, Math.min(hi, parseInt(v, 10) || 0));
+  const entry = {
+    id: "wl-" + Date.now(),
+    category: String(req.body.category || "").slice(0, 120),
+    passages: clampInt(req.body.passages, 100000),
+    mistakes: clampInt(req.body.mistakes, 1000000),
+    elapsedMs: clampInt(req.body.elapsedMs, 1000 * 60 * 60 * 24),
+    at: new Date().toISOString(),
+  };
+  user.writingLog = [entry, ...(Array.isArray(user.writingLog) ? user.writingLog : [])].slice(0, WRITING_LOG_CAP);
+
+  // tell Hermione, but never about her own practice runs
+  const hermione = users["hermione"];
+  if (hermione && key !== "hermione") {
+    pushNotification(
+      hermione,
+      "writing-" + key,
+      user.username + " finished a writing series" + (entry.category ? " (" + entry.category + ")" : "") + ".",
+      "/admin"
+    );
+  }
+  saveUsers(users);
+  res.json({ ok: true });
+});
+
+// Hermione reads a player's writing history
+app.get("/api/users/:username/writing", (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });
+  const users = loadUsers();
+  const u = users[req.params.username.toLowerCase()];
+  if (!u) return res.status(404).json({ error: "No such account." });
+  res.json({ log: Array.isArray(u.writingLog) ? u.writingLog : [] });
+});
+
 // --- tithe: give up points ---
 // The points are burned, not transferred. Hermione doesn't keep points: they
 // read as null on her profile and she can't be granted them, so crediting her
