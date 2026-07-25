@@ -12,7 +12,8 @@
     /* This page has no nav, so it would fall to the shared centred body in
        site.css. Pull the header and card up to the top the way it was before
        the shared shell centralised body layout. */
-    body { justify-content: flex-start; padding: 1.75rem 1rem 1rem; }
+    /* centre the login card, header above it, with breathing room up top */
+    body { justify-content: center; padding: 3.25rem 1rem; gap: 1.75rem; }
     /* Browsers (notably on Linux) paint autofilled fields with their own
        yellow/blue background. Force our own colours so the fields stay on
        theme. The long transition delay is the standard trick to stop the UA
@@ -32,29 +33,29 @@
     }
     .site-header {
       font-family: "Quicksand", "Cause", -apple-system, sans-serif;
-      font-size: 3rem;
+      font-size: clamp(3.2rem, 10vw, 5rem);
       font-weight: 700;
       letter-spacing: -0.01em;
       color: #ffffff;
       /* white neon glow (idea 6, whitened) */
-      text-shadow: 0 0 4px #fff, 0 0 12px #fff, 0 0 26px #fff, 0 0 44px rgba(255, 255, 255, 0.85);
+      text-shadow: 0 0 5px #fff, 0 0 14px #fff, 0 0 30px #fff, 0 0 52px rgba(255, 255, 255, 0.85);
       text-align: center;
-      margin: 0.7rem 0 1rem;
+      margin: 0.4rem 0 0.5rem;
       padding: 0;
       position: relative;
       display: inline-block;
     }
-    /* white halo above the wordmark (idea 2, whitened) */
+    /* white halo above the wordmark (idea 2, whitened), glowing like the text */
     .site-header .halo {
       position: absolute;
-      top: -0.32em;
+      top: -0.34em;
       left: 50%;
       transform: translateX(-50%) rotate(-8deg);
-      width: 58px;
-      height: 20px;
-      border: 4px solid #ffffff;
+      width: 92px;
+      height: 30px;
+      border: 5px solid #ffffff;
       border-radius: 50%;
-      box-shadow: 0 0 12px rgba(255, 255, 255, 0.9);
+      box-shadow: 0 0 5px #fff, 0 0 14px #fff, 0 0 30px #fff, 0 0 46px rgba(255, 255, 255, 0.85);
     }
     /* U+A8D1 (Saurashtra) and U+09CE (Bengali) have no font on Windows, so the
        bows rendered as tofu. Ship the Noto faces that cover them. */
