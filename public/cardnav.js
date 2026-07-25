@@ -177,12 +177,23 @@
     // each of its sides and neighbours never overlap it.
     function unit(i) { return wideFlags[i] ? wideStep : normalStep; }
     function gap(a, b) { return (unit(a) + unit(b)) / 2; }
+    // Signed circular distance from the focus, in (-n/2, n/2], so the strip is a
+    // ring: the far cards wrap around to the other side.
+    function circOffset(i) {
+      var n = cards.length;
+      var o = ((i - focus) % n + n) % n;   // 0..n-1
+      if (o > n / 2) o -= n;
+      return o;
+    }
     function positionOf(i) {
-      var x = 0, k;
-      if (i > focus) for (k = focus; k < i; k++) x += gap(k, k + 1);
-      else if (i < focus) for (k = focus; k > i; k--) x -= gap(k - 1, k);
+      var n = cards.length, o = circOffset(i), x = 0, s, a, b;
+      for (s = 0; s < o; s++) { a = (focus + s) % n; b = (focus + s + 1) % n; x += gap(a, b); }
+      for (s = 0; s > o; s--) { a = ((focus + s - 1) % n + n) % n; b = ((focus + s) % n + n) % n; x -= gap(a, b); }
       return x;
     }
+    // remembers each card's last offset so a card that wraps across the seam can
+    // teleport instead of animating all the way across the strip
+    var prevO = els.map(function () { return null; });
 
     function activate(i) {
       var c = cards[i];
@@ -192,19 +203,23 @@
     }
 
     function setFocus(i) {
-      focus = Math.max(0, Math.min(cards.length - 1, i));
+      var n = cards.length;
+      focus = n ? ((i % n) + n) % n : 0;   // wraps: past the last card is the first
       render();
     }
 
     function render() {
       els.forEach(function (el, i) {
-        var o = i - focus;
+        var o = circOffset(i);
         var abs = Math.abs(o);
-        var rot = Math.max(-60, Math.min(60, -o * angle));
+        var rot = Math.max(-60, Math.min(60, o * angle));   // side cards face outward
         var x = positionOf(i);
         var z = -abs * depth;
         var scale = 1 - Math.min(abs, 4) * 0.06;
         var visible = abs <= 3;               // focus + three each side = seven cards
+        // a card that jumped across the seam moves without a transition
+        var wrapped = prevO[i] !== null && Math.abs(o - prevO[i]) > 1;
+        if (wrapped) el.style.transition = "none";
         el.style.transform =
           "translateX(" + x + "px) translateZ(" + z + "px) rotateY(" + rot + "deg) scale(" + scale + ")";
         el.style.opacity = !visible ? 0 : abs <= 1 ? 1 : abs === 2 ? 0.55 : 0.3;
@@ -212,6 +227,8 @@
         el.style.zIndex = String(50 - abs);
         el.setAttribute("aria-selected", i === focus ? "true" : "false");
         el.classList.toggle("focused", i === focus);
+        if (wrapped) { void el.offsetWidth; el.style.transition = ""; }
+        prevO[i] = o;
       });
     }
 
