@@ -168,6 +168,8 @@ body.has-top-nav {
 }
 
 .top-nav a[hidden] { display: none; }
+/* a game a guest can't play: shown but greyed and inert */
+.top-nav .nav-locked { opacity: 0.45; cursor: not-allowed; pointer-events: none; }
 .top-nav .dropdown[hidden] { display: none; }
 
 .top-nav .dropdown { position: relative; display: inline-flex; }

@@ -100,6 +100,8 @@
       color: var(--input-text);
     }
     input:focus { outline: none; border-color: var(--active-color); }
+    /* guest mode greys out the fields it doesn't need */
+    input:disabled, select:disabled, textarea:disabled { opacity: 0.45; cursor: not-allowed; }
     select {
       width: 100%;
       padding: 0.6rem 0.75rem;
@@ -238,10 +240,11 @@
           <option value="He/Him">He/Him</option>
           <option value="They/Them">They/Them</option>
         </select>
-        <label>Rank</label>
+        <label>Account type</label>
         <div class="role-toggle">
-          <button type="button" class="role-option" data-role="Visitor" data-tip="Test site functions or look around without obligations.">Visitor</button>
           <button type="button" class="role-option" data-role="Sub" data-tip="Worship your Princess. :3">Sub</button>
+          <button type="button" class="role-option" data-role="Visitor" data-tip="A kept account with no points or dailies. Play the games and keep your progress.">Visitor</button>
+          <button type="button" class="role-option" data-role="Guest" data-tip="Try the games right now. No account, no sign-in, nothing saved.">Guest</button>
         </div>
         <label for="intro">Who are you?</label>
         <textarea id="intro" maxlength="500" rows="3"></textarea>
@@ -273,15 +276,29 @@
       hint.hidden = login;
       document.getElementById("register-fields").hidden = login;
       errorBox.style.display = "none";
+      applyRoleState();
     }
 
     let selectedRole = "";
+    // Guest needs no account details, so those fields grey out and the button
+    // changes to reflect that you are not registering.
+    function applyRoleState() {
+      const guest = mode === "register" && selectedRole === "Guest";
+      ["username", "password", "pronouns", "intro"].forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.disabled = guest;
+      });
+      if (mode === "register") {
+        document.getElementById("submit").textContent = guest ? "Continue as guest" : "Register";
+      }
+    }
     document.querySelectorAll(".role-option").forEach((btn) => {
       btn.addEventListener("click", () => {
         selectedRole = btn.dataset.role;
         document.querySelectorAll(".role-option").forEach((b) => {
           b.classList.toggle("selected", b === btn);
         });
+        applyRoleState();
       });
     });
     tabLogin.addEventListener("click", () => setMode("login"));
@@ -298,6 +315,14 @@
     document.getElementById("form").addEventListener("submit", async (e) => {
       e.preventDefault();
       errorBox.style.display = "none";
+      // guest: no account, just a session, then straight to the games
+      if (mode === "register" && selectedRole === "Guest") {
+        const gr = await fetch("/api/guest", { method: "POST" });
+        if (gr.ok) { window.location.href = "/snake"; return; }
+        errorBox.textContent = "Couldn't start a guest session.";
+        errorBox.style.display = "block";
+        return;
+      }
       const payload = {
         username: document.getElementById("username").value.trim(),
         password: document.getElementById("password").value,

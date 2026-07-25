@@ -391,13 +391,16 @@
           notice.hidden = false;
         }
         const isHermione = Boolean(d.isAdmin ?? (d.username && d.username.toLowerCase() === "hermione"));
+        // Hermione and Visitors sit outside the points/dailies/tithe economy
+        const noEcon = Boolean(d.noEconomy) || isHermione;
         const tithe = document.getElementById("tithe");
-        tithe.hidden = isHermione;
+        tithe.hidden = noEcon;
         // her profile is otherwise unreachable for regular users; hide it for her
         document.getElementById("hermione-link").hidden = isHermione;
+        document.getElementById("dailies-card").hidden = noEcon;
         // in the red? the obligation is suspended and the button waits until the
         // balance is back to zero. already given today? nothing more to do.
-        if (!isHermione) applyTitheState(d.points, d.tithedToday);
+        if (!noEcon) applyTitheState(d.points, d.tithedToday);
         loadCopy(isHermione);
       })
       .catch(() => (window.location.href = "/"));

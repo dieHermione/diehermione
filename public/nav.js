@@ -116,6 +116,29 @@
     });
   }
 
+  // A guest only gets the games. Hide the account pages, lock the multiplayer
+  // games behind sign-in, and offer a way to sign in.
+  function applyGuestNav() {
+    ["nav-dashboard", "nav-profile", "nav-tasks"].forEach(function (id) {
+      var node = document.getElementById(id);
+      if (node) node.hidden = true;
+    });
+    ["nav-deathroll", "nav-chess"].forEach(function (id) {
+      var node = document.getElementById(id);
+      if (node) {
+        node.classList.add("nav-locked");
+        node.removeAttribute("href");
+        node.setAttribute("title", "Sign in to play");
+      }
+    });
+    var links = document.querySelector(".top-nav .nav-links");
+    if (links && !document.getElementById("nav-signin")) {
+      var signin = el("a", { id: "nav-signin", href: "/", text: "Sign in" });
+      var dd = document.getElementById("games-dropdown");
+      if (dd) links.insertBefore(signin, dd); else links.appendChild(signin);
+    }
+  }
+
   function init() {
     setUpTheme();
     if (!document.body.classList.contains("has-top-nav")) return;
@@ -126,8 +149,9 @@
     // via /me.js, so this shares the page's single /api/me request rather than
     // racing the page and the bell for the once-a-day check-in result
     window.siteMe()
-      .then(function () {
+      .then(function (d) {
         nav.hidden = false;
+        if (d && d.guest) applyGuestNav();
       })
       .catch(function () { window.location.href = "/"; });
   }

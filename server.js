@@ -76,6 +76,19 @@ function isAdmin(req) {
   return req.session.username && req.session.username.toLowerCase() === "hermione";
 }
 
+// A guest is a not-really-logged-in session: no account, no points, no dailies,
+// and no multiplayer. It only exists to let someone try the single-player games.
+function isGuest(req) {
+  return Boolean(req.session.guest) && !req.session.username;
+}
+
+// Like requireLogin, but a guest session passes too. Used for the game pages a
+// guest may reach; account pages keep requireLogin.
+function requirePlayer(req, res, next) {
+  if (req.session.username || req.session.guest) return next();
+  return res.redirect("/");
+}
+
 // --- routes ---
 app.post("/api/register", async (req, res) => {
   const { username, password } = req.body;
@@ -182,6 +195,7 @@ function todayKey(now = new Date()) {
 function awardDailyCheckIn(users, key) {
   const user = users[key];
   if (!user) return null;
+  if (rankFor(user, key) === "Visitor") return null;   // visitors keep no points
   const today = todayKey();
   if (user.lastCheckIn === today) return null;
   user.lastCheckIn = today;
@@ -220,8 +234,24 @@ app.post("/api/logout", (req, res) => {
   req.session.destroy(() => res.json({ ok: true }));
 });
 
+// Start a guest session: no account is created, and there is no username.
+app.post("/api/guest", (req, res) => {
+  req.session.username = undefined;
+  req.session.guest = true;
+  res.json({ ok: true });
+});
+
 app.get("/api/me", (req, res) => {
-  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  if (!req.session.username) {
+    if (req.session.guest) {
+      // a guest is signed in only enough to try games; no account behind it
+      return res.json({
+        guest: true, username: "Guest", isAdmin: false, rank: "Guest",
+        points: null, noEconomy: true, tithedToday: false, checkIn: null,
+      });
+    }
+    return res.status(401).json({ error: "Not logged in." });
+  }
   const users = loadUsers();
   const key = req.session.username.toLowerCase();
   if (!users[key]) return res.status(401).json({ error: "Not logged in." });
@@ -232,10 +262,15 @@ app.get("/api/me", (req, res) => {
   // sessions outlive a day, so check in on the first page view of each day too
   const checkIn = awardDailyCheckIn(users, key);
   settleTithe(users, key);
+  const rank = rankFor(users[key], key);
+  // Hermione and Visitors sit outside the points/dailies/tithe economy
+  const noEconomy = key === "hermione" || rank === "Visitor";
   res.json({
     username: req.session.username,
     isAdmin: isAdmin(req),
-    points: users[key].points || 0,
+    rank,
+    noEconomy,
+    points: noEconomy ? null : users[key].points || 0,
     tithedToday: users[key].tithedOn === todayKey(),
     checkIn,
   });
@@ -751,7 +786,7 @@ app.get("/chess", requireLogin, (req, res) => {
   res.sendFile(path.join(__dirname, "views", "chess.html"));
 });
 
-app.get("/snake", requireLogin, (req, res) => {
+app.get("/snake", requirePlayer, (req, res) => {
   res.sendFile(path.join(__dirname, "views", "snake.html"));
 });
 
@@ -763,6 +798,7 @@ app.post("/api/snake/food", (req, res) => {
   const key = req.session.username.toLowerCase();
   const user = users[key];
   if (!user) return res.status(404).json({ error: "No such account." });
+  const visitor = rankFor(user, key) === "Visitor";   // plays and keeps stats, earns no points
   // rate limit: refill one token every SNAKE_REFILL_MS, up to SNAKE_BURST
   const now = Date.now();
   const bucket = req.session.snakeBucket || { tokens: SNAKE_BURST, at: now };
@@ -782,14 +818,14 @@ app.post("/api/snake/food", (req, res) => {
     user.snakeToday = 0;
   }
   user.snakeToday += 1;
-  user.points = (user.points || 0) + SNAKE_FOOD_POINTS;   // every pickup pays
+  if (!visitor) user.points = (user.points || 0) + SNAKE_FOOD_POINTS;   // every pickup pays
 
   // completing the daily (20 eaten) triggers an extra payout, once per day
   let bonus = 0;
   if (user.snakeToday >= SNAKE_DAILY_TARGET && user.snakeBonusDay !== today) {
     user.snakeBonusDay = today;
     bonus = SNAKE_COMPLETION_BONUS;
-    user.points += bonus;
+    if (!visitor) user.points += bonus;
   }
   saveUsers(users);
   res.json({
@@ -1003,7 +1039,7 @@ app.post("/api/wheel/spin", (req, res) => {
   // hermione still records the day so the daily objective completes; it just
   // doesn't gate her next spin
   user.wheelDay = todayKey();
-  user.points = (user.points || 0) + prize.points;
+  if (rankFor(user, key) !== "Visitor") user.points = (user.points || 0) + prize.points;
   saveUsers(users);
   res.json({
     ok: true,
@@ -1022,6 +1058,9 @@ app.get("/api/dailies", (req, res) => {
   const key = req.session.username.toLowerCase();
   const user = users[key];
   if (!user) return res.status(401).json({ error: "Not logged in." });
+  if (rankFor(user, key) === "Visitor") {
+    return res.json({ resets: "noon Eastern", dailies: [] });   // no dailies for visitors
+  }
   const today = todayKey();
   const snakeToday = user.snakeDay === today ? user.snakeToday || 0 : 0;
   res.json({
@@ -1204,7 +1243,7 @@ app.post("/api/writing/complete", (req, res) => {
   const today = todayKey();
   if (user.writingDay !== today) {
     user.writingDay = today;
-    user.points = (user.points || 0) + WRITING_DAILY_POINTS;
+    if (rankFor(user, key) !== "Visitor") user.points = (user.points || 0) + WRITING_DAILY_POINTS;
   }
 
   // tell Hermione, but never about her own practice runs
@@ -1244,7 +1283,7 @@ const TITHE_MISS_PENALTY = 25;
 // disabled) until the balance is back to zero or above.
 function settleTithe(users, key) {
   const user = users[key];
-  if (!user || key === "hermione") return;
+  if (!user || key === "hermione" || rankFor(user, key) === "Visitor") return;
   const today = todayKey();
   if (user.titheCheckedOn === today) return;
   const firstEver = !user.titheCheckedOn;
@@ -1271,6 +1310,9 @@ app.post("/api/tithe", (req, res) => {
   const users = loadUsers();
   const user = users[key];
   if (!user) return res.status(401).json({ error: "Not logged in." });
+  if (rankFor(user, key) === "Visitor") {
+    return res.status(400).json({ error: "Visitors don't tithe." });
+  }
   if ((user.points || 0) < 0) {
     return res.status(400).json({ error: "You are in the red. Earn your points back first." });
   }
@@ -1693,11 +1735,11 @@ app.get("/deathroll", requireLogin, (req, res) => {
   res.sendFile(path.join(__dirname, "views", "deathroll.html"));
 });
 
-app.get("/wheel", requireLogin, (req, res) => {
+app.get("/wheel", requirePlayer, (req, res) => {
   res.sendFile(path.join(__dirname, "views", "wheel.html"));
 });
 
-app.get("/writing", requireLogin, (req, res) => {
+app.get("/writing", requirePlayer, (req, res) => {
   res.sendFile(path.join(__dirname, "views", "writing.html"));
 });
 
