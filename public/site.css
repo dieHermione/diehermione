@@ -9,21 +9,21 @@
 
 :root {
   color-scheme: light;
-  --bg1: #FBC3D3;
+  --bg1: #24c5ed;
   --bg2: #f6f6f6;
   --panel-bg: rgba(255, 255, 255, 0.95);
   /* opaque twin of --panel-bg, for popovers that must not show the page through */
   --panel-solid: #ffffff;
   --header-color: #ffffff;
-  --heading-color: #FBC3D3;
+  --heading-color: #24c5ed;
   --text-color: #333;
   --muted-color: #777;
-  --active-color: #FBC3D3;
+  --active-color: #24c5ed;
   --table-border: #eee;
   --table-header-color: #888;
-  --button-bg: #FBC3D3;
+  --button-bg: #24c5ed;
   --button-text: #ffffff;
-  --button-hover-bg: #f7b8c8;
+  --button-hover-bg: #1aa9d1;
   --shadow: rgba(0, 0, 0, 0.2);
   --input-border: #ddd;
   --input-bg: #fff;
@@ -31,8 +31,8 @@
   --toggle-bg: rgba(255, 255, 255, 0.9);
   --toggle-text: #333;
   --error-bg: #fdecea;
-  --error-color: #FBC3D3;
-  --notif-item-bg: rgba(251, 195, 211, 0.15);
+  --error-color: #24c5ed;
+  --notif-item-bg: rgba(36, 197, 237, 0.15);
 }
 
 body[data-theme="dark"] {

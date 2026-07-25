@@ -52,12 +52,12 @@
     }
     .rank-row .name { flex: 1; font-weight: 700; }
     .rank-row .note { color: var(--muted-color); font-size: 0.76rem; font-weight: 500; }
-    .rank-row.current { border-color: var(--button-bg); background: var(--notif-item-bg, rgba(251, 195, 211, 0.1)); }
+    .rank-row.current { border-color: var(--button-bg); background: var(--notif-item-bg, rgba(36, 197, 237, 0.1)); }
     .rank-row.assignable { cursor: pointer; }
     .rank-row.assignable:hover { border-color: var(--button-bg); }
     /* the top rank, with a crown drawn rather than typed */
     .rank-row.princess { position: relative; }
-    .rank-row.princess .name { color: #FBC3D3; }
+    .rank-row.princess .name { color: #24c5ed; }
     body[data-theme="dark"] .rank-row.princess .name { color: #e6e6e6; }
     .rank-crown {
       flex-shrink: 0;

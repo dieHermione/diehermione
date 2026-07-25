@@ -11,9 +11,9 @@
   <script src="/me.js"></script>
   <style>    :root {
       --wedge-a: #ffffff;
-      --wedge-b: #FBC3D3;
-      --wedge-line: #f7b8c8;
-      --wedge-text: #d4718f;
+      --wedge-b: #24c5ed;
+      --wedge-line: #1aa9d1;
+      --wedge-text: #147a94;
     }    body[data-theme="dark"] {
       --wedge-a: #dcdcdc;
       --wedge-b: #6a6a6a;
@@ -71,7 +71,7 @@
       box-shadow: 0 8px 30px var(--shadow);
       transform: rotate(0deg);
     }
-    #wheel.spinning { transition: transform 4.2s cubic-bezier(0.15, 0.85, 0.2, 1); }
+    #wheel.spinning { transition: transform 14.2s cubic-bezier(0.15, 0.85, 0.2, 1); }
     .hub {
       position: absolute;
       top: 50%;
@@ -177,7 +177,7 @@
       if (spinning) return;
       spinning = true;
       spinBtn.disabled = true;
-      statusEl.textContent = "Spinning…";
+      statusEl.textContent = "";
       statusEl.classList.remove("win");
 
       const res = await fetch("/api/wheel/spin", { method: "POST" });

@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="/site.css" />
   <script src="/me.js"></script>
   <style>    :root {
-      --heart-color: #FBC3D3;
+      --heart-color: #24c5ed;
     }    body[data-theme="dark"] {
       --heart-color: #c9c9c9;
     }
@@ -80,14 +80,14 @@
     const CELL = canvas.width / GRID;
     const statusEl = document.getElementById("status");
 
-    const heartColor = () => getComputedStyle(document.body).getPropertyValue("--heart-color").trim() || "#FBC3D3";
+    const heartColor = () => getComputedStyle(document.body).getPropertyValue("--heart-color").trim() || "#24c5ed";
     let teleportChance = 0.9;      // odds the food bolts when you get adjacent
     const TELEPORT_MIN_DISTANCE = 8;  // where fleeing food lands
     const SPAWN_MIN_DISTANCE = 4;     // where fresh food lands after being eaten
 
     // the head matches the site buttons; each segment behind it fades toward white
     function headColor() {
-      return getComputedStyle(document.body).getPropertyValue("--button-bg").trim() || "#FBC3D3";
+      return getComputedStyle(document.body).getPropertyValue("--button-bg").trim() || "#24c5ed";
     }
 
     function hexToRgb(hex) {

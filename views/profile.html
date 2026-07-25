@@ -43,7 +43,7 @@
       margin: 0 auto 1rem;
       box-shadow: 0 6px 20px var(--shadow);
       border: 4px solid var(--button-bg);
-      background: linear-gradient(135deg, #FBC3D3, #f7b8c8);
+      background: linear-gradient(135deg, #24c5ed, #1aa9d1);
     }
     .avatar-fallback {
       width: 120px;
@@ -57,7 +57,7 @@
       font-size: 3rem;
       font-weight: 700;
       color: #ffffff;
-      background: linear-gradient(135deg, #FBC3D3, #f7b8c8);
+      background: linear-gradient(135deg, #24c5ed, #1aa9d1);
       box-shadow: 0 6px 20px var(--shadow);
       border: 4px solid var(--button-bg);
     }
@@ -76,9 +76,9 @@
       margin-bottom: 1.25rem;
     }
     .badge.princess {
-      background: linear-gradient(135deg, #FBC3D3, #f7b8c8);
+      background: linear-gradient(135deg, #24c5ed, #1aa9d1);
       color: #ffffff;
-      box-shadow: 0 4px 12px rgba(251, 195, 211, 0.5);
+      box-shadow: 0 4px 12px rgba(36, 197, 237, 0.5);
     }
     .badge.user {
       background: var(--table-border);
@@ -173,7 +173,7 @@
     .form-error {
       display: none;
       color: #b3261e;
-      background: rgba(251, 195, 211, 0.15);
+      background: rgba(36, 197, 237, 0.15);
       border-radius: 8px;
       padding: 0.5rem 0.75rem;
       font-size: 0.85rem;
@@ -198,7 +198,7 @@
       border: 1px solid var(--table-border);
       border-radius: 10px;
       padding: 0.7rem 0.85rem;
-      background: var(--notif-item-bg, rgba(251, 195, 211, 0.08));
+      background: var(--notif-item-bg, rgba(36, 197, 237, 0.08));
     }
     .gb-entry .gb-head { display: flex; align-items: baseline; gap: 0.5rem; margin-bottom: 0.25rem; }
     .gb-entry .gb-author { font-weight: 700; font-size: 0.9rem; color: var(--heading-color); }
@@ -230,6 +230,58 @@
     }
     .gb-form textarea:focus { outline: none; border-color: var(--button-hover-bg); }
     .gb-form button { display: block; margin: 0 auto; }
+
+    /* a single reply, indented under its comment */
+    .gb-reply {
+      margin: 0.6rem 0 0 1.1rem;
+      padding: 0.55rem 0.7rem;
+      border-left: 2px solid var(--button-bg);
+      border-radius: 0 8px 8px 0;
+      background: var(--notif-item-bg, rgba(36, 197, 237, 0.06));
+    }
+    .gb-reply .gb-head { display: flex; align-items: baseline; gap: 0.5rem; margin-bottom: 0.2rem; }
+    .gb-reply .gb-author { font-weight: 700; font-size: 0.82rem; color: var(--heading-color); }
+    .gb-reply .gb-when { color: var(--muted-color); font-size: 0.68rem; }
+    .gb-reply .gb-text { font-size: 0.85rem; line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .gb-reply .gb-del {
+      margin-left: auto;
+      padding: 0 !important;
+      width: 1.2rem; height: 1.2rem;
+      border-radius: 50%;
+      background: transparent;
+      color: var(--muted-color);
+      font-size: 0.85rem; line-height: 1;
+    }
+    .gb-reply .gb-del:hover { background: var(--button-bg); color: var(--button-text); }
+    .gb-reply-btn {
+      margin-top: 0.55rem;
+      padding: 0.25rem 0.85rem;
+      font-size: 0.78rem;
+      font-weight: 700;
+      border-radius: 999px;
+      background: transparent;
+      color: var(--heading-color);
+      box-shadow: inset 0 0 0 1.5px var(--button-bg);
+    }
+    .gb-reply-btn[hidden] { display: none; }
+    .gb-reply-btn:hover { background: var(--button-bg); color: var(--button-text); }
+    .gb-reply-form { margin: 0.55rem 0 0 1.1rem; }
+    .gb-reply-form[hidden] { display: none; }
+    .gb-reply-form textarea {
+      width: 100%;
+      padding: 0.5rem 0.65rem;
+      border: 1px solid var(--input-border);
+      border-radius: 8px;
+      background: var(--input-bg);
+      color: var(--input-text);
+      font-family: inherit;
+      font-size: 0.85rem;
+      resize: vertical;
+      margin-bottom: 0.4rem;
+    }
+    .gb-reply-form textarea:focus { outline: none; border-color: var(--button-hover-bg); }
+    .gb-reply-form .row { display: flex; gap: 0.4rem; }
+    .gb-reply-form .row button { padding: 0.35rem 0.9rem; font-size: 0.8rem; margin: 0; }
 
     /* greyscale dark mode: neutralise the pinks that live outside the variables */
     body[data-theme="dark"] .avatar,
@@ -289,7 +341,7 @@
         <select id="f-rank">
           <option value="">Not set</option>
           <option value="Visitor">Visitor</option>
-          <option value="Citizen">Citizen</option>
+          <option value="Sub">Sub</option>
           <option value="Princess">Princess</option>
         </select>
       </div>
@@ -537,6 +589,75 @@
         text.className = "gb-text";
         text.textContent = e.text;
         item.append(head, text);
+
+        // an existing single reply, indented under the comment
+        if (e.reply) {
+          const rep = document.createElement("div");
+          rep.className = "gb-reply";
+          const rhead = document.createElement("div");
+          rhead.className = "gb-head";
+          const rauthor = document.createElement("span");
+          rauthor.className = "gb-author";
+          rauthor.textContent = e.reply.author;
+          const rwhen = document.createElement("span");
+          rwhen.className = "gb-when";
+          rwhen.textContent = e.reply.at ? new Date(e.reply.at).toLocaleDateString() : "";
+          rhead.append(rauthor, rwhen);
+          if (e.reply.canDelete) {
+            const rdel = document.createElement("button");
+            rdel.type = "button";
+            rdel.className = "gb-del";
+            rdel.textContent = "×";
+            rdel.title = "Delete reply";
+            rdel.addEventListener("click", async () => {
+              const r = await fetch(
+                "/api/profile/" + encodeURIComponent(profileUser) + "/guestbook/" + encodeURIComponent(e.id) + "/reply",
+                { method: "DELETE" }
+              );
+              if (r.ok) loadGuestbook();
+            });
+            rhead.append(rdel);
+          }
+          const rtext = document.createElement("div");
+          rtext.className = "gb-text";
+          rtext.textContent = e.reply.text;
+          rep.append(rhead, rtext);
+          item.append(rep);
+        } else if (e.canReply) {
+          // owner or Hermione may add the one reply; no reply to a reply
+          const replyBtn = document.createElement("button");
+          replyBtn.type = "button";
+          replyBtn.className = "gb-reply-btn";
+          replyBtn.textContent = "Reply";
+          const form = document.createElement("div");
+          form.className = "gb-reply-form";
+          form.hidden = true;
+          const ta = document.createElement("textarea");
+          ta.rows = 2;
+          ta.maxLength = 1000;
+          ta.placeholder = "Write a reply…";
+          const rrow = document.createElement("div");
+          rrow.className = "row";
+          const post = document.createElement("button");
+          post.type = "button";
+          post.textContent = "Post reply";
+          const cancel = document.createElement("button");
+          cancel.type = "button";
+          cancel.textContent = "Cancel";
+          cancel.addEventListener("click", () => { form.hidden = true; replyBtn.hidden = false; });
+          post.addEventListener("click", async () => {
+            const r = await fetch(
+              "/api/profile/" + encodeURIComponent(profileUser) + "/guestbook/" + encodeURIComponent(e.id) + "/reply",
+              { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: ta.value }) }
+            );
+            if (r.ok) loadGuestbook();
+          });
+          rrow.append(post, cancel);
+          form.append(ta, rrow);
+          replyBtn.addEventListener("click", () => { replyBtn.hidden = true; form.hidden = false; ta.focus(); });
+          item.append(replyBtn, form);
+        }
+
         list.append(item);
       }
     }

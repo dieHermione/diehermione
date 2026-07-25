@@ -147,7 +147,7 @@ function isPending(user) {
 // both granted and earned, and the leaderboard reflects both.
 const DAILY_CHECKIN_POINTS = 5;
 const SNAKE_FOOD_POINTS = 1;
-const WRITING_DAILY_POINTS = 5;
+const WRITING_DAILY_POINTS = 50;
 // Snake pickups are reported by the browser, so they can't be trusted outright.
 // These bound the damage: a daily ceiling makes farming pointless, and a token
 // bucket caps the sustained rate while still allowing honest bursts (food can
@@ -260,9 +260,11 @@ const RANK_LADDER = [
   { name: "Servant", note: "" },
 ];
 const RANK_ASIDE = { name: "Visitor", note: "Not a sub." };
-const RANK_OPTIONS = [...RANK_LADDER.map((r) => r.name), RANK_ASIDE.name, "Citizen"];
-const SIGNUP_RANKS = ["Visitor", "Citizen"];
-const LEGACY_RANKS = { domme: "Visitor", sub: "Citizen" };
+const RANK_OPTIONS = [...RANK_LADDER.map((r) => r.name), RANK_ASIDE.name, "Sub"];
+const SIGNUP_RANKS = ["Visitor", "Sub"];
+// "Citizen" was the old name for the "Sub" signup rank; keep mapping it so
+// accounts created before the rename still resolve to a real rank.
+const LEGACY_RANKS = { domme: "Visitor", sub: "Sub", citizen: "Sub" };
 
 // what hermione may hand out: everything except Princess and the unnamed rank
 const ASSIGNABLE_RANKS = [
@@ -384,13 +386,23 @@ app.get("/api/profile/:username/guestbook", (req, res) => {
   const owner = users[req.params.username.toLowerCase()];
   if (!owner) return res.status(404).json({ error: "No such account." });
   const meKey = req.session.username.toLowerCase();
+  const ownerOrAdmin = isAdmin(req) || req.params.username.toLowerCase() === meKey;
   const entries = (Array.isArray(owner.guestbook) ? owner.guestbook : []).map((e) => ({
     id: e.id,
     author: e.author,
     text: e.text,
     at: e.at,
-    canDelete: isAdmin(req) || req.params.username.toLowerCase() === meKey ||
-               String(e.author).toLowerCase() === meKey,
+    canDelete: ownerOrAdmin || String(e.author).toLowerCase() === meKey,
+    reply: e.reply
+      ? {
+          author: e.reply.author,
+          text: e.reply.text,
+          at: e.reply.at,
+          canDelete: ownerOrAdmin || String(e.reply.author).toLowerCase() === meKey,
+        }
+      : null,
+    // only the profile owner or Hermione may reply, and only once per comment
+    canReply: ownerOrAdmin && !e.reply,
   }));
   res.json({ entries });
 });
@@ -433,6 +445,58 @@ app.delete("/api/profile/:username/guestbook/:id", (req, res) => {
   const canDelete = isAdmin(req) || key === meKey || String(entry.author).toLowerCase() === meKey;
   if (!canDelete) return res.status(403).json({ error: "Not allowed." });
   owner.guestbook = list.filter((e) => e.id !== req.params.id);
+  saveUsers(users);
+  res.json({ ok: true });
+});
+
+// A comment may carry exactly one reply, written by the profile owner or
+// Hermione. No chains: there is nowhere to reply to a reply.
+app.post("/api/profile/:username/guestbook/:id/reply", (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  const users = loadUsers();
+  const key = req.params.username.toLowerCase();
+  const owner = users[key];
+  if (!owner) return res.status(404).json({ error: "No such account." });
+  const meKey = req.session.username.toLowerCase();
+  const me = users[meKey];
+  if (!me || isPending(me)) return res.status(403).json({ error: "Not allowed." });
+  if (!(isAdmin(req) || key === meKey)) return res.status(403).json({ error: "Not allowed." });
+  const list = Array.isArray(owner.guestbook) ? owner.guestbook : [];
+  const entry = list.find((e) => e.id === req.params.id);
+  if (!entry) return res.status(404).json({ error: "No such entry." });
+  if (entry.reply) return res.status(400).json({ error: "That comment already has a reply." });
+  const text = String(req.body.text || "").trim();
+  if (!text) return res.status(400).json({ error: "Write something first." });
+  if (text.length > GUESTBOOK_TEXT_MAX) {
+    return res.status(400).json({ error: "Keep it under " + GUESTBOOK_TEXT_MAX + " characters." });
+  }
+  entry.reply = { author: me.username, text, at: new Date().toISOString() };
+  // tell the commenter they got a reply, unless replying to their own comment
+  if (String(entry.author).toLowerCase() !== meKey) {
+    const commenter = users[String(entry.author).toLowerCase()];
+    if (commenter) {
+      pushNotification(commenter, "gb-reply-" + entry.id,
+        me.username + " replied to your comment.",
+        "/profile?user=" + encodeURIComponent(owner.username));
+    }
+  }
+  saveUsers(users);
+  res.json({ ok: true, reply: entry.reply });
+});
+
+app.delete("/api/profile/:username/guestbook/:id/reply", (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  const users = loadUsers();
+  const key = req.params.username.toLowerCase();
+  const owner = users[key];
+  if (!owner) return res.status(404).json({ error: "No such account." });
+  const list = Array.isArray(owner.guestbook) ? owner.guestbook : [];
+  const entry = list.find((e) => e.id === req.params.id);
+  if (!entry || !entry.reply) return res.status(404).json({ error: "No such reply." });
+  const meKey = req.session.username.toLowerCase();
+  const canDelete = isAdmin(req) || key === meKey || String(entry.reply.author).toLowerCase() === meKey;
+  if (!canDelete) return res.status(403).json({ error: "Not allowed." });
+  delete entry.reply;
   saveUsers(users);
   res.json({ ok: true });
 });
@@ -1203,9 +1267,9 @@ app.post("/api/tithe", (req, res) => {
   if ((user.points || 0) < 0) {
     return res.status(400).json({ error: "You are in the red. Earn your points back first." });
   }
-  if (user.tithedOn === todayKey()) {
-    return res.status(400).json({ error: "You have already tithed today." });
-  }
+  // Tithing more than once a day is allowed: the daily obligation is met on the
+  // first tithe, and any further tithes are voluntary. Only being in the red
+  // (checked above) blocks it.
   // a tithe may take the balance negative; that is the point of it being a cost
   user.points = (user.points || 0) - TITHE_POINTS;
   user.tithedOn = todayKey();

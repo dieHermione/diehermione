@@ -135,7 +135,7 @@
       padding: 0.85rem 1rem;
       border-radius: 10px;
       border: 1px solid var(--button-bg);
-      background: var(--notif-item-bg, rgba(251, 195, 211, 0.12));
+      background: var(--notif-item-bg, rgba(36, 197, 237, 0.12));
       font-size: 0.9rem;
       margin-bottom: 1rem;
     }
@@ -189,7 +189,6 @@
       <p class="status" id="rep-status">Start typing.</p>
       <p class="error" id="rep-error" hidden></p>
       <div class="actions">
-        <button type="button" id="restart" class="ghost">Start this line again</button>
         <a href="/tasks" class="ghost">Back to tasks</a>
       </div>
     </section>
@@ -248,7 +247,7 @@
         if (res.ok) {
           task = data.task;
           el("sent-back").hidden = true;   // superseded by this hand-in
-          showDone("Handed in, " + data.words + " words. Hermione will read it.");
+          showDone("Submitted to Hermione.");
           refreshEssay();
         } else {
           err.textContent = data.error || "That didn't go through.";
@@ -321,13 +320,6 @@
         el("rep-status").classList.add("win");
         locked = true;
       }
-
-      el("restart").addEventListener("click", () => {
-        if (task.status === "done") return;
-        typed = 0;
-        renderTarget();
-        el("rep-status").textContent = "Start typing.";
-      });
 
       // Same rules as the Writing game: no backspace, no pasting.
       document.addEventListener("keydown", (e) => {

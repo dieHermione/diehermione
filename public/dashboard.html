@@ -33,7 +33,7 @@
       color: var(--text-color);
     }
     .checkin-notice {
-      background: rgba(251, 195, 211, 0.12);
+      background: rgba(36, 197, 237, 0.12);
       border: 1px solid var(--button-bg);
       border-radius: 10px;
       padding: 0.6rem 0.9rem;
@@ -125,7 +125,25 @@
     .copy-editor .hint { color: var(--muted-color); font-size: 0.72rem; margin: -0.4rem 0 0.7rem; }
     /* +10px under the heading, taken back off the paragraph so the card keeps its height */
     .welcome-line { margin-bottom: 2.5rem; }
-    #tithe:disabled { opacity: 0.55; cursor: default; }
+    #tithe:disabled, #tithe-again:disabled { opacity: 0.55; cursor: default; }
+    #tithe-again {
+      background: transparent;
+      color: var(--heading-color);
+      box-shadow: inset 0 0 0 1.5px var(--button-bg);
+    }
+    #tithe-again:hover:not(:disabled) { background: var(--button-bg); color: var(--button-text); }
+    .dashboard-actions .link-btn {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.6rem 1.5rem;
+      background: var(--button-bg);
+      color: var(--button-text);
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      text-decoration: none;
+    }
+    .dashboard-actions .link-btn:hover { background: var(--button-hover-bg); }
     #dashboard-message { margin-bottom: 0.875rem; }
     .daily-list { display: flex; flex-direction: column; gap: 0.6rem; text-align: left; }
     .daily {
@@ -136,7 +154,7 @@
       border: 1px solid var(--table-border);
       border-radius: 10px;
     }
-    .daily.done { border-color: var(--button-bg); background: rgba(251, 195, 211, 0.08); }
+    .daily.done { border-color: var(--button-bg); background: rgba(36, 197, 237, 0.08); }
     .daily .tick {
       flex-shrink: 0;
       width: 1.25rem;
@@ -221,7 +239,7 @@
       margin: 0 auto 0.85rem;
       box-shadow: 0 6px 20px var(--shadow);
       border: 4px solid var(--button-bg);
-      background: linear-gradient(135deg, #FBC3D3, #f7b8c8);
+      background: linear-gradient(135deg, #24c5ed, #1aa9d1);
     }
     .profile-card .avatar-fallback {
       width: 88px;
@@ -235,7 +253,7 @@
       font-size: 2.2rem;
       font-weight: 700;
       color: #ffffff;
-      background: linear-gradient(135deg, #FBC3D3, #f7b8c8);
+      background: linear-gradient(135deg, #24c5ed, #1aa9d1);
       box-shadow: 0 6px 20px var(--shadow);
       border: 4px solid var(--button-bg);
     }
@@ -248,9 +266,9 @@
       margin-bottom: 1rem;
     }
     .profile-card .badge.princess {
-      background: linear-gradient(135deg, #FBC3D3, #f7b8c8);
+      background: linear-gradient(135deg, #24c5ed, #1aa9d1);
       color: #ffffff;
-      box-shadow: 0 4px 12px rgba(251, 195, 211, 0.5);
+      box-shadow: 0 4px 12px rgba(36, 197, 237, 0.5);
     }
     .profile-card .badge.user {
       background: var(--table-border);
@@ -333,6 +351,8 @@
         <p class="checkin-notice" id="checkin-notice" hidden></p>
         <div class="dashboard-actions">
           <button id="tithe" type="button" hidden>Tithe 5 points</button>
+          <button id="tithe-again" type="button" hidden>Tithe Again</button>
+          <a id="hermione-link" class="link-btn" href="/profile?user=hermione" hidden>Hermione's profile</a>
         </div>
       </main>
       <section class="card">
@@ -374,6 +394,8 @@
         const isHermione = Boolean(d.isAdmin ?? (d.username && d.username.toLowerCase() === "hermione"));
         const tithe = document.getElementById("tithe");
         tithe.hidden = isHermione;
+        // her profile is otherwise unreachable for regular users; hide it for her
+        document.getElementById("hermione-link").hidden = isHermione;
         // in the red? the obligation is suspended and the button waits until the
         // balance is back to zero. already given today? nothing more to do.
         if (!isHermione) applyTitheState(d.points, d.tithedToday);
@@ -566,7 +588,7 @@
         // detail may be blank now that the flavour lines are gone; only the
         // progress readout remains for a task that has one
         const detailText = d.progress && !d.done
-          ? (d.detail ? d.detail + " " : "") + d.progress.current + " of " + d.progress.max + " points today"
+          ? (d.detail ? d.detail + " " : "") + d.progress.current + "/" + d.progress.max + " until complete"
           : d.detail;
         if (detailText) {
           const detail = document.createElement("div");
@@ -596,14 +618,19 @@
 
     function applyTitheState(points, tithedToday) {
       const tithe = document.getElementById("tithe");
+      const again = document.getElementById("tithe-again");
       const negative = (points || 0) < 0;
+      // the primary button is the daily obligation: once met it just reads back
       tithe.disabled = negative || tithedToday;
       tithe.textContent = tithedToday
         ? "Tithed today"
         : negative ? "Tithe (in the red)" : "Tithe " + 5 + " points";
+      // after the daily tithe is done, an optional button allows extra tithes
+      again.hidden = !tithedToday;
+      again.disabled = negative;
     }
 
-    document.getElementById("tithe").addEventListener("click", async () => {
+    async function doTithe() {
       const res = await fetch("/api/tithe", { method: "POST" });
       const data = await res.json().catch(() => ({}));
       const notice = document.getElementById("checkin-notice");
@@ -615,7 +642,9 @@
         applyTitheState(data.points, true);
         loadProfileCard();
       }
-    });
+    }
+    document.getElementById("tithe").addEventListener("click", doTithe);
+    document.getElementById("tithe-again").addEventListener("click", doTithe);
 
     document.getElementById("pc-view").addEventListener("click", () => {
       window.location.href = "/profile";

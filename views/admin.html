@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="/site.css" />
   <script src="/me.js"></script>
   <style>    :root {
-      --focus-color: #FBC3D3;
+      --focus-color: #24c5ed;
     }    body[data-theme="dark"] {
       --focus-color: #d6d6d6;
     }
@@ -223,7 +223,7 @@
       border-radius: 10px;
       padding: 0.7rem 0.85rem;
     }
-    .task-admin.done { border-color: var(--button-bg); background: var(--notif-item-bg, rgba(251, 195, 211, 0.1)); }
+    .task-admin.done { border-color: var(--button-bg); background: var(--notif-item-bg, rgba(36, 197, 237, 0.1)); }
     .task-admin .top {
       display: flex;
       flex-wrap: wrap;
@@ -278,7 +278,7 @@
       border: 1px solid var(--button-bg);
       border-radius: 10px;
       padding: 0.75rem 0.85rem;
-      background: var(--notif-item-bg, rgba(251, 195, 211, 0.12));
+      background: var(--notif-item-bg, rgba(36, 197, 237, 0.12));
     }
     .approval .who {
       display: flex;
@@ -354,6 +354,52 @@
     /* greyscale dark mode */
     body[data-theme="dark"] .chip.danger { color: #cfcfcf; box-shadow: inset 0 0 0 1.5px #6a6a6a; }
     body[data-theme="dark"] .chip.danger:hover { background: #6a6a6a; color: #f2f2f2; box-shadow: none; }
+
+    /* the Listed pill is itself the leaderboard toggle now (no Show/Hide button) */
+    .listed-pill { cursor: pointer; border: none; font-family: inherit; transition: filter 0.12s ease; }
+    .listed-pill:hover { filter: brightness(0.94); }
+    .listed-pill:focus-visible { outline: 2px solid var(--focus-color); outline-offset: 1px; }
+
+    /* custom points: a button that opens a small styled popover */
+    .pts-custom { position: relative; display: inline-flex; }
+    .pts-custom-menu {
+      position: absolute;
+      top: calc(100% + 0.35rem);
+      left: 0;
+      z-index: 20;
+      display: flex;
+      gap: 0.3rem;
+      align-items: center;
+      padding: 0.4rem;
+      background: var(--panel-solid);
+      border: 1px solid var(--input-border);
+      border-radius: 10px;
+      box-shadow: 0 8px 24px var(--shadow);
+      animation: pts-open 0.14s ease;
+    }
+    .pts-custom-menu[hidden] { display: none; }
+    .pts-custom-menu .pts-input {
+      width: 5rem;
+      margin: 0;
+      border-radius: 8px;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    /* collapsible Assigned list */
+    .sub-head.toggle {
+      background: none;
+      border: none;
+      padding: 0;
+      width: 100%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+    }
+    .sub-head.toggle .caret { font-size: 0.8rem; transition: transform 0.15s ease; }
+    .sub-head.toggle.collapsed .caret { transform: rotate(-90deg); }
   </style>
 </head>
 <body class="has-top-nav">
@@ -431,12 +477,14 @@
         </div>
       </form>
 
-      <h3 class="sub-head">Assigned</h3>
-      <p class="panel-empty" id="tasks-empty">Nothing assigned yet.</p>
-      <div class="task-admin-list" id="task-list"></div>
+      <button type="button" class="sub-head toggle" id="assigned-toggle" aria-expanded="true">Assigned <span class="caret">▾</span></button>
+      <div id="assigned-body">
+        <p class="panel-empty" id="tasks-empty">Nothing assigned yet.</p>
+        <div class="task-admin-list" id="task-list"></div>
+      </div>
     </section>
     <section class="card">
-      <h2>Writing results</h2>
+      <h2>Lines Completed</h2>
       <p class="panel-empty" id="writing-empty">No writing series finished yet.</p>
       <div class="task-admin-list" id="writing-list"></div>
     </section>
@@ -824,9 +872,20 @@
             const points = document.createElement("td");
             points.textContent = u.points;
             const listed = document.createElement("td");
+            // the pill IS the toggle now; clicking it flips leaderboard visibility
             const pill = document.createElement("span");
             pill.className = "listed-pill " + (u.flagged ? "yes" : "no");
             pill.textContent = u.flagged ? "Listed" : "Hidden";
+            pill.setAttribute("role", "button");
+            pill.tabIndex = 0;
+            pill.title = u.flagged
+              ? "Listed on the leaderboard. Click to hide."
+              : "Hidden from the leaderboard. Click to list.";
+            const toggleFlag = () => setFlag(u.username, !u.flagged);
+            pill.addEventListener("click", toggleFlag);
+            pill.addEventListener("keydown", (e) => {
+              if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleFlag(); }
+            });
             listed.append(pill);
 
             const actions = document.createElement("td");
@@ -845,36 +904,55 @@
               sign.textContent = "+";
               sign.title = "Switch to taking points away";
 
-              // the amount field is hidden until Give/Take is pressed, then it
-              // slides open to its right; pressing again (or Enter) applies it
+              // "Custom" opens a small styled popover with the amount field; it
+              // applies on Enter or Apply and then hides itself again
+              const custom = document.createElement("div");
+              custom.className = "pts-custom";
+              const customBtn = document.createElement("button");
+              customBtn.type = "button";
+              customBtn.className = "chip quick";
+              customBtn.textContent = "Custom";
+
+              const menu = document.createElement("div");
+              menu.className = "pts-custom-menu";
+              menu.hidden = true;
               const amount = document.createElement("input");
               amount.type = "number";
               amount.step = "1";
               amount.min = "1";
-              amount.className = "pts-input pts-reveal";
+              amount.className = "pts-input";
               amount.placeholder = "amount";
-              amount.hidden = true;
+              const apply = document.createElement("button");
+              apply.type = "button";
+              apply.className = "chip";
+              apply.textContent = "Apply";
+              menu.append(amount, apply);
+              custom.append(customBtn, menu);
 
-              const give = document.createElement("button");
-              give.type = "button";
-              give.className = "chip give";
-              give.textContent = "Give";
+              function onDocDown(e) { if (!custom.contains(e.target)) closeMenu(); }
+              const closeMenu = () => {
+                menu.hidden = true;
+                document.removeEventListener("mousedown", onDocDown);
+              };
+              const openMenu = () => {
+                menu.hidden = false;
+                document.addEventListener("mousedown", onDocDown);
+                amount.focus();
+              };
               const applyAmount = () => {
                 const n = parseInt(amount.value, 10);
                 if (!Number.isInteger(n) || n === 0) return;
                 addPoints(u.username, negative ? -Math.abs(n) : Math.abs(n));
                 amount.value = "";
-                amount.hidden = true;
+                closeMenu();
               };
-              give.addEventListener("click", () => {
-                if (amount.hidden) { amount.hidden = false; amount.focus(); return; }
-                applyAmount();
-              });
+              customBtn.addEventListener("click", () => (menu.hidden ? openMenu() : closeMenu()));
+              apply.addEventListener("click", applyAmount);
               amount.addEventListener("keydown", (e) => {
                 if (e.key === "Enter") { e.preventDefault(); applyAmount(); }
-                if (e.key === "Escape") { amount.value = ""; amount.hidden = true; }
+                if (e.key === "Escape") { amount.value = ""; closeMenu(); }
               });
-              group.append(sign, give, amount);   // input sits to the right of the button
+              group.append(sign, custom);
               row.append(group);
 
               const quicks = [5, 10, 25, 100].map((n) => {
@@ -893,17 +971,8 @@
                 sign.classList.toggle("danger", negative);
                 sign.title = negative ? "Switch to giving points" : "Switch to taking points away";
                 quicks.forEach(({ el, n }) => { el.textContent = (negative ? "−" : "+") + n; });
-                give.textContent = negative ? "Take" : "Give";
               });
             }
-
-            const flag = document.createElement("button");
-            flag.type = "button";
-            flag.className = "chip" + (u.flagged ? " on" : "");
-            flag.textContent = u.flagged ? "Hide" : "Show";
-            flag.title = u.flagged ? "Hide from leaderboard" : "Show on leaderboard";
-            flag.addEventListener("click", () => setFlag(u.username, !u.flagged));
-            row.append(flag);
 
             if (u.username.toLowerCase() !== "hermione") {
               const del = document.createElement("button");
@@ -1002,6 +1071,15 @@
       }
       loadAccounts();
     }
+
+    // the Assigned list collapses so a long list doesn't bury the panels below
+    document.getElementById("assigned-toggle").addEventListener("click", () => {
+      const body = document.getElementById("assigned-body");
+      const toggle = document.getElementById("assigned-toggle");
+      body.hidden = !body.hidden;
+      toggle.classList.toggle("collapsed", body.hidden);
+      toggle.setAttribute("aria-expanded", String(!body.hidden));
+    });
 
     loadAccounts();
   </script>
