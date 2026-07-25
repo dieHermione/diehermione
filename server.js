@@ -735,9 +735,11 @@ app.get("/api/chess/games", (req, res) => {
 });
 
 // kept out of public/ so the static middleware can't serve it unauthenticated
+// The admin panels moved onto Hermione's own profile; keep the old URL working
+// by sending it there.
 app.get("/admin", requireLogin, (req, res) => {
   if (!isAdmin(req)) return res.redirect("/dashboard");
-  res.sendFile(path.join(__dirname, "views", "admin.html"));
+  res.redirect("/profile");
 });
 
 app.get("/chess", requireLogin, (req, res) => {

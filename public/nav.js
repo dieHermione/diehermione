@@ -16,7 +16,6 @@
 
   var NAV_LINKS = [
     { id: "nav-dashboard", href: "/dashboard", label: "Dashboard" },
-    { id: "nav-admin", href: "/admin", label: "Admin", adminOnly: true },
     { id: "nav-profile", href: "/profile", label: "Profile" },
     { id: "nav-tasks", href: "/tasks", label: "Tasks" },
   ];
@@ -127,10 +126,8 @@
     // via /me.js, so this shares the page's single /api/me request rather than
     // racing the page and the bell for the once-a-day check-in result
     window.siteMe()
-      .then(function (d) {
+      .then(function () {
         nav.hidden = false;
-        var admin = document.getElementById("nav-admin");
-        if (admin) admin.hidden = !d.isAdmin;
       })
       .catch(function () { window.location.href = "/"; });
   }

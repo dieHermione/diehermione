@@ -294,14 +294,413 @@
       color: #f2f2f2;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
     }
+    #admin-view { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 1.5rem; }
+        :root {
+      --focus-color: #24c5ed;
+    }    body[data-theme="dark"] {
+      --focus-color: #d6d6d6;
+    }
+    @keyframes pts-open {
+      from { opacity: 0; transform: scaleX(0.6); transform-origin: left; }
+      to { opacity: 1; transform: scaleX(1); }
+    }
+    /* greyscale dark mode */
+    body[data-theme="dark"] #admin-view .chip.danger { color: #cfcfcf; box-shadow: inset 0 0 0 1.5px #6a6a6a; }
+    body[data-theme="dark"] #admin-view .chip.danger:hover { background: #6a6a6a; color: #f2f2f2; box-shadow: none; }
+
+#admin-view {
+    .site-header {
+      font-family: "Cause", sans-serif;
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: var(--header-color);
+      text-shadow: 0 2px 12px rgba(255, 255, 255, 0.6);
+      text-align: center;
+      margin-bottom: 1.25rem;
+      padding: 20px 0;
+    }
+    .bow { display: inline-block; }
+    .bow.flip { transform: scaleX(-1); }
+    .card {
+      background: var(--panel-bg);
+      border-radius: 12px;
+      box-shadow: 0 10px 40px var(--shadow);
+      width: 100%;
+      max-width: 946px;
+      padding: 2.2rem;
+      color: var(--text-color);
+    }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 1.5rem; }
+    th, td { text-align: left; padding: 0.5rem 0.75rem; font-size: 0.95rem; }
+    th { color: var(--table-header-color); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    tr + tr td { border-top: 1px solid var(--table-border); }
+    td { color: var(--text-color); }
+    td a { color: inherit; text-decoration: underline; text-decoration-color: var(--button-hover-bg); text-underline-offset: 3px; }
+    td a:hover { color: var(--button-hover-bg); }
+    .count { color: var(--muted-color); font-size: 0.85rem; margin-bottom: 1rem; }
+    .admin-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: start;
+      gap: 1.5rem;
+      width: 100%;
+      max-width: 1240px;
+    }
+    .admin-cards {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 1.5rem;
+      min-width: 0;
+    }
+    .admin-profile { width: 380px; position: sticky; top: 1.5rem; }
+    .admin-profile iframe {
+      width: 100%;
+      height: 680px;
+      border: none;
+      border-radius: 12px;
+      background: transparent;
+      display: block;
+    }
+    @media (max-width: 1040px) {
+      .admin-grid { display: flex; flex-direction: column; align-items: stretch; }
+      .admin-profile { width: 100%; position: static; }
+    }
+    h2 {
+      font-family: "Cause", sans-serif;
+      font-size: 1.1rem;
+      color: var(--heading-color);
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+    .doc-links { display: flex; gap: 0.6rem; justify-content: center; margin-bottom: 0.5rem; }
+    .doc-links a {
+      padding: 0.5rem 1.25rem;
+      border-radius: 999px;
+      background: var(--button-bg);
+      color: var(--button-text);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+    .doc-links a:hover { background: var(--button-hover-bg); }
+    .panel-empty {
+      color: var(--muted-color);
+      font-style: italic;
+      font-size: 0.9rem;
+      text-align: center;
+      padding: 0.75rem 0;
+    }
+    .action-menu {
+      padding: 0.3rem 0.4rem;
+      border: 1px solid var(--input-border);
+      border-radius: 6px;
+      font-size: 0.85rem;
+      background: var(--input-bg);
+      color: var(--input-text);
+      cursor: pointer;
+    }
+    .action-menu:focus { outline: none; border-color: var(--focus-color); }
+    .pts-input {
+      width: 4rem;
+      padding: 0.3rem 0.4rem;
+      border: 1px solid var(--input-border);
+      border-radius: 6px;
+      font-size: 0.85rem;
+      margin-right: 0.35rem;
+      background: var(--input-bg);
+      color: var(--input-text);
+    }
+    .pts-input:focus { outline: none; border-color: var(--focus-color); }
+    .action-row { display: flex; flex-wrap: wrap; gap: 0.3rem; align-items: center; }
+    .pts-group { display: inline-flex; gap: 0.25rem; align-items: center; }
+    .pts-select {
+      padding: 0.3rem 0.4rem;
+      border: 1px solid var(--input-border);
+      border-radius: 999px;
+      font-family: inherit;
+      font-size: 0.76rem;
+      font-weight: 700;
+      background: var(--input-bg);
+      color: var(--input-text);
+      cursor: pointer;
+    }
+    .pts-select:focus { outline: none; border-color: var(--focus-color); }
+    .chip.quick { padding: 0.32rem 0.6rem; }
+    .chip.sign { padding: 0.32rem 0.65rem; min-width: 2rem; font-size: 0.95rem; line-height: 1; }
+    .pts-group .pts-input { width: 3.6rem; margin-right: 0; }
+    .pts-reveal {
+      border-radius: 999px;
+      border: 1.5px solid var(--button-bg);
+      background: var(--input-bg);
+      text-align: center;
+      font-weight: 700;
+      animation: pts-open 0.14s ease;
+    }
+    /* delete runs on a timer you can call off */
+    .pending {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--text-color);
+    }
+    .pending .countdown {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 1.9rem;
+      padding: 0.15rem 0.4rem;
+      border-radius: 999px;
+      background: var(--table-border);
+      color: var(--text-color);
+      font-variant-numeric: tabular-nums;
+    }
+    /* --- assigning tasks --- */
+    .assign {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+      gap: 0.75rem 0.9rem;
+      align-items: end;
+      text-align: left;
+      margin-bottom: 1.5rem;
+    }
+    .assign .field { display: flex; flex-direction: column; gap: 0.25rem; min-width: 0; }
+    .assign .field[hidden] { display: none; }
+    .assign .field.narrow { max-width: 9rem; }
+    .assign label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--table-header-color);
+    }
+    .assign input, .assign select, .assign textarea {
+      width: 100%;
+      padding: 0.45rem 0.6rem;
+      border: 1px solid var(--input-border);
+      border-radius: 8px;
+      background: var(--input-bg);
+      color: var(--input-text);
+      font-family: inherit;
+      font-size: 0.88rem;
+      resize: vertical;
+    }
+    .assign input:focus, .assign select:focus, .assign textarea:focus {
+      outline: none;
+      border-color: var(--focus-color);
+    }
+    .assign-actions {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+    }
+    .assign-actions .chip { flex: 0 0 auto; padding: 0.5rem 1.4rem; }
+    .assign-msg { font-size: 0.8rem; color: var(--muted-color); }
+    .assign-msg.bad { color: #d4607f; }
+    .sub-head {
+      font-family: "Cause", sans-serif;
+      font-size: 0.95rem;
+      color: var(--heading-color);
+      margin: 0 0 0.75rem;
+      text-align: center;
+    }
+    .task-admin-list { display: flex; flex-direction: column; gap: 0.6rem; text-align: left; }
+    .task-admin {
+      border: 1px solid var(--table-border);
+      border-radius: 10px;
+      padding: 0.7rem 0.85rem;
+    }
+    .task-admin.done { border-color: var(--button-bg); background: var(--notif-item-bg, rgba(36, 197, 237, 0.1)); }
+    .task-admin .top {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 0.5rem;
+      margin-bottom: 0.2rem;
+    }
+    .task-admin .who { font-weight: 700; font-size: 0.9rem; }
+    .task-admin .kind { color: var(--muted-color); font-size: 0.76rem; }
+    .task-admin .state {
+      margin-left: auto;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--muted-color);
+    }
+    .task-admin.done .state { color: var(--heading-color); }
+    .task-admin .submission {
+      margin-top: 0.5rem;
+      padding: 0.6rem 0.7rem;
+      border-radius: 8px;
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
+      font-size: 0.84rem;
+      line-height: 1.5;
+      white-space: pre-wrap;      /* keep her paragraphing */
+      overflow-wrap: anywhere;
+      max-height: 14rem;
+      overflow-y: auto;
+    }
+    .task-admin .row-actions { display: flex; gap: 0.4rem; margin-top: 0.55rem; }
+
+    .review .note-row { display: flex; gap: 0.4rem; margin-top: 0.55rem; flex-wrap: wrap; }
+    .review .note-row input {
+      flex: 1;
+      min-width: 10rem;
+      padding: 0.4rem 0.6rem;
+      border: 1px solid var(--input-border);
+      border-radius: 8px;
+      background: var(--input-bg);
+      color: var(--input-text);
+      font-family: inherit;
+      font-size: 0.82rem;
+    }
+    .review .note-row input:focus { outline: none; border-color: var(--focus-color); }
+
+    /* --- signup approvals (note: .pending above is the delete countdown) --- */
+    #approvals-card[hidden] { display: none; }
+    .approval-list { display: flex; flex-direction: column; gap: 0.75rem; }
+    .approval {
+      border: 1px solid var(--button-bg);
+      border-radius: 10px;
+      padding: 0.75rem 0.85rem;
+      background: var(--notif-item-bg, rgba(36, 197, 237, 0.12));
+    }
+    .approval .who {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 0.5rem;
+      margin-bottom: 0.4rem;
+    }
+    .approval .who strong { font-size: 0.95rem; }
+    .approval .who .meta { color: var(--muted-color); font-size: 0.76rem; }
+    .approval .intro {
+      font-size: 0.85rem;
+      line-height: 1.5;
+      white-space: pre-wrap;   /* keep the paragraphing they typed */
+      overflow-wrap: anywhere; /* and don't let one long word blow out the card */
+      margin-bottom: 0.7rem;
+      color: var(--text-color);
+    }
+    .approval .chip.refuse { background: var(--table-border); color: var(--text-color); }
+    .approval .chip.refuse:hover { background: var(--muted-color); color: var(--panel-bg); }
+    .chip {
+      flex: 0 0 auto;
+      padding: 0.32rem 0.75rem;
+      border: none;
+      border-radius: 999px;
+      background: var(--button-bg);
+      color: var(--button-text);
+      font-family: inherit;
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background-color 0.15s ease, transform 0.1s ease;
+    }
+    .chip:hover { background: var(--button-hover-bg); transform: translateY(-1px); }
+    .chip:active { transform: translateY(0); }
+    .chip.on {
+      background: transparent;
+      color: var(--heading-color);
+      box-shadow: inset 0 0 0 1.5px var(--button-bg);
+    }
+    .chip.on:hover { background: var(--button-bg); color: var(--button-text); }
+    .chip.danger {
+      background: transparent;
+      color: #d4607f;
+      box-shadow: inset 0 0 0 1.5px #f0b6c6;
+    }
+    .chip.danger:hover { background: #e8748f; color: #ffffff; box-shadow: none; }
+    .listed-pill {
+      display: inline-block;
+      padding: 0.15rem 0.6rem;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+    }
+    .listed-pill.yes { background: var(--button-bg); color: var(--button-text); }
+    .listed-pill.no { background: var(--table-border); color: var(--muted-color); }
+    .pts-input { width: 3.4rem; margin-right: 0.15rem; }
+    .nav { display: flex; gap: 0.75rem; }
+    button {
+      flex: 1;
+      padding: 0.6rem 1rem;
+      background: var(--button-bg);
+      color: var(--button-text);
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button:hover { background: var(--button-hover-bg); }
+
+
+    /* the Listed pill is itself the leaderboard toggle now (no Show/Hide button) */
+    .listed-pill { cursor: pointer; border: none; font-family: inherit; transition: filter 0.12s ease; }
+    .listed-pill:hover { filter: brightness(0.94); }
+    .listed-pill:focus-visible { outline: 2px solid var(--focus-color); outline-offset: 1px; }
+
+    /* custom points: a button that opens a small styled popover */
+    .pts-custom { position: relative; display: inline-flex; }
+    .pts-custom-menu {
+      position: absolute;
+      top: calc(100% + 0.35rem);
+      left: 0;
+      z-index: 20;
+      display: flex;
+      gap: 0.3rem;
+      align-items: center;
+      padding: 0.4rem;
+      background: var(--panel-solid);
+      border: 1px solid var(--input-border);
+      border-radius: 10px;
+      box-shadow: 0 8px 24px var(--shadow);
+      animation: pts-open 0.14s ease;
+    }
+    .pts-custom-menu[hidden] { display: none; }
+    .pts-custom-menu .pts-input {
+      width: 5rem;
+      margin: 0;
+      border-radius: 8px;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    /* collapsible Assigned list */
+    .sub-head.toggle {
+      background: none;
+      border: none;
+      padding: 0;
+      width: 100%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+    }
+    .sub-head.toggle .caret { font-size: 0.8rem; transition: transform 0.15s ease; }
+    .sub-head.toggle.collapsed .caret { transform: rotate(-90deg); }
+  
+  button + button { margin-left: 0; }
+}
+
   </style>
 </head>
 <body class="has-top-nav">
-    <main class="card">
     <div class="ptabs">
       <button id="tab-profile" class="ptab active" type="button">Profile</button>
       <button id="tab-guestbook" class="ptab" type="button">Guestbook</button>
+      <button id="tab-admin" class="ptab" type="button" hidden>Admin</button>
     </div>
+    <main class="card" id="profile-card-main">
     <div id="view-mode">
       <div id="avatar-slot"></div>
       <input type="file" id="quick-icon" accept="image/*" hidden />
@@ -361,6 +760,96 @@
       </form>
     </div>
   </main>
+  <div id="admin-view" hidden>    <section class="card" id="approvals-card" hidden>
+      <h2>Pending approvals</h2>
+      <p class="count" id="approvals-count"></p>
+      <div class="approval-list" id="approvals"></div>
+    </section>
+    <section class="card">
+      <h2>Accounts</h2>
+      <p class="count" id="count">Loading…</p>
+      <table>
+        <thead>
+          <tr><th>Username</th><th>Registered</th><th>Points</th><th>Listed</th><th></th></tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </section>
+    <section class="card" id="review-card" hidden>
+      <h2>Waiting to be read</h2>
+      <p class="count" id="review-count"></p>
+      <div class="approval-list" id="review-list"></div>
+    </section>
+    <section class="card">
+      <h2>Tasks</h2>
+
+      <form class="assign" id="assign">
+        <div class="field">
+          <label for="t-who">Who</label>
+          <select id="t-who"></select>
+        </div>
+
+        <div class="field">
+          <label for="t-type">Type</label>
+          <select id="t-type">
+            <option value="essay">Essay</option>
+            <option value="repetition">Write it out</option>
+          </select>
+        </div>
+
+        <!-- essay fields -->
+        <div class="field" id="f-topic">
+          <label for="t-topic">Topic</label>
+          <input id="t-topic" maxlength="200" />
+        </div>
+        <div class="field narrow" id="f-words">
+          <label for="t-words">Minimum words</label>
+          <input id="t-words" type="number" min="1" step="1" />
+        </div>
+
+        <!-- repetition fields -->
+        <div class="field" id="f-text" hidden>
+          <label for="t-text">Text to write</label>
+          <textarea id="t-text" rows="2" maxlength="2000" placeholder="The line she must copy out"></textarea>
+        </div>
+        <div class="field narrow" id="f-reps" hidden>
+          <label for="t-reps">Repetitions</label>
+          <input id="t-reps" type="number" min="1" step="1" placeholder="times" />
+        </div>
+
+        <div class="field">
+          <label for="t-detail">Note (optional)</label>
+          <input id="t-detail" maxlength="200" />
+        </div>
+        <div class="field narrow">
+          <label for="t-points">Reward</label>
+          <input id="t-points" type="number" min="0" step="1" required />
+        </div>
+
+        <div class="assign-actions">
+          <button type="submit" class="chip">Assign</button>
+          <span class="assign-msg" id="assign-msg"></span>
+        </div>
+      </form>
+
+      <button type="button" class="sub-head toggle" id="assigned-toggle" aria-expanded="true">Assigned <span class="caret">▾</span></button>
+      <div id="assigned-body">
+        <p class="panel-empty" id="tasks-empty">Nothing assigned yet.</p>
+        <div class="task-admin-list" id="task-list"></div>
+      </div>
+    </section>
+    <section class="card">
+      <h2>Lines Completed</h2>
+      <p class="panel-empty" id="writing-empty">No writing series finished yet.</p>
+      <div class="task-admin-list" id="writing-list"></div>
+    </section>
+    <section class="card">
+      <h2>Documentation</h2>
+      <div class="doc-links">
+        <a href="/guide">Guide</a>
+        <a href="/tech">Technical notes</a>
+      </div>
+    </section></div>
   <script>
 
     // --- profile logic ---
@@ -540,15 +1029,22 @@
     // --- profile / guestbook tabs ---
     function showTab(name) {
       const gb = name === "guestbook";
-      document.getElementById("tab-profile").classList.toggle("active", !gb);
+      const adm = name === "admin";
+      document.getElementById("tab-profile").classList.toggle("active", !gb && !adm);
       document.getElementById("tab-guestbook").classList.toggle("active", gb);
+      const at = document.getElementById("tab-admin");
+      if (at) at.classList.toggle("active", adm);
+      document.getElementById("profile-card-main").hidden = adm;
+      document.getElementById("admin-view").hidden = !adm;
       document.getElementById("guestbook-view").hidden = !gb;
-      document.getElementById("view-mode").style.display = gb ? "none" : "";
-      document.getElementById("edit-form").style.display = gb ? "none" : "";
+      document.getElementById("view-mode").style.display = (gb || adm) ? "none" : "";
+      document.getElementById("edit-form").style.display = (gb || adm) ? "none" : "";
       if (gb) loadGuestbook();
+      if (adm) initAdmin();
     }
     document.getElementById("tab-profile").addEventListener("click", () => showTab("profile"));
     document.getElementById("tab-guestbook").addEventListener("click", () => showTab("guestbook"));
+    document.getElementById("tab-admin").addEventListener("click", () => showTab("admin"));
 
     async function loadGuestbook() {
       const res = await fetch("/api/profile/" + encodeURIComponent(profileUser) + "/guestbook");
@@ -678,10 +1174,601 @@
       loadGuestbook();
     });
 
+    let adminInited = false;
+    function initAdmin() {
+      if (adminInited) return;
+      adminInited = true;
+
+    // --- assigning tasks ---
+    let accounts = [];          // approved, non-hermione, filled by loadAccounts
+    let pronounsByName = {};     // username -> "She/Her" | "He/Him" | "They/Them"
+
+    // The assign-form hints describe the selected assignee, so they use that
+    // person's pronouns rather than a hardcoded "she". "They" takes "are".
+    function subjectPronoun(pronouns) {
+      if (pronouns === "He/Him") return { subject: "he", isAre: "is" };
+      if (pronouns === "They/Them") return { subject: "they", isAre: "are" };
+      return { subject: "she", isAre: "is" };   // She/Her, and the safe default
+    }
+
+    function applyPronouns() {
+      const who = document.getElementById("t-who").value;
+      const { subject, isAre } = subjectPronoun(pronounsByName[who]);
+      document.getElementById("t-text").placeholder = "The line " + subject + " must copy out";
+    }
+    document.getElementById("t-who").addEventListener("change", applyPronouns);
+
+    function refreshAssignForm() {
+      const essay = document.getElementById("t-type").value === "essay";
+      document.getElementById("f-topic").hidden = !essay;
+      document.getElementById("f-words").hidden = !essay;
+      document.getElementById("f-text").hidden = essay;
+      document.getElementById("f-reps").hidden = essay;
+    }
+    document.getElementById("t-type").addEventListener("change", refreshAssignForm);
+    refreshAssignForm();
+
+    function fillWhoOptions() {
+      const who = document.getElementById("t-who");
+      const previous = who.value;
+      who.replaceChildren();
+      for (const name of accounts) {
+        const opt = document.createElement("option");
+        opt.value = name;
+        opt.textContent = name;
+        who.append(opt);
+      }
+      if (previous && accounts.includes(previous)) who.value = previous;
+      document.getElementById("assign").hidden = accounts.length === 0;
+    }
+
+    document.getElementById("assign").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const msg = document.getElementById("assign-msg");
+      msg.textContent = "";
+      msg.classList.remove("bad");
+
+      const type = document.getElementById("t-type").value;
+      const body = {
+        type,
+        detail: document.getElementById("t-detail").value,
+        // sent raw: an empty box is an error, not a silent zero
+        points: document.getElementById("t-points").value,
+      };
+      if (type === "essay") {
+        body.topic = document.getElementById("t-topic").value;
+        body.minWords = Number(document.getElementById("t-words").value);
+      } else {
+        body.text = document.getElementById("t-text").value;
+        body.reps = Number(document.getElementById("t-reps").value);
+      }
+
+      const who = document.getElementById("t-who").value;
+      const res = await fetch("/api/users/" + encodeURIComponent(who) + "/tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        msg.textContent = data.error || "That didn't go through.";
+        msg.classList.add("bad");
+        return;
+      }
+      msg.textContent = "Assigned to " + who + ".";
+      document.getElementById("t-topic").value = "";
+      document.getElementById("t-text").value = "";
+      document.getElementById("t-detail").value = "";
+      document.getElementById("t-points").value = "";
+      document.getElementById("t-words").value = "";
+      document.getElementById("t-reps").value = "";
+      loadAllTasks();
+    });
+
+    // Essays wait here until she reads them. Approving pays the reward; sending
+    // one back returns it to the assignee with the text intact.
+    async function renderReviews(rows) {
+      const card = document.getElementById("review-card");
+      const list = document.getElementById("review-list");
+      const waiting = rows.filter(({ task }) => task.status === "submitted");
+      card.hidden = waiting.length === 0;
+      document.getElementById("review-count").textContent =
+        waiting.length + (waiting.length === 1 ? " essay is" : " essays are") + " waiting";
+      list.replaceChildren();
+
+      for (const { name, task } of waiting) {
+        const item = document.createElement("div");
+        item.className = "approval review";
+
+        const who = document.createElement("div");
+        who.className = "who";
+        const strong = document.createElement("strong");
+        strong.textContent = name;
+        const meta = document.createElement("span");
+        meta.className = "meta";
+        meta.textContent = task.title +
+          (task.submittedAt ? " · handed in " + new Date(task.submittedAt).toLocaleString() : "");
+        who.append(strong, meta);
+        item.append(who);
+
+        const body = document.createElement("p");
+        body.className = "intro";
+        body.textContent = task.submission || "(nothing written)";
+        item.append(body);
+
+        const noteRow = document.createElement("div");
+        noteRow.className = "note-row";
+        const note = document.createElement("input");
+        note.placeholder = "A note, if you want to say why";
+        note.maxLength = 200;
+        noteRow.append(note);
+        item.append(noteRow);
+
+        const actions = document.createElement("div");
+        actions.className = "action-row";
+        const send = async (approve) => {
+          const res = await fetch(
+            "/api/users/" + encodeURIComponent(name) + "/tasks/" +
+              encodeURIComponent(task.id) + "/review",
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ approve, note: note.value }),
+            }
+          );
+          if (res.ok) loadAllTasks();
+        };
+        const yes = document.createElement("button");
+        yes.type = "button";
+        yes.className = "chip";
+        yes.textContent = "Accept";
+        yes.addEventListener("click", () => send(true));
+        const no = document.createElement("button");
+        no.type = "button";
+        no.className = "chip refuse";
+        no.textContent = "Send back";
+        no.addEventListener("click", () => send(false));
+        actions.append(yes, no);
+        item.append(actions);
+
+        list.append(item);
+      }
+    }
+
+    async function loadWritingLogs() {
+      const list = document.getElementById("writing-list");
+      list.replaceChildren();
+      const rows = [];
+      for (const name of accounts) {
+        const res = await fetch("/api/users/" + encodeURIComponent(name) + "/writing");
+        if (!res.ok) continue;
+        const data = await res.json();
+        for (const e of data.log || []) rows.push({ name, e });
+      }
+      rows.sort((a, b) => String(b.e.at || "").localeCompare(String(a.e.at || "")));
+      document.getElementById("writing-empty").hidden = rows.length > 0;
+
+      const fmt = (ms) => {
+        const total = Math.round((ms || 0) / 1000);
+        const m = Math.floor(total / 60);
+        const sec = total % 60;
+        return m ? m + "m " + sec + "s" : sec + "s";
+      };
+
+      for (const { name, e } of rows.slice(0, 40)) {
+        const item = document.createElement("div");
+        item.className = "task-admin";
+        const top = document.createElement("div");
+        top.className = "top";
+        const who = document.createElement("span");
+        who.className = "who";
+        who.textContent = name;
+        const kind = document.createElement("span");
+        kind.className = "kind";
+        kind.textContent = (e.category || "a series") + " · " +
+          e.passages + (e.passages === 1 ? " passage" : " passages") + " · " +
+          e.mistakes + (e.mistakes === 1 ? " mistake" : " mistakes") + " · " + fmt(e.elapsedMs);
+        const when = document.createElement("span");
+        when.className = "state";
+        when.textContent = e.at ? new Date(e.at).toLocaleDateString() : "";
+        top.append(who, kind, when);
+        item.append(top);
+        list.append(item);
+      }
+    }
+
+    async function loadAllTasks() {
+      const list = document.getElementById("task-list");
+      list.replaceChildren();
+      const rows = [];
+
+      for (const name of accounts) {
+        const res = await fetch("/api/users/" + encodeURIComponent(name) + "/tasks");
+        if (!res.ok) continue;
+        const data = await res.json();
+        for (const t of data.tasks || []) rows.push({ name, task: t });
+      }
+
+      // newest first, so what she just set is at the top
+      rows.sort((a, b) => String(b.task.assignedAt || "").localeCompare(String(a.task.assignedAt || "")));
+      renderReviews(rows);
+      document.getElementById("tasks-empty").hidden = rows.length > 0;
+
+      for (const { name, task } of rows) {
+        const item = document.createElement("div");
+        item.className = "task-admin" + (task.status === "done" ? " done" : "");
+
+        const top = document.createElement("div");
+        top.className = "top";
+        const who = document.createElement("span");
+        who.className = "who";
+        who.textContent = name;
+        const kind = document.createElement("span");
+        kind.className = "kind";
+        kind.textContent = task.type === "essay"
+          ? task.title + " · " + task.minWords + " words"
+          : task.title + " · " + task.repsDone + " of " + task.reps;
+        const state = document.createElement("span");
+        state.className = "state";
+        state.textContent = task.status === "done"
+          ? "Done"
+          : task.status === "submitted" ? "Waiting" : "Active";
+        top.append(who, kind, state);
+        item.append(top);
+
+        if (task.detail) {
+          const d = document.createElement("div");
+          d.className = "kind";
+          d.textContent = task.detail;
+          item.append(d);
+        }
+
+        // her essay, verbatim; textContent because she wrote it
+        if (task.type === "essay" && task.submission) {
+          const sub = document.createElement("div");
+          sub.className = "submission";
+          sub.textContent = task.submission;
+          item.append(sub);
+        }
+
+        const actions = document.createElement("div");
+        actions.className = "row-actions";
+        const del = document.createElement("button");
+        del.type = "button";
+        del.className = "chip danger";
+        del.textContent = "Remove";
+        del.addEventListener("click", async () => {
+          const r = await fetch(
+            "/api/users/" + encodeURIComponent(name) + "/tasks/" + encodeURIComponent(task.id),
+            { method: "DELETE" }
+          );
+          if (r.ok) loadAllTasks();
+        });
+        actions.append(del);
+        item.append(actions);
+
+        list.append(item);
+      }
+    }
+
+    // --- signup approvals ---
+    function renderApprovals(waiting) {
+      const card = document.getElementById("approvals-card");
+      const list = document.getElementById("approvals");
+      card.hidden = waiting.length === 0;
+      document.getElementById("approvals-count").textContent =
+        waiting.length + (waiting.length === 1 ? " person is" : " people are") + " waiting to be let in";
+      list.replaceChildren();
+
+      for (const u of waiting) {
+        const item = document.createElement("div");
+        item.className = "approval";
+
+        const who = document.createElement("div");
+        who.className = "who";
+        const name = document.createElement("strong");
+        name.textContent = u.username;
+        const meta = document.createElement("span");
+        meta.className = "meta";
+        meta.textContent = "asked " + new Date(u.createdAt).toLocaleDateString();
+        who.append(name, meta);
+
+        const intro = document.createElement("p");
+        intro.className = "intro";
+        // textContent, not innerHTML: this is text a stranger wrote
+        intro.textContent = u.intro || "They didn't say anything.";
+
+        const actions = document.createElement("div");
+        actions.className = "action-row";
+        const approve = document.createElement("button");
+        approve.type = "button";
+        approve.className = "chip";
+        approve.textContent = "Approve";
+        approve.addEventListener("click", () => approveAccount(u.username));
+        const refuse = document.createElement("button");
+        refuse.type = "button";
+        refuse.className = "chip refuse";
+        refuse.textContent = "Turn away";
+        refuse.title = "Deletes the account outright";
+        refuse.addEventListener("click", () => {
+          if (confirm("Turn away " + u.username + "? Their account is deleted.")) {
+            deleteAccount(u.username);
+          }
+        });
+        actions.append(approve, refuse);
+
+        item.append(who, intro, actions);
+        list.append(item);
+      }
+    }
+
+    async function approveAccount(username) {
+      const res = await fetch("/api/users/" + encodeURIComponent(username) + "/approve", {
+        method: "POST",
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        document.getElementById("approvals-count").textContent = data.error || "Approve failed.";
+        return;
+      }
+      loadAccounts();
+    }
+
+    function loadAccounts() {
+      fetch("/api/users")
+        .then((r) => (r.ok ? r.json() : Promise.reject()))
+        .then((d) => {
+          // accounts awaiting approval get their own panel and stay out of the
+          // main table until they're let in
+          const waiting = d.users.filter((u) => u.pending);
+          const approved = d.users.filter((u) => !u.pending);
+          renderApprovals(waiting);
+
+          const assignable = approved.filter((u) => u.username.toLowerCase() !== "hermione");
+          accounts = assignable.map((u) => u.username);
+          pronounsByName = {};
+          for (const u of assignable) pronounsByName[u.username] = u.pronouns || "";
+          fillWhoOptions();
+          applyPronouns();
+          loadAllTasks();
+          loadWritingLogs();
+
+          document.getElementById("count").textContent =
+            approved.length + " registered account" + (approved.length === 1 ? "" : "s");
+          const rows = document.getElementById("rows");
+          rows.replaceChildren();
+          for (const u of approved) {
+            const tr = document.createElement("tr");
+            const name = document.createElement("td");
+            const profileLink = document.createElement("a");
+            profileLink.href = "/profile?user=" + encodeURIComponent(u.username);
+            profileLink.textContent = u.username;
+            name.append(profileLink);
+            const date = document.createElement("td");
+            date.textContent = new Date(u.createdAt).toLocaleDateString();
+            const points = document.createElement("td");
+            points.textContent = u.points;
+            const listed = document.createElement("td");
+            // the pill IS the toggle now; clicking it flips leaderboard visibility
+            const pill = document.createElement("span");
+            pill.className = "listed-pill " + (u.flagged ? "yes" : "no");
+            pill.textContent = u.flagged ? "Listed" : "Hidden";
+            pill.setAttribute("role", "button");
+            pill.tabIndex = 0;
+            pill.title = u.flagged
+              ? "Listed on the leaderboard. Click to hide."
+              : "Hidden from the leaderboard. Click to list.";
+            const toggleFlag = () => setFlag(u.username, !u.flagged);
+            pill.addEventListener("click", toggleFlag);
+            pill.addEventListener("keydown", (e) => {
+              if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleFlag(); }
+            });
+            listed.append(pill);
+
+            const actions = document.createElement("td");
+            const row = document.createElement("div");
+            row.className = "action-row";
+
+            if (u.username.toLowerCase() !== "hermione") {
+              // pick an amount, or use a one-tap preset
+              const group = document.createElement("div");
+              group.className = "pts-group";
+              // sign flips every button in the row, so the presets can take away too
+              let negative = false;
+              const sign = document.createElement("button");
+              sign.type = "button";
+              sign.className = "chip sign";
+              sign.textContent = "+";
+              sign.title = "Switch to taking points away";
+
+              // "Custom" opens a small styled popover with the amount field; it
+              // applies on Enter or Apply and then hides itself again
+              const custom = document.createElement("div");
+              custom.className = "pts-custom";
+              const customBtn = document.createElement("button");
+              customBtn.type = "button";
+              customBtn.className = "chip quick";
+              customBtn.textContent = "Custom";
+
+              const menu = document.createElement("div");
+              menu.className = "pts-custom-menu";
+              menu.hidden = true;
+              const amount = document.createElement("input");
+              amount.type = "number";
+              amount.step = "1";
+              amount.min = "1";
+              amount.className = "pts-input";
+              amount.placeholder = "amount";
+              const apply = document.createElement("button");
+              apply.type = "button";
+              apply.className = "chip";
+              apply.textContent = "Apply";
+              menu.append(amount, apply);
+              custom.append(customBtn, menu);
+
+              function onDocDown(e) { if (!custom.contains(e.target)) closeMenu(); }
+              const closeMenu = () => {
+                menu.hidden = true;
+                document.removeEventListener("mousedown", onDocDown);
+              };
+              const openMenu = () => {
+                menu.hidden = false;
+                document.addEventListener("mousedown", onDocDown);
+                amount.focus();
+              };
+              const applyAmount = () => {
+                const n = parseInt(amount.value, 10);
+                if (!Number.isInteger(n) || n === 0) return;
+                addPoints(u.username, negative ? -Math.abs(n) : Math.abs(n));
+                amount.value = "";
+                closeMenu();
+              };
+              customBtn.addEventListener("click", () => (menu.hidden ? openMenu() : closeMenu()));
+              apply.addEventListener("click", applyAmount);
+              amount.addEventListener("keydown", (e) => {
+                if (e.key === "Enter") { e.preventDefault(); applyAmount(); }
+                if (e.key === "Escape") { amount.value = ""; closeMenu(); }
+              });
+              group.append(sign, custom);
+              row.append(group);
+
+              const quicks = [5, 10, 25, 100].map((n) => {
+                const quick = document.createElement("button");
+                quick.type = "button";
+                quick.className = "chip quick";
+                quick.textContent = "+" + n;
+                quick.addEventListener("click", () => addPoints(u.username, negative ? -n : n));
+                row.append(quick);
+                return { el: quick, n };
+              });
+
+              sign.addEventListener("click", () => {
+                negative = !negative;
+                sign.textContent = negative ? "−" : "+";
+                sign.classList.toggle("danger", negative);
+                sign.title = negative ? "Switch to giving points" : "Switch to taking points away";
+                quicks.forEach(({ el, n }) => { el.textContent = (negative ? "−" : "+") + n; });
+              });
+            }
+
+            if (u.username.toLowerCase() !== "hermione") {
+              const del = document.createElement("button");
+              del.type = "button";
+              del.className = "chip danger";
+              del.textContent = "Delete";
+              del.title = "Delete account";
+              del.addEventListener("click", () => armDelete(u.username, row));
+              row.append(del);
+            }
+            actions.append(row);
+            tr.append(name, date, points, listed, actions);
+            rows.append(tr);
+          }
+        })
+        .catch(() => (window.location.href = "/"));
+    }
+
+    async function addPoints(username, value) {
+      const amount = parseInt(value, 10);
+      if (!Number.isInteger(amount) || amount === 0) return;
+      const res = await fetch("/api/users/" + encodeURIComponent(username) + "/points", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || "Adding points failed.");
+      }
+      loadAccounts();
+    }
+
+    async function setFlag(username, flagged) {
+      const res = await fetch("/api/users/" + encodeURIComponent(username) + "/flag", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ flagged }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || "Updating the leaderboard flag failed.");
+      }
+      loadAccounts();
+    }
+
+    // Deleting is armed rather than confirmed: the row turns into a countdown
+    // you can call off, and only fires if you let it run out.
+    const DELETE_DELAY = 15;
+
+    function armDelete(username, row) {
+      const original = [...row.childNodes];
+      let left = DELETE_DELAY;
+
+      const pending = document.createElement("div");
+      pending.className = "pending";
+      const label = document.createElement("span");
+      label.textContent = "Deleting " + username + " in";
+      const clock = document.createElement("span");
+      clock.className = "countdown";
+      clock.textContent = left + "s";
+      const cancel = document.createElement("button");
+      cancel.type = "button";
+      cancel.className = "chip";
+      cancel.textContent = "Cancel";
+      const now = document.createElement("button");
+      now.type = "button";
+      now.className = "chip danger";
+      now.textContent = "Delete now";
+      pending.append(label, clock, cancel, now);
+      row.replaceChildren(pending);
+
+      const stop = () => {
+        clearInterval(timer);
+        row.replaceChildren(...original);
+      };
+      cancel.addEventListener("click", stop);
+      now.addEventListener("click", () => { clearInterval(timer); deleteAccount(username); });
+
+      const timer = setInterval(() => {
+        left--;
+        clock.textContent = left + "s";
+        if (left <= 0) {
+          clearInterval(timer);
+          deleteAccount(username);
+        }
+      }, 1000);
+    }
+
+    async function deleteAccount(username) {
+      const res = await fetch("/api/users/" + encodeURIComponent(username), { method: "DELETE" });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        const count = document.getElementById("count");
+        count.textContent = data.error || "Delete failed.";
+      }
+      loadAccounts();
+    }
+
+    // the Assigned list collapses so a long list doesn't bury the panels below
+    document.getElementById("assigned-toggle").addEventListener("click", () => {
+      const body = document.getElementById("assigned-body");
+      const toggle = document.getElementById("assigned-toggle");
+      body.hidden = !body.hidden;
+      toggle.classList.toggle("collapsed", body.hidden);
+      toggle.setAttribute("aria-expanded", String(!body.hidden));
+    });
+
+    loadAccounts();
+    }
+
     window.siteMe()
       .then(async (d) => {
         me = d;
         profileUser = params.get("user") || d.username;
+        // Hermione's admin panels live on her own profile now; the tab only
+        // appears when she is viewing it
+        const showAdmin = Boolean(d.isAdmin) && profileUser.toLowerCase() === "hermione";
+        document.getElementById("tab-admin").hidden = !showAdmin;
         await loadProfile();
       })
       .catch(() => (window.location.href = "/"));
