@@ -742,6 +742,11 @@ app.get("/admin", requireLogin, (req, res) => {
   res.redirect("/profile");
 });
 
+// Demo surface for the reusable card navigator (see public/cardnav.js).
+app.get("/cardnav", requireLogin, (req, res) => {
+  res.sendFile(path.join(__dirname, "views", "cardnav.html"));
+});
+
 app.get("/chess", requireLogin, (req, res) => {
   res.sendFile(path.join(__dirname, "views", "chess.html"));
 });

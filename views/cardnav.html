@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Card navigation - angeldom.me</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cause:wght@400..700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/site.css" />
+  <script src="/me.js"></script>
+  <style>
+    .intro {
+      width: min(100%, 720px);
+      text-align: center;
+      margin-bottom: 0.5rem;
+    }
+    .intro h1 {
+      font-family: "Cause", sans-serif;
+      font-size: 1.7rem;
+      color: var(--heading-color);
+      margin-bottom: 0.4rem;
+    }
+    .intro p { color: var(--muted-color); font-size: 0.92rem; line-height: 1.5; }
+    .intro kbd {
+      font-family: ui-monospace, "SF Mono", Menlo, monospace;
+      font-size: 0.8em;
+      padding: 0.1rem 0.4rem;
+      border-radius: 5px;
+      background: var(--notif-item-bg, rgba(36, 197, 237, 0.15));
+      color: var(--text-color);
+    }
+    .strip-label {
+      width: min(100%, 720px);
+      font-family: "Cause", sans-serif;
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--table-header-color);
+      text-align: center;
+      margin: 1.5rem 0 0.25rem;
+    }
+    /* normal cards: about the size of the dashboard profile card */
+    #strip-normal { --cardnav-h: 430px; --card-w: 300px; --card-h: 360px; }
+    /* wide cards: same height, stretched out */
+    #strip-wide { --cardnav-h: 430px; --card-w-wide: min(90vw, 640px); --card-h: 360px; }
+  </style>
+</head>
+<body class="has-top-nav">
+  <div class="intro">
+    <h1>Card navigation</h1>
+    <p>
+      A scrolling strip where the focused card stays centred and its neighbours
+      fan out around it. Move with <kbd>&larr;</kbd> <kbd>&rarr;</kbd> or
+      <kbd>A</kbd> <kbd>D</kbd>, and press <kbd>Space</kbd> to open the focused
+      card. Click a side card to bring it to the centre. This is a demo with
+      placeholders; the strip is meant to be reused across the site.
+    </p>
+  </div>
+
+  <div class="strip-label">Normal cards</div>
+  <div id="strip-normal"></div>
+
+  <div class="strip-label">Wide cards</div>
+  <div id="strip-wide"></div>
+
+  <script src="/cardnav.js"></script>
+  <script>
+    window.siteMe()
+      .then(() => {
+        const normal = CardNav.mount(document.getElementById("strip-normal"), {
+          type: "normal",
+          start: 2,
+          ariaLabel: "Pages",
+          cards: [
+            { label: "Dashboard", sub: "Dailies and leaderboard", href: "/dashboard" },
+            { label: "Tasks", sub: "What Hermione set you", href: "/tasks" },
+            { label: "Snake", sub: "Earn a point per bite", href: "/snake" },
+            { label: "Wheel", sub: "One spin a day", href: "/wheel" },
+            { label: "Deathroll", sub: "Roll against the Princess", href: "/deathroll" },
+            { label: "Writing", sub: "Copy the passages", href: "/writing" },
+            { label: "Profile", sub: "Your card and guestbook", href: "/profile" },
+          ],
+        });
+        // focus the first strip so the keys work straight away
+        document.getElementById("strip-normal").focus();
+
+        CardNav.mount(document.getElementById("strip-wide"), {
+          type: "wide",
+          start: 1,
+          ariaLabel: "Sections",
+          cards: [
+            { label: "Welcome", sub: "The login dashboard could live here" },
+            { label: "About your Princess", sub: "Who she is, and what this place is for" },
+            { label: "The point of it all", sub: "Ranks, points, and devotion" },
+            { label: "FAQ", sub: "The questions newcomers ask" },
+          ],
+        });
+      })
+      .catch(() => (window.location.href = "/"));
+  </script>
+  <script src="/nav.js" defer></script>
+  <script src="/notifications.js" defer></script>
+</body>
+</html>
