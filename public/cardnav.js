@@ -129,7 +129,7 @@
     var normalStep, wideStep;
     function computeSteps() {
       var w = container.clientWidth || window.innerWidth || 1000;
-      normalStep = opts.step != null ? opts.step : Math.max(150, Math.round(w * 0.22));
+      normalStep = opts.step != null ? opts.step : Math.max(130, Math.round(w * 0.15));
       wideStep = opts.wideStep != null ? opts.wideStep : Math.round(normalStep * 1.7);
     }
     computeSteps();
@@ -203,11 +203,11 @@
         var rot = Math.max(-60, Math.min(60, -o * angle));
         var x = positionOf(i);
         var z = -abs * depth;
-        var scale = 1 - Math.min(abs, 3) * 0.07;
-        var visible = abs <= 2;
+        var scale = 1 - Math.min(abs, 4) * 0.06;
+        var visible = abs <= 3;               // focus + three each side = seven cards
         el.style.transform =
           "translateX(" + x + "px) translateZ(" + z + "px) rotateY(" + rot + "deg) scale(" + scale + ")";
-        el.style.opacity = visible ? (abs <= 1 ? 1 : 0.55) : 0;
+        el.style.opacity = !visible ? 0 : abs <= 1 ? 1 : abs === 2 ? 0.55 : 0.3;
         el.style.pointerEvents = visible ? "auto" : "none";
         el.style.zIndex = String(50 - abs);
         el.setAttribute("aria-selected", i === focus ? "true" : "false");

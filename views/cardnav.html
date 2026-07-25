@@ -45,10 +45,10 @@
       text-align: center;
       margin: 1.5rem 0 0.25rem;
     }
-    /* normal cards: enlarged (~2x) for the full-width strip */
-    #strip-normal { --cardnav-h: 660px; --card-w: 600px; --card-h: 540px; --card-w-wide: min(92vw, 900px); }
+    /* normal cards: original size, +50% */
+    #strip-normal { --cardnav-h: 640px; --card-w: 450px; --card-h: 540px; --card-w-wide: min(92vw, 780px); }
     /* wide cards: same height, stretched out */
-    #strip-wide { --cardnav-h: 660px; --card-w-wide: min(94vw, 1000px); --card-h: 540px; }
+    #strip-wide { --cardnav-h: 640px; --card-w-wide: min(94vw, 960px); --card-h: 540px; }
   </style>
 </head>
 <body class="has-top-nav">
@@ -75,9 +75,10 @@
       .then(() => {
         const normal = CardNav.mount(document.getElementById("strip-normal"), {
           type: "normal",
-          start: 2,
+          start: 5,
           ariaLabel: "Pages",
           cards: [
+            { label: "Guide", sub: "How the site works", href: "/guide" },
             { label: "Dashboard", sub: "Dailies and leaderboard", href: "/dashboard" },
             { label: "Tasks", sub: "What Hermione set you", href: "/tasks" },
             { label: "Snake", sub: "Earn a point per bite", href: "/snake" },
@@ -85,7 +86,9 @@
             { label: "Wheel", sub: "One spin a day", href: "/wheel" },
             { label: "Deathroll", sub: "Roll against the Princess", href: "/deathroll" },
             { label: "Writing", sub: "Copy the passages", href: "/writing" },
+            { label: "Chess", sub: "Play the Princess", href: "/chess" },
             { label: "Profile", sub: "Your card and guestbook", href: "/profile" },
+            { label: "Placeholder", sub: "Room for more", href: "#" },
           ],
         });
         // focus the first strip so the keys work straight away
@@ -93,13 +96,16 @@
 
         CardNav.mount(document.getElementById("strip-wide"), {
           type: "wide",
-          start: 1,
+          start: 3,
           ariaLabel: "Sections",
           cards: [
             { label: "Welcome", sub: "The login dashboard could live here" },
             { label: "About your Princess", sub: "Who she is, and what this place is for" },
             { label: "The point of it all", sub: "Ranks, points, and devotion" },
             { label: "FAQ", sub: "The questions newcomers ask" },
+            { label: "Rules", sub: "What is expected of you" },
+            { label: "Gallery", sub: "A wide showcase" },
+            { label: "Contact", sub: "Reach the Princess" },
           ],
         });
       })
