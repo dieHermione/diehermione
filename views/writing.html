@@ -123,7 +123,8 @@
     .editor .error {
       display: none;
       color: #d4607f;
-      background: rgba(36, 197, 237, 0.15);
+      background: transparent;
+      border: 1px solid #d4607f;
       border-radius: 8px;
       padding: 0.5rem 0.75rem;
       font-size: 0.85rem;
@@ -250,7 +251,7 @@
 
     /* greyscale dark mode */
     body[data-theme="dark"] .mistakes { color: #bdbdbd; }
-    body[data-theme="dark"] .editor .error { color: #d0d0d0; background: rgba(255, 255, 255, 0.07); }
+    body[data-theme="dark"] .editor .error { color: #d0d0d0; }
     body[data-theme="dark"] .passage-card { background: rgba(255, 255, 255, 0.05); }
   </style>
 </head>

@@ -14,6 +14,10 @@
       width: min(100%, 720px);
       text-align: center;
       margin-bottom: 0.5rem;
+      background: var(--panel-bg);
+      border-radius: 14px;
+      padding: 1.6rem 1.85rem;
+      box-shadow: 0 10px 40px var(--shadow);
     }
     .intro h1 {
       font-family: "Cause", sans-serif;
@@ -41,10 +45,10 @@
       text-align: center;
       margin: 1.5rem 0 0.25rem;
     }
-    /* normal cards: about the size of the dashboard profile card */
-    #strip-normal { --cardnav-h: 430px; --card-w: 300px; --card-h: 360px; }
+    /* normal cards: enlarged (~2x) for the full-width strip */
+    #strip-normal { --cardnav-h: 660px; --card-w: 600px; --card-h: 540px; --card-w-wide: min(92vw, 900px); }
     /* wide cards: same height, stretched out */
-    #strip-wide { --cardnav-h: 430px; --card-w-wide: min(90vw, 640px); --card-h: 360px; }
+    #strip-wide { --cardnav-h: 660px; --card-w-wide: min(94vw, 1000px); --card-h: 540px; }
   </style>
 </head>
 <body class="has-top-nav">
@@ -59,7 +63,7 @@
     </p>
   </div>
 
-  <div class="strip-label">Normal cards</div>
+  <div class="strip-label">Normal cards (with a wide one mixed in)</div>
   <div id="strip-normal"></div>
 
   <div class="strip-label">Wide cards</div>
@@ -77,6 +81,7 @@
             { label: "Dashboard", sub: "Dailies and leaderboard", href: "/dashboard" },
             { label: "Tasks", sub: "What Hermione set you", href: "/tasks" },
             { label: "Snake", sub: "Earn a point per bite", href: "/snake" },
+            { label: "Featured", sub: "A wide card dropped into a normal strip", type: "wide", href: "/wheel" },
             { label: "Wheel", sub: "One spin a day", href: "/wheel" },
             { label: "Deathroll", sub: "Roll against the Princess", href: "/deathroll" },
             { label: "Writing", sub: "Copy the passages", href: "/writing" },

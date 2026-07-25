@@ -6,7 +6,7 @@
   <title>Sign in - angeldom.me</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cause:wght@400..700&family=Noto+Sans+Bengali&family=Noto+Sans+Saurashtra&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Cause:wght@400..700&family=Noto+Sans+Bengali&family=Noto+Sans+Saurashtra&family=Quicksand:wght@700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/site.css" />
   <style>
     /* This page has no nav, so it would fall to the shared centred body in
@@ -31,14 +31,30 @@
       -webkit-text-fill-color: var(--input-text);
     }
     .site-header {
-      font-family: "Cause", sans-serif;
+      font-family: "Quicksand", "Cause", -apple-system, sans-serif;
       font-size: 3rem;
       font-weight: 700;
-      color: var(--header-color);
-      text-shadow: 0 2px 12px rgba(255, 255, 255, 0.6);
+      letter-spacing: -0.01em;
+      color: #ffffff;
+      /* white neon glow (idea 6, whitened) */
+      text-shadow: 0 0 4px #fff, 0 0 12px #fff, 0 0 26px #fff, 0 0 44px rgba(255, 255, 255, 0.85);
       text-align: center;
-      margin-bottom: 0.75rem;
+      margin: 0.7rem 0 1rem;
       padding: 0;
+      position: relative;
+      display: inline-block;
+    }
+    /* white halo above the wordmark (idea 2, whitened) */
+    .site-header .halo {
+      position: absolute;
+      top: -0.32em;
+      left: 50%;
+      transform: translateX(-50%) rotate(-8deg);
+      width: 58px;
+      height: 20px;
+      border: 4px solid #ffffff;
+      border-radius: 50%;
+      box-shadow: 0 0 12px rgba(255, 255, 255, 0.9);
     }
     /* U+A8D1 (Saurashtra) and U+09CE (Bengali) have no font on Windows, so the
        bows rendered as tofu. Ship the Noto faces that cover them. */
@@ -158,8 +174,9 @@
     body[data-theme="dark"] .submit:hover { background: #4d4d4d; }
     .error {
       display: none;
-      background: var(--error-bg);
+      background: transparent;
       color: var(--error-color);
+      border: 1px solid var(--error-color);
       border-radius: 8px;
       padding: 0.6rem 0.75rem;
       margin-bottom: 1rem;
@@ -198,7 +215,7 @@
   </style>
 </head>
 <body>
-  <h1 class="site-header"><span class="bow flip">꣑ৎ</span> angeldom.me <span class="bow">꣑ৎ</span></h1>
+  <h1 class="site-header"><span class="halo" aria-hidden="true"></span>angeldom.me</h1>
   <main class="card">
     <div class="tabs">
       <button id="tab-login" class="active" type="button">Log in</button>

@@ -173,7 +173,8 @@
     .form-error {
       display: none;
       color: #b3261e;
-      background: rgba(36, 197, 237, 0.15);
+      background: transparent;
+      border: 1px solid #b3261e;
       border-radius: 8px;
       padding: 0.5rem 0.75rem;
       font-size: 0.85rem;
@@ -695,12 +696,12 @@
   </style>
 </head>
 <body class="has-top-nav">
+    <main class="card" id="profile-card-main">
     <div class="ptabs">
       <button id="tab-profile" class="ptab active" type="button">Profile</button>
       <button id="tab-guestbook" class="ptab" type="button">Guestbook</button>
       <button id="tab-admin" class="ptab" type="button" hidden>Admin</button>
     </div>
-    <main class="card" id="profile-card-main">
     <div id="view-mode">
       <div id="avatar-slot"></div>
       <input type="file" id="quick-icon" accept="image/*" hidden />
@@ -1035,7 +1036,8 @@
       document.getElementById("tab-guestbook").classList.toggle("active", gb);
       const at = document.getElementById("tab-admin");
       if (at) at.classList.toggle("active", adm);
-      document.getElementById("profile-card-main").hidden = adm;
+      // the card (with its tabs) stays put; only its body content swaps out, and
+      // the admin panels appear below it
       document.getElementById("admin-view").hidden = !adm;
       document.getElementById("guestbook-view").hidden = !gb;
       document.getElementById("view-mode").style.display = (gb || adm) ? "none" : "";
