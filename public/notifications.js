@@ -113,7 +113,9 @@
     </svg>`;
 
   function build() {
-    const links = document.querySelector(".top-nav .nav-links");
+    // Normally the bell lives in the top nav; a page can also opt to host it
+    // elsewhere by providing an element with id="notif-slot".
+    const links = document.querySelector(".top-nav .nav-links") || document.getElementById("notif-slot");
     if (!links || document.querySelector(".notif-wrap")) return null;
 
     const style = document.createElement("style");

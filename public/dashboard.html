@@ -10,9 +10,15 @@
   <link rel="stylesheet" href="/site.css" />
   <script src="/me.js"></script>
   <style>
-    /* Cirrus: soft sky, drifting clouds, glassy cards, Quicksand */
-    body { font-family: "Quicksand", -apple-system, BlinkMacSystemFont, sans-serif;
-      background: linear-gradient(180deg, #8fd8f2 0%, #e8f6fd 72%); color: #22506a; }
+    /* Cirrus: soft sky, drifting clouds, glassy cards, Quicksand. No top nav. */
+    body {
+      font-family: "Quicksand", -apple-system, BlinkMacSystemFont, sans-serif;
+      background: linear-gradient(180deg, #8fd8f2 0%, #e8f6fd 72%);
+      color: #22506a;
+      justify-content: flex-start;
+      padding: 2.5rem 1rem 3rem;
+      gap: 0;
+    }
     .sky-clouds { position: fixed; inset: 0; overflow: hidden; z-index: 0; pointer-events: none; }
     .sky-clouds .c { position: absolute; border-radius: 50%;
       background: radial-gradient(closest-side, rgba(255,255,255,0.9), rgba(255,255,255,0) 72%); filter: blur(4px); }
@@ -20,8 +26,6 @@
     @keyframes driftR { from { transform: translateX(-22vw); } to { transform: translateX(140vw); } }
     @media (prefers-reduced-motion: reduce) { .sky-clouds .c { animation: none !important; } }
 
-    /* Cirrus dashboard grid: welcome hero across the top, then balance + actions,
-       then dailies + leaderboard */
     .dash {
       width: min(1120px, 96vw); margin: 0 auto; position: relative; z-index: 2;
       display: grid; gap: 1.3rem; grid-template-columns: repeat(3, 1fr);
@@ -44,27 +48,25 @@
     }
     .hero { grid-area: hero; padding: 2.4rem 2.5rem; }
     .balance-card { grid-area: bal; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.5rem; }
-    .actions-card { grid-area: act; }
     .dailies-card { grid-area: day; }
     .leaderboard-card { grid-area: lead; }
+    .control-card { grid-area: act; }
 
     h2 { font-family: "Quicksand", sans-serif; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: var(--button-bg); margin-bottom: 1rem; }
 
-    /* hero */
     .hero .eyebrow { font-size: 0.74rem; letter-spacing: 0.16em; text-transform: uppercase; color: #6aa0b8; margin-bottom: 0.5rem; }
     .hero h1 { font-family: "Quicksand", sans-serif; font-size: 2.5rem; font-weight: 700; color: #12405c; line-height: 1.06; margin-bottom: 0.5rem; }
     .hero p { color: #5e8ba3; font-size: 1rem; margin: 0; }
     .checkin-notice { margin-top: 1.1rem; background: transparent; border: 1px solid var(--button-bg); border-radius: 12px; padding: 0.6rem 0.9rem; color: #22506a; font-size: 0.9rem; font-weight: 600; }
     .checkin-notice[hidden] { display: none; }
-    /* hermione's inline copy editing */
     .editable { position: relative; display: inline-block; }
     .editable::after { content: ""; position: absolute; top: 0; bottom: 0; left: 100%; width: 2.1rem; }
     .editable .pencil {
       position: absolute; top: 50%; right: -1.9rem; transform: translateY(-50%);
       width: 1.45rem; height: 1.45rem; padding: 0; border: none; border-radius: 50%;
-      background: var(--button-bg); color: var(--button-text); font-size: 0.72rem; line-height: 1; cursor: pointer;
+      background: var(--button-bg); color: #fff; font-size: 0.72rem; line-height: 1; cursor: pointer;
       display: inline-flex; align-items: center; justify-content: center; z-index: 1;
-      opacity: 0; pointer-events: none; transition: opacity 0.12s ease;
+      opacity: 0; pointer-events: none; transition: opacity 0.12s ease; box-shadow: none;
     }
     .editable:hover .pencil, .editable:focus-within .pencil { opacity: 1; pointer-events: auto; }
     .copy-editor { display: none; margin-top: 1rem; text-align: left; }
@@ -75,34 +77,21 @@
     .copy-editor .row { display: flex; gap: 0.5rem; }
     .copy-editor .hint { color: var(--muted-color); font-size: 0.72rem; margin: -0.4rem 0 0.7rem; }
 
-    /* balance */
     .bal-eyebrow { font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: #6aa0b8; }
     .bal-num { font-family: "Quicksand", sans-serif; font-size: 3.4rem; font-weight: 700; color: #12405c; line-height: 1; }
     .bal-num[hidden], .bal-eyebrow[hidden] { display: none; }
     .bal-sub { font-size: 0.9rem; color: #5e8ba3; letter-spacing: 0.03em; }
 
-    /* actions */
-    .dashboard-actions { display: flex; flex-wrap: wrap; gap: 0.7rem; margin-top: 0.2rem; }
-    button { padding: 0.65rem 1.4rem; background: var(--button-bg); color: var(--button-text); border: none; border-radius: 10px; font-family: inherit; font-size: 0.95rem; font-weight: 700; cursor: pointer; }
-    button:hover { background: var(--button-hover-bg); }
-    #tithe:disabled, #tithe-again:disabled { opacity: 0.55; cursor: default; }
-    #tithe-again { background: transparent; color: var(--heading-color); box-shadow: inset 0 0 0 1.5px var(--button-bg); }
-    #tithe-again:hover:not(:disabled) { background: var(--button-bg); color: var(--button-text); }
-    .link-btn { display: inline-flex; align-items: center; padding: 0.65rem 1.4rem; background: var(--button-bg); color: var(--button-text); border-radius: 10px; font-size: 0.95rem; font-weight: 700; text-decoration: none; }
-    .link-btn:hover { background: var(--button-hover-bg); }
-    .link-btn.ghost { background: transparent; color: var(--heading-color); box-shadow: inset 0 0 0 1.5px var(--button-bg); }
-    .link-btn.ghost:hover { background: var(--button-bg); color: var(--button-text); }
-
     /* dailies */
     .daily-list { display: flex; flex-direction: column; gap: 0.6rem; }
     .daily { display: flex; align-items: flex-start; gap: 0.75rem; padding: 0.7rem 0.85rem; border: 1px solid rgba(30,120,160,0.14); border-radius: 12px; }
     .daily.done { border-color: var(--button-bg); background: rgba(36, 197, 237, 0.08); }
-    .daily .tick { flex-shrink: 0; width: 1.25rem; height: 1.25rem; margin-top: 0.1rem; border-radius: 50%; border: 2px solid var(--button-bg); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; color: var(--button-text); }
+    .daily .tick { flex-shrink: 0; width: 1.25rem; height: 1.25rem; margin-top: 0.1rem; border-radius: 50%; border: 2px solid var(--button-bg); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; color: #fff; }
     .daily.done .tick { background: var(--button-bg); }
     .daily .body { flex: 1; min-width: 0; }
     .daily .label { font-weight: 700; font-size: 0.92rem; color: #22506a; }
     .daily .detail { color: #6aa0b8; font-size: 0.8rem; margin-top: 0.1rem; }
-    .daily .reward { flex-shrink: 0; align-self: center; padding: 0.15rem 0.6rem; border-radius: 999px; font-size: 0.75rem; font-weight: 700; background: var(--button-bg); color: var(--button-text); }
+    .daily .reward { flex-shrink: 0; align-self: center; padding: 0.15rem 0.6rem; border-radius: 999px; font-size: 0.75rem; font-weight: 700; background: var(--button-bg); color: #fff; }
     .daily .mini-bar { height: 5px; border-radius: 999px; background: rgba(30,120,160,0.14); overflow: hidden; margin-top: 0.45rem; }
     .daily .mini-bar span { display: block; height: 100%; background: var(--button-bg); }
     .daily-reset { color: #6aa0b8; font-size: 0.78rem; margin: 0.9rem 0 0; }
@@ -116,9 +105,33 @@
     td.rank { color: #6aa0b8; width: 2rem; }
     td a { color: inherit; text-decoration: underline; text-decoration-color: var(--button-hover-bg); text-underline-offset: 3px; }
     td a:hover { color: var(--button-hover-bg); }
+
+    /* --- control bar: nav + actions + notifications, restyled buttons --- */
+    .controls { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; }
+    .ctl-btn {
+      font-family: "Quicksand", sans-serif; font-weight: 700; font-size: 0.92rem;
+      padding: 0.62rem 1.3rem; border-radius: 999px; border: none; cursor: pointer;
+      background: linear-gradient(180deg, #3ad0f0 0%, #1aa9d1 100%); color: #fff; text-decoration: none;
+      box-shadow: 0 6px 16px rgba(26,169,209,0.3); display: inline-flex; align-items: center; gap: 0.3rem;
+      transition: filter 0.12s ease, transform 0.08s ease;
+    }
+    .ctl-btn:hover { filter: brightness(1.06); }
+    .ctl-btn:active { transform: translateY(1px); }
+    .ctl-btn.ghost, #tithe-again { background: rgba(255,255,255,0.85); color: #1aa9d1; box-shadow: inset 0 0 0 1.6px #7fd6ee; }
+    .ctl-btn.ghost:hover, #tithe-again:hover:not(:disabled) { background: #fff; filter: none; }
+    #tithe:disabled, #tithe-again:disabled { opacity: 0.5; cursor: default; filter: none; box-shadow: none; }
+    .ctl-dropdown { position: relative; }
+    .ctl-dropdown::before { content: ""; position: absolute; top: 100%; left: 0; right: 0; height: 0.5rem; }
+    .ctl-menu { position: absolute; top: calc(100% + 0.45rem); left: 0; display: none; flex-direction: column; gap: 0.25rem; padding: 0.45rem; background: var(--panel-solid, #fff); border-radius: 14px; box-shadow: 0 12px 34px rgba(80,150,190,0.34); min-width: 9rem; z-index: 10; }
+    .ctl-dropdown:hover .ctl-menu, .ctl-dropdown:focus-within .ctl-menu { display: flex; }
+    .ctl-menu a { padding: 0.5rem 0.85rem; border-radius: 9px; color: #1aa9d1; text-decoration: none; font-weight: 700; font-size: 0.88rem; }
+    .ctl-menu a:hover { background: rgba(36,197,237,0.12); }
+    /* notifications bell (injected here); make it match and open its panel upward */
+    #notif-slot .notif-btn { background: linear-gradient(180deg, #3ad0f0, #1aa9d1); color: #fff; border-radius: 999px !important; box-shadow: 0 6px 16px rgba(26,169,209,0.3); }
+    #notif-slot .notif-wrap { margin-left: auto; }
   </style>
 </head>
-<body class="has-top-nav">
+<body>
   <div class="sky-clouds" aria-hidden="true">
     <div class="c" style="top:8%;  left:-6%; width:320px; height:100px; animation: driftR 80s linear infinite;"></div>
     <div class="c" style="top:22%; left:64%; width:230px; height:76px;  animation: driftL 64s linear infinite; animation-delay:-24s;"></div>
@@ -143,16 +156,6 @@
       <div class="bal-sub" id="bal-sub">rank —</div>
     </aside>
 
-    <section class="card actions-card">
-      <h2>Devotions</h2>
-      <div class="dashboard-actions">
-        <button id="tithe" type="button" hidden>Tithe 5 points</button>
-        <button id="tithe-again" type="button" hidden>Tithe Again</button>
-        <a id="hermione-link" class="link-btn" href="/profile?user=hermione" hidden>Hermione's profile</a>
-        <a class="link-btn ghost" href="/profile">View profile</a>
-      </div>
-    </section>
-
     <aside class="card dailies-card" id="dailies-card">
       <h2>Dailies</h2>
       <div class="daily-list" id="daily-list"></div>
@@ -166,6 +169,25 @@
         <tbody id="board"></tbody>
       </table>
     </section>
+
+    <section class="card control-card">
+      <div class="controls" id="notif-slot">
+        <a class="ctl-btn" href="/profile">Profile</a>
+        <a class="ctl-btn" href="/tasks">Tasks</a>
+        <div class="ctl-dropdown">
+          <button class="ctl-btn" type="button">Games ▾</button>
+          <div class="ctl-menu">
+            <a href="/snake">Snake</a>
+            <a href="/writing">Writing</a>
+            <a href="/wheel">Wheel</a>
+            <a href="/deathroll">Deathroll</a>
+          </div>
+        </div>
+        <button id="tithe" class="ctl-btn" type="button" hidden>Tithe 5 points</button>
+        <button id="tithe-again" class="ctl-btn ghost" type="button" hidden>Tithe Again</button>
+        <a id="hermione-link" class="ctl-btn" href="/profile?user=hermione" hidden>Hermione's profile</a>
+      </div>
+    </section>
   </div>
 
   <script>
@@ -175,8 +197,6 @@
     document.getElementById("greeting").textContent =
       h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
 
-    // Clean balance + rank readout (no avatar, no badge). Hermione and Visitors
-    // keep no points, so they show rank only.
     function setBalance(points) {
       const num = document.getElementById("bal-num");
       const eb = document.getElementById("bal-eyebrow");
@@ -191,8 +211,6 @@
       }
     }
 
-    // /me.js keeps this to one request per page load: a second would swallow
-    // the daily check-in result, since the server only reports it once per day
     window.siteMe()
       .then((d) => {
         if (d.checkIn) {
@@ -289,9 +307,11 @@
       row.className = "row";
       const save = document.createElement("button");
       save.type = "button";
+      save.className = "ctl-btn";
       save.textContent = "Save";
       const cancel = document.createElement("button");
       cancel.type = "button";
+      cancel.className = "ctl-btn ghost";
       cancel.textContent = "Cancel";
       cancel.addEventListener("click", () => editor.classList.remove("open"));
       save.addEventListener("click", async () => {
@@ -389,7 +409,6 @@
     document.getElementById("tithe").addEventListener("click", doTithe);
     document.getElementById("tithe-again").addEventListener("click", doTithe);
   </script>
-  <script src="/nav.js" defer></script>
   <script src="/notifications.js" defer></script>
 </body>
 </html>
