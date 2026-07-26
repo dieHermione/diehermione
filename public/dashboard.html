@@ -6,13 +6,13 @@
   <title>Dashboard - angeldom.me</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cause:wght@400..700&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/site.css" />
   <script src="/me.js"></script>
   <style>
     /* Cirrus: soft sky, drifting clouds, glassy cards, Quicksand */
     body { font-family: "Quicksand", -apple-system, BlinkMacSystemFont, sans-serif;
-      background: linear-gradient(180deg, #8fd8f2 0%, #e8f6fd 72%); }
+      background: linear-gradient(180deg, #8fd8f2 0%, #e8f6fd 72%); color: #22506a; }
     .sky-clouds { position: fixed; inset: 0; overflow: hidden; z-index: 0; pointer-events: none; }
     .sky-clouds .c { position: absolute; border-radius: 50%;
       background: radial-gradient(closest-side, rgba(255,255,255,0.9), rgba(255,255,255,0) 72%); filter: blur(4px); }
@@ -20,32 +20,43 @@
     @keyframes driftR { from { transform: translateX(-22vw); } to { transform: translateX(140vw); } }
     @media (prefers-reduced-motion: reduce) { .sky-clouds .c { animation: none !important; } }
 
+    /* Cirrus dashboard grid: welcome hero across the top, then balance + actions,
+       then dailies + leaderboard */
+    .dash {
+      width: min(1120px, 96vw); margin: 0 auto; position: relative; z-index: 2;
+      display: grid; gap: 1.3rem; grid-template-columns: repeat(3, 1fr);
+      grid-template-areas: "hero hero hero" "bal act act" "day day lead";
+    }
+    @media (max-width: 900px) {
+      .dash { grid-template-columns: 1fr; grid-template-areas: "hero" "bal" "act" "day" "lead"; }
+    }
+
     .card {
       background: rgba(255, 255, 255, 0.78);
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
       border-radius: 22px;
-      box-shadow: 0 20px 50px rgba(80, 150, 190, 0.22);
-      width: 100%;
-      max-width: 528px;
-      padding: 2.75rem;
-      text-align: center;
-      color: var(--text-color);
+      box-shadow: 0 18px 46px rgba(80, 150, 190, 0.22);
+      padding: 1.9rem 2rem;
+      color: #22506a;
+      text-align: left;
+      min-width: 0;
     }
-    .checkin-notice {
-      background: transparent;
-      border: 1px solid var(--button-bg);
-      border-radius: 12px;
-      padding: 0.6rem 0.9rem;
-      color: var(--text-color);
-      font-size: 0.9rem;
-      font-weight: 600;
-      margin-bottom: 1rem;
-    }
+    .hero { grid-area: hero; padding: 2.4rem 2.5rem; }
+    .balance-card { grid-area: bal; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.5rem; }
+    .actions-card { grid-area: act; }
+    .dailies-card { grid-area: day; }
+    .leaderboard-card { grid-area: lead; }
+
+    h2 { font-family: "Quicksand", sans-serif; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: var(--button-bg); margin-bottom: 1rem; }
+
+    /* hero */
+    .hero .eyebrow { font-size: 0.74rem; letter-spacing: 0.16em; text-transform: uppercase; color: #6aa0b8; margin-bottom: 0.5rem; }
+    .hero h1 { font-family: "Quicksand", sans-serif; font-size: 2.5rem; font-weight: 700; color: #12405c; line-height: 1.06; margin-bottom: 0.5rem; }
+    .hero p { color: #5e8ba3; font-size: 1rem; margin: 0; }
+    .checkin-notice { margin-top: 1.1rem; background: transparent; border: 1px solid var(--button-bg); border-radius: 12px; padding: 0.6rem 0.9rem; color: #22506a; font-size: 0.9rem; font-weight: 600; }
     .checkin-notice[hidden] { display: none; }
-    .dashboard-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.75rem; margin-top: 1rem; }
-    .dashboard-actions button { margin: 0; }
-    /* hermione's edit affordances: invisible until you hover the text */
+    /* hermione's inline copy editing */
     .editable { position: relative; display: inline-block; }
     .editable::after { content: ""; position: absolute; top: 0; bottom: 0; left: 100%; width: 2.1rem; }
     .editable .pencil {
@@ -56,73 +67,55 @@
       opacity: 0; pointer-events: none; transition: opacity 0.12s ease;
     }
     .editable:hover .pencil, .editable:focus-within .pencil { opacity: 1; pointer-events: auto; }
-    .copy-editor { display: none; margin-bottom: 1rem; text-align: left; }
+    .copy-editor { display: none; margin-top: 1rem; text-align: left; }
     .copy-editor.open { display: block; }
     .copy-editor label { display: block; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--table-header-color); margin-bottom: 0.25rem; }
     .copy-editor input { width: 100%; padding: 0.5rem 0.65rem; margin-bottom: 0.7rem; border: 1px solid var(--input-border); border-radius: 8px; background: var(--input-bg); color: var(--input-text); font-family: inherit; font-size: 0.9rem; }
     .copy-editor input:focus { outline: none; border-color: var(--button-hover-bg); }
-    .copy-editor .row { display: flex; gap: 0.5rem; justify-content: center; }
+    .copy-editor .row { display: flex; gap: 0.5rem; }
     .copy-editor .hint { color: var(--muted-color); font-size: 0.72rem; margin: -0.4rem 0 0.7rem; }
-    .welcome-line { margin-bottom: 2.5rem; }
+
+    /* balance */
+    .bal-eyebrow { font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: #6aa0b8; }
+    .bal-num { font-family: "Quicksand", sans-serif; font-size: 3.4rem; font-weight: 700; color: #12405c; line-height: 1; }
+    .bal-num[hidden], .bal-eyebrow[hidden] { display: none; }
+    .bal-sub { font-size: 0.9rem; color: #5e8ba3; letter-spacing: 0.03em; }
+
+    /* actions */
+    .dashboard-actions { display: flex; flex-wrap: wrap; gap: 0.7rem; margin-top: 0.2rem; }
+    button { padding: 0.65rem 1.4rem; background: var(--button-bg); color: var(--button-text); border: none; border-radius: 10px; font-family: inherit; font-size: 0.95rem; font-weight: 700; cursor: pointer; }
+    button:hover { background: var(--button-hover-bg); }
     #tithe:disabled, #tithe-again:disabled { opacity: 0.55; cursor: default; }
     #tithe-again { background: transparent; color: var(--heading-color); box-shadow: inset 0 0 0 1.5px var(--button-bg); }
     #tithe-again:hover:not(:disabled) { background: var(--button-bg); color: var(--button-text); }
-    .link-btn {
-      display: inline-flex; align-items: center; padding: 0.6rem 1.5rem;
-      background: var(--button-bg); color: var(--button-text); border-radius: 10px;
-      font-size: 1rem; font-weight: 600; text-decoration: none;
-    }
+    .link-btn { display: inline-flex; align-items: center; padding: 0.65rem 1.4rem; background: var(--button-bg); color: var(--button-text); border-radius: 10px; font-size: 0.95rem; font-weight: 700; text-decoration: none; }
     .link-btn:hover { background: var(--button-hover-bg); }
     .link-btn.ghost { background: transparent; color: var(--heading-color); box-shadow: inset 0 0 0 1.5px var(--button-bg); }
     .link-btn.ghost:hover { background: var(--button-bg); color: var(--button-text); }
-    #dashboard-message { margin-bottom: 0.875rem; }
 
-    .daily-list { display: flex; flex-direction: column; gap: 0.6rem; text-align: left; }
+    /* dailies */
+    .daily-list { display: flex; flex-direction: column; gap: 0.6rem; }
     .daily { display: flex; align-items: flex-start; gap: 0.75rem; padding: 0.7rem 0.85rem; border: 1px solid rgba(30,120,160,0.14); border-radius: 12px; }
     .daily.done { border-color: var(--button-bg); background: rgba(36, 197, 237, 0.08); }
     .daily .tick { flex-shrink: 0; width: 1.25rem; height: 1.25rem; margin-top: 0.1rem; border-radius: 50%; border: 2px solid var(--button-bg); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; color: var(--button-text); }
     .daily.done .tick { background: var(--button-bg); }
     .daily .body { flex: 1; min-width: 0; }
-    .daily .label { font-weight: 700; font-size: 0.92rem; }
-    .daily .detail { color: var(--muted-color); font-size: 0.8rem; margin-top: 0.1rem; }
+    .daily .label { font-weight: 700; font-size: 0.92rem; color: #22506a; }
+    .daily .detail { color: #6aa0b8; font-size: 0.8rem; margin-top: 0.1rem; }
     .daily .reward { flex-shrink: 0; align-self: center; padding: 0.15rem 0.6rem; border-radius: 999px; font-size: 0.75rem; font-weight: 700; background: var(--button-bg); color: var(--button-text); }
     .daily .mini-bar { height: 5px; border-radius: 999px; background: rgba(30,120,160,0.14); overflow: hidden; margin-top: 0.45rem; }
     .daily .mini-bar span { display: block; height: 100%; background: var(--button-bg); }
-    .daily-reset { color: var(--muted-color); font-size: 0.78rem; text-align: center; margin: 0.9rem 0 0; }
+    .daily-reset { color: #6aa0b8; font-size: 0.78rem; margin: 0.9rem 0 0; }
 
-    .dashboard-grid { display: grid; grid-template-columns: 1fr auto 1fr; align-items: start; gap: 1.5rem; width: 100%; position: relative; z-index: 2; }
-    .dashboard-col { grid-column: 2; display: flex; flex-direction: column; align-items: center; gap: 1.5rem; width: min(480px, 90vw); }
-    .balance-card { grid-column: 3; justify-self: start; width: 330px; padding: 2.2rem 1.5rem; }
-    .dailies-card { grid-column: 1; justify-self: end; width: 330px; padding: 2rem 1.5rem; }
-    @media (max-width: 1100px) {
-      .dashboard-grid { display: flex; flex-direction: column; align-items: center; }
-      .dashboard-col { width: min(100%, 480px); }
-      .balance-card, .dailies-card { width: 100%; max-width: 480px; }
-    }
-
-    /* clean balance + rank, no avatar or badge */
-    .balance-card { display: flex; flex-direction: column; align-items: center; gap: 0.75rem; }
-    .bal-eyebrow { font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--table-header-color); }
-    .bal-num { font-family: "Quicksand", sans-serif; font-size: 3.1rem; font-weight: 700; color: var(--heading-color); line-height: 1; }
-    .bal-num[hidden], .bal-eyebrow[hidden] { display: none; }
-    .bal-sub { font-size: 0.9rem; color: var(--muted-color); letter-spacing: 0.03em; }
-    .balance-card .link-btn { margin-top: 0.4rem; }
-
-    h1, h2 { font-family: "Quicksand", sans-serif; }
-    h1 { font-size: 1.6rem; color: var(--heading-color); margin-bottom: 0.5rem; font-weight: 700; }
-    h2 { font-size: 1.15rem; color: var(--heading-color); margin-bottom: 1rem; font-weight: 700; }
-    p { color: var(--muted-color); margin-bottom: 1.5rem; }
+    /* leaderboard */
     table { width: 100%; border-collapse: collapse; text-align: left; }
-    th, td { padding: 0.5rem 0.75rem; font-size: 0.95rem; }
-    th { color: var(--table-header-color); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    th, td { padding: 0.5rem 0.6rem; font-size: 0.95rem; }
+    th { color: var(--table-header-color); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; }
     tr + tr td { border-top: 1px solid rgba(30,120,160,0.14); }
-    td { color: var(--text-color); }
-    td.rank { color: var(--muted-color); width: 2.5rem; }
+    td { color: #22506a; }
+    td.rank { color: #6aa0b8; width: 2rem; }
     td a { color: inherit; text-decoration: underline; text-decoration-color: var(--button-hover-bg); text-underline-offset: 3px; }
     td a:hover { color: var(--button-hover-bg); }
-    button { padding: 0.6rem 1.5rem; background: var(--button-bg); color: var(--button-text); border: none; border-radius: 10px; font-family: inherit; font-size: 1rem; font-weight: 600; cursor: pointer; }
-    button:hover { background: var(--button-hover-bg); }
-    button + button { margin-left: 0.5rem; }
   </style>
 </head>
 <body class="has-top-nav">
@@ -134,43 +127,53 @@
     <div class="c" style="top:74%; left:24%; width:210px; height:70px;  animation: driftR 72s linear infinite; animation-delay:-34s;"></div>
     <div class="c" style="top:86%; left:60%; width:250px; height:80px;  animation: driftL 100s linear infinite;"></div>
   </div>
-  <div class="dashboard-grid">
+
+  <div class="dash">
+    <section class="card hero">
+      <div class="eyebrow" id="greeting">Welcome</div>
+      <h1><span class="editable" id="welcome-wrap"><span id="welcome">Welcome!</span></span></h1>
+      <p><span class="editable" id="message-wrap"><span id="dashboard-message">There is no text here yet.</span></span></p>
+      <div class="copy-editor" id="copy-editor"></div>
+      <p class="checkin-notice" id="checkin-notice" hidden></p>
+    </section>
+
+    <aside class="card balance-card" id="balance-card">
+      <div class="bal-eyebrow" id="bal-eyebrow">Balance</div>
+      <div class="bal-num" id="bal-num">—</div>
+      <div class="bal-sub" id="bal-sub">rank —</div>
+    </aside>
+
+    <section class="card actions-card">
+      <h2>Devotions</h2>
+      <div class="dashboard-actions">
+        <button id="tithe" type="button" hidden>Tithe 5 points</button>
+        <button id="tithe-again" type="button" hidden>Tithe Again</button>
+        <a id="hermione-link" class="link-btn" href="/profile?user=hermione" hidden>Hermione's profile</a>
+        <a class="link-btn ghost" href="/profile">View profile</a>
+      </div>
+    </section>
+
     <aside class="card dailies-card" id="dailies-card">
       <h2>Dailies</h2>
       <div class="daily-list" id="daily-list"></div>
       <p class="daily-reset" id="daily-reset"></p>
     </aside>
-    <div class="dashboard-col">
-      <main class="card">
-        <h1 class="welcome-line"><span class="editable" id="welcome-wrap"><span id="welcome">Welcome!</span></span></h1>
-        <p><span class="editable" id="message-wrap"><span id="dashboard-message">There is no text here yet.</span></span></p>
-        <div class="copy-editor" id="copy-editor"></div>
-        <p class="checkin-notice" id="checkin-notice" hidden></p>
-        <div class="dashboard-actions">
-          <button id="tithe" type="button" hidden>Tithe 5 points</button>
-          <button id="tithe-again" type="button" hidden>Tithe Again</button>
-          <a id="hermione-link" class="link-btn" href="/profile?user=hermione" hidden>Hermione's profile</a>
-        </div>
-      </main>
-      <section class="card">
-        <h2>Leaderboard</h2>
-        <table>
-          <thead>
-            <tr><th></th><th>Username</th><th>Points</th></tr>
-          </thead>
-          <tbody id="board"></tbody>
-        </table>
-      </section>
-    </div>
-    <aside class="card balance-card" id="balance-card">
-      <div class="bal-eyebrow" id="bal-eyebrow">Balance</div>
-      <div class="bal-num" id="bal-num">—</div>
-      <div class="bal-sub" id="bal-sub">rank —</div>
-      <a class="link-btn ghost" href="/profile">View profile</a>
-    </aside>
+
+    <section class="card leaderboard-card">
+      <h2>Leaderboard</h2>
+      <table>
+        <thead><tr><th></th><th>Username</th><th>Points</th></tr></thead>
+        <tbody id="board"></tbody>
+      </table>
+    </section>
   </div>
+
   <script>
     let myRank = "—";
+
+    const h = new Date().getHours();
+    document.getElementById("greeting").textContent =
+      h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
 
     // Clean balance + rank readout (no avatar, no badge). Hermione and Visitors
     // keep no points, so they show rank only.
@@ -201,8 +204,7 @@
         const noEcon = Boolean(d.noEconomy) || isHermione;
         myRank = d.rank || "—";
         setBalance(d.points);
-        const tithe = document.getElementById("tithe");
-        tithe.hidden = noEcon;
+        document.getElementById("tithe").hidden = noEcon;
         document.getElementById("hermione-link").hidden = isHermione;
         document.getElementById("dailies-card").hidden = noEcon;
         if (!noEcon) applyTitheState(d.points, d.tithedToday);
