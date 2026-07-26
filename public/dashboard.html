@@ -6,26 +6,26 @@
   <title>Dashboard - angeldom.me</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cause:wght@400..700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Cause:wght@400..700&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/site.css" />
   <script src="/me.js"></script>
   <style>
-    .site-header {
-      font-family: "Cause", sans-serif;
-      font-size: 3rem;
-      font-weight: 700;
-      color: var(--header-color);
-      text-shadow: 0 2px 12px rgba(255, 255, 255, 0.6);
-      text-align: center;
-      margin-bottom: 1.25rem;
-      padding: 20px 0;
-    }
-    .bow { display: inline-block; }
-    .bow.flip { transform: scaleX(-1); }
+    /* Cirrus: soft sky, drifting clouds, glassy cards, Quicksand */
+    body { font-family: "Quicksand", -apple-system, BlinkMacSystemFont, sans-serif;
+      background: linear-gradient(180deg, #8fd8f2 0%, #e8f6fd 72%); }
+    .sky-clouds { position: fixed; inset: 0; overflow: hidden; z-index: 0; pointer-events: none; }
+    .sky-clouds .c { position: absolute; border-radius: 50%;
+      background: radial-gradient(closest-side, rgba(255,255,255,0.9), rgba(255,255,255,0) 72%); filter: blur(4px); }
+    @keyframes driftL { from { transform: translateX(22vw); } to { transform: translateX(-140vw); } }
+    @keyframes driftR { from { transform: translateX(-22vw); } to { transform: translateX(140vw); } }
+    @media (prefers-reduced-motion: reduce) { .sky-clouds .c { animation: none !important; } }
+
     .card {
-      background: var(--panel-bg);
-      border-radius: 12px;
-      box-shadow: 0 10px 40px var(--shadow);
+      background: rgba(255, 255, 255, 0.78);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-radius: 22px;
+      box-shadow: 0 20px 50px rgba(80, 150, 190, 0.22);
       width: 100%;
       max-width: 528px;
       padding: 2.75rem;
@@ -35,313 +35,111 @@
     .checkin-notice {
       background: transparent;
       border: 1px solid var(--button-bg);
-      border-radius: 10px;
+      border-radius: 12px;
       padding: 0.6rem 0.9rem;
       color: var(--text-color);
       font-size: 0.9rem;
       font-weight: 600;
       margin-bottom: 1rem;
     }
-    .dashboard-actions {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 0.75rem;
-      margin-top: 1rem;
-    }
-    .dashboard-actions button {
-      margin: 0;
-    }
-    .mini-detail[hidden] { display: none; }
+    .checkin-notice[hidden] { display: none; }
+    .dashboard-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.75rem; margin-top: 1rem; }
+    .dashboard-actions button { margin: 0; }
     /* hermione's edit affordances: invisible until you hover the text */
     .editable { position: relative; display: inline-block; }
-    /* The pencil sits outside the text box, with a gap between the two. Without
-       a bridge across that gap the cursor leaves .editable on its way to the
-       button, the button hides, and it can never actually be clicked. Same
-       trap as the nav dropdown menu. */
-    .editable::after {
-      content: "";
-      position: absolute;
-      top: 0;
-      bottom: 0;
-      left: 100%;
-      width: 2.1rem;
-    }
+    .editable::after { content: ""; position: absolute; top: 0; bottom: 0; left: 100%; width: 2.1rem; }
     .editable .pencil {
-      position: absolute;
-      top: 50%;
-      right: -1.9rem;
-      transform: translateY(-50%);
-      width: 1.45rem;
-      height: 1.45rem;
-      padding: 0;
-      border: none;
-      border-radius: 50%;
-      background: var(--button-bg);
-      color: var(--button-text);
-      font-size: 0.72rem;
-      line-height: 1;
-      cursor: pointer;
-      /* Laid out even when hidden, so it stays keyboard-focusable. A
-         display:none button cannot be tabbed to at all. Sits above the
-         bridge so the bridge never swallows the click. */
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.12s ease;
+      position: absolute; top: 50%; right: -1.9rem; transform: translateY(-50%);
+      width: 1.45rem; height: 1.45rem; padding: 0; border: none; border-radius: 50%;
+      background: var(--button-bg); color: var(--button-text); font-size: 0.72rem; line-height: 1; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center; z-index: 1;
+      opacity: 0; pointer-events: none; transition: opacity 0.12s ease;
     }
-    .editable:hover .pencil,
-    .editable:focus-within .pencil {
-      opacity: 1;
-      pointer-events: auto;
-    }
+    .editable:hover .pencil, .editable:focus-within .pencil { opacity: 1; pointer-events: auto; }
     .copy-editor { display: none; margin-bottom: 1rem; text-align: left; }
     .copy-editor.open { display: block; }
-    .copy-editor label {
-      display: block;
-      font-size: 0.72rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--table-header-color);
-      margin-bottom: 0.25rem;
-    }
-    .copy-editor input {
-      width: 100%;
-      padding: 0.5rem 0.65rem;
-      margin-bottom: 0.7rem;
-      border: 1px solid var(--input-border);
-      border-radius: 8px;
-      background: var(--input-bg);
-      color: var(--input-text);
-      font-family: inherit;
-      font-size: 0.9rem;
-    }
+    .copy-editor label { display: block; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--table-header-color); margin-bottom: 0.25rem; }
+    .copy-editor input { width: 100%; padding: 0.5rem 0.65rem; margin-bottom: 0.7rem; border: 1px solid var(--input-border); border-radius: 8px; background: var(--input-bg); color: var(--input-text); font-family: inherit; font-size: 0.9rem; }
     .copy-editor input:focus { outline: none; border-color: var(--button-hover-bg); }
     .copy-editor .row { display: flex; gap: 0.5rem; justify-content: center; }
     .copy-editor .hint { color: var(--muted-color); font-size: 0.72rem; margin: -0.4rem 0 0.7rem; }
-    /* +10px under the heading, taken back off the paragraph so the card keeps its height */
     .welcome-line { margin-bottom: 2.5rem; }
     #tithe:disabled, #tithe-again:disabled { opacity: 0.55; cursor: default; }
-    #tithe-again {
-      background: transparent;
-      color: var(--heading-color);
-      box-shadow: inset 0 0 0 1.5px var(--button-bg);
-    }
+    #tithe-again { background: transparent; color: var(--heading-color); box-shadow: inset 0 0 0 1.5px var(--button-bg); }
     #tithe-again:hover:not(:disabled) { background: var(--button-bg); color: var(--button-text); }
-    .dashboard-actions .link-btn {
-      display: inline-flex;
-      align-items: center;
-      padding: 0.6rem 1.5rem;
-      background: var(--button-bg);
-      color: var(--button-text);
-      border-radius: 8px;
-      font-size: 1rem;
-      font-weight: 600;
-      text-decoration: none;
+    .link-btn {
+      display: inline-flex; align-items: center; padding: 0.6rem 1.5rem;
+      background: var(--button-bg); color: var(--button-text); border-radius: 10px;
+      font-size: 1rem; font-weight: 600; text-decoration: none;
     }
-    .dashboard-actions .link-btn:hover { background: var(--button-hover-bg); }
+    .link-btn:hover { background: var(--button-hover-bg); }
+    .link-btn.ghost { background: transparent; color: var(--heading-color); box-shadow: inset 0 0 0 1.5px var(--button-bg); }
+    .link-btn.ghost:hover { background: var(--button-bg); color: var(--button-text); }
     #dashboard-message { margin-bottom: 0.875rem; }
+
     .daily-list { display: flex; flex-direction: column; gap: 0.6rem; text-align: left; }
-    .daily {
-      display: flex;
-      align-items: flex-start;
-      gap: 0.75rem;
-      padding: 0.7rem 0.85rem;
-      border: 1px solid var(--table-border);
-      border-radius: 10px;
-    }
+    .daily { display: flex; align-items: flex-start; gap: 0.75rem; padding: 0.7rem 0.85rem; border: 1px solid rgba(30,120,160,0.14); border-radius: 12px; }
     .daily.done { border-color: var(--button-bg); background: rgba(36, 197, 237, 0.08); }
-    .daily .tick {
-      flex-shrink: 0;
-      width: 1.25rem;
-      height: 1.25rem;
-      margin-top: 0.1rem;
-      border-radius: 50%;
-      border: 2px solid var(--button-bg);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.75rem;
-      color: var(--button-text);
-    }
+    .daily .tick { flex-shrink: 0; width: 1.25rem; height: 1.25rem; margin-top: 0.1rem; border-radius: 50%; border: 2px solid var(--button-bg); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; color: var(--button-text); }
     .daily.done .tick { background: var(--button-bg); }
     .daily .body { flex: 1; min-width: 0; }
     .daily .label { font-weight: 700; font-size: 0.92rem; }
     .daily .detail { color: var(--muted-color); font-size: 0.8rem; margin-top: 0.1rem; }
-    .daily .reward {
-      flex-shrink: 0;
-      align-self: center;
-      padding: 0.15rem 0.6rem;
-      border-radius: 999px;
-      font-size: 0.75rem;
-      font-weight: 700;
-      background: var(--button-bg);
-      color: var(--button-text);
-    }
-    .daily .mini-bar {
-      height: 5px;
-      border-radius: 999px;
-      background: var(--table-border);
-      overflow: hidden;
-      margin-top: 0.45rem;
-    }
+    .daily .reward { flex-shrink: 0; align-self: center; padding: 0.15rem 0.6rem; border-radius: 999px; font-size: 0.75rem; font-weight: 700; background: var(--button-bg); color: var(--button-text); }
+    .daily .mini-bar { height: 5px; border-radius: 999px; background: rgba(30,120,160,0.14); overflow: hidden; margin-top: 0.45rem; }
     .daily .mini-bar span { display: block; height: 100%; background: var(--button-bg); }
-    .daily-reset {
-      color: var(--muted-color);
-      font-size: 0.78rem;
-      text-align: center;
-      margin: 0.9rem 0 0;
-    }
-    .dashboard-grid {
-      display: grid;
-      /* equal 1fr spacers keep the middle column truly centered on the page */
-      grid-template-columns: 1fr auto 1fr;
-      align-items: start;
-      gap: 1.5rem;
-      width: 100%;
-    }
-    .dashboard-col {
-      grid-column: 2;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 1.5rem;
-      width: min(480px, 90vw);
-    }
-    .profile-card {
-      grid-column: 3;
-      justify-self: start;
-      width: 330px;
-      padding: 2rem 1.5rem;
-    }
-    .dailies-card {
-      grid-column: 1;
-      justify-self: end;
-      width: 330px;
-      padding: 2rem 1.5rem;
-    }
+    .daily-reset { color: var(--muted-color); font-size: 0.78rem; text-align: center; margin: 0.9rem 0 0; }
+
+    .dashboard-grid { display: grid; grid-template-columns: 1fr auto 1fr; align-items: start; gap: 1.5rem; width: 100%; position: relative; z-index: 2; }
+    .dashboard-col { grid-column: 2; display: flex; flex-direction: column; align-items: center; gap: 1.5rem; width: min(480px, 90vw); }
+    .balance-card { grid-column: 3; justify-self: start; width: 330px; padding: 2.2rem 1.5rem; }
+    .dailies-card { grid-column: 1; justify-self: end; width: 330px; padding: 2rem 1.5rem; }
     @media (max-width: 1100px) {
       .dashboard-grid { display: flex; flex-direction: column; align-items: center; }
       .dashboard-col { width: min(100%, 480px); }
-      .profile-card { width: 100%; max-width: 480px; }
-      .dailies-card { width: 100%; max-width: 480px; }
+      .balance-card, .dailies-card { width: 100%; max-width: 480px; }
     }
-    .profile-card .avatar {
-      width: 88px;
-      height: 88px;
-      border-radius: 50%;
-      object-fit: cover;
-      display: block;
-      margin: 0 auto 0.85rem;
-      box-shadow: 0 6px 20px var(--shadow);
-      border: 4px solid var(--button-bg);
-      background: linear-gradient(135deg, #24c5ed, #1aa9d1);
-    }
-    .profile-card .avatar-fallback {
-      width: 88px;
-      height: 88px;
-      border-radius: 50%;
-      margin: 0 auto 0.85rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: "Cause", sans-serif;
-      font-size: 2.2rem;
-      font-weight: 700;
-      color: #ffffff;
-      background: linear-gradient(135deg, #24c5ed, #1aa9d1);
-      box-shadow: 0 6px 20px var(--shadow);
-      border: 4px solid var(--button-bg);
-    }
-    .profile-card .badge {
-      display: inline-block;
-      padding: 0.2rem 0.8rem;
-      border-radius: 999px;
-      font-size: 0.8rem;
-      font-weight: 700;
-      margin-bottom: 1rem;
-    }
-    .profile-card .badge.princess {
-      background: linear-gradient(135deg, #24c5ed, #1aa9d1);
-      color: #ffffff;
-      box-shadow: 0 4px 12px rgba(36, 197, 237, 0.5);
-    }
-    .profile-card .badge.user {
-      background: var(--table-border);
-      color: var(--muted-color);
-    }
-    .profile-card .bio {
-      color: var(--text-color);
-      font-size: 0.9rem;
-      margin-bottom: 1rem;
-      white-space: pre-wrap;
-      overflow-wrap: anywhere;
-    }
-    .profile-card .bio.empty { color: var(--muted-color); font-style: italic; }
-    .profile-card .mini-details {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-      margin-bottom: 1rem;
-      text-align: left;
-    }
-    .profile-card .mini-detail {
-      display: flex;
-      justify-content: space-between;
-      gap: 0.5rem;
-      padding: 0.2rem 0;
-      font-size: 0.85rem;
-    }
-    .profile-card .mini-detail .label {
-      color: var(--table-header-color);
-      text-transform: uppercase;
-      font-size: 0.68rem;
-      letter-spacing: 0.05em;
-      align-self: center;
-    }
-    .profile-card .mini-detail .value { font-weight: 600; overflow-wrap: anywhere; text-align: right; }
-    .profile-card .joined { color: var(--muted-color); font-size: 0.78rem; margin-bottom: 1rem; }
-    h1 { font-family: "Cause", sans-serif; font-size: 1.5rem; color: var(--heading-color); margin-bottom: 0.5rem; }
-    h2 { font-family: "Cause", sans-serif; font-size: 1.1rem; color: var(--heading-color); margin-bottom: 1rem; }
+
+    /* clean balance + rank, no avatar or badge */
+    .balance-card { display: flex; flex-direction: column; align-items: center; gap: 0.75rem; }
+    .bal-eyebrow { font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--table-header-color); }
+    .bal-num { font-family: "Quicksand", sans-serif; font-size: 3.1rem; font-weight: 700; color: var(--heading-color); line-height: 1; }
+    .bal-num[hidden], .bal-eyebrow[hidden] { display: none; }
+    .bal-sub { font-size: 0.9rem; color: var(--muted-color); letter-spacing: 0.03em; }
+    .balance-card .link-btn { margin-top: 0.4rem; }
+
+    h1, h2 { font-family: "Quicksand", sans-serif; }
+    h1 { font-size: 1.6rem; color: var(--heading-color); margin-bottom: 0.5rem; font-weight: 700; }
+    h2 { font-size: 1.15rem; color: var(--heading-color); margin-bottom: 1rem; font-weight: 700; }
     p { color: var(--muted-color); margin-bottom: 1.5rem; }
     table { width: 100%; border-collapse: collapse; text-align: left; }
     th, td { padding: 0.5rem 0.75rem; font-size: 0.95rem; }
     th { color: var(--table-header-color); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
-    tr + tr td { border-top: 1px solid var(--table-border); }
+    tr + tr td { border-top: 1px solid rgba(30,120,160,0.14); }
     td { color: var(--text-color); }
     td.rank { color: var(--muted-color); width: 2.5rem; }
     td a { color: inherit; text-decoration: underline; text-decoration-color: var(--button-hover-bg); text-underline-offset: 3px; }
     td a:hover { color: var(--button-hover-bg); }
-    button {
-      padding: 0.6rem 1.5rem;
-      background: var(--button-bg);
-      color: var(--button-text);
-      border: none;
-      border-radius: 8px;
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-    }
+    button { padding: 0.6rem 1.5rem; background: var(--button-bg); color: var(--button-text); border: none; border-radius: 10px; font-family: inherit; font-size: 1rem; font-weight: 600; cursor: pointer; }
     button:hover { background: var(--button-hover-bg); }
     button + button { margin-left: 0.5rem; }
-
-    /* greyscale dark mode */
-    body[data-theme="dark"] .profile-card .avatar,
-    body[data-theme="dark"] .profile-card .avatar-fallback { background: linear-gradient(135deg, #5a5a5a, #7a7a7a); }
-    body[data-theme="dark"] .daily.done { background: rgba(255, 255, 255, 0.06); }
   </style>
 </head>
 <body class="has-top-nav">
-    <div class="dashboard-grid">
+  <div class="sky-clouds" aria-hidden="true">
+    <div class="c" style="top:8%;  left:-6%; width:320px; height:100px; animation: driftR 80s linear infinite;"></div>
+    <div class="c" style="top:22%; left:64%; width:230px; height:76px;  animation: driftL 64s linear infinite; animation-delay:-24s;"></div>
+    <div class="c" style="top:40%; left:10%; width:190px; height:64px;  animation: driftR 96s linear infinite; animation-delay:-44s;"></div>
+    <div class="c" style="top:58%; left:72%; width:270px; height:88px;  animation: driftL 84s linear infinite; animation-delay:-12s;"></div>
+    <div class="c" style="top:74%; left:24%; width:210px; height:70px;  animation: driftR 72s linear infinite; animation-delay:-34s;"></div>
+    <div class="c" style="top:86%; left:60%; width:250px; height:80px;  animation: driftL 100s linear infinite;"></div>
+  </div>
+  <div class="dashboard-grid">
     <aside class="card dailies-card" id="dailies-card">
-        <h2>Dailies</h2>
-        <div class="daily-list" id="daily-list"></div>
-        <p class="daily-reset" id="daily-reset"></p>
-      </aside>
+      <h2>Dailies</h2>
+      <div class="daily-list" id="daily-list"></div>
+      <p class="daily-reset" id="daily-reset"></p>
+    </aside>
     <div class="dashboard-col">
       <main class="card">
         <h1 class="welcome-line"><span class="editable" id="welcome-wrap"><span id="welcome">Welcome!</span></span></h1>
@@ -364,22 +162,31 @@
         </table>
       </section>
     </div>
-    <aside class="card profile-card" id="profile-card" hidden>
-      <div id="pc-avatar"></div>
-      <h2 id="pc-username">…</h2>
-      <div id="pc-badge"></div>
-      <p class="bio" id="pc-bio"></p>
-      <div class="mini-details">
-        <div class="mini-detail"><span class="label">Pronouns</span><span class="value" id="pc-pronouns">-</span></div>
-        <div class="mini-detail"><span class="label">Rank</span><span class="value" id="pc-rank">-</span></div>
-        <div class="mini-detail"><span class="label">Points</span><span class="value" id="pc-points">0</span></div>
-      </div>
-      <p class="joined" id="pc-joined"></p>
-      <button id="pc-view" type="button">View profile</button>
+    <aside class="card balance-card" id="balance-card">
+      <div class="bal-eyebrow" id="bal-eyebrow">Balance</div>
+      <div class="bal-num" id="bal-num">—</div>
+      <div class="bal-sub" id="bal-sub">rank —</div>
+      <a class="link-btn ghost" href="/profile">View profile</a>
     </aside>
   </div>
   <script>
+    let myRank = "—";
 
+    // Clean balance + rank readout (no avatar, no badge). Hermione and Visitors
+    // keep no points, so they show rank only.
+    function setBalance(points) {
+      const num = document.getElementById("bal-num");
+      const eb = document.getElementById("bal-eyebrow");
+      const sub = document.getElementById("bal-sub");
+      if (points === null || points === undefined) {
+        num.hidden = true; eb.hidden = true;
+        sub.textContent = "rank " + myRank;
+      } else {
+        num.hidden = false; eb.hidden = false;
+        num.textContent = Number(points).toLocaleString();
+        sub.textContent = "points · rank " + myRank;
+      }
+    }
 
     // /me.js keeps this to one request per page load: a second would swallow
     // the daily check-in result, since the server only reports it once per day
@@ -391,15 +198,13 @@
           notice.hidden = false;
         }
         const isHermione = Boolean(d.isAdmin ?? (d.username && d.username.toLowerCase() === "hermione"));
-        // Hermione and Visitors sit outside the points/dailies/tithe economy
         const noEcon = Boolean(d.noEconomy) || isHermione;
+        myRank = d.rank || "—";
+        setBalance(d.points);
         const tithe = document.getElementById("tithe");
         tithe.hidden = noEcon;
-        // her profile is otherwise unreachable for regular users; hide it for her
         document.getElementById("hermione-link").hidden = isHermione;
         document.getElementById("dailies-card").hidden = noEcon;
-        // in the red? the obligation is suspended and the button waits until the
-        // balance is back to zero. already given today? nothing more to do.
         if (!noEcon) applyTitheState(d.points, d.tithedToday);
         loadCopy(isHermione);
       })
@@ -426,68 +231,6 @@
         });
       })
       .catch(() => {});
-
-    function pcAgeString(createdAt) {
-      const days = Math.floor((Date.now() - new Date(createdAt).getTime()) / 86400000);
-      if (days < 1) return "brand new";
-      if (days < 31) return days + (days === 1 ? " day old" : " days old");
-      const months = Math.floor(days / 30.44);
-      if (months < 12) return months + (months === 1 ? " month old" : " months old");
-      const years = Math.floor(months / 12);
-      const rem = months % 12;
-      return years + (years === 1 ? " year" : " years") + (rem ? ", " + rem + (rem === 1 ? " month" : " months") : "") + " old";
-    }
-
-    async function loadProfileCard() {
-      const me = await window.siteMe().catch(() => null);
-      if (!me) return;
-      const res = await fetch("/api/profile/" + encodeURIComponent(me.username));
-      if (!res.ok) return;
-      const p = (await res.json()).profile;
-      const slot = document.getElementById("pc-avatar");
-      if (p.icon) {
-        const img = document.createElement("img");
-        img.className = "avatar";
-        img.src = p.icon;
-        img.alt = p.username + "'s profile picture";
-        slot.replaceChildren(img);
-      } else {
-        const div = document.createElement("div");
-        div.className = "avatar-fallback";
-        div.textContent = (p.username[0] || "?").toUpperCase();
-        slot.replaceChildren(div);
-      }
-      document.getElementById("pc-username").textContent = p.username;
-      const badge = document.createElement("span");
-      const princess = p.rank === "Princess";
-      document.getElementById("profile-card").classList.toggle("princess-glow", princess);
-      badge.className = "badge " + (princess ? "princess" : "user");
-      badge.textContent = p.rank;
-      document.getElementById("pc-badge").replaceChildren(badge);
-      window.RankLegend?.attach(badge, () => ({
-        rank: p.rank,
-        username: p.username,
-        canEdit: false,          // your own card; ranks are handed out on profiles
-        onChange: () => loadProfileCard(),
-      }));
-      const bio = document.getElementById("pc-bio");
-      bio.textContent = p.bio || "No bio yet.";
-      bio.classList.toggle("empty", !p.bio);
-      document.getElementById("pc-pronouns").textContent = p.pronouns || "-";
-      document.getElementById("pc-rank").textContent = p.rank || "-";
-      const pcPoints = document.getElementById("pc-points").closest(".mini-detail");
-      if (p.points === null) {
-        pcPoints.hidden = true;
-      } else {
-        pcPoints.hidden = false;
-        document.getElementById("pc-points").textContent = p.points;
-      }
-      document.getElementById("pc-joined").textContent =
-        "Joined " + new Date(p.createdAt).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" }) +
-        " · " + pcAgeString(p.createdAt);
-      document.getElementById("profile-card").hidden = false;
-    }
-    loadProfileCard();
 
     // --- the two lines of dashboard copy, editable in place by hermione ---
     let siteRaw = null;
@@ -587,8 +330,6 @@
         label.className = "label";
         label.textContent = d.label;
         bodyEl.append(label);
-        // detail may be blank now that the flavour lines are gone; only the
-        // progress readout remains for a task that has one
         const detailText = d.progress && !d.done
           ? (d.detail ? d.detail + " " : "") + d.progress.current + "/" + d.progress.max + " until complete"
           : d.detail;
@@ -622,12 +363,10 @@
       const tithe = document.getElementById("tithe");
       const again = document.getElementById("tithe-again");
       const negative = (points || 0) < 0;
-      // the primary button is the daily obligation: once met it just reads back
       tithe.disabled = negative || tithedToday;
       tithe.textContent = tithedToday
         ? "Tithed today"
         : negative ? "Tithe (in the red)" : "Tithe " + 5 + " points";
-      // after the daily tithe is done, an optional button allows extra tithes
       again.hidden = !tithedToday;
       again.disabled = negative;
     }
@@ -642,17 +381,12 @@
       notice.hidden = false;
       if (res.ok) {
         applyTitheState(data.points, true);
-        loadProfileCard();
+        setBalance(data.points);
       }
     }
     document.getElementById("tithe").addEventListener("click", doTithe);
     document.getElementById("tithe-again").addEventListener("click", doTithe);
-
-    document.getElementById("pc-view").addEventListener("click", () => {
-      window.location.href = "/profile";
-    });
   </script>
-  <script src="/ranks.js"></script>
   <script src="/nav.js" defer></script>
   <script src="/notifications.js" defer></script>
 </body>
