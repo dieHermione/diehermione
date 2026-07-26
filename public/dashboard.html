@@ -50,7 +50,7 @@
     .balance-card { grid-area: bal; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.5rem; }
     .dailies-card { grid-area: day; }
     .leaderboard-card { grid-area: lead; }
-    .control-card { grid-area: act; }
+    .control-card { grid-area: act; position: relative; }
 
     h2 { font-family: "Quicksand", sans-serif; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: var(--button-bg); margin-bottom: 1rem; }
 
@@ -107,12 +107,13 @@
     td a:hover { color: var(--button-hover-bg); }
 
     /* --- control bar: nav + actions + notifications, restyled buttons --- */
-    .controls { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; }
+    .controls { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; padding-right: 3.2rem; }
     .ctl-btn {
       font-family: "Quicksand", sans-serif; font-weight: 700; font-size: 0.92rem;
       padding: 0.62rem 1.3rem; border-radius: 999px; border: none; cursor: pointer;
-      background: linear-gradient(180deg, #3ad0f0 0%, #1aa9d1 100%); color: #fff; text-decoration: none;
-      box-shadow: 0 6px 16px rgba(26,169,209,0.3); display: inline-flex; align-items: center; gap: 0.3rem;
+      background: linear-gradient(180deg, #7ad8f4 0%, #43c2e8 100%); color: #fff; text-decoration: none;
+      text-shadow: 0 1px 2px rgba(20, 90, 120, 0.22);
+      box-shadow: 0 6px 16px rgba(70, 190, 230, 0.32); display: inline-flex; align-items: center; gap: 0.3rem;
       transition: filter 0.12s ease, transform 0.08s ease;
     }
     .ctl-btn:hover { filter: brightness(1.06); }
@@ -127,8 +128,10 @@
     .ctl-menu a { padding: 0.5rem 0.85rem; border-radius: 9px; color: #1aa9d1; text-decoration: none; font-weight: 700; font-size: 0.88rem; }
     .ctl-menu a:hover { background: rgba(36,197,237,0.12); }
     /* notifications bell (injected here); make it match and open its panel upward */
-    #notif-slot .notif-btn { background: linear-gradient(180deg, #3ad0f0, #1aa9d1); color: #fff; border-radius: 999px !important; box-shadow: 0 6px 16px rgba(26,169,209,0.3); }
-    #notif-slot .notif-wrap { margin-left: auto; }
+    #notif-slot .notif-btn { background: linear-gradient(180deg, #7ad8f4, #43c2e8); color: #fff; border: none; outline: none; border-radius: 999px !important; box-shadow: 0 6px 16px rgba(70, 190, 230, 0.32); }
+    #notif-slot .notif-btn:hover { filter: brightness(1.06); }
+    /* the bell sits in the top-right corner of the panel */
+    #notif-slot .notif-wrap { position: absolute; top: 1.3rem; right: 1.5rem; margin: 0; }
   </style>
 </head>
 <body>
@@ -151,9 +154,8 @@
     </section>
 
     <aside class="card balance-card" id="balance-card">
-      <div class="bal-eyebrow" id="bal-eyebrow">Balance</div>
       <div class="bal-num" id="bal-num">—</div>
-      <div class="bal-sub" id="bal-sub">rank —</div>
+      <div class="bal-sub" id="bal-sub">—</div>
     </aside>
 
     <aside class="card dailies-card" id="dailies-card">
@@ -199,15 +201,14 @@
 
     function setBalance(points) {
       const num = document.getElementById("bal-num");
-      const eb = document.getElementById("bal-eyebrow");
       const sub = document.getElementById("bal-sub");
       if (points === null || points === undefined) {
-        num.hidden = true; eb.hidden = true;
-        sub.textContent = "rank " + myRank;
+        num.hidden = true;
+        sub.textContent = myRank;
       } else {
-        num.hidden = false; eb.hidden = false;
+        num.hidden = false;
         num.textContent = Number(points).toLocaleString();
-        sub.textContent = "points · rank " + myRank;
+        sub.textContent = "points · " + myRank;
       }
     }
 
