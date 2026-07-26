@@ -103,9 +103,10 @@
   /* --- slide panels (guide + debug) --- */
   /* The panel itself must NOT clip: its edge tab sits outside the panel box, so
      scrolling lives on an inner wrapper instead of the panel. */
+  /* panels are background-less: just text over the scene, with a strong shadow
+     for legibility. */
   .panel { position: fixed; top: 0; bottom: 0; z-index: 12; width: min(360px, 86vw);
-    background: var(--panel); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-    border-right: 1px solid var(--panel-line); box-shadow: 0 0 60px rgba(0,0,0,0.5);
+    text-shadow: 0 2px 10px rgba(0,0,0,0.85), 0 0 3px rgba(0,0,0,0.7);
     transition: transform 0.5s cubic-bezier(0.2,0.8,0.2,1); }
   .panel-scroll { position: absolute; inset: 0; overflow-y: auto; padding: 2.4rem 1.9rem; }
   .panel h2 { font-family: "Jost", sans-serif; font-weight: 300; font-size: 1.5rem; letter-spacing: 0.04em; margin-bottom: 0.4rem; }
@@ -116,21 +117,27 @@
   .panel li { font-weight: 300; font-size: 0.92rem; line-height: 1.5; color: #e3ece3; padding-left: 1rem; position: relative; }
   .panel li::before { content: ""; position: absolute; left: 0; top: 0.6em; width: 5px; height: 5px; border-radius: 50%; background: #8fce97; }
   .panel li b { font-weight: 500; color: #f2f8f2; }
-  .panel .tab { position: absolute; top: 50%; width: 2.1rem; height: 8.4rem; transform: translateY(-50%);
-    background: var(--panel); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  /* the trigger tab is a transparent hover target with just its label */
+  .panel .tab { position: absolute; top: 50%; width: 2.4rem; height: 8.4rem; transform: translateY(-50%);
     display: flex; align-items: center; justify-content: center; cursor: pointer; }
-  .panel .tab span { writing-mode: vertical-rl; text-orientation: mixed; font-size: 0.72rem; letter-spacing: 0.28em; text-transform: uppercase; color: #d6e2d6; }
+  .panel .tab span { writing-mode: vertical-rl; text-orientation: mixed; font-size: 0.72rem; letter-spacing: 0.28em; text-transform: uppercase; color: #e6efe6; transition: color 0.2s ease; }
+  .panel:hover .tab span { color: #ffffff; }
 
-  /* guide on the left */
-  #guide { left: 0; transform: translateX(-100%); }
-  #guide.open { transform: translateX(0); }
-  #guide .tab { left: 100%; border: 1px solid var(--panel-line); border-left: none; border-radius: 0 12px 12px 0; }
-
-  /* debug on the right */
-  #debug { right: 0; left: auto; transform: translateX(100%); border-right: none; border-left: 1px solid var(--panel-line); }
-  #debug.open { transform: translateX(0); }
-  #debug .tab { right: 100%; left: auto; border: 1px solid var(--panel-line); border-right: none; border-radius: 12px 0 0 12px; }
+  /* panels open on hover. Debug on the LEFT, Guide on the RIGHT. */
+  #debug { left: 0; transform: translateX(-100%); }
+  #debug:hover { transform: translateX(0); }
+  #debug .tab { left: 100%; }
   #debug.hidden-role { display: none; }
+
+  #guide { right: 0; left: auto; transform: translateX(100%); }
+  #guide:hover { transform: translateX(0); }
+  #guide .tab { right: 100%; left: auto; }
+
+  /* the left (debug) panel opens over the bottom-left stats, so hide them while
+     it is open to give the text room */
+  .menu { transition: opacity 0.35s ease; }
+  body:has(#debug:hover) .menu { opacity: 0 !important; pointer-events: none; }
+
   #debug .grp { margin-bottom: 1.2rem; }
   #debug label { display: block; font-size: 0.74rem; letter-spacing: 0.06em; color: #bcd0bd; margin: 0.5rem 0 0.2rem; }
   #debug .dbtn { display: inline-block; margin: 0.2rem 0.3rem 0.2rem 0; padding: 0.36rem 0.7rem; font-family: inherit; font-size: 0.82rem;
@@ -143,18 +150,18 @@
   #debug .rawline { font-size: 0.78rem; color: #cfe0d0; line-height: 1.5; font-variant-numeric: tabular-nums; }
 
   /* journal modal */
-  .modal { position: fixed; inset: 0; z-index: 15; display: none; align-items: center; justify-content: center; background: rgba(6,12,8,0.55); backdrop-filter: blur(3px); }
+  /* journal is background-less too: text over the scene */
+  .modal { position: fixed; inset: 0; z-index: 15; display: none; align-items: center; justify-content: center;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.9), 0 0 3px rgba(0,0,0,0.8); }
   .modal.open { display: flex; }
-  .modal .box { width: min(520px, 90vw); max-height: 74vh; overflow-y: auto; background: var(--panel);
-    border: 1px solid var(--panel-line); border-radius: 16px; padding: 1.8rem 1.9rem; backdrop-filter: blur(14px); }
+  .modal .box { width: min(520px, 90vw); max-height: 74vh; overflow-y: auto; padding: 1.8rem 1.9rem; }
   .modal .box h2 { font-weight: 300; font-size: 1.4rem; margin-bottom: 1rem; letter-spacing: 0.04em; }
-  .modal .je { padding: 0.55rem 0; border-top: 1px solid rgba(255,255,255,0.08); }
+  .modal .je { padding: 0.55rem 0; border-top: 1px solid rgba(255,255,255,0.12); }
   .modal .je:first-of-type { border-top: none; }
-  .modal .je .ev { font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: #a9c1ab; }
-  .modal .je .tx { font-weight: 300; font-size: 0.95rem; color: #e6efe6; margin-top: 0.1rem; }
-  .modal .je .ago { font-size: 0.74rem; color: #90a692; }
-  .modal .empty { color: #b7c6b8; font-weight: 300; }
-  .modal .close { position: absolute; }
+  .modal .je .ev { font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: #bcd3be; }
+  .modal .je .tx { font-weight: 300; font-size: 0.95rem; color: #f1f7f1; margin-top: 0.1rem; }
+  .modal .je .ago { font-size: 0.74rem; color: #a7bba9; }
+  .modal .empty { color: #cbd8cc; font-weight: 300; }
 
   /* intro / page load */
   .intro { position: fixed; inset: 0; z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -709,13 +716,7 @@ function timeAgo(ts) {
   return Math.round(s / 86400) + "d ago";
 }
 
-/* guide + debug slide panels */
-function wirePanel(panelId, tabId) {
-  const p = document.getElementById(panelId);
-  document.getElementById(tabId).addEventListener("click", () => p.classList.toggle("open"));
-}
-wirePanel("guide", "guideTab");
-wirePanel("debug", "debugTab");
+/* guide + debug panels open on hover (see CSS); no JS toggle needed */
 
 /* ============================ admin debug panel ============================ */
 const Debug = (function () {
