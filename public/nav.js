@@ -27,6 +27,7 @@
     { id: "nav-writing", href: "/writing", label: "Writing" },
     { id: "nav-wheel", href: "/wheel", label: "Wheel" },
     { id: "nav-deathroll", href: "/deathroll", label: "Deathroll" },
+    { id: "nav-elysium", href: "/elysium", label: "Elysium" },
   ];
 
   function el(tag, props, children) {
@@ -140,8 +141,10 @@
   }
 
   function init() {
-    setUpTheme();
+    // The dark/light toggle belongs to the shared-shell pages only. The login
+    // page (no top nav) has deprecated it, so skip theme setup entirely there.
     if (!document.body.classList.contains("has-top-nav")) return;
+    setUpTheme();
 
     var nav = buildNav();
     markActive(nav);

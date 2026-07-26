@@ -6,6 +6,7 @@ games.json
 writing.json
 deathroll.json
 site.json
+elysium.json
 # Mail was removed, but any leftover mail.json holds real messages. Kept
 # ignored so a stale file can never be committed by accident.
 mail.json

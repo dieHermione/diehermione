@@ -130,28 +130,68 @@ points open in a styled popover, the Assigned list collapses, "Writing results"
 
 ---
 
-## Elysium, the tree-care game demo (`/tree`, `views/tree.html`)
+## Elysium, the tree-care game (`/elysium`, `views/elysium.html`)
 
-**Visual/audio demo only, no mechanics.** Persistent account-bound game later:
-grow and care for a tree; the tree grows from **time** (not from actions);
-diseases occur randomly, more often if tree dailies (separate from site dailies)
-are missed.
+**Now a real, playable, account-bound game** (was a visual demo). Renamed from
+"Tree" to **Elysium** everywhere: route is `/elysium` (`/tree` 302-redirects for
+back-compat), file is `views/elysium.html`, and it is in the Games dropdown
+(`nav.js` GAMES + the dashboard control-card menu).
 
-Current demo: real misty **forest photo** (Unsplash
-`photo-1448375240586-882707db888b`), **synthesised rain** ambience (Web Audio
-filtered noise, resumes on the intro click), **rain-on-glass droplets** (not
-falling streaks), a **placeholder SVG sapling** (needs real art), and a
-**text-only UI** (no backgrounds): a merged top-left menu (stats + today's care),
-underlined text control buttons (Water / Trim / Mist / Fertilize / Inspect), and
-a text music player streaming **Satie's Gymnopédie No. 1** (Kevin MacLeod,
-CC-BY - needs a credit line in the finished version). Music + Ambience mute
-toggles default ON and strike through when muted. Intro overlay ("Elysium")
-doubles as the page-load animation and the audio gesture. Fonts: Cormorant
-Garamond (display) + Jost (UI).
+### Engine (`elysium-engine.js`, server-side, CommonJS)
+Pure module, unit-testable with plain `node -e`. **Server-authoritative and
+time-based:** state carries a `lastTick` and `simulate(state, now)` walks the
+tree forward in **1-hour ticks** (capped at ~45 days of catch-up), so a tree
+lives while you are away and **every browser on the account agrees** (this is
+also why the old cross-window issues do not apply to game state). Implements the
+MVP from the mechanics brief: health, resilience, soil moisture, humidity,
+airflow, nutrients, leaf wetness, wound load, hidden per-family **disease
+pressure incubators**, growth-by-time (6 stages, `STAGE_GROWTH` checkpoints,
+gated on health >= 55 and no critical disease), 3 diseases (**root rot, powdery
+mildew, canker**) each moving through **Latent -> Symptomatic -> Active ->
+Critical** and **receding a stage at a time when the cause is corrected** (never
+destroyed), zone model (roots/trunk/branches/crown/leaves) with adjacency
+spread, a **journal**, seasons from the real month, and gradual **inspection**
+(names a disease only after enough looking). Actions have real tradeoffs (Water
+can waterlog, Mist feeds fungus, Trim wounds + raises airflow, Fertilize has a
+cooldown and hurts rot, Inspect reveals clues). `publicView` hides raw numbers
+(coarse bands + concern + "next attention"); `debugView` exposes everything.
 
-**Open on the game:** real tree artwork; optionally a real forest-ambience loop
-alongside the synth rain; the user asked for one animation each with alternatives
-listed (they have not picked yet).
+### Server routes (in `server.js`)
+`/elysium` (page, requireLogin), `/tree` -> redirect. `GET /api/elysium`
+(simulate + publicView + `isAdmin`), `POST /api/elysium/action {action}`,
+and **admin-only** `GET|POST /api/elysium/debug` (full state + `cmd`/`args`
+ops: advance, grow, setStage, set, damageZone, spawn, cure, heal, reset). State
+persists in **`elysium.json`** keyed by username (gitignored, like games.json).
+
+### Frontend (`views/elysium.html`, full rewrite)
+- **Background** is the new misty-clearing photo, served **responsively**: JS
+  picks the smallest of `tree-bg-{1366,1920,2560,3840}.jpg` that covers the
+  display's true pixel width (falls back to full `tree-background.jpg`). Those
+  scaled variants live in `public/` and were made with `sips -Z`.
+- **Rain** is now a fast diagonal-streak **canvas** (replaced the slow droplets).
+  Synth-rain **audio** is unchanged.
+- **Audio controls, top-right:** a **music-note** and a **speaker** icon (SVG).
+  Muted = struck through; hover lifts them (like the care buttons) and reveals a
+  **vertical volume slider**. State (both mutes + both volumes) is the single
+  source of truth in **localStorage**, re-applied on `focus`/`visibilitychange`/
+  `storage` so multiple windows sharing an audio pool stay consistent.
+- **Realistic tree:** procedural recursive branch skeleton (bent limbs, root
+  flare, stable per stage via a seeded RNG) with muted, textured foliage clumps
+  that sit inside the misty scene. Reacts to stage (size), zone health (bare
+  patches, browning), and disease (canker patch on bark, pale mildew film).
+- **Minimalist title:** lowercase wide-tracked sans "elysium" (was serif Cormorant).
+- **Slide panels:** a left **Guide** (loop + actions, diseases hinted not spoiled)
+  and a right **admin-only Debug** console (time/growth, stat sliders, damage a
+  zone, spawn/cure disease, heal, reset). Glassy translucent styling, edge tabs.
+- Top-left status readout (condition/soil/humidity/airflow/nutrients/concern/
+  next), a growth bar, and a **Journal** modal. Care buttons POST actions and
+  float a feedback toast.
+- Music credit line ("Gymnopédie No. 1 by Kevin MacLeod, CC BY 3.0") is in the
+  Guide panel.
+
+**Still open on Elysium:** natural disease onset is deliberately slow (patient
+by design; use the debug console to force states); tree art is procedural, not
+hand-drawn; no tree-specific dailies yet; no site-points hookup (intentional).
 
 ---
 
@@ -255,10 +295,13 @@ into the dashboard/login/tree work. Still open:
 - **L. Card navigator polish:** stronger tilt / cylinder illusion, regular
   spacing for the farthest cards, **wide card counts as two normal cards** for
   spacing.
-- **Tree game:** real tree artwork; pick the animations (alternatives were
-  offered); optional real forest-ambience loop; the real game mechanics.
-- **Docs pass:** README.md + `/tech` are stale (see top). Also the tree-game
-  music needs a CC-BY credit line before it ships for real.
+- **Elysium (done this session):** full mechanics engine, persistence, realistic
+  procedural tree, responsive background, new rain, icon audio controls, guide +
+  admin debug panels, renamed everywhere. Remaining polish noted in its section.
+- **Login (done this session):** buttons retheme to the Cirrus pill style; the
+  light/dark toggle was **removed from login** (dark mode deprecated there, and
+  `nav.js` now only runs `setUpTheme()` on `has-top-nav` pages).
+- **Docs pass:** README.md + `/tech` are still stale (see top).
 
 Dashboard design = Cirrus (done). Login design = Cirrus (done).
 

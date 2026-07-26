@@ -5,6 +5,7 @@ const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
 const { Chess } = require("chess.js");
+const elysium = require("./elysium-engine");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -13,6 +14,7 @@ const GAMES_FILE = path.join(process.env.DATA_DIR || __dirname, "games.json");
 const WRITING_FILE = path.join(process.env.DATA_DIR || __dirname, "writing.json");
 const DEATHROLL_FILE = path.join(process.env.DATA_DIR || __dirname, "deathroll.json");
 const SITE_FILE = path.join(process.env.DATA_DIR || __dirname, "site.json");
+const ELYSIUM_FILE = path.join(process.env.DATA_DIR || __dirname, "elysium.json");
 
 // --- simple JSON-file user store (fine for testing; swap for a DB later) ---
 function loadUsers() {
@@ -785,9 +787,73 @@ app.get("/cardnav", requireLogin, (req, res) => {
   res.sendFile(path.join(__dirname, "views", "cardnav.html"));
 });
 
-// Visual/audio demo for the tree-care game (no mechanics yet).
-app.get("/tree", requireLogin, (req, res) => {
-  res.sendFile(path.join(__dirname, "views", "tree.html"));
+// --- Elysium: the tree-care game (account-bound state, server-simulated) ---
+// State lives in one JSON file keyed by username; the engine owns the clock so
+// every device viewing an account agrees on the tree.
+function loadTrees() {
+  try {
+    return JSON.parse(fs.readFileSync(ELYSIUM_FILE, "utf8"));
+  } catch {
+    return {};
+  }
+}
+function saveTrees(trees) {
+  fs.writeFileSync(ELYSIUM_FILE, JSON.stringify(trees, null, 2));
+}
+// fetch a user's tree, creating and persisting one on first visit
+function getTree(key) {
+  const trees = loadTrees();
+  if (!trees[key]) { trees[key] = elysium.newTree(); saveTrees(trees); }
+  return { trees, state: trees[key] };
+}
+
+app.get("/elysium", requireLogin, (req, res) => {
+  res.sendFile(path.join(__dirname, "views", "elysium.html"));
+});
+// old path kept alive; the game was renamed Tree -> Elysium
+app.get("/tree", requireLogin, (req, res) => res.redirect("/elysium"));
+
+app.get("/api/elysium", requireLogin, (req, res) => {
+  const key = req.session.username.toLowerCase();
+  const { trees, state } = getTree(key);
+  elysium.simulate(state, Date.now());
+  trees[key] = state;
+  saveTrees(trees);
+  res.json({ tree: elysium.publicView(state), isAdmin: isAdmin(req) });
+});
+
+const ELYSIUM_ACTIONS = ["water", "mist", "trim", "fertilize", "inspect"];
+app.post("/api/elysium/action", requireLogin, (req, res) => {
+  const action = String(req.body.action || "");
+  if (!ELYSIUM_ACTIONS.includes(action)) {
+    return res.status(400).json({ error: "Unknown action." });
+  }
+  const key = req.session.username.toLowerCase();
+  const { trees, state } = getTree(key);
+  const { state: next, result } = elysium.applyAction(state, action, Date.now());
+  trees[key] = next;
+  saveTrees(trees);
+  res.json({ tree: elysium.publicView(next), result });
+});
+
+// full state + write access to it, admin only, for the in-game debug panel
+app.get("/api/elysium/debug", requireLogin, (req, res) => {
+  if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });
+  const key = req.session.username.toLowerCase();
+  const { trees, state } = getTree(key);
+  elysium.simulate(state, Date.now());
+  trees[key] = state;
+  saveTrees(trees);
+  res.json({ tree: elysium.publicView(state), debug: elysium.debugView(state) });
+});
+app.post("/api/elysium/debug", requireLogin, (req, res) => {
+  if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });
+  const key = req.session.username.toLowerCase();
+  const { trees, state } = getTree(key);
+  const next = elysium.debug(state, String(req.body.cmd || ""), req.body.args || {}, Date.now());
+  trees[key] = next;
+  saveTrees(trees);
+  res.json({ tree: elysium.publicView(next), debug: elysium.debugView(next) });
 });
 
 app.get("/chess", requireLogin, (req, res) => {

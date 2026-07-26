@@ -32,14 +32,18 @@
       margin: 0 auto; position: relative; z-index: 2;
       display: grid; gap: 1.3rem; grid-template-columns: repeat(3, 1fr);
       grid-template-areas: "hero hero hero" "bal act act" "day day lead";
+      /* last row grows so the dashboard reaches the bottom margin on tall
+         monitors instead of ending high up the page */
+      grid-template-rows: auto auto 1fr;
       width: min(2400px, 94vw);
+      min-height: calc(100vh - 5.5rem);
     }
     @media (max-width: 900px) {
       .dash { grid-template-columns: 1fr; grid-template-areas: "hero" "bal" "act" "day" "lead"; }
     }
 
     .card {
-      background: rgba(255, 255, 255, 0.78);
+      background: rgba(255, 255, 255, 0.62);
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
       border-radius: 22px;
@@ -192,6 +196,7 @@
             <a href="/writing">Writing</a>
             <a href="/wheel">Wheel</a>
             <a href="/deathroll">Deathroll</a>
+            <a href="/elysium">Elysium</a>
           </div>
         </div>
         <button id="tithe" class="ctl-btn" type="button" hidden><span class="th-default">Tithe</span><span class="th-hover">Tithe again</span></button>
