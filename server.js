@@ -105,10 +105,13 @@ app.post("/api/register", async (req, res) => {
   if (!pronouns) {
     return res.status(400).json({ error: "Pick your pronouns." });
   }
-  const rank = canonical(req.body.rank, SIGNUP_RANKS);
-  if (!rank) {
-    return res.status(400).json({ error: "Pick visitor or citizen." });
+  const signupChoice = canonical(req.body.rank, SIGNUP_RANKS);
+  if (!signupChoice) {
+    return res.status(400).json({ error: "Pick an account type." });
   }
+  // "Sub" is only the registration label; a sub account starts at the lowest
+  // ladder rank, Servant, and Hermione promotes from there.
+  const rank = signupChoice === "Sub" ? "Servant" : signupChoice;
   const intro = String(req.body.intro || "").trim();
   if (!intro) {
     return res.status(400).json({ error: "Tell Hermione who you are." });
@@ -295,11 +298,11 @@ const RANK_LADDER = [
   { name: "Servant", note: "" },
 ];
 const RANK_ASIDE = { name: "Visitor", note: "Not a sub." };
-const RANK_OPTIONS = [...RANK_LADDER.map((r) => r.name), RANK_ASIDE.name, "Sub"];
+const RANK_OPTIONS = [...RANK_LADDER.map((r) => r.name), RANK_ASIDE.name];
 const SIGNUP_RANKS = ["Visitor", "Sub"];
 // "Citizen" was the old name for the "Sub" signup rank; keep mapping it so
 // accounts created before the rename still resolve to a real rank.
-const LEGACY_RANKS = { domme: "Visitor", sub: "Sub", citizen: "Sub" };
+const LEGACY_RANKS = { domme: "Visitor", sub: "Servant", citizen: "Servant" };
 
 // what hermione may hand out: everything except Princess and the unnamed rank
 const ASSIGNABLE_RANKS = [

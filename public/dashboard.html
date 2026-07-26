@@ -27,9 +27,10 @@
     @media (prefers-reduced-motion: reduce) { .sky-clouds .c { animation: none !important; } }
 
     .dash {
-      width: min(1120px, 96vw); margin: 0 auto; position: relative; z-index: 2;
+      margin: 0 auto; position: relative; z-index: 2;
       display: grid; gap: 1.3rem; grid-template-columns: repeat(3, 1fr);
       grid-template-areas: "hero hero hero" "bal act act" "day day lead";
+      width: min(2400px, 94vw);
     }
     @media (max-width: 900px) {
       .dash { grid-template-columns: 1fr; grid-template-areas: "hero" "bal" "act" "day" "lead"; }
@@ -46,11 +47,11 @@
       text-align: left;
       min-width: 0;
     }
-    .hero { grid-area: hero; padding: 2.4rem 2.5rem; }
+    .hero { grid-area: hero; padding: 2.4rem 2.5rem; position: relative; }
     .balance-card { grid-area: bal; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.5rem; }
     .dailies-card { grid-area: day; }
     .leaderboard-card { grid-area: lead; }
-    .control-card { grid-area: act; position: relative; }
+    .control-card { grid-area: act; }
 
     h2 { font-family: "Quicksand", sans-serif; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: var(--button-bg); margin-bottom: 1rem; }
 
@@ -107,20 +108,24 @@
     td a:hover { color: var(--button-hover-bg); }
 
     /* --- control bar: nav + actions + notifications, restyled buttons --- */
-    .controls { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; padding-right: 3.2rem; }
+    .controls { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; }
     .ctl-btn {
       font-family: "Quicksand", sans-serif; font-weight: 700; font-size: 0.92rem;
       padding: 0.62rem 1.3rem; border-radius: 999px; border: none; cursor: pointer;
-      background: linear-gradient(180deg, #7ad8f4 0%, #43c2e8 100%); color: #fff; text-decoration: none;
-      text-shadow: 0 1px 2px rgba(20, 90, 120, 0.22);
-      box-shadow: 0 6px 16px rgba(70, 190, 230, 0.32); display: inline-flex; align-items: center; gap: 0.3rem;
+      background: linear-gradient(180deg, #9ce3f7 0%, #5ccfee 100%); color: #fff; text-decoration: none;
+      text-shadow: 0 1px 2px rgba(20, 90, 120, 0.28);
+      box-shadow: 0 6px 16px rgba(90, 200, 235, 0.3); display: inline-flex; align-items: center; gap: 0.3rem;
       transition: filter 0.12s ease, transform 0.08s ease;
     }
     .ctl-btn:hover { filter: brightness(1.06); }
     .ctl-btn:active { transform: translateY(1px); }
-    .ctl-btn.ghost, #tithe-again { background: rgba(255,255,255,0.85); color: #1aa9d1; box-shadow: inset 0 0 0 1.6px #7fd6ee; }
-    .ctl-btn.ghost:hover, #tithe-again:hover:not(:disabled) { background: #fff; filter: none; }
-    #tithe:disabled, #tithe-again:disabled { opacity: 0.5; cursor: default; filter: none; box-shadow: none; }
+    .ctl-btn.ghost { background: rgba(255,255,255,0.85); color: #1aa9d1; box-shadow: inset 0 0 0 1.6px #7fd6ee; text-shadow: none; }
+    .ctl-btn.ghost:hover { background: #fff; filter: none; }
+    #tithe:disabled { opacity: 0.5; cursor: default; filter: none; box-shadow: none; }
+    /* once tithed, the button stays live and reveals "Tithe again" on hover */
+    #tithe .th-hover { display: none; }
+    #tithe.tithed:hover .th-default { display: none; }
+    #tithe.tithed:hover .th-hover { display: inline; }
     .ctl-dropdown { position: relative; }
     .ctl-dropdown::before { content: ""; position: absolute; top: 100%; left: 0; right: 0; height: 0.5rem; }
     .ctl-menu { position: absolute; top: calc(100% + 0.45rem); left: 0; display: none; flex-direction: column; gap: 0.25rem; padding: 0.45rem; background: var(--panel-solid, #fff); border-radius: 14px; box-shadow: 0 12px 34px rgba(80,150,190,0.34); min-width: 9rem; z-index: 10; }
@@ -128,10 +133,11 @@
     .ctl-menu a { padding: 0.5rem 0.85rem; border-radius: 9px; color: #1aa9d1; text-decoration: none; font-weight: 700; font-size: 0.88rem; }
     .ctl-menu a:hover { background: rgba(36,197,237,0.12); }
     /* notifications bell (injected here); make it match and open its panel upward */
-    #notif-slot .notif-btn { background: linear-gradient(180deg, #7ad8f4, #43c2e8); color: #fff; border: none; outline: none; border-radius: 999px !important; box-shadow: 0 6px 16px rgba(70, 190, 230, 0.32); }
+    /* the bell lives in the top-right corner of the welcome hero */
+    #notif-slot { position: absolute; top: 1.6rem; right: 1.8rem; z-index: 5; }
+    #notif-slot .notif-btn { background: linear-gradient(180deg, #9ce3f7, #5ccfee); color: #fff; border: none; outline: none; border-radius: 999px !important; box-shadow: 0 6px 16px rgba(90, 200, 235, 0.3); }
     #notif-slot .notif-btn:hover { filter: brightness(1.06); }
-    /* the bell sits in the top-right corner of the panel */
-    #notif-slot .notif-wrap { position: absolute; top: 1.3rem; right: 1.5rem; margin: 0; }
+    #notif-slot .notif-wrap { margin: 0; }
   </style>
 </head>
 <body>
@@ -146,6 +152,7 @@
 
   <div class="dash">
     <section class="card hero">
+      <div id="notif-slot"></div>
       <div class="eyebrow" id="greeting">Welcome</div>
       <h1><span class="editable" id="welcome-wrap"><span id="welcome">Welcome!</span></span></h1>
       <p><span class="editable" id="message-wrap"><span id="dashboard-message">There is no text here yet.</span></span></p>
@@ -173,7 +180,7 @@
     </section>
 
     <section class="card control-card">
-      <div class="controls" id="notif-slot">
+      <div class="controls">
         <a class="ctl-btn" href="/profile">Profile</a>
         <a class="ctl-btn" href="/tasks">Tasks</a>
         <div class="ctl-dropdown">
@@ -185,8 +192,7 @@
             <a href="/deathroll">Deathroll</a>
           </div>
         </div>
-        <button id="tithe" class="ctl-btn" type="button" hidden>Tithe 5 points</button>
-        <button id="tithe-again" class="ctl-btn ghost" type="button" hidden>Tithe Again</button>
+        <button id="tithe" class="ctl-btn" type="button" hidden><span class="th-default">Tithe 5 points</span><span class="th-hover">Tithe again</span></button>
         <a id="hermione-link" class="ctl-btn" href="/profile?user=hermione" hidden>Hermione's profile</a>
       </div>
     </section>
@@ -194,6 +200,7 @@
 
   <script>
     let myRank = "—";
+    let fakeTithe = false;
 
     const h = new Date().getHours();
     document.getElementById("greeting").textContent =
@@ -212,6 +219,23 @@
       }
     }
 
+    // Hermione has no real points or daily obligation; show placeholders so her
+    // dashboard doesn't look half-empty (to be replaced later).
+    function setFakeBalance() {
+      const num = document.getElementById("bal-num");
+      num.hidden = false;
+      num.textContent = "∞";
+      document.getElementById("bal-sub").textContent = "points · Princess";
+    }
+    function setupFakeTithe() {
+      fakeTithe = true;
+      const tithe = document.getElementById("tithe");
+      tithe.hidden = false;
+      tithe.disabled = false;
+      tithe.classList.add("tithed");
+      tithe.querySelector(".th-default").textContent = "Tithed today";
+    }
+
     window.siteMe()
       .then((d) => {
         if (d.checkIn) {
@@ -222,11 +246,17 @@
         const isHermione = Boolean(d.isAdmin ?? (d.username && d.username.toLowerCase() === "hermione"));
         const noEcon = Boolean(d.noEconomy) || isHermione;
         myRank = d.rank || "—";
-        setBalance(d.points);
-        document.getElementById("tithe").hidden = noEcon;
         document.getElementById("hermione-link").hidden = isHermione;
-        document.getElementById("dailies-card").hidden = noEcon;
-        if (!noEcon) applyTitheState(d.points, d.tithedToday);
+        if (isHermione) {
+          setFakeBalance();
+          setupFakeTithe();
+          document.getElementById("dailies-card").hidden = false;
+        } else {
+          setBalance(d.points);
+          document.getElementById("tithe").hidden = noEcon;
+          document.getElementById("dailies-card").hidden = noEcon;
+          if (!noEcon) applyTitheState(d.points, d.tithedToday);
+        }
         loadCopy(isHermione);
       })
       .catch(() => (window.location.href = "/"));
@@ -384,31 +414,37 @@
 
     function applyTitheState(points, tithedToday) {
       const tithe = document.getElementById("tithe");
-      const again = document.getElementById("tithe-again");
       const negative = (points || 0) < 0;
-      tithe.disabled = negative || tithedToday;
-      tithe.textContent = tithedToday
+      // only truly disabled when in the red; once tithed it stays clickable
+      tithe.disabled = negative;
+      tithe.classList.toggle("tithed", tithedToday && !negative);
+      tithe.querySelector(".th-default").textContent = tithedToday && !negative
         ? "Tithed today"
-        : negative ? "Tithe (in the red)" : "Tithe " + 5 + " points";
-      again.hidden = !tithedToday;
-      again.disabled = negative;
+        : negative ? "Tithe (in the red)" : "Tithe 5 points";
+    }
+
+    let noticeTimer = null;
+    function flashNotice(text) {
+      const notice = document.getElementById("checkin-notice");
+      notice.textContent = text;
+      notice.hidden = false;
+      clearTimeout(noticeTimer);
+      noticeTimer = setTimeout(() => { notice.hidden = true; }, 4000);
     }
 
     async function doTithe() {
+      if (fakeTithe) return;   // the Princess's tithe is decorative for now
       const res = await fetch("/api/tithe", { method: "POST" });
       const data = await res.json().catch(() => ({}));
-      const notice = document.getElementById("checkin-notice");
-      notice.textContent = res.ok
+      flashNotice(res.ok
         ? "Tithed " + data.amount + " points. You have " + data.points + " left."
-        : data.error || "That didn't work.";
-      notice.hidden = false;
+        : data.error || "That didn't work.");
       if (res.ok) {
         applyTitheState(data.points, true);
         setBalance(data.points);
       }
     }
     document.getElementById("tithe").addEventListener("click", doTithe);
-    document.getElementById("tithe-again").addEventListener("click", doTithe);
   </script>
   <script src="/notifications.js" defer></script>
 </body>
