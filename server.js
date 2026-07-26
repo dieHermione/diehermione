@@ -785,6 +785,11 @@ app.get("/cardnav", requireLogin, (req, res) => {
   res.sendFile(path.join(__dirname, "views", "cardnav.html"));
 });
 
+// Visual/audio demo for the tree-care game (no mechanics yet).
+app.get("/tree", requireLogin, (req, res) => {
+  res.sendFile(path.join(__dirname, "views", "tree.html"));
+});
+
 app.get("/chess", requireLogin, (req, res) => {
   res.sendFile(path.join(__dirname, "views", "chess.html"));
 });
