@@ -482,7 +482,7 @@ const Tree = (function () {
       const y2 = y - Math.sin(angle) * len;
       // a gentle bend for a natural limb: control point pushed off the midline
       const perp = angle + Math.PI / 2;
-      const bend = (rand() - 0.5) * len * 0.28;
+      const bend = (rand() - 0.5) * len * 0.16;
       const mcx = (x + x2) / 2 + Math.cos(perp) * bend;
       const mcy = (y + y2) / 2 - Math.sin(perp) * bend;
       branches.push({ x1: x, y1: y, cx: mcx, cy: mcy, x2, y2, width, zone });
@@ -503,7 +503,7 @@ const Tree = (function () {
       const kids = d >= depth - 1 ? 2 : (rand() < 0.5 ? 3 : 2);
       for (let i = 0; i < kids; i++) {
         const spread = (i - (kids - 1) / 2) * (0.44 + rand() * 0.14);
-        const na = angle + spread + (rand() - 0.5) * 0.1;
+        const na = angle + spread + (rand() - 0.5) * 0.055;
         const nl = len * (0.74 + rand() * 0.12);
         let nz = zone;
         if (zone === "trunk" && d === depth - 1) nz = na > Math.PI / 2 ? "leftBranch" : "rightBranch";
@@ -532,19 +532,26 @@ const Tree = (function () {
     builtStage = stageIndex;
   }
 
-  // muted, desaturated palettes so the tree sits inside the misty scene rather
-  // than glowing against it. [dark, mid, light]
-  function foliageColor(healthBand, season, mildew) {
-    if (mildew) return ["#8b9880", "#a6b096", "#c2c9b6"];
-    const greens = {
-      strong: ["#3f5836", "#5c7a4a", "#7c9b63"],
-      fair: ["#42502f", "#5f7444", "#84955f"],
-      weak: ["#565a2e", "#7a7e40", "#9a9857"],
-      failing: ["#5f4d2a", "#8a6f3a", "#b0894f"],
+  // ink-line-art palette. Dark line work reads well on the misty background;
+  // the canopy is suggested with crosshatch rather than filled foliage.
+  function inkColor(band, season) {
+    const sets = {
+      strong: { branch: "#1b140d", hatch: "#243019", hatch2: "#2f3d24" },
+      fair: { branch: "#221a11", hatch: "#2b3620", hatch2: "#37432a" },
+      weak: { branch: "#302619", hatch: "#4a4a28", hatch2: "#565a30" },
+      failing: { branch: "#3d3020", hatch: "#5c4a2a", hatch2: "#6b5730" },
     };
-    let set = greens[healthBand] || greens.fair;
-    if (season === "Autumn" && (healthBand === "strong" || healthBand === "fair")) set = ["#6e4f28", "#9a7538", "#c29a52"];
-    return set;
+    let s = sets[band] || sets.fair;
+    if (season === "Autumn" && (band === "strong" || band === "fair")) {
+      s = { branch: s.branch, hatch: "#6e4f28", hatch2: "#8a6531" };
+    }
+    return s;
+  }
+  function hatchDensity(band) {
+    return ({
+      strong: { sp: 5, op: 0.66 }, fair: { sp: 6.5, op: 0.58 },
+      weak: { sp: 9, op: 0.42 }, failing: { sp: 13, op: 0.3 },
+    })[band] || { sp: 7, op: 0.52 };
   }
 
   function render(tree) {
@@ -553,72 +560,90 @@ const Tree = (function () {
     const zones = tree.zones || {};
     const diseaseByZone = {};
     (tree.diseases || []).forEach((d) => { diseaseByZone[d.zone] = d; });
-    const mildewOnLeaves = (tree.diseases || []).some((d) => d.family === "fungal" && d.stage >= 1);
-    const [fLight, fMid, fDark] = foliageColor(tree.healthBand, tree.season, mildewOnLeaves);
+    const mildew = (tree.diseases || []).some((d) => d.family === "fungal" && d.stage >= 1);
+    const rootRot = (tree.diseases || []).some((d) => d.family === "root" && d.stage >= 1);
+    const ink = inkColor(tree.healthBand, tree.season);
 
-    const shadeOf = (s) => (s < 0.4 ? fDark : s < 0.75 ? fMid : fLight);
+    // the canopy shape follows the actual branch tips: a soft blurred blob at
+    // each tip forms an organic, feathered mask, so the hatch hugs the crown
+    // instead of floating inside a hard oval.
+    const blobR = 15 + tree.stageIndex * 3;
+    const xs = leaves.map((t) => t.x), ys = leaves.map((t) => t.y);
+    const bx0 = Math.min(...xs) - blobR - 16, bx1 = Math.max(...xs) + blobR + 16;
+    const by0 = Math.min(...ys) - blobR - 16, by1 = Math.max(...ys) + blobR + 16;
+    const maskBlobs = leaves.map((t) => `<circle cx="${t.x.toFixed(0)}" cy="${t.y.toFixed(0)}" r="${blobR}" fill="#fff"/>`).join("");
 
-    let defs = `
-      <linearGradient id="bark" x1="0" y1="1" x2="0" y2="0">
-        <stop offset="0" stop-color="#3a2c1d"/><stop offset="0.6" stop-color="#5a462e"/><stop offset="1" stop-color="#6f573a"/></linearGradient>
-      <radialGradient id="canopy" cx="0.4" cy="0.3" r="0.8">
-        <stop offset="0" stop-color="${fMid}"/><stop offset="1" stop-color="${fDark}"/></radialGradient>
-      <filter id="soft"><feGaussianBlur stdDeviation="5"/></filter>
-      <filter id="soft2"><feGaussianBlur stdDeviation="2"/></filter>`;
+    let svg = `<svg viewBox="0 0 400 540" xmlns="http://www.w3.org/2000/svg"><defs>` +
+      `<filter id="soft"><feGaussianBlur stdDeviation="5"/></filter>` +
+      `<filter id="blurm" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="9"/></filter>` +
+      `<mask id="cm" maskUnits="userSpaceOnUse" x="0" y="0" width="400" height="540"><g filter="url(#blurm)">${maskBlobs}</g></mask></defs>`;
 
-    let svg = `<svg viewBox="0 0 400 540" xmlns="http://www.w3.org/2000/svg"><defs>${defs}</defs>`;
+    // faint cast shadow, damp soil reads a touch darker
+    const damp = tree.soil === "waterlogged" || tree.soil === "wet" ? 0.4 : tree.soil === "dry" ? 0.16 : 0.26;
+    svg += `<ellipse cx="200" cy="500" rx="118" ry="18" fill="#0d1109" opacity="${(0.24 + damp * 0.3).toFixed(2)}" filter="url(#soft)"/>`;
 
-    // ground: a soft cast shadow plus a low mossy mound, not a hard puddle.
-    // Damp soil simply reads a touch darker.
-    const damp = tree.soil === "waterlogged" || tree.soil === "wet" ? 0.34 : tree.soil === "dry" ? 0.16 : 0.24;
-    svg += `<ellipse cx="200" cy="500" rx="120" ry="20" fill="#0d1109" opacity="0.42" filter="url(#soft)"/>`;
-    svg += `<ellipse cx="200" cy="497" rx="70" ry="13" fill="#2a2416" opacity="${damp}" filter="url(#soft2)"/>`;
+    // a whisper of canopy mass (masked to the crown shape) so the hatch reads as a form
+    svg += `<rect x="${bx0.toFixed(0)}" y="${by0.toFixed(0)}" width="${(bx1 - bx0).toFixed(0)}" height="${(by1 - by0).toFixed(0)}" fill="#18220f" opacity="0.2" mask="url(#cm)"/>`;
 
-    // soft canopy mass behind the leaves, low opacity for depth
-    for (const b of skeleton.back) {
-      svg += `<ellipse cx="${b.x.toFixed(0)}" cy="${b.y.toFixed(0)}" rx="${b.rx.toFixed(0)}" ry="${b.ry.toFixed(0)}" fill="url(#canopy)" opacity="0.4" filter="url(#soft)"/>`;
-    }
-
-    // a small root flare so the trunk grounds instead of floating
+    // root flare, inked
     const trunkW = 11 + tree.stageIndex * 2.2;
-    svg += `<path d="M${(200 - trunkW * 1.6).toFixed(1)} 498 Q200 ${(498 - trunkW).toFixed(1)} ${(200 + trunkW * 1.6).toFixed(1)} 498 Q200 ${(498 + trunkW * 0.5).toFixed(1)} ${(200 - trunkW * 1.6).toFixed(1)} 498 Z" fill="url(#bark)" opacity="0.95"/>`;
+    svg += `<path d="M${(200 - trunkW * 1.6).toFixed(1)} 498 Q200 ${(498 - trunkW).toFixed(1)} ${(200 + trunkW * 1.6).toFixed(1)} 498 Q200 ${(498 + trunkW * 0.5).toFixed(1)} ${(200 - trunkW * 1.6).toFixed(1)} 498 Z" fill="${ink.branch}"/>`;
 
-    // branches, thickest first, drawn as gently bent limbs
+    // branches as inked, gently bent limbs with a faint sketch double-stroke on twigs
     branches.sort((a, b) => b.width - a.width);
     for (const b of branches) {
       const zh = (zones[b.zone] && zones[b.zone].health) ?? 100;
-      const hurt = zh < 55;
+      const w = Math.max(0.8, b.width);
+      const op = zh < 30 ? 0.45 : zh < 55 ? 0.75 : 1;   // failing zones fade toward bare
       const path = `M${b.x1.toFixed(1)} ${b.y1.toFixed(1)} Q${b.cx.toFixed(1)} ${b.cy.toFixed(1)} ${b.x2.toFixed(1)} ${b.y2.toFixed(1)}`;
-      svg += `<path d="${path}" stroke="${hurt ? "#4d3c28" : "url(#bark)"}" stroke-width="${Math.max(1, b.width).toFixed(1)}" stroke-linecap="round" fill="none" opacity="${hurt ? 0.9 : 1}"/>`;
+      svg += `<path d="${path}" stroke="${ink.branch}" stroke-width="${w.toFixed(1)}" stroke-linecap="round" fill="none" opacity="${op}"/>`;
+      if (b.width < 4.5) {
+        svg += `<path d="${path}" stroke="${ink.hatch}" stroke-width="${(w * 0.5).toFixed(1)}" stroke-linecap="round" fill="none" opacity="${(op * 0.4).toFixed(2)}" transform="translate(1.1,-0.8)"/>`;
+      }
+      // canker: an inked sunken blotch on the diseased limb
       const dz = diseaseByZone[b.zone];
       if (dz && dz.family === "wound" && dz.stage >= 1 && b.width > 3) {
-        const mxp = b.cx, myp = b.cy;
-        svg += `<ellipse cx="${mxp.toFixed(1)}" cy="${myp.toFixed(1)}" rx="${(b.width * 0.8).toFixed(1)}" ry="${(b.width * 1.5).toFixed(1)}" fill="#241610" opacity="0.82" transform="rotate(24 ${mxp.toFixed(1)} ${myp.toFixed(1)})"/>`;
+        svg += `<ellipse cx="${b.cx.toFixed(1)}" cy="${b.cy.toFixed(1)}" rx="${(b.width * 0.8).toFixed(1)}" ry="${(b.width * 1.5).toFixed(1)}" fill="#1a0f08" opacity="0.85" transform="rotate(24 ${b.cx.toFixed(1)} ${b.cy.toFixed(1)})"/>`;
       }
     }
 
-    // foliage: many small, muted, jittered clumps per anchor
-    let foliage = `<g class="foliage">`;
-    const scale = 0.72 + tree.stageIndex * 0.05;
-    for (const l of leaves) {
-      const zh = (zones[l.zone] && zones[l.zone].health) ?? 100;
-      const thin = zh < 45 ? (zh < 25 ? 0.65 : 0.35) : 0;  // bare patches where a zone fails
-      for (const c of l.clumps) {
-        if (thin && rand01(l.x + c.dx + c.dy) < thin) continue;
-        const cxp = l.x + c.dx, cyp = l.y + c.dy;
-        const rr = (c.rr * scale).toFixed(1);
-        foliage += `<ellipse cx="${cxp.toFixed(1)}" cy="${cyp.toFixed(1)}" rx="${rr}" ry="${(c.rr * scale * 0.78).toFixed(1)}" fill="${shadeOf(c.shade)}" opacity="${c.op.toFixed(2)}" transform="rotate(${c.rot.toFixed(0)} ${cxp.toFixed(1)} ${cyp.toFixed(1)})"/>`;
+    // small ink leaf-ticks at the tips tie the canopy to the twig ends
+    if (tree.season !== "Winter") {
+      let ticks = "";
+      for (const t of leaves) {
+        const zh = (zones[t.zone] && zones[t.zone].health) ?? 100;
+        if (zh < 30) continue;
+        for (let k = 0; k < 3; k++) {
+          const a = rand01(t.x * 3 + k * 7 + t.y) * 6.283;
+          const ln = 3 + rand01(t.x + k * 5) * 4;
+          ticks += `<line x1="${t.x.toFixed(1)}" y1="${t.y.toFixed(1)}" x2="${(t.x + Math.cos(a) * ln).toFixed(1)}" y2="${(t.y + Math.sin(a) * ln).toFixed(1)}" stroke="${ink.hatch}" stroke-width="1" opacity="0.55"/>`;
+        }
+      }
+      svg += ticks;
+    }
+
+    // crosshatch canopy, masked to the crown shape. Density/opacity track the
+    // tree's health; winter thins it toward bare; disease dims it.
+    let d = hatchDensity(tree.healthBand);
+    let sp = d.sp, op = d.op;
+    if (tree.season === "Winter") { sp *= 2.2; op *= 0.4; }
+    if (mildew || rootRot) op *= 0.82;
+    const yTop = by0, yBot = by1;
+    let hatch = `<g mask="url(#cm)" opacity="${op.toFixed(2)}">`;
+    for (let x = bx0 - 80; x < bx1; x += sp) {
+      hatch += `<line x1="${x.toFixed(0)}" y1="${yTop.toFixed(0)}" x2="${(x + 80).toFixed(0)}" y2="${yBot.toFixed(0)}" stroke="${ink.hatch}" stroke-width="0.8"/>`;
+    }
+    for (let x = bx0; x < bx1 + 80; x += sp) {
+      hatch += `<line x1="${x.toFixed(0)}" y1="${yBot.toFixed(0)}" x2="${(x + 80).toFixed(0)}" y2="${yTop.toFixed(0)}" stroke="${ink.hatch2}" stroke-width="0.8"/>`;
+    }
+    // powdery mildew: pale broken strokes bleaching the canopy
+    if (mildew) {
+      for (let x = bx0; x < bx1; x += sp * 2.4) {
+        hatch += `<line x1="${x.toFixed(0)}" y1="${(yTop + 20).toFixed(0)}" x2="${(x + 60).toFixed(0)}" y2="${(yBot - 10).toFixed(0)}" stroke="#dfe6d6" stroke-width="1.4" opacity="0.5"/>`;
       }
     }
-    // powdery mildew: pale film specks over the canopy (deterministic jitter)
-    if (mildewOnLeaves) {
-      leaves.forEach((l, i) => {
-        const a = rand01(l.x + i), b = rand01(l.y - i);
-        foliage += `<circle cx="${(l.x + (a - 0.5) * 14).toFixed(1)}" cy="${(l.y + (b - 0.5) * 14).toFixed(1)}" r="${(3 + a * 4).toFixed(1)}" fill="#e6ecdc" opacity="0.5"/>`;
-      });
-    }
-    foliage += `</g>`;
-    svg += foliage + `</svg>`;
+    hatch += `</g>`;
+    svg += hatch + `</svg>`;
     wrap.innerHTML = svg;
   }
   return { render };

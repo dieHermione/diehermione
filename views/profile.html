@@ -779,69 +779,6 @@
         <tbody id="rows"></tbody>
       </table>
     </section>
-    <section class="card" id="review-card" hidden>
-      <h2>Waiting to be read</h2>
-      <p class="count" id="review-count"></p>
-      <div class="approval-list" id="review-list"></div>
-    </section>
-    <section class="card">
-      <h2>Tasks</h2>
-
-      <form class="assign" id="assign">
-        <div class="field">
-          <label for="t-who">Who</label>
-          <select id="t-who"></select>
-        </div>
-
-        <div class="field">
-          <label for="t-type">Type</label>
-          <select id="t-type">
-            <option value="essay">Essay</option>
-            <option value="repetition">Write it out</option>
-          </select>
-        </div>
-
-        <!-- essay fields -->
-        <div class="field" id="f-topic">
-          <label for="t-topic">Topic</label>
-          <input id="t-topic" maxlength="200" />
-        </div>
-        <div class="field narrow" id="f-words">
-          <label for="t-words">Minimum words</label>
-          <input id="t-words" type="number" min="1" step="1" />
-        </div>
-
-        <!-- repetition fields -->
-        <div class="field" id="f-text" hidden>
-          <label for="t-text">Text to write</label>
-          <textarea id="t-text" rows="2" maxlength="2000" placeholder="The line she must copy out"></textarea>
-        </div>
-        <div class="field narrow" id="f-reps" hidden>
-          <label for="t-reps">Repetitions</label>
-          <input id="t-reps" type="number" min="1" step="1" placeholder="times" />
-        </div>
-
-        <div class="field">
-          <label for="t-detail">Note (optional)</label>
-          <input id="t-detail" maxlength="200" />
-        </div>
-        <div class="field narrow">
-          <label for="t-points">Reward</label>
-          <input id="t-points" type="number" min="0" step="1" required />
-        </div>
-
-        <div class="assign-actions">
-          <button type="submit" class="chip">Assign</button>
-          <span class="assign-msg" id="assign-msg"></span>
-        </div>
-      </form>
-
-      <button type="button" class="sub-head toggle" id="assigned-toggle" aria-expanded="true">Assigned <span class="caret">▾</span></button>
-      <div id="assigned-body">
-        <p class="panel-empty" id="tasks-empty">Nothing assigned yet.</p>
-        <div class="task-admin-list" id="task-list"></div>
-      </div>
-    </section>
     <section class="card">
       <h2>Lines Completed</h2>
       <p class="panel-empty" id="writing-empty">No writing series finished yet.</p>
@@ -1185,161 +1122,9 @@
       if (adminInited) return;
       adminInited = true;
 
-    // --- assigning tasks ---
+    // Custom task assignment (essays / write-it-out) was deprecated and removed.
+    // The writing game's finished series still show under "Lines Completed".
     let accounts = [];          // approved, non-hermione, filled by loadAccounts
-    let pronounsByName = {};     // username -> "She/Her" | "He/Him" | "They/Them"
-
-    // The assign-form hints describe the selected assignee, so they use that
-    // person's pronouns rather than a hardcoded "she". "They" takes "are".
-    function subjectPronoun(pronouns) {
-      if (pronouns === "He/Him") return { subject: "he", isAre: "is" };
-      if (pronouns === "They/Them") return { subject: "they", isAre: "are" };
-      return { subject: "she", isAre: "is" };   // She/Her, and the safe default
-    }
-
-    function applyPronouns() {
-      const who = document.getElementById("t-who").value;
-      const { subject, isAre } = subjectPronoun(pronounsByName[who]);
-      document.getElementById("t-text").placeholder = "The line " + subject + " must copy out";
-    }
-    document.getElementById("t-who").addEventListener("change", applyPronouns);
-
-    function refreshAssignForm() {
-      const essay = document.getElementById("t-type").value === "essay";
-      document.getElementById("f-topic").hidden = !essay;
-      document.getElementById("f-words").hidden = !essay;
-      document.getElementById("f-text").hidden = essay;
-      document.getElementById("f-reps").hidden = essay;
-    }
-    document.getElementById("t-type").addEventListener("change", refreshAssignForm);
-    refreshAssignForm();
-
-    function fillWhoOptions() {
-      const who = document.getElementById("t-who");
-      const previous = who.value;
-      who.replaceChildren();
-      for (const name of accounts) {
-        const opt = document.createElement("option");
-        opt.value = name;
-        opt.textContent = name;
-        who.append(opt);
-      }
-      if (previous && accounts.includes(previous)) who.value = previous;
-      document.getElementById("assign").hidden = accounts.length === 0;
-    }
-
-    document.getElementById("assign").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const msg = document.getElementById("assign-msg");
-      msg.textContent = "";
-      msg.classList.remove("bad");
-
-      const type = document.getElementById("t-type").value;
-      const body = {
-        type,
-        detail: document.getElementById("t-detail").value,
-        // sent raw: an empty box is an error, not a silent zero
-        points: document.getElementById("t-points").value,
-      };
-      if (type === "essay") {
-        body.topic = document.getElementById("t-topic").value;
-        body.minWords = Number(document.getElementById("t-words").value);
-      } else {
-        body.text = document.getElementById("t-text").value;
-        body.reps = Number(document.getElementById("t-reps").value);
-      }
-
-      const who = document.getElementById("t-who").value;
-      const res = await fetch("/api/users/" + encodeURIComponent(who) + "/tasks", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        msg.textContent = data.error || "That didn't go through.";
-        msg.classList.add("bad");
-        return;
-      }
-      msg.textContent = "Assigned to " + who + ".";
-      document.getElementById("t-topic").value = "";
-      document.getElementById("t-text").value = "";
-      document.getElementById("t-detail").value = "";
-      document.getElementById("t-points").value = "";
-      document.getElementById("t-words").value = "";
-      document.getElementById("t-reps").value = "";
-      loadAllTasks();
-    });
-
-    // Essays wait here until she reads them. Approving pays the reward; sending
-    // one back returns it to the assignee with the text intact.
-    async function renderReviews(rows) {
-      const card = document.getElementById("review-card");
-      const list = document.getElementById("review-list");
-      const waiting = rows.filter(({ task }) => task.status === "submitted");
-      card.hidden = waiting.length === 0;
-      document.getElementById("review-count").textContent =
-        waiting.length + (waiting.length === 1 ? " essay is" : " essays are") + " waiting";
-      list.replaceChildren();
-
-      for (const { name, task } of waiting) {
-        const item = document.createElement("div");
-        item.className = "approval review";
-
-        const who = document.createElement("div");
-        who.className = "who";
-        const strong = document.createElement("strong");
-        strong.textContent = name;
-        const meta = document.createElement("span");
-        meta.className = "meta";
-        meta.textContent = task.title +
-          (task.submittedAt ? " · handed in " + new Date(task.submittedAt).toLocaleString() : "");
-        who.append(strong, meta);
-        item.append(who);
-
-        const body = document.createElement("p");
-        body.className = "intro";
-        body.textContent = task.submission || "(nothing written)";
-        item.append(body);
-
-        const noteRow = document.createElement("div");
-        noteRow.className = "note-row";
-        const note = document.createElement("input");
-        note.placeholder = "A note, if you want to say why";
-        note.maxLength = 200;
-        noteRow.append(note);
-        item.append(noteRow);
-
-        const actions = document.createElement("div");
-        actions.className = "action-row";
-        const send = async (approve) => {
-          const res = await fetch(
-            "/api/users/" + encodeURIComponent(name) + "/tasks/" +
-              encodeURIComponent(task.id) + "/review",
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ approve, note: note.value }),
-            }
-          );
-          if (res.ok) loadAllTasks();
-        };
-        const yes = document.createElement("button");
-        yes.type = "button";
-        yes.className = "chip";
-        yes.textContent = "Accept";
-        yes.addEventListener("click", () => send(true));
-        const no = document.createElement("button");
-        no.type = "button";
-        no.className = "chip refuse";
-        no.textContent = "Send back";
-        no.addEventListener("click", () => send(false));
-        actions.append(yes, no);
-        item.append(actions);
-
-        list.append(item);
-      }
-    }
 
     async function loadWritingLogs() {
       const list = document.getElementById("writing-list");
@@ -1379,80 +1164,6 @@
         when.textContent = e.at ? new Date(e.at).toLocaleDateString() : "";
         top.append(who, kind, when);
         item.append(top);
-        list.append(item);
-      }
-    }
-
-    async function loadAllTasks() {
-      const list = document.getElementById("task-list");
-      list.replaceChildren();
-      const rows = [];
-
-      for (const name of accounts) {
-        const res = await fetch("/api/users/" + encodeURIComponent(name) + "/tasks");
-        if (!res.ok) continue;
-        const data = await res.json();
-        for (const t of data.tasks || []) rows.push({ name, task: t });
-      }
-
-      // newest first, so what she just set is at the top
-      rows.sort((a, b) => String(b.task.assignedAt || "").localeCompare(String(a.task.assignedAt || "")));
-      renderReviews(rows);
-      document.getElementById("tasks-empty").hidden = rows.length > 0;
-
-      for (const { name, task } of rows) {
-        const item = document.createElement("div");
-        item.className = "task-admin" + (task.status === "done" ? " done" : "");
-
-        const top = document.createElement("div");
-        top.className = "top";
-        const who = document.createElement("span");
-        who.className = "who";
-        who.textContent = name;
-        const kind = document.createElement("span");
-        kind.className = "kind";
-        kind.textContent = task.type === "essay"
-          ? task.title + " · " + task.minWords + " words"
-          : task.title + " · " + task.repsDone + " of " + task.reps;
-        const state = document.createElement("span");
-        state.className = "state";
-        state.textContent = task.status === "done"
-          ? "Done"
-          : task.status === "submitted" ? "Waiting" : "Active";
-        top.append(who, kind, state);
-        item.append(top);
-
-        if (task.detail) {
-          const d = document.createElement("div");
-          d.className = "kind";
-          d.textContent = task.detail;
-          item.append(d);
-        }
-
-        // her essay, verbatim; textContent because she wrote it
-        if (task.type === "essay" && task.submission) {
-          const sub = document.createElement("div");
-          sub.className = "submission";
-          sub.textContent = task.submission;
-          item.append(sub);
-        }
-
-        const actions = document.createElement("div");
-        actions.className = "row-actions";
-        const del = document.createElement("button");
-        del.type = "button";
-        del.className = "chip danger";
-        del.textContent = "Remove";
-        del.addEventListener("click", async () => {
-          const r = await fetch(
-            "/api/users/" + encodeURIComponent(name) + "/tasks/" + encodeURIComponent(task.id),
-            { method: "DELETE" }
-          );
-          if (r.ok) loadAllTasks();
-        });
-        actions.append(del);
-        item.append(actions);
-
         list.append(item);
       }
     }
@@ -1532,11 +1243,6 @@
 
           const assignable = approved.filter((u) => u.username.toLowerCase() !== "hermione");
           accounts = assignable.map((u) => u.username);
-          pronounsByName = {};
-          for (const u of assignable) pronounsByName[u.username] = u.pronouns || "";
-          fillWhoOptions();
-          applyPronouns();
-          loadAllTasks();
           loadWritingLogs();
 
           document.getElementById("count").textContent =
@@ -1754,15 +1460,6 @@
       }
       loadAccounts();
     }
-
-    // the Assigned list collapses so a long list doesn't bury the panels below
-    document.getElementById("assigned-toggle").addEventListener("click", () => {
-      const body = document.getElementById("assigned-body");
-      const toggle = document.getElementById("assigned-toggle");
-      body.hidden = !body.hidden;
-      toggle.classList.toggle("collapsed", body.hidden);
-      toggle.setAttribute("aria-expanded", String(!body.hidden));
-    });
 
     loadAccounts();
     }

@@ -175,10 +175,11 @@ const SNAKE_COMPLETION_BONUS = 10; // extra payout for completing it, once a day
 const SNAKE_BURST = 8;
 const SNAKE_REFILL_MS = 2000;
 
-// The daily bonus resets at noon Eastern. Read the Eastern wall clock, then
-// step back 12h so the date label only flips at midday rather than midnight.
+// The daily bonus resets at 6am Eastern. Read the Eastern wall clock (which
+// already accounts for EST/EDT), then step back RESET_HOUR so the date label
+// only flips at that hour rather than at midnight.
 const RESET_ZONE = "America/New_York";
-const RESET_HOUR = 12;
+const RESET_HOUR = 6;
 function todayKey(now = new Date()) {
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: RESET_ZONE,

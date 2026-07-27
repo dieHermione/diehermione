@@ -9,6 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/site.css" />
   <script src="/me.js"></script>
+  <script src="/glitch.js"></script>
   <style>
     /* Cirrus: soft sky, drifting clouds, glassy cards, Quicksand. No top nav. */
     body {
@@ -31,7 +32,7 @@
     .dash {
       margin: 0 auto; position: relative; z-index: 2;
       display: grid; gap: 1.3rem; grid-template-columns: repeat(3, 1fr);
-      grid-template-areas: "hero hero hero" "bal act act" "day day lead";
+      grid-template-areas: "hero hero hero" "bal act clk" "day day lead";
       /* last row grows so the dashboard reaches the bottom margin on tall
          monitors instead of ending high up the page */
       grid-template-rows: auto auto 1fr;
@@ -39,7 +40,7 @@
       min-height: calc(100vh - 5.5rem);
     }
     @media (max-width: 900px) {
-      .dash { grid-template-columns: 1fr; grid-template-areas: "hero" "bal" "act" "day" "lead"; }
+      .dash { grid-template-columns: 1fr; grid-template-areas: "hero" "bal" "act" "clk" "day" "lead"; }
     }
 
     .card {
@@ -58,6 +59,18 @@
     .dailies-card { grid-area: day; }
     .leaderboard-card { grid-area: lead; }
     .control-card { grid-area: act; }
+    /* clock card sits in the half freed up by trimming the buttons card */
+    .clock-card { grid-area: clk; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.35rem; }
+    .clock-card .clk-eyebrow { font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; color: #6aa0b8; }
+    .clock-card .clk-time { font-family: "Quicksand", sans-serif; font-size: 2.9rem; font-weight: 700; color: #12405c; line-height: 1; font-variant-numeric: tabular-nums; }
+    .clock-card .clk-ampm { font-size: 1.1rem; font-weight: 600; color: #4f88a3; }
+    .clock-card .clk-date { font-size: 0.9rem; color: #5e8ba3; }
+    .clock-card .clk-reset { margin-top: 0.5rem; font-size: 0.78rem; color: #6aa0b8; }
+
+    /* subliminal test control (temporary scaffolding, no random trigger yet) */
+    .sub-test { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-top: 1rem; padding-top: 0.9rem; border-top: 1px solid rgba(30,120,160,0.16); }
+    .sub-test .lbl { width: 100%; font-size: 0.68rem; letter-spacing: 0.14em; text-transform: uppercase; color: #6aa0b8; }
+    .sub-test select { flex: 1; min-width: 8rem; padding: 0.45rem 0.6rem; border: 1px solid var(--input-border); border-radius: 999px; background: rgba(255,255,255,0.85); color: #22506a; font-family: inherit; font-size: 0.85rem; cursor: pointer; }
 
     h2 { font-family: "Quicksand", sans-serif; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: var(--button-bg); margin-bottom: 1rem; }
 
@@ -188,7 +201,6 @@
     <section class="card control-card">
       <div class="controls">
         <a class="ctl-btn" href="/profile">Profile</a>
-        <a class="ctl-btn" href="/tasks">Tasks</a>
         <div class="ctl-dropdown">
           <button class="ctl-btn" type="button">Games ▾</button>
           <div class="ctl-menu">
@@ -202,7 +214,19 @@
         <button id="tithe" class="ctl-btn" type="button" hidden><span class="th-default">Tithe</span><span class="th-hover">Tithe again</span></button>
         <a id="hermione-link" class="ctl-btn" href="/profile?user=hermione" hidden>Hermione's profile</a>
       </div>
+      <div class="sub-test">
+        <span class="lbl">Subliminal test</span>
+        <select id="sub-select" aria-label="Subliminal message"></select>
+        <button class="ctl-btn" id="sub-flash" type="button">Flash</button>
+      </div>
     </section>
+
+    <aside class="card clock-card" id="clock-card">
+      <div class="clk-eyebrow" id="clk-eyebrow">Eastern Time</div>
+      <div class="clk-time"><span id="clk-time">--:--:--</span> <span class="clk-ampm" id="clk-ampm"></span></div>
+      <div class="clk-date" id="clk-date"></div>
+      <div class="clk-reset" id="clk-reset"></div>
+    </aside>
   </div>
 
   <script>
@@ -452,6 +476,53 @@
       }
     }
     document.getElementById("tithe").addEventListener("click", doTithe);
+
+    // --- Eastern-time clock (EST/EDT via Intl; daily reset is 6am Eastern) ---
+    const RESET_HOUR = 6;
+    function easternParts(now) {
+      const p = new Intl.DateTimeFormat("en-US", {
+        timeZone: "America/New_York", hourCycle: "h23",
+        hour: "2-digit", minute: "2-digit", second: "2-digit",
+      }).formatToParts(now);
+      const get = (t) => Number(p.find((x) => x.type === t).value);
+      return { h: get("hour"), m: get("minute"), s: get("second") };
+    }
+    function tickClock() {
+      const now = new Date();
+      const time = new Intl.DateTimeFormat("en-US", {
+        timeZone: "America/New_York", hour: "numeric", minute: "2-digit", second: "2-digit", hour12: true,
+      }).formatToParts(now);
+      const val = (t) => (time.find((x) => x.type === t) || {}).value || "";
+      document.getElementById("clk-time").textContent = val("hour") + ":" + val("minute") + ":" + val("second");
+      document.getElementById("clk-ampm").textContent = (val("dayPeriod") || "").toUpperCase();
+      const tz = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", timeZoneName: "short" })
+        .formatToParts(now).find((x) => x.type === "timeZoneName").value;
+      document.getElementById("clk-eyebrow").textContent = "Eastern Time · " + tz;
+      document.getElementById("clk-date").textContent = new Intl.DateTimeFormat("en-US", {
+        timeZone: "America/New_York", weekday: "long", month: "long", day: "numeric",
+      }).format(now);
+      // countdown to the next 6am Eastern reset
+      const { h, m, s } = easternParts(now);
+      let rem = (RESET_HOUR * 3600 - (h * 3600 + m * 60 + s) + 86400) % 86400;
+      if (rem === 0) rem = 86400;
+      const rh = Math.floor(rem / 3600), rm = Math.floor((rem % 3600) / 60);
+      document.getElementById("clk-reset").textContent = "Daily reset in " + rh + "h " + rm + "m";
+    }
+    tickClock();
+    setInterval(tickClock, 1000);
+
+    // --- subliminal test control (temporary; no random trigger yet) ---
+    (function () {
+      const sel = document.getElementById("sub-select");
+      (window.Subliminal ? window.Subliminal.messages : []).forEach((msg, i) => {
+        const o = document.createElement("option");
+        o.value = i; o.textContent = (i + 1) + ". " + msg;
+        sel.append(o);
+      });
+      document.getElementById("sub-flash").addEventListener("click", () => {
+        if (window.Subliminal) window.Subliminal.flash(Number(sel.value));
+      });
+    })();
   </script>
   <script src="/notifications.js" defer></script>
 </body>

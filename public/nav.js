@@ -14,10 +14,11 @@
 (function () {
   "use strict";
 
+  // Tasks (assigned essays / write-it-out) was deprecated; the page still
+  // exists but is no longer linked, like chess.
   var NAV_LINKS = [
     { id: "nav-dashboard", href: "/dashboard", label: "Dashboard" },
     { id: "nav-profile", href: "/profile", label: "Profile" },
-    { id: "nav-tasks", href: "/tasks", label: "Tasks" },
   ];
 
   // Chess is deliberately absent. The page and its API are still live, it is
