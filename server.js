@@ -278,6 +278,7 @@ app.get("/api/me", (req, res) => {
     noEconomy,
     points: noEconomy ? null : users[key].points || 0,
     angelcoins: users[key].angelcoins || 0,
+    createdAt: users[key].createdAt || null,
     tithedToday: users[key].tithedOn === todayKey(),
     checkIn,
   });

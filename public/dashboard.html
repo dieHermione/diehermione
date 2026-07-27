@@ -54,11 +54,12 @@
       text-align: left;
       min-width: 0;
     }
-    .hero { grid-area: hero; padding: 2.4rem 2.5rem; position: relative; }
+    .hero { grid-area: hero; padding: 2.4rem 2.5rem; position: relative; z-index: 30; }
     .balance-card { grid-area: bal; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.5rem; }
     .dailies-card { grid-area: day; }
     .leaderboard-card { grid-area: lead; }
-    .control-card { grid-area: act; }
+    .control-card { grid-area: act; position: relative; z-index: 20; }
+    .acct-age { margin-top: 0.4rem; font-size: 0.82rem; color: #5e8ba3; }
     /* clock card sits in the half freed up by trimming the buttons card */
     .clock-card { grid-area: clk; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.35rem; }
     .clock-card .clk-eyebrow { font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; color: #6aa0b8; }
@@ -205,6 +206,7 @@
       <h1><span class="editable" id="welcome-wrap"><span id="welcome">Welcome!</span></span></h1>
       <p><span class="editable" id="message-wrap"><span id="dashboard-message">There is no text here yet.</span></span></p>
       <div class="copy-editor" id="copy-editor"></div>
+      <p class="acct-age" id="acct-age"></p>
       <p class="checkin-notice" id="checkin-notice" hidden></p>
     </section>
 
@@ -312,6 +314,8 @@
         const isHermione = Boolean(d.isAdmin ?? (d.username && d.username.toLowerCase() === "hermione"));
         const noEcon = Boolean(d.noEconomy) || isHermione;
         myRank = d.rank || "—";
+        const age = d.createdAt ? Math.floor((Date.now() - new Date(d.createdAt)) / 86400000) : null;
+        document.getElementById("acct-age").textContent = age != null ? "Member for " + age + (age === 1 ? " day" : " days") : "";
         document.getElementById("hermione-link").hidden = isHermione;
         if (isHermione) {
           setFakeBalance();
@@ -653,6 +657,25 @@
         if (window.Subliminal) window.Subliminal.flash(Number(sel.value));
       });
     })();
+    // Shrink the whole dashboard to fit the viewport height instead of scrolling.
+    // Content height varies (admin panel, dailies), so re-fit whenever it changes.
+    const _dash = document.querySelector(".dash");
+    function fitDash() {
+      if (!_dash) return;
+      _dash.style.transform = "";
+      const avail = window.innerHeight - 44;
+      const h = _dash.getBoundingClientRect().height;
+      if (h > avail + 2) {
+        _dash.style.transformOrigin = "top center";
+        _dash.style.transform = "scale(" + Math.max(0.6, avail / h) + ")";
+        document.body.style.overflow = "hidden";
+      } else {
+        document.body.style.overflow = "";
+      }
+    }
+    try { new ResizeObserver(fitDash).observe(_dash); } catch (e) {}
+    window.addEventListener("resize", fitDash);
+    fitDash();
   </script>
   <script src="/notifications.js" defer></script>
 </body>

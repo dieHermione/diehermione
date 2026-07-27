@@ -251,6 +251,16 @@
     #login-nav .cardnav-title { color: #24c5ed; }
     #login-nav .cardnav-sub { color: #5e8ba3; }
     #login-content { text-align: left; }
+    /* short viewports (laptops): shrink so the page never scrolls */
+    @media (max-height: 880px) {
+      #login-nav { --cardnav-h: 540px; --card-h: 500px; }
+      .site-header { font-size: clamp(2.4rem, 8vw, 3.8rem); }
+      body { gap: 1rem; padding-top: 2rem; }
+    }
+    @media (max-height: 740px) {
+      #login-nav { --cardnav-h: 452px; --card-h: 416px; }
+      .site-header { font-size: clamp(2rem, 7vw, 3rem); }
+    }
     @media (max-width: 640px) {
       #login-nav { --card-w: min(88vw, 400px); --card-h: 540px; --card-w-wide: min(88vw, 400px); }
     }
