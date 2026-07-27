@@ -45,6 +45,15 @@
 
   /* status menu, bottom-left for readability against the sky */
   .menu { bottom: 2.3rem; left: 2.4rem; max-width: 20rem; animation-delay: 0.4s; }
+
+  /* back-to-dashboard button, top left */
+  .backbtn { position: fixed; top: 1.9rem; left: 2.2rem; z-index: 9; color: #eef5ee; padding: 0.3rem;
+    filter: drop-shadow(0 2px 8px rgba(0,0,0,0.7)); transition: transform 0.28s cubic-bezier(0.2,0.7,0.3,1), color 0.2s ease; }
+  .backbtn svg { display: block; width: 26px; height: 26px; }
+  .backbtn:hover { transform: translateY(-3px); color: #ffffff; }
+  /* version marker, in the same quiet UI voice */
+  .version { position: fixed; bottom: 1.3rem; right: 2.2rem; z-index: 6; font-family: "Jost", sans-serif; font-weight: 300;
+    font-size: 0.72rem; letter-spacing: 0.24em; text-transform: uppercase; color: rgba(230,238,230,0.5); text-shadow: 0 2px 8px rgba(0,0,0,0.7); }
   .menu .stage-line { font-size: 0.72rem; letter-spacing: 0.22em; text-transform: uppercase; color: #d7e2d7; margin-bottom: 0.15rem; }
   .menu .cond { font-family: "Jost", sans-serif; font-weight: 300; font-size: 1.9rem; letter-spacing: 0.01em; line-height: 1.1; margin-bottom: 0.9rem; }
   .menu .readout { display: flex; flex-direction: column; gap: 0.4rem; }
@@ -184,6 +193,10 @@
 </head>
 <body>
   <div class="veil"></div>
+  <a class="backbtn" href="/dashboard" title="Back to dashboard" aria-label="Back to dashboard">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+  </a>
+  <div class="version">Version 0.01</div>
   <div class="stage"><div class="tree-wrap" id="treeWrap"></div></div>
   <canvas id="rain"></canvas>
 

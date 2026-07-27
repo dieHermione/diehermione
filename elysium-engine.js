@@ -65,33 +65,47 @@ function seasonFor(date = new Date()) {
 }
 const SEASON_HUMIDITY = { Spring: 58, Summer: 46, Autumn: 62, Winter: 52 };
 
-/* ---------- a fresh tree ---------- */
+/* ---------- a fresh tree ----------
+ * A new tree begins *ailing*: waterlogged, starved of airflow, and already
+ * carrying two diseases. The opening objective is to read the symptoms and
+ * nurse it back to health before growth can resume. */
 function newTree(now = Date.now()) {
-  return {
+  const tree = {
     version: 1,
     plantedAt: now,
     lastTick: now,
     ageTicks: 0,
-    growth: 0,
-    stageIndex: 1,            // starts as a Sapling, matching the old demo copy
-    health: 92,
-    resilience: 40,
-    soilMoisture: 52,
-    humidity: 55,
-    airflow: 60,
-    nutrients: 62,
-    leafWetness: 12,
-    woundLoad: 0,
+    growth: STAGE_GROWTH[1],  // a Sapling, but a sickly one
+    stageIndex: 1,
+    health: 22,
+    resilience: 18,
+    soilMoisture: 88,         // waterlogged -> feeds the rot
+    humidity: 78,
+    airflow: 36,              // stagnant -> feeds the mildew
+    nutrients: 24,
+    leafWetness: 42,
+    woundLoad: 34,
     // hidden per-family incubators that build toward spawning a disease
-    risk: { root: 0, fungal: 0, wound: 0 },
-    diseases: [],
+    risk: { root: 72, fungal: 58, wound: 30 },
+    diseases: [
+      { type: "root_rot", zone: "roots", stage: 2, progress: 0.4, identified: false, confidence: 0, born: now },
+      { type: "powdery_mildew", zone: "leaves", stage: 1, progress: 0.3, identified: false, confidence: 0, born: now },
+    ],
     zones: Object.fromEntries(ZONES.map((z) => [z, { health: 100 }])),
     actions: {},             // last-used tick timestamps for cooldowns
     inspect: { lastTick: -999, confidence: 0, clues: [] },
-    journal: [],
+    journal: [{ at: now, event: "Planted", type: null, disease: null, text: "A sickly sapling, in need of care." }],
     recentTreatment: 0,      // ticks since a corrective action, for "Recovering"
-    condition: "Thriving",
+    condition: "Critical",
   };
+  // the ailing zones the player must nurse back
+  tree.zones.roots.health = 28;
+  tree.zones.trunk.health = 56;
+  tree.zones.leaves.health = 44;
+  tree.zones.crown.health = 64;
+  tree.zones.leftBranch.health = 72;
+  tree.zones.rightBranch.health = 74;
+  return tree;
 }
 
 /* migrate / heal a loaded state so older or partial saves never crash */
