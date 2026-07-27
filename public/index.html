@@ -17,7 +17,7 @@
        the shared shell centralised body layout. */
     /* centre the login card, header above it, with breathing room up top */
     body { justify-content: center; padding: 3.25rem 1rem; gap: 1.75rem; min-height: 100vh;
-      background: linear-gradient(180deg, #8fd8f2 0%, #e8f6fd 72%); background-attachment: fixed; }
+      background: linear-gradient(180deg, #8fd8f2 0%, #63bde3 62%, #52aed8 100%); background-attachment: fixed; }
 
     /* Cirrus: soft clouds drifting to the sides, looping */
     .sky-clouds { position: fixed; inset: 0; overflow: hidden; z-index: 0; pointer-events: none; }
@@ -175,17 +175,15 @@
     }
     body[data-theme="dark"] .role-option::after { color: #6f6f6f; }
     .role-option.selected {
-      background: linear-gradient(180deg, #b6eefb 0%, #6fd5f0 100%);
+      background: #35b6e6;
       color: #fff;
-      border-color: #6fd5f0;
-      text-shadow: 0 1px 2px rgba(20, 90, 120, 0.3);
-      box-shadow: 0 4px 12px rgba(110, 210, 240, 0.28);
+      border-color: #35b6e6;
     }
     /* matches the dashboard's Cirrus pill buttons */
     .submit {
       width: 100%;
       padding: 0.72rem;
-      background: linear-gradient(180deg, #b6eefb 0%, #6fd5f0 100%);
+      background: #35b6e6;
       color: #fff;
       border: none;
       border-radius: 999px;
@@ -193,12 +191,9 @@
       font-size: 1rem;
       font-weight: 700;
       cursor: pointer;
-      text-shadow: 0 1px 2px rgba(20, 90, 120, 0.3);
-      box-shadow: 0 6px 16px rgba(110, 210, 240, 0.3);
-      transition: filter 0.12s ease, transform 0.08s ease;
+      transition: background 0.12s ease;
     }
-    .submit:hover { filter: brightness(1.06); }
-    .submit:active { transform: translateY(1px); }
+    .submit:hover { background: #2aa9dc; }
     .error {
       display: none;
       background: transparent;
@@ -245,7 +240,8 @@
       --card-w: 400px; --card-h: 560px; --card-w-wide: 640px; --cardnav-h: 600px; }
     #card-src[hidden] { display: none; }
     #login-nav .cardnav-card {
-      background: #ffffff;
+      background: rgba(255, 255, 255, 0.5);
+      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
       border-radius: 22px;
       box-shadow: 0 24px 60px rgba(80, 150, 190, 0.28);
       color: var(--text-color);
@@ -323,7 +319,7 @@
         <label>Account type</label>
         <div class="role-toggle">
           <button type="button" class="role-option" data-role="Sub" data-tip="Worship your Princess. :3">Sub</button>
-          <button type="button" class="role-option" data-role="Visitor" data-tip="A kept account with no points or dailies. Play the games and keep your progress.">Visitor</button>
+          <button type="button" class="role-option" data-role="Visitor" data-tip="A persistent account for playing games. No dailies or points.">Visitor</button>
         </div>
         <label for="intro">Who are you?</label>
         <textarea id="intro" maxlength="500" rows="3"></textarea>

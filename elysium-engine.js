@@ -403,6 +403,12 @@ function applyAction(state, action, now = Date.now()) {
 /* ---------- observation text ---------- */
 function readClues(state) {
   const lines = [];
+  // the tree is no longer drawn, so its silhouette is described here instead
+  const h = state.health;
+  if (h < 30) lines.push("The canopy is sparse and grey; bare twigs show through.");
+  else if (h < 55) lines.push("The foliage looks thin and dull.");
+  else if (h >= 85) lines.push("The canopy is full and richly leaved.");
+  else lines.push("The canopy is holding, if not thriving.");
   const wet = state.soilMoisture;
   if (wet > 82) lines.push("The soil is waterlogged and slow to drain.");
   else if (wet > 66) lines.push("The soil is quite wet.");

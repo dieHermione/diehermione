@@ -60,8 +60,8 @@
   .menu .r { display: flex; gap: 0.6rem; font-weight: 300; font-size: 0.98rem; letter-spacing: 0.03em; }
   .menu .r .k { color: #b7c6b8; min-width: 5.6rem; text-transform: lowercase; letter-spacing: 0.06em; }
   .menu .r .v { color: #eef5ee; }
-  .menu .r .v.warn { color: #f4d79a; }
-  .menu .r .v.bad { color: #f0b3a2; }
+  .menu .r .v.warn { color: #eef5ee; }
+  .menu .r .v.bad { color: #eef5ee; }
   /* care controls, stacked over the journal button, bottom-centre */
   .bottombar { bottom: 2.1rem; left: 0; right: 0; display: flex; flex-direction: column; align-items: center; gap: 1rem; pointer-events: none; animation-delay: 0.9s; }
   .controls { display: flex; justify-content: center; gap: 2rem; }
@@ -79,13 +79,13 @@
   .ctl:disabled { opacity: 0.4; cursor: default; transform: none; text-decoration-color: rgba(242,247,240,0.3); }
 
   /* fleeting feedback line */
-  .toast { position: fixed; z-index: 7; left: 50%; bottom: 8.6rem; transform: translateX(-50%);
+  .toast { position: fixed; z-index: 7; left: 50%; top: 6rem; transform: translateX(-50%);
     font-family: "Cormorant Garamond", serif; font-style: italic; font-size: 1.3rem; color: #f2f9f1; max-width: 80vw; text-align: center;
     text-shadow: 0 2px 12px rgba(0,0,0,0.6); opacity: 0; pointer-events: none; }
-  .toast.warn { color: #f6ddb0; }
-  .toast.good { color: #cdeecd; }
+  .toast.warn { color: #f2f9f1; }
+  .toast.good { color: #f2f9f1; }
   .toast.show { animation: floatUp 3.4s ease forwards; }
-  @keyframes floatUp { 0% { opacity: 0; transform: translate(-50%, 10px); } 10% { opacity: 1; } 85% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -24px); } }
+  @keyframes floatUp { 0% { opacity: 0; transform: translate(-50%, -26px); } 12% { opacity: 1; } 82% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, 26px); } }
 
   /* --- audio controls: note + speaker icons, top right --- */
   .audio { top: 1.9rem; right: 2.2rem; display: flex; gap: 1.4rem; z-index: 8; }
@@ -197,7 +197,6 @@
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
   </a>
   <div class="version">Version 0.01</div>
-  <div class="stage"><div class="tree-wrap" id="treeWrap"></div></div>
   <canvas id="rain"></canvas>
 
   <!-- top-left status -->
@@ -667,14 +666,14 @@ const api = (path, opts) => fetch(path, opts).then((r) => r.json());
 let current = null, isAdmin = false;
 
 const READOUT = [
-  { k: "condition", pick: (t) => cap(t.condition), band: (t) => condBand(t.condition) },
+  { k: "condition", pick: (t) => t.condition.toLowerCase(), band: () => "" },
   { k: "soil", pick: (t) => t.soil, band: (t) => (t.soil === "waterlogged" || t.soil === "dry" ? "warn" : "") },
   { k: "humidity", pick: (t) => t.humidityLabel, band: (t) => (t.humidityLabel === "humid" ? "warn" : "") },
   { k: "airflow", pick: (t) => t.airflowLabel, band: (t) => (t.airflowLabel === "still" ? "warn" : "") },
   { k: "nutrients", pick: (t) => t.nutrientLabel, band: (t) => (t.nutrientLabel === "low" ? "warn" : "") },
   { k: "growth", pick: (t) => (t.stageIndex >= t.stageMax ? "full-grown" : Math.round((t.growthProgress || 0) * 100) + "% to next"), band: () => "" },
   { k: "concern", pick: (t) => t.concern || "none", band: (t) => (t.concern ? "bad" : "") },
-  { k: "next", pick: (t) => t.nextAttention, band: () => "" },
+  { k: "next", pick: (t) => (t.nextAttention || "").toLowerCase(), band: () => "" },
 ];
 function cap(s) { return s ? s[0].toUpperCase() + s.slice(1) : s; }
 function condBand(c) { return ["Critical", "Vulnerable", "Ailing"].includes(c) ? "bad" : c === "Recovering" || c === "Dormant" ? "warn" : ""; }
@@ -682,7 +681,7 @@ function condBand(c) { return ["Critical", "Vulnerable", "Ailing"].includes(c) ?
 function renderMenu(t) {
   document.getElementById("stageLine").textContent =
     t.stage + " · " + t.ageDays + (t.ageDays === 1 ? " day" : " days") + " · " + t.season.toLowerCase();
-  document.getElementById("cond").textContent = cap(t.condition);
+  document.getElementById("cond").textContent = t.condition.toLowerCase();
   const ro = document.getElementById("readout");
   ro.replaceChildren(...READOUT.map((row) => {
     const r = document.createElement("div"); r.className = "r";
@@ -696,7 +695,6 @@ function renderMenu(t) {
 function render(t) {
   current = t;
   renderMenu(t);
-  Tree.render(t);
 }
 
 async function refresh() {
