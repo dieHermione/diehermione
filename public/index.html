@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="/site.css" />
   <script src="/glitch.js"></script>
   <script src="/cardnav.js"></script>
+  <script src="/transitions.js"></script>
   <style>
     /* This page has no nav, so it would fall to the shared centred body in
        site.css. Pull the header and card up to the top the way it was before
@@ -259,6 +260,14 @@
       #login-nav { --card-w: min(88vw, 400px); --card-h: 540px; --card-w-wide: min(88vw, 400px); }
     }
 
+    /* transition test bar (temporary scaffolding) */
+    #xtest { position: fixed; left: 50%; bottom: 1.1rem; transform: translateX(-50%); z-index: 50;
+      display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.8rem; border-radius: 999px;
+      background: rgba(255,255,255,0.7); backdrop-filter: blur(8px); box-shadow: 0 8px 24px rgba(80,150,190,0.25); }
+    #xtest .lbl { font-family: "Quicksand", sans-serif; font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase; color: #6aa0b8; }
+    #xtest select { border: 1px solid #bfe4f2; border-radius: 999px; background: #fff; color: #24c5ed; font-family: "Quicksand", sans-serif; font-weight: 600; font-size: 0.82rem; padding: 0.3rem 0.6rem; cursor: pointer; }
+    #xtest button { border: none; cursor: pointer; border-radius: 999px; padding: 0.35rem 0.9rem; font-family: "Quicksand", sans-serif; font-weight: 700; font-size: 0.8rem; color: #fff; background: linear-gradient(180deg,#b6eefb,#6fd5f0); }
+
     /* the writing-game card wears the game's own terminal skin, not Cirrus */
     #login-nav .cardnav-card.wcard-host { padding: 0; background: #04060a; overflow: hidden; }
     #login-nav .cardnav-card.wcard-host.focused { box-shadow: 0 0 0 2px #8fd0ff, 0 24px 60px rgba(0,0,0,0.5), 0 0 26px 2px rgba(60,140,220,0.5); }
@@ -340,6 +349,13 @@
     </div>
   </div>
   </div>
+
+  <div id="xtest">
+    <span class="lbl">transition</span>
+    <select id="xt-select" aria-label="Login transition"></select>
+    <button id="xt-play" type="button">Play</button>
+  </div>
+
   <script>
 
     let mode = "login";
@@ -425,12 +441,25 @@
         // registering no longer signs you in, the account waits for approval
         showPending();
       } else if (res.ok) {
-        window.location.href = "/dashboard";
+        // play the chosen transition, then land on the dashboard
+        if (window.Transitions) Transitions.play(activeTransition(), { navigateTo: "/dashboard" });
+        else window.location.href = "/dashboard";
       } else {
         errorBox.textContent = data.error || "Something went wrong.";
         errorBox.style.display = "block";
       }
     });
+
+    // login -> dashboard transition: a test dropdown previews each; the chosen
+    // one plays for real on sign-in. Remembered in localStorage.
+    function activeTransition() { return Number(localStorage.getItem("login.transition") || 0); }
+    if (window.Transitions) {
+      const xs = document.getElementById("xt-select");
+      Transitions.list.forEach((n, i) => { const o = document.createElement("option"); o.value = i; o.textContent = (i + 1) + ". " + n; xs.append(o); });
+      xs.value = activeTransition();
+      xs.addEventListener("change", () => localStorage.setItem("login.transition", xs.value));
+      document.getElementById("xt-play").addEventListener("click", () => Transitions.play(Number(xs.value)));
+    }
 
     // Start a no-account session, then drop straight into a game.
     async function startGuest(path) {
