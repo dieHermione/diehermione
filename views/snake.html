@@ -6,128 +6,102 @@
   <title>Snake - angeldom.me</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cause:wght@400..700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/site.css" />
   <script src="/me.js"></script>
-  <style>    :root {
-      --heart-color: #24c5ed;
-    }    body[data-theme="dark"] {
-      --heart-color: #c9c9c9;
-    }
-    .site-header {
-      font-family: "Cause", sans-serif;
-      font-size: 3rem;
-      font-weight: 700;
-      color: var(--header-color);
-      text-shadow: 0 2px 12px rgba(255, 255, 255, 0.6);
-      text-align: center;
-      margin-bottom: 1.25rem;
-      padding: 20px 0;
-    }
-    .bow { display: inline-block; }
-    .bow.flip { transform: scaleX(-1); }
-    .card {
-      background: var(--panel-bg);
-      border-radius: 12px;
-      box-shadow: 0 10px 40px var(--shadow);
-      width: 100%;
-      max-width: 572px;
-      padding: 2.2rem;
-      text-align: center;
-      color: var(--text-color);
-    }
-    .status { color: var(--text-color); font-weight: 600; margin-bottom: 1rem; min-height: 1.4em; }
-    canvas {
-      width: 100%;
-      max-width: 440px;
-      aspect-ratio: 1;
-      border: 3px solid var(--button-bg);
-      border-radius: 8px;
-      display: block;
-      margin: 0 auto 1.25rem;
-      background: transparent;
-      touch-action: none;
-    }
-    .nav { display: flex; gap: 0.75rem; justify-content: center; }
-    button {
-      padding: 0.6rem 1.25rem;
-      background: var(--button-bg);
-      color: var(--button-text);
-      border: none;
-      border-radius: 8px;
-      font-size: 0.95rem;
-      font-weight: 600;
-      cursor: pointer;
-    }
-    button:hover { background: var(--button-hover-bg); }
-    .note { color: var(--muted-color); font-size: 0.85rem; margin-top: 1rem; }
+  <style>
+    /* Snake — Blood Ritual skin, full window (dark-red terminal). Snake colours
+       come from the CSS vars below so the existing draw code stays untouched. */
+    :root { --button-bg: #ff3b2f; --heart-color: #ffffff;
+            --c:#cf3730; --br:#ff3b2f; --dim:#7a2b27; --bg:#060102; --glow:rgba(255,50,40,0.42); }
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    html, body { height: 100%; margin: 0; overflow: hidden; }
+    body { background: radial-gradient(130% 100% at 50% 45%, #1a0405 0, #050101 100%);
+      color: var(--c); font-family: "IBM Plex Mono", monospace; }
+    #game { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; background:
+      repeating-linear-gradient(0deg, rgba(207,55,48,0.04) 0 1px, transparent 1px 4px); z-index: 1; touch-action: none; }
+    .scan { position: fixed; inset: 0; z-index: 3; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(0,0,0,0.3) 0 1px, transparent 1px 3px); }
+    .vig { position: fixed; inset: 0; z-index: 2; pointer-events: none; box-shadow: inset 0 0 26vh 9vh rgba(0,0,0,0.72); }
+
+    .hud { position: fixed; z-index: 5; }
+    .hud .k { font-size: 0.7rem; letter-spacing: 0.28em; text-transform: uppercase; color: var(--dim); }
+    .hud .v { font-weight: 800; color: var(--br); text-shadow: 0 0 14px var(--glow); line-height: 1; font-variant-numeric: tabular-nums; }
+    .tl { top: 3vh; left: 3vw; } .tr { top: 3vh; right: 3vw; text-align: right; }
+    .bl { bottom: 3vh; left: 3vw; } .br2 { bottom: 3vh; right: 3vw; text-align: right; }
+    .tl .v { font-size: clamp(2rem, 5vw, 3.4rem); } .tr .v, .bl .v { font-size: clamp(1.2rem, 2.6vw, 1.8rem); }
+    .title { position: fixed; top: 3vh; left: 50%; transform: translateX(-50%); z-index: 5; text-align: center; }
+    .title h1 { font-size: clamp(1.3rem, 3vw, 2.2rem); letter-spacing: 0.34em; text-transform: uppercase; color: var(--br); text-shadow: 0 0 22px var(--glow); font-weight: 700; }
+    .title .status { color: var(--dim); font-size: 0.9rem; letter-spacing: 0.06em; margin-top: 0.7rem; min-height: 1.3em; }
+
+    .nav { position: fixed; bottom: 3vh; left: 50%; transform: translateX(-50%); z-index: 6; display: flex; gap: 1rem; }
+    .nav button { font-family: inherit; cursor: pointer; font-size: 0.9rem; letter-spacing: 0.18em; text-transform: uppercase;
+      padding: 0.6rem 1.8rem; border: 1.5px solid var(--br); background: transparent; color: var(--br); box-shadow: 0 0 18px rgba(255,50,40,0.25); }
+    .nav button:hover { background: var(--br); color: var(--bg); }
+    #back { border-color: var(--dim); color: var(--c); box-shadow: none; }
   </style>
 </head>
 <body class="has-top-nav">
-    <main class="card">
-    <p class="status" id="status"></p>
-    <canvas id="game" width="440" height="440"></canvas>
-    <div class="nav">
-      <button id="start" type="button">Start</button>
-      <button id="back" type="button">Dashboard</button>
-    </div>
-  </main>
-  <script>
+  <canvas id="game"></canvas>
+  <div class="vig"></div>
+  <div class="scan"></div>
 
-    const GRID = 20;
+  <div class="title"><h1>Serpent</h1><p class="status" id="status">an offering to the Princess</p></div>
+  <div class="hud tl"><div class="k">score</div><div class="v" id="hud-score">0</div></div>
+  <div class="hud tr"><div class="k">length</div><div class="v" id="hud-length">3</div></div>
+  <div class="hud bl"><div class="k">points earned</div><div class="v" id="hud-earned">0</div></div>
+
+  <div class="nav">
+    <button id="start" type="button">Start</button>
+    <button id="back" type="button">Dashboard</button>
+  </div>
+
+  <script>
     const canvas = document.getElementById("game");
     const ctx = canvas.getContext("2d");
-    const CELL = canvas.width / GRID;
     const statusEl = document.getElementById("status");
 
-    const heartColor = () => getComputedStyle(document.body).getPropertyValue("--heart-color").trim() || "#24c5ed";
-    let teleportChance = 0.9;      // odds the food bolts when you get adjacent
-    const TELEPORT_MIN_DISTANCE = 8;  // where fleeing food lands
-    const SPAWN_MIN_DISTANCE = 4;     // where fresh food lands after being eaten
-
-    // the head matches the site buttons; each segment behind it fades toward white
-    function headColor() {
-      return getComputedStyle(document.body).getPropertyValue("--button-bg").trim() || "#24c5ed";
+    // full-window grid: fixed cell size, columns/rows derived from the viewport,
+    // centred with a small offset so it fills the screen edge to edge.
+    let CELL, COLS, ROWS, OFFX, OFFY;
+    function sizeGrid() {
+      const dpr = 1;
+      canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+      CELL = Math.max(20, Math.min(44, Math.floor(Math.min(canvas.width, canvas.height) / 20)));
+      COLS = Math.floor(canvas.width / CELL);
+      ROWS = Math.floor(canvas.height / CELL);
+      OFFX = Math.floor((canvas.width - COLS * CELL) / 2);
+      OFFY = Math.floor((canvas.height - ROWS * CELL) / 2);
     }
+    sizeGrid();
+    window.addEventListener("resize", () => { sizeGrid(); if (snake) draw(); });
 
-    function hexToRgb(hex) {
-      const h = hex.replace("#", "");
-      const full = h.length === 3 ? h.split("").map((c) => c + c).join("") : h;
-      return [0, 2, 4].map((i) => parseInt(full.slice(i, i + 2), 16));
-    }
+    const heartColor = () => getComputedStyle(document.body).getPropertyValue("--heart-color").trim() || "#ffffff";
+    let teleportChance = 0.9;
+    const TELEPORT_MIN_DISTANCE = 8, SPAWN_MIN_DISTANCE = 4;
 
+    function headColor() { return getComputedStyle(document.body).getPropertyValue("--button-bg").trim() || "#ff3b2f"; }
+    function hexToRgb(hex) { const h = hex.replace("#", ""); const full = h.length === 3 ? h.split("").map((c) => c + c).join("") : h; return [0, 2, 4].map((i) => parseInt(full.slice(i, i + 2), 16)); }
     function segmentColor(base, index) {
       const [r, g, b] = hexToRgb(base);
-      const fade = Math.min(0.72, index * 0.07); // toward white, capped so it stays visible
+      const fade = Math.min(0.72, index * 0.05);
       const mix = (c) => Math.round(c + (255 - c) * fade);
       return "rgb(" + mix(r) + ", " + mix(g) + ", " + mix(b) + ")";
     }
 
-    let snake, dir, nextDir, food, score, timer = null, alive = false;
-    let earned = 0;     // points earned this run
+    let snake, dir, nextDir, food, score, timer = null, alive = false, earned = 0;
 
     function reset() {
-      snake = [{ x: 9, y: 10 }, { x: 8, y: 10 }, { x: 7, y: 10 }];
-      dir = { x: 1, y: 0 };
-      nextDir = dir;
-      score = 0;
-      alive = true;
-      placeFood();
+      const cy = Math.floor(ROWS / 2), cx = Math.floor(COLS / 2);
+      snake = [{ x: cx, y: cy }, { x: cx - 1, y: cy }, { x: cx - 2, y: cy }];
+      dir = { x: 1, y: 0 }; nextDir = dir; score = 0; alive = true; placeFood();
     }
-
     function freeSquares() {
       const taken = new Set(snake.map((s) => s.x + "," + s.y));
       const open = [];
-      for (let y = 0; y < GRID; y++) {
-        for (let x = 0; x < GRID; x++) {
-          if (!taken.has(x + "," + y)) open.push({ x, y });
-        }
-      }
+      for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) if (!taken.has(x + "," + y)) open.push({ x, y });
       return open;
     }
-
-    // never drop food in the player's lap: prefer squares at least minDist away,
-    // relaxing only if a long snake has left nowhere better
     function pickSquare(head, minDist) {
       const open = freeSquares();
       if (!open.length) return food;
@@ -136,28 +110,18 @@
       if (!pool.length) pool = open;
       return pool[Math.floor(Math.random() * pool.length)];
     }
-
-    function placeFood() {
-      food = pickSquare(snake[0], SPAWN_MIN_DISTANCE);
-    }
-
-    // how far apart two squares are, counting wrap-around as a shortcut
+    function placeFood() { food = pickSquare(snake[0], SPAWN_MIN_DISTANCE); }
     function distance(a, b) {
-      const dx = Math.min(Math.abs(a.x - b.x), GRID - Math.abs(a.x - b.x));
-      const dy = Math.min(Math.abs(a.y - b.y), GRID - Math.abs(a.y - b.y));
+      const dx = Math.min(Math.abs(a.x - b.x), COLS - Math.abs(a.x - b.x));
+      const dy = Math.min(Math.abs(a.y - b.y), ROWS - Math.abs(a.y - b.y));
       return Math.max(dx, dy);
     }
+    function fleeFrom(head) { food = pickSquare(head, TELEPORT_MIN_DISTANCE); }
 
-    // the food is shy: once the head is adjacent it usually bolts somewhere far
-    function fleeFrom(head) {
-      food = pickSquare(head, TELEPORT_MIN_DISTANCE);
-    }
-
-    function drawBoard() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-    }
-
+    function drawBoard() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
     function drawHeart(cx, cy, size) {
+      ctx.save();
+      ctx.shadowColor = "rgba(255,60,48,0.9)"; ctx.shadowBlur = size * 0.7;
       ctx.fillStyle = heartColor();
       ctx.beginPath();
       const s = size / 2;
@@ -165,114 +129,72 @@
       ctx.bezierCurveTo(cx + s, cy - s * 0.4, cx + s * 0.5, cy - s, cx, cy - s * 0.3);
       ctx.bezierCurveTo(cx - s * 0.5, cy - s, cx - s, cy - s * 0.4, cx, cy + s * 0.6);
       ctx.fill();
+      ctx.restore();
     }
-
     function draw() {
       drawBoard();
-      drawHeart(food.x * CELL + CELL / 2, food.y * CELL + CELL / 2, CELL * 0.9);
+      drawHeart(OFFX + food.x * CELL + CELL / 2, OFFY + food.y * CELL + CELL / 2, CELL * 0.9);
       const base = headColor();
       snake.forEach((seg, i) => {
         ctx.fillStyle = segmentColor(base, i);
-        const pad = 1.5;
-        const r = 5;
-        const x = seg.x * CELL + pad, y = seg.y * CELL + pad, w = CELL - pad * 2;
-        ctx.beginPath();
-        ctx.roundRect(x, y, w, w, r);
-        ctx.fill();
+        if (i === 0) { ctx.save(); ctx.shadowColor = base; ctx.shadowBlur = CELL * 0.6; }
+        const pad = 1.5, r = 5;
+        const x = OFFX + seg.x * CELL + pad, y = OFFY + seg.y * CELL + pad, w = CELL - pad * 2;
+        ctx.beginPath(); ctx.roundRect(x, y, w, w, r); ctx.fill();
+        if (i === 0) ctx.restore();
       });
     }
-
     function tick() {
       dir = nextDir;
-      // walls wrap: leaving one edge brings you back on the opposite side
-      const head = {
-        x: (snake[0].x + dir.x + GRID) % GRID,
-        y: (snake[0].y + dir.y + GRID) % GRID,
-      };
-      if (snake.some((s) => s.x === head.x && s.y === head.y)) {
-        gameOver();
-        return;
-      }
+      const head = { x: (snake[0].x + dir.x + COLS) % COLS, y: (snake[0].y + dir.y + ROWS) % ROWS };
+      if (snake.some((s) => s.x === head.x && s.y === head.y)) { gameOver(); return; }
       snake.unshift(head);
-      if (head.x === food.x && head.y === food.y) {
-        score++;
-        awardFood();
-        showScore();
-        placeFood();
-      } else {
-        snake.pop();
-        if (distance(head, food) <= 1 && Math.random() < teleportChance) {
-          fleeFrom(head);
-        }
-      }
+      if (head.x === food.x && head.y === food.y) { score++; awardFood(); showScore(); placeFood(); }
+      else { snake.pop(); if (distance(head, food) <= 1 && Math.random() < teleportChance) fleeFrom(head); }
       draw();
     }
-
-    // each pickup is worth a point; the server is the one that actually credits it
     async function awardFood() {
       try {
         const res = await fetch("/api/snake/food", { method: "POST" });
         if (!res.ok) return;
         const data = await res.json();
-        earned += data.earned;
-        if (data.bonus) earned += data.bonus;   // daily-completion bonus
+        earned += data.earned; if (data.bonus) earned += data.bonus;
         showScore();
       } catch {}
     }
-
     function showScore() {
-      statusEl.textContent = "Score: " + score + (earned ? " · earned " + earned + " points" : "");
+      document.getElementById("hud-score").textContent = score;
+      document.getElementById("hud-length").textContent = snake ? snake.length : 0;
+      document.getElementById("hud-earned").textContent = earned;
     }
-
     function gameOver() {
-      alive = false;
-      clearInterval(timer);
-      timer = null;
-      statusEl.textContent =
-        "Game over. Final score " + score +
-        (earned ? ", earned " + earned + " points" : "") + ". Press Start to try again!";
+      alive = false; clearInterval(timer); timer = null;
+      statusEl.textContent = "the serpent falls · score " + score + (earned ? " · earned " + earned + " points" : "") + " · press start to begin again";
       document.getElementById("start").textContent = "Start";
     }
-
     function start() {
       if (timer) clearInterval(timer);
-      reset();
-      earned = 0;
-      showScore();
+      sizeGrid(); reset(); earned = 0; showScore();
+      statusEl.textContent = "feed the serpent";
       document.getElementById("start").textContent = "Restart";
-      draw();
-      timer = setInterval(tick, 120);
+      draw(); timer = setInterval(tick, 120);
     }
 
     const UP = { x: 0, y: -1 }, DOWN = { x: 0, y: 1 }, LEFT = { x: -1, y: 0 }, RIGHT = { x: 1, y: 0 };
-    const KEYS = {
-      ArrowUp: UP, ArrowDown: DOWN, ArrowLeft: LEFT, ArrowRight: RIGHT,
-      Up: UP, Down: DOWN, Left: LEFT, Right: RIGHT,
-      KeyW: UP, KeyS: DOWN, KeyA: LEFT, KeyD: RIGHT,
-      w: UP, s: DOWN, a: LEFT, d: RIGHT,
-    };
+    const KEYS = { ArrowUp: UP, ArrowDown: DOWN, ArrowLeft: LEFT, ArrowRight: RIGHT, Up: UP, Down: DOWN, Left: LEFT, Right: RIGHT, KeyW: UP, KeyS: DOWN, KeyA: LEFT, KeyD: RIGHT, w: UP, s: DOWN, a: LEFT, d: RIGHT };
     document.addEventListener("keydown", (e) => {
       const key = e.key && e.key.length === 1 ? e.key.toLowerCase() : e.key;
       const d = KEYS[key] || KEYS[e.code];
       if (!d) return;
       e.preventDefault();
       if (!alive) return;
-      if (d.x === -dir.x && d.y === -dir.y) return; // no instant reversal
+      if (d.x === -dir.x && d.y === -dir.y) return;
       nextDir = d;
     });
-
     document.getElementById("start").addEventListener("click", start);
-    document.getElementById("back").addEventListener("click", () => {
-      window.location.href = "/dashboard";
-    });
+    document.getElementById("back").addEventListener("click", () => { window.location.href = "/dashboard"; });
 
-    // require a login like the rest of the site; hermione's food is less skittish
-    window.siteMe()
-      .then((d) => {
-        if (d.isAdmin) teleportChance = 0.5;
-      })
-      .catch(() => (window.location.href = "/"));
-
+    window.siteMe().then((d) => { if (d.isAdmin) teleportChance = 0.5; }).catch(() => (window.location.href = "/"));
     drawBoard();
   </script>
   <script src="/nav.js" defer></script>
