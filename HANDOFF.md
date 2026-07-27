@@ -343,26 +343,54 @@ deleted from the repo. Reuse that pattern for design options.
 
 ## Pending / roadmap (current)
 
-**Next up — mockups (explicitly deferred to last, do these once fixes settle):**
-- **Snake / Deathroll / Wheel: 10 maximalist mockups each** to match the newer
-  (Penance/Elysium/terminal) look before implementing. Snake should stretch the
-  **full window** (not the tiny box it lives in now); Deathroll keeps
-  player/enemy cards. Go maximalist, not the calm Cirrus theme.
-- **Re-output the not-yet-implemented mockups for selection** — the maximalist
-  game-selection screens (the last batch of 5 concepts: film projector, tarot
-  fan, turntable, poster wall, corridor of doors — the user wanted "more
-  creative/maximalist"; earlier 20-uniform and 5-concept batches were rejected/
-  parked). No game-selection screen is implemented yet; it is still mockups only.
+### Landed this session
+- **Penance dark-red reskin.** Penance rests on a dark-red terminal palette and
+  corrupts toward hotter red; Devotion is pinned blue (`corruption()` returns 0)
+  and never leaves it. Mode set pre-paint via `data-mode` on `<html>` (no flash).
+  Green `OK/READY` is now white in both modes. (`views/writing.html`)
+- **Dashboard admin panel fix + size revert.** `buildAdminPanel()` called an
+  undefined `mk()` helper and threw before appending, so the panel rendered
+  empty; `mk()` is now defined. Panel body capped at a fixed `18rem` (was
+  `min(60vh,32rem)`) so a long admin list scrolls internally instead of tripping
+  the scale-to-fit shrink. "Member for N days" moved inline after the greeting.
+- **Devotion 50-line daily** wired to the dailies panel with a progress bar. Only
+  Devotion series count (Penance is logged but does not feed it); reward pays out
+  once when the day's running total first crosses 50. `DEVOTION_DAILY_TARGET=50`;
+  tracked via `user.devotionDay`/`user.devotionCount`.
+- **Devotion presets are Hermione-editable.** Server-stored in `devotion.json`
+  (gitignored). A preset is `{id,name,lines}`: `lines[0]` is always typed first,
+  `lines[1..]` are the shuffle pool (randomised each cycle, no immediate repeat).
+  `GET /api/devotion/presets` (any player), `POST` (admin only). Default seeded
+  with the new line set (first line "Hermione is my guardian angel."). Editor
+  lives in the dashboard admin panel; the game builds the sequence client-side.
 
-**Smaller follow-ups noted during the big session:**
-- **Devotion presets should be Hermione-editable** (currently default line-sets
-  hardcoded in `views/writing.html`); needs server storage + an admin editor.
-- **Devotion "must complete 50" daily nuance** — right now finishing any series
-  counts toward the writing daily; the 50-line requirement isn't enforced.
-- **Chess** is still wired but unlinked and not redesigned (mockups never picked).
+### Mockups produced, awaiting selection (still mockups only — nothing wired)
+All built as parameterised `?d=N` files in `public/` (`_snake`, `_deathroll`,
+`_wheel`, `_select`, `_auth`, `_boot`, `_dash`) and captured with headless Chrome.
+**These `_*.html` files are untracked (won't deploy); delete once directions are
+locked.**
+- **Game reskins** — 10 maximalist concepts each for Snake (full-window),
+  Deathroll (player/enemy cards), Wheel; plus 5 game-selection concepts (film
+  projector, tarot fan, turntable, poster wall, corridor).
+- **Terminal-blue redesign** (black / baby-blue) — 6 login/registration concepts,
+  3 loading/boot animations (Penance-style scroll, blue), 6 dashboard concepts.
+
+### LOCKED-IN mockup choices (implement later, not yet built)
+- **Snake → Blood Ritual** (concept 2: dark-red terminal, corrupting).
+- **Deathroll → Blood Ritual** (concept 2).
+- **Wheel → Blood Ritual but in BLUE** (baby-blue, to match the Devotion/login
+  terminal theme — not red).
+- **Game selection → Poster wall** (`_select.html?d=4`), BUT replace the flat
+  single-colour + name posters with cards styled like the **current login
+  offline-mode cards** (the game-preview cards on the login card-navigator, e.g.
+  the black/red Penance guest card) — each poster is a mini game-styled card.
+
+### Still open
+- **Chess** is still wired but unlinked and not redesigned.
 - **Docs pass:** README.md + `/tech` are still stale (see top).
-- Sandbox seed users lack `createdAt`, so profiles/dashboard show "Invalid
-  Date / NaN days" locally; real accounts have it. Harmless, sandbox-only.
+- Sandbox seed users need `passwordHash` (not `password`), `status:"approved"`,
+  `pronouns`, and `createdAt`; without `createdAt` profiles show "NaN days"
+  locally. Reseed each session (sandbox is ephemeral).
 
 ## Older open items still unverified
 - Windows tofu fix on the login bows (the login header no longer uses the bows,
