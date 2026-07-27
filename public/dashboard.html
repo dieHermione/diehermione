@@ -102,6 +102,31 @@
     .bal-num[hidden], .bal-eyebrow[hidden] { display: none; }
     .bal-sub { font-size: 0.9rem; color: #5e8ba3; letter-spacing: 0.03em; }
 
+    /* the dailies card is now a generic content panel: its body scrolls when
+       the contents (e.g. the admin controls on Hermione's account) overflow */
+    .panel-card { display: flex; flex-direction: column; min-height: 0; }
+    .panel-body { flex: 1; min-height: 0; max-height: min(60vh, 32rem); overflow-y: auto; padding-right: 0.2rem; }
+    .panel-body::-webkit-scrollbar { width: 8px; }
+    .panel-body::-webkit-scrollbar-thumb { background: rgba(110,210,240,0.5); border-radius: 999px; }
+
+    /* admin controls rendered into the panel for Hermione */
+    .adm h3 { font-family: "Quicksand", sans-serif; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #6aa0b8; margin: 0.3rem 0 0.6rem; }
+    .adm-sec { margin-bottom: 1.1rem; }
+    .adm-row { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.65rem; border: 1px solid rgba(30,120,160,0.14); border-radius: 11px; margin-bottom: 0.5rem; }
+    .adm-row.pending { background: rgba(36,197,237,0.08); border-color: var(--button-bg); flex-wrap: wrap; }
+    .adm-row .nm { font-weight: 700; font-size: 0.9rem; color: #22506a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .adm-row .grow { flex: 1; min-width: 0; }
+    .adm-row .pts { font-variant-numeric: tabular-nums; color: #4f88a3; font-size: 0.85rem; font-weight: 700; }
+    .adm-row .intro { flex-basis: 100%; font-size: 0.8rem; color: #6aa0b8; line-height: 1.4; }
+    .adm-mini { border: none; cursor: pointer; width: 1.55rem; height: 1.55rem; border-radius: 50%; background: linear-gradient(180deg,#b6eefb,#6fd5f0); color: #fff; font-weight: 700; font-size: 0.95rem; line-height: 1; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 3px 8px rgba(110,210,240,0.3); }
+    .adm-mini:hover { filter: brightness(1.06); }
+    .adm-chip { border: none; cursor: pointer; padding: 0.32rem 0.7rem; border-radius: 999px; font-family: "Quicksand", sans-serif; font-weight: 700; font-size: 0.78rem; background: linear-gradient(180deg,#b6eefb,#6fd5f0); color: #fff; box-shadow: 0 3px 8px rgba(110,210,240,0.3); }
+    .adm-chip.ghost { background: rgba(255,255,255,0.85); color: #1aa9d1; box-shadow: inset 0 0 0 1.4px #7fd6ee; }
+    .adm-chip:hover { filter: brightness(1.05); }
+    .adm-toggle { border: 1px solid #7fd6ee; background: transparent; color: #1aa9d1; cursor: pointer; padding: 0.28rem 0.6rem; border-radius: 999px; font-family: "Quicksand"; font-weight: 700; font-size: 0.72rem; }
+    .adm-toggle.on { background: var(--button-bg); color: #fff; border-color: var(--button-bg); }
+    .adm-empty { color: #6aa0b8; font-size: 0.85rem; }
+
     /* dailies */
     .daily-list { display: flex; flex-direction: column; gap: 0.6rem; }
     .daily { display: flex; align-items: flex-start; gap: 0.75rem; padding: 0.7rem 0.85rem; border: 1px solid rgba(30,120,160,0.14); border-radius: 12px; }
@@ -184,10 +209,12 @@
       <div class="bal-sub" id="bal-sub">—</div>
     </aside>
 
-    <aside class="card dailies-card" id="dailies-card">
-      <h2>Dailies</h2>
-      <div class="daily-list" id="daily-list"></div>
-      <p class="daily-reset" id="daily-reset"></p>
+    <aside class="card dailies-card panel-card" id="dailies-card">
+      <h2 id="panel-title">Dailies</h2>
+      <div class="panel-body" id="panel-body">
+        <div class="daily-list" id="daily-list"></div>
+        <p class="daily-reset" id="daily-reset"></p>
+      </div>
     </aside>
 
     <section class="card leaderboard-card">
@@ -281,12 +308,15 @@
         if (isHermione) {
           setFakeBalance();
           setupFakeTithe();
+          // her panel holds the admin controls instead of dailies
           document.getElementById("dailies-card").hidden = false;
+          document.getElementById("panel-title").textContent = "Admin controls";
+          buildAdminPanel();
         } else {
           setBalance(d.points);
           document.getElementById("tithe").hidden = noEcon;
           document.getElementById("dailies-card").hidden = noEcon;
-          if (!noEcon) applyTitheState(d.points, d.tithedToday);
+          if (!noEcon) { applyTitheState(d.points, d.tithedToday); loadDailies(); }
         }
         loadCopy(isHermione);
       })
@@ -441,7 +471,98 @@
       }));
       document.getElementById("daily-reset").textContent = "Resets at " + data.resets + ".";
     }
-    loadDailies();
+
+    // --- admin controls, rendered into the panel on Hermione's account ---
+    async function buildAdminPanel() {
+      const body = document.getElementById("panel-body");
+      body.replaceChildren();
+      const res = await fetch("/api/users");
+      if (!res.ok) { body.innerHTML = '<p class="adm-empty">Could not load accounts.</p>'; return; }
+      const { users } = await res.json();
+      const wrap = document.createElement("div");
+      wrap.className = "adm";
+
+      const pending = users.filter((u) => u.pending);
+      const approved = users.filter((u) => !u.pending && u.username.toLowerCase() !== "hermione");
+
+      const mkChip = (label, cls, fn) => {
+        const b = document.createElement("button");
+        b.className = "adm-chip" + (cls ? " " + cls : "");
+        b.textContent = label; b.addEventListener("click", fn); return b;
+      };
+      const mkMini = (label, fn) => {
+        const b = document.createElement("button");
+        b.className = "adm-mini"; b.textContent = label; b.addEventListener("click", fn); return b;
+      };
+
+      // approvals
+      const appSec = document.createElement("div");
+      appSec.className = "adm-sec";
+      const appH = document.createElement("h3");
+      appH.textContent = "Approvals" + (pending.length ? " · " + pending.length : "");
+      appSec.append(appH);
+      if (!pending.length) {
+        const e = document.createElement("p"); e.className = "adm-empty"; e.textContent = "No one waiting.";
+        appSec.append(e);
+      } else {
+        for (const u of pending) {
+          const row = document.createElement("div");
+          row.className = "adm-row pending";
+          const nm = document.createElement("span"); nm.className = "nm grow"; nm.textContent = u.username;
+          row.append(nm);
+          row.append(mkChip("Approve", "", async () => {
+            const r = await fetch("/api/users/" + encodeURIComponent(u.username) + "/approve", { method: "POST" });
+            if (r.ok) buildAdminPanel();
+          }));
+          row.append(mkChip("Refuse", "ghost", async () => {
+            if (!confirm("Refuse and delete " + u.username + "?")) return;
+            const r = await fetch("/api/users/" + encodeURIComponent(u.username), { method: "DELETE" });
+            if (r.ok) buildAdminPanel();
+          }));
+          if (u.intro) { const i = document.createElement("div"); i.className = "intro"; i.textContent = u.intro; row.append(i); }
+          appSec.append(row);
+        }
+      }
+      wrap.append(appSec);
+
+      // accounts: points + leaderboard listing
+      const accSec = document.createElement("div");
+      accSec.className = "adm-sec";
+      const accH = document.createElement("h3"); accH.textContent = "Accounts · " + approved.length;
+      accSec.append(accH);
+      for (const u of approved) {
+        const row = document.createElement("div");
+        row.className = "adm-row";
+        const nm = document.createElement("span"); nm.className = "nm"; nm.textContent = u.username;
+        const grow = document.createElement("span"); grow.className = "grow";
+        const pts = document.createElement("span"); pts.className = "pts"; pts.textContent = (u.points || 0) + " pts";
+        grow.append(pts);
+        const adjust = async (amount) => {
+          const r = await fetch("/api/users/" + encodeURIComponent(u.username) + "/points", {
+            method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ amount }),
+          });
+          const data = await r.json().catch(() => ({}));
+          if (r.ok) { u.points = data.points; pts.textContent = data.points + " pts"; }
+        };
+        const listed = document.createElement("button");
+        listed.className = "adm-toggle" + (u.flagged ? " on" : "");
+        listed.textContent = u.flagged ? "Listed" : "Unlisted";
+        listed.addEventListener("click", async () => {
+          const r = await fetch("/api/users/" + encodeURIComponent(u.username) + "/flag", {
+            method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ flagged: !u.flagged }),
+          });
+          if (r.ok) { u.flagged = !u.flagged; listed.classList.toggle("on", u.flagged); listed.textContent = u.flagged ? "Listed" : "Unlisted"; }
+        });
+        row.append(nm, grow,
+          mkMini("−", () => adjust(-1)),
+          mkMini("+", () => adjust(1)),
+          mkChip("±", "ghost", () => { const n = parseInt(prompt("Adjust " + u.username + "'s points by:", "10")); if (Number.isInteger(n)) adjust(n); }),
+          listed);
+        accSec.append(row);
+      }
+      wrap.append(accSec);
+      body.append(wrap);
+    }
 
     function applyTitheState(points, tithedToday) {
       const tithe = document.getElementById("tithe");
@@ -514,9 +635,9 @@
     // --- subliminal test control (temporary; no random trigger yet) ---
     (function () {
       const sel = document.getElementById("sub-select");
-      (window.Subliminal ? window.Subliminal.messages : []).forEach((msg, i) => {
+      (window.Subliminal ? window.Subliminal.effects : []).forEach((name, i) => {
         const o = document.createElement("option");
-        o.value = i; o.textContent = (i + 1) + ". " + msg;
+        o.value = i; o.textContent = (i + 1) + ". " + name;
         sel.append(o);
       });
       document.getElementById("sub-flash").addEventListener("click", () => {
