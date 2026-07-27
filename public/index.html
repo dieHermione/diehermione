@@ -6,7 +6,7 @@
   <title>Sign in - angeldom.me</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cause:wght@400..700&family=Noto+Sans+Bengali&family=Noto+Sans+Saurashtra&family=Quicksand:wght@700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Cause:wght@400..700&family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+Bengali&family=Noto+Sans+Saurashtra&family=Quicksand:wght@700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/site.css" />
   <script src="/glitch.js"></script>
   <script src="/cardnav.js"></script>
@@ -260,19 +260,23 @@
       #login-nav { --card-w: min(88vw, 400px); --card-h: 540px; --card-w-wide: min(88vw, 400px); }
     }
 
-    /* mini site preview inside the wide card */
-    .preview { display: flex; flex-direction: column; gap: 0.7rem; text-align: left; }
-    .preview .pv-eyebrow { font-size: 0.68rem; letter-spacing: 0.16em; text-transform: uppercase; color: #6aa0b8; }
-    .preview .pv-hero { background: linear-gradient(180deg, #bfeaf8, #e8f6fd); border-radius: 16px; padding: 1.1rem 1.2rem; }
-    .preview .pv-hero .pv-title { font-family: "Quicksand", sans-serif; font-weight: 700; font-size: 1.5rem; color: #24c5ed; }
-    .preview .pv-hero .pv-line { color: #5e8ba3; font-size: 0.85rem; margin-top: 0.2rem; }
-    .preview .pv-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-    .preview .pv-pill { padding: 0.36rem 0.85rem; border-radius: 999px; background: linear-gradient(180deg, #b6eefb, #6fd5f0); color: #fff; font-size: 0.78rem; font-weight: 700; }
-    .preview .pv-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
-    .preview .pv-card { background: rgba(255, 255, 255, 0.72); border-radius: 14px; padding: 0.85rem 1rem; }
-    .preview .pv-card .pv-k { font-size: 0.66rem; letter-spacing: 0.12em; text-transform: uppercase; color: #6aa0b8; }
-    .preview .pv-card .pv-v { font-family: "Quicksand", sans-serif; font-weight: 700; font-size: 1.6rem; color: #24c5ed; }
-    .preview .pv-card .pv-small { font-size: 0.82rem; color: #5e8ba3; }
+    /* the writing-game card wears the game's own terminal skin, not Cirrus */
+    #login-nav .cardnav-card.wcard-host { padding: 0; background: #04060a; overflow: hidden; }
+    #login-nav .cardnav-card.wcard-host.focused { box-shadow: 0 0 0 2px #8fd0ff, 0 24px 60px rgba(0,0,0,0.5), 0 0 26px 2px rgba(60,140,220,0.5); }
+    .wcard { position: relative; width: 100%; height: 100%; padding: 1.8rem; display: flex; flex-direction: column; gap: 0.5rem;
+      font-family: "IBM Plex Mono", monospace; color: #8fd0ff; text-align: left; text-shadow: 0 0 8px rgba(60,140,220,0.4); }
+    .wcard .wc-scan { position: absolute; inset: 0; pointer-events: none;
+      background: repeating-linear-gradient(0deg, rgba(0,0,0,0.28) 0 1px, transparent 1px 3px); }
+    .wcard .wc-head { font-size: 0.72rem; letter-spacing: 0.06em; color: #6fb4e6; }
+    .wcard .wc-dim { color: #3f6a94; }
+    .wcard .wc-title { font-size: 1.9rem; font-weight: 600; letter-spacing: 0.04em; margin-top: auto; }
+    .wcard .wc-sub { color: #3f6a94; font-size: 0.85rem; }
+    .wcard .wc-line { font-size: 0.95rem; margin-top: 0.6rem; }
+    .wcard .wc-cur { background: #8fd0ff; color: #04060a; text-shadow: none; }
+    .wcard .wc-foot { margin-top: auto; color: #5fe08a; font-size: 0.82rem; letter-spacing: 0.08em; }
+    /* small guest-game cards flanking the login */
+    #login-nav .guestcard .cardnav-title { color: #12608a; }
+    #login-nav .guestcard .cardnav-sub { color: #5e8ba3; }
   </style>
 </head>
 <body>
@@ -312,7 +316,6 @@
         <div class="role-toggle">
           <button type="button" class="role-option" data-role="Sub" data-tip="Worship your Princess. :3">Sub</button>
           <button type="button" class="role-option" data-role="Visitor" data-tip="A kept account with no points or dailies. Play the games and keep your progress.">Visitor</button>
-          <button type="button" class="role-option" data-role="Guest" data-tip="Try the games right now. No account, no sign-in, nothing saved.">Guest</button>
         </div>
         <label for="intro">Who are you?</label>
         <textarea id="intro" maxlength="500" rows="3"></textarea>
@@ -327,23 +330,14 @@
     </div>
   </div>
 
-  <div id="preview-content">
-    <div class="preview">
-      <div class="pv-eyebrow">A peek inside</div>
-      <div class="pv-hero">
-        <div class="pv-title">Welcome, Princess</div>
-        <div class="pv-line">Tithe, tend your tree, and serve.</div>
-      </div>
-      <div class="pv-row">
-        <span class="pv-pill">Profile</span>
-        <span class="pv-pill">Games</span>
-        <span class="pv-pill">Elysium</span>
-      </div>
-      <div class="pv-cards">
-        <div class="pv-card"><div class="pv-k">Balance</div><div class="pv-v">340</div><div class="pv-small">points · Devoted</div></div>
-        <div class="pv-card"><div class="pv-k">Today</div><div class="pv-v">✓</div><div class="pv-small">daily check-in</div></div>
-      </div>
-      <div class="pv-card"><div class="pv-k">Leaderboard</div><div class="pv-small">wren · seraphina · …</div></div>
+  <div id="writing-content">
+    <div class="wcard">
+      <div class="wc-scan"></div>
+      <div class="wc-head">angeldom OS <span class="wc-dim">· writing</span></div>
+      <div class="wc-title">&gt; WRITING</div>
+      <div class="wc-sub">lines for the Princess</div>
+      <div class="wc-line">&gt; I will not disa<span class="wc-cur">p</span>point<span class="wc-dim">…</span></div>
+      <div class="wc-foot">play as guest ▸</div>
     </div>
   </div>
   </div>
@@ -439,15 +433,25 @@
       }
     });
 
-    // Present the sign-in as the focused card in a horizontal navigator, with a
-    // wide site-preview card to its right and placeholders to its left.
+    // Start a no-account session, then drop straight into a game.
+    async function startGuest(path) {
+      try { const r = await fetch("/api/guest", { method: "POST" }); if (r.ok) { window.location.href = path; return; } } catch (e) {}
+      errorBox.textContent = "Couldn't start a guest session.";
+      errorBox.style.display = "block";
+    }
+
+    // Sign-in is the focused centre card. Flanking it are normal cards that open
+    // the single-player games with no account; the writing card wears the game's
+    // own terminal skin.
     if (window.CardNav) {
       CardNav.mount(document.getElementById("login-nav"), {
-        start: 0,
+        start: 2,
         ariaLabel: "Sign in",
         cards: [
+          { label: "Snake", sub: "play as guest", cardClass: "guestcard", onSelect: () => startGuest("/snake") },
+          { label: "Wheel", sub: "play as guest", cardClass: "guestcard", onSelect: () => startGuest("/wheel") },
           { content: document.getElementById("login-content"), interactive: true },
-          { type: "wide", content: document.getElementById("preview-content") },
+          { content: document.getElementById("writing-content"), cardClass: "wcard-host", onSelect: () => startGuest("/writing") },
         ],
       });
     }

@@ -153,7 +153,7 @@
       var isWide = c.type === "wide" || (c.type == null && defaultWide);
       wideFlags[i] = isWide;
       var el = document.createElement(c.href ? "a" : "div");
-      el.className = "cardnav-card" + (isWide ? " wide" : "");
+      el.className = "cardnav-card" + (isWide ? " wide" : "") + (c.cardClass ? " " + c.cardClass : "");
       el.setAttribute("role", "option");
       if (c.href) el.href = c.href;
 
