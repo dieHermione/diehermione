@@ -1,11 +1,13 @@
 /* Subliminal glitch overlay, shared by the dashboard and the login page.
  *
- * Ten DIFFERENT effect implementations of the same idea: a message flashes
- * subliminally over the page. The dashboard test dropdown picks which effect to
- * preview. No automatic/random trigger yet.
+ * Ten effects, all in the "single-frame flash" family the project settled on:
+ * the message blips over the page, LARGE, GLOWING, and jumping to erratic
+ * random positions and tilts. They run noticeably longer than a single frame.
+ * (Photosensitivity is intentionally not a concern here per the site owner; a
+ * small invite-only audience, adjustable later.)
  *
- *   Subliminal.flash(effectIndex, message?)   // message defaults to a random one
- *   Subliminal.effects     // ordered list of effect names (for the dropdown)
+ *   Subliminal.flash(effectIndex, message?)   // message defaults to random
+ *   Subliminal.effects     // ordered effect names (for the dashboard dropdown)
  *   Subliminal.messages    // the phrase pool
  */
 window.Subliminal = (function () {
@@ -16,233 +18,162 @@ window.Subliminal = (function () {
     "GIVE IN", "GOOD SERVANT", "DO NOT RESIST", "DEVOTE YOURSELF", "SHE SEES ALL",
   ];
 
-  // order matters: the dashboard dropdown is indexed by this list
   var EFFECTS = [
-    { key: "chroma", name: "Chromatic split" },
-    { key: "frame", name: "Single-frame flash" },
-    { key: "static", name: "Static burst" },
-    { key: "tear", name: "Datamosh tear" },
-    { key: "sweep", name: "Scanline sweep" },
-    { key: "invert", name: "Colour invert" },
-    { key: "decode", name: "Decode / scramble" },
-    { key: "rush", name: "Zoom rush" },
-    { key: "echo", name: "Ghost echo" },
-    { key: "crt", name: "CRT collapse" },
+    { key: "scatter", name: "Scatter strobe" },
+    { key: "afterimage", name: "Afterimage" },
+    { key: "escalate", name: "Escalating burst" },
+    { key: "twin", name: "Twin flash" },
+    { key: "zoom", name: "Zoom blip" },
+    { key: "invert", name: "Invert stutter" },
+    { key: "quadrant", name: "Corner jump" },
+    { key: "slowburn", name: "Slow burn" },
+    { key: "stutter", name: "Rapid stutter" },
+    { key: "cascade", name: "Cascade tile" },
   ];
 
-  var overlay, word, canvas, styleInjected;
-  var timers = [];
+  var GLOW_WHITE = "0 0 8px #fff, 0 0 26px #fff, 0 0 60px rgba(255,255,255,0.85)";
+  var GLOW_RED = "0 0 10px #ff2d55, 0 0 34px #ff2d55, 0 0 70px rgba(255,45,85,0.7)";
+  var GLOW_CYAN = "0 0 8px #7fe6ff, 0 0 30px #22d3ff, 0 0 64px rgba(34,211,255,0.7)";
 
-  function css() {
-    return [
-      ".subliminal{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;pointer-events:none;overflow:hidden;opacity:0;}",
-      ".subliminal.show{opacity:1;}",
-      ".subliminal .veil{position:absolute;inset:0;background:rgba(4,8,10,0.72);opacity:0;}",
-      ".subliminal .scan{position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(0,0,0,0.35) 0 1px,transparent 1px 3px);mix-blend-mode:overlay;opacity:0;}",
-      ".subliminal canvas{position:absolute;inset:0;width:100%;height:100%;opacity:0;}",
-      ".subliminal .word{position:relative;font-family:'Oswald','Quicksand',-apple-system,sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;font-size:clamp(2.4rem,9vw,7rem);color:#f4f4f2;line-height:1;text-align:center;padding:0 6vw;opacity:0;white-space:nowrap;}",
+  var overlay, styleInjected, timers = [], pool = [], POOL = 8;
 
-      /* 1 chroma */
-      ".subliminal[data-fx=chroma].on .veil{animation:vFlick 0.5s steps(1,end) forwards;}",
-      ".subliminal[data-fx=chroma].on .scan{opacity:0.7;}",
-      ".subliminal[data-fx=chroma].on .word{animation:jit 0.52s steps(2,end) forwards;}",
-      ".subliminal[data-fx=chroma] .word::before,.subliminal[data-fx=chroma] .word::after{content:attr(data-t);position:absolute;left:0;right:0;top:0;padding:inherit;}",
-      ".subliminal[data-fx=chroma] .word::before{color:#ff2d55;transform:translate(-4px,0);clip-path:inset(0 0 52% 0);}",
-      ".subliminal[data-fx=chroma] .word::after{color:#22d3ff;transform:translate(4px,0);clip-path:inset(50% 0 0 0);}",
-      "@keyframes vFlick{0%{opacity:0}6%{opacity:1}16%{opacity:.2}26%{opacity:1}44%{opacity:.5}54%{opacity:1}88%{opacity:1}100%{opacity:0}}",
-      "@keyframes jit{0%{opacity:0;transform:translate(0,0)}6%{opacity:1}18%{transform:translate(-7px,2px) skewX(7deg)}36%{transform:translate(6px,-2px) skewX(-6deg)}54%{transform:translate(-3px,1px)}82%{opacity:1;transform:translate(0,0)}100%{opacity:0}}",
-
-      /* 2 single-frame: two ultra-brief inverted blips */
-      ".subliminal[data-fx=frame] .word{mix-blend-mode:difference;color:#fff;}",
-      ".subliminal[data-fx=frame].on .word{animation:blip 0.42s steps(1,end) forwards;}",
-      "@keyframes blip{0%,100%{opacity:0}4%{opacity:1}9%{opacity:0}40%{opacity:0}45%{opacity:1}50%{opacity:0}}",
-
-      /* 3 static: canvas noise + word bleed */
-      ".subliminal[data-fx=static].on canvas{animation:stat 0.66s steps(1,end) forwards;}",
-      ".subliminal[data-fx=static].on .word{animation:bleed 0.66s ease forwards;}",
-      "@keyframes stat{0%{opacity:0}5%{opacity:.9}70%{opacity:.85}100%{opacity:0}}",
-      "@keyframes bleed{0%{opacity:0;filter:blur(6px)}30%{opacity:0.2}55%{opacity:1;filter:blur(0)}80%{opacity:1}100%{opacity:0}}",
-
-      /* 4 tear: horizontal displaced bands (built in JS) */
-      ".subliminal[data-fx=tear].on .veil{opacity:0.6;}",
-      ".subliminal[data-fx=tear] .word{white-space:nowrap;}",
-      ".subliminal[data-fx=tear] .band{position:absolute;left:0;right:0;text-align:center;color:#f4f4f2;}",
-
-      /* 5 sweep: a bright bar crosses; word revealed as it passes */
-      ".subliminal[data-fx=sweep].on .veil{opacity:0.75;}",
-      ".subliminal[data-fx=sweep] .bar{position:absolute;left:0;right:0;height:12vh;background:linear-gradient(180deg,transparent,rgba(190,235,255,0.5),transparent);opacity:0;}",
-      ".subliminal[data-fx=sweep].on .bar{animation:sweepbar 0.7s ease-in-out forwards;}",
-      ".subliminal[data-fx=sweep].on .word{animation:sweepword 0.7s ease forwards;}",
-      "@keyframes sweepbar{0%{opacity:0;transform:translateY(-60vh)}10%{opacity:1}90%{opacity:1}100%{opacity:0;transform:translateY(60vh)}}",
-      "@keyframes sweepword{0%{opacity:0}35%{opacity:0.15}50%{opacity:1}70%{opacity:0.4}100%{opacity:0}}",
-
-      /* 6 invert: whole viewport inverts briefly */
-      ".subliminal[data-fx=invert].on{backdrop-filter:invert(1) hue-rotate(180deg);-webkit-backdrop-filter:invert(1) hue-rotate(180deg);animation:invpulse 0.5s steps(1,end) forwards;}",
-      ".subliminal[data-fx=invert].on .word{color:#000;animation:invword 0.5s ease forwards;}",
-      "@keyframes invpulse{0%{opacity:0}8%{opacity:1}20%{opacity:0.2}30%{opacity:1}70%{opacity:1}100%{opacity:0}}",
-      "@keyframes invword{0%{opacity:0}20%{opacity:1}80%{opacity:1}100%{opacity:0}}",
-
-      /* 7 decode: text scrambles (chars swapped in JS), veil behind */
-      ".subliminal[data-fx=decode].on .veil{opacity:0.7;}",
-      ".subliminal[data-fx=decode] .word{color:#9effa8;font-family:'IBM Plex Mono',monospace;text-shadow:0 0 10px rgba(80,220,120,0.5);}",
-      ".subliminal[data-fx=decode].on .word{animation:showhold 1s ease forwards;}",
-      "@keyframes showhold{0%{opacity:0}10%{opacity:1}85%{opacity:1}100%{opacity:0}}",
-
-      /* 8 rush: word charges forward */
-      ".subliminal[data-fx=rush].on .veil{animation:vFlick 0.55s steps(1,end) forwards;}",
-      ".subliminal[data-fx=rush].on .word{animation:rush 0.55s cubic-bezier(0.6,0,0.9,0.3) forwards;}",
-      "@keyframes rush{0%{opacity:0;transform:scale(0.1)}20%{opacity:1}100%{opacity:0;transform:scale(6)}}",
-
-      /* 9 echo: ghost copies fan out (built in JS) */
-      ".subliminal[data-fx=echo].on .veil{opacity:0.55;}",
-      ".subliminal[data-fx=echo] .ghost{position:absolute;left:0;right:0;text-align:center;color:#f4f4f2;opacity:0;}",
-
-      /* 10 crt: word shows then screen collapses to a line */
-      ".subliminal[data-fx=crt].on .veil{opacity:0.9;}",
-      ".subliminal[data-fx=crt].on{animation:crtoff 0.66s ease-in forwards;transform-origin:center;}",
-      ".subliminal[data-fx=crt].on .word{animation:crtword 0.66s ease forwards;}",
-      "@keyframes crtoff{0%{opacity:1;transform:scaleY(1) scaleX(1)}55%{opacity:1;transform:scaleY(0.02) scaleX(1)}72%{transform:scaleY(0.02) scaleX(0.0)}100%{opacity:0;transform:scaleY(0.02) scaleX(0)}}",
-      "@keyframes crtword{0%{opacity:0}20%{opacity:1}45%{opacity:1}55%{opacity:0}100%{opacity:0}}",
-
-      "@media(prefers-reduced-motion:reduce){.subliminal *{animation-duration:0.3s !important;}}",
+  function injectStyle() {
+    if (styleInjected) return; styleInjected = true;
+    var css = [
+      ".subliminal{position:fixed;inset:0;z-index:99999;pointer-events:none;overflow:hidden;}",
+      ".subliminal .w{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);",
+      "font-family:'Oswald','Quicksand',-apple-system,sans-serif;font-weight:700;text-transform:uppercase;",
+      "letter-spacing:0.04em;white-space:nowrap;color:#fff;opacity:0;",
+      "font-size:clamp(3.5rem,15vw,13rem);text-shadow:" + GLOW_WHITE + ";will-change:transform,opacity;}",
+      ".subliminal .tint{position:absolute;inset:0;background:#fff;opacity:0;mix-blend-mode:difference;}",
     ].join("");
+    var s = document.createElement("style"); s.id = "subliminal-style"; s.textContent = css;
+    document.head.appendChild(s);
   }
 
   function ensure() {
     if (overlay) return;
-    if (!styleInjected) {
-      styleInjected = true;
-      var s = document.createElement("style");
-      s.id = "subliminal-style"; s.textContent = css();
-      document.head.appendChild(s);
-    }
+    injectStyle();
     overlay = document.createElement("div");
     overlay.className = "subliminal";
     overlay.setAttribute("aria-hidden", "true");
-    overlay.innerHTML = '<div class="veil"></div><canvas></canvas><div class="scan"></div>';
-    word = document.createElement("div");
-    word.className = "word";
-    overlay.appendChild(word);
-    canvas = overlay.querySelector("canvas");
+    var tint = document.createElement("div"); tint.className = "tint"; overlay.appendChild(tint);
+    for (var i = 0; i < POOL; i++) {
+      var w = document.createElement("div"); w.className = "w";
+      overlay.appendChild(w); pool.push(w);
+    }
+    overlay._tint = tint;
     document.body.appendChild(overlay);
   }
 
   function clearFx() {
     timers.forEach(clearTimeout); timers = [];
-    overlay.className = "subliminal";
-    overlay.style.transform = "";
-    // strip any JS-built extras (bands / ghosts)
-    Array.prototype.slice.call(overlay.querySelectorAll(".band,.ghost,.bar")).forEach(function (n) { n.remove(); });
-    word.style.cssText = "";
-    word.textContent = "";
+    pool.forEach(function (w) { w.style.opacity = "0"; w.style.transition = "none"; });
+    if (overlay._tint) { overlay._tint.style.opacity = "0"; overlay._tint.style.transition = "none"; }
   }
+  function at(t, fn) { timers.push(setTimeout(fn, t)); }
+  function rnd(a, b) { return a + Math.random() * (b - a); }
 
-  function drawStatic() {
-    var w = canvas.width = Math.floor(window.innerWidth / 3);
-    var h = canvas.height = Math.floor(window.innerHeight / 3);
-    var ctx = canvas.getContext("2d");
-    var frames = 0;
-    function paint() {
-      if (frames++ > 22) return;
-      var img = ctx.createImageData(w, h);
-      for (var i = 0; i < img.data.length; i += 4) {
-        var v = Math.random() * 255;
-        img.data[i] = img.data[i + 1] = img.data[i + 2] = v; img.data[i + 3] = 255;
-      }
-      ctx.putImageData(img, 0, 0);
-      timers.push(setTimeout(paint, 28));
-    }
-    paint();
+  // one blip: place a word element and show it briefly. cfg fields are all
+  // optional; position/tilt/scale default to erratic random values.
+  function blip(el, text, cfg) {
+    cfg = cfg || {};
+    el.textContent = text;
+    el.style.transition = cfg.fade ? "opacity " + cfg.fade + "ms ease" : "none";
+    el.style.left = (cfg.x != null ? cfg.x : rnd(18, 82)) + "%";
+    el.style.top = (cfg.y != null ? cfg.y : rnd(22, 78)) + "%";
+    el.style.color = cfg.color || "#fff";
+    el.style.textShadow = cfg.glow || GLOW_WHITE;
+    el.style.fontSize = cfg.size ? cfg.size : "";
+    var rot = cfg.rot != null ? cfg.rot : rnd(-26, 26);
+    var sc = cfg.scale != null ? cfg.scale : rnd(0.8, 1.6);
+    el.style.transform = "translate(-50%,-50%) rotate(" + rot.toFixed(1) + "deg) scale(" + sc.toFixed(2) + ")";
+    el.style.opacity = "1";
+    at(cfg.dur || 90, function () { el.style.opacity = "0"; });
   }
-
-  var GLYPHS = "!<>-_\\/[]{}=+*^?#________ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-  function decode(text) {
-    var steps = 14, i = 0;
-    function tick() {
-      var out = "";
-      for (var c = 0; c < text.length; c++) {
-        if (text[c] === " ") { out += " "; continue; }
-        out += i / steps > c / text.length ? text[c] : GLYPHS[Math.floor(Math.random() * GLYPHS.length)];
-      }
-      word.textContent = out;
-      if (i++ < steps) timers.push(setTimeout(tick, 45));
-      else word.textContent = text;
-    }
-    tick();
-  }
-
-  function buildBands(text) {
-    var n = 6;
-    for (var i = 0; i < n; i++) {
-      var b = document.createElement("div");
-      b.className = "band"; b.textContent = text;
-      b.style.font = "inherit";
-      b.style.top = "50%";
-      b.style.clipPath = "inset(" + (i / n * 100) + "% 0 " + ((n - i - 1) / n * 100) + "% 0)";
-      b.style.transform = "translateY(-50%) translateX(" + ((i % 2 ? 1 : -1) * (8 + i * 6)) + "px)";
-      b.style.font = getComputedStyle(word).font;
-      b.style.textTransform = "uppercase";
-      b.style.letterSpacing = "0.06em";
-      overlay.appendChild(b);
-      (function (band, idx) {
-        band.style.opacity = "0";
-        timers.push(setTimeout(function () { band.style.transition = "opacity 0.08s"; band.style.opacity = "1"; }, 40));
-        timers.push(setTimeout(function () {
-          band.style.transform = "translateY(-50%) translateX(" + ((idx % 2 ? 1 : -1) * 2) + "px)";
-          band.style.transition = "transform 0.18s, opacity 0.2s";
-        }, 120));
-        timers.push(setTimeout(function () { band.style.opacity = "0"; }, 620));
-      })(b, i);
-    }
-  }
-
-  function buildEcho(text) {
-    for (var i = 0; i < 5; i++) {
-      var g = document.createElement("div");
-      g.className = "ghost"; g.textContent = text;
-      g.style.font = getComputedStyle(word).font;
-      g.style.textTransform = "uppercase"; g.style.letterSpacing = "0.06em";
-      g.style.top = "50%"; g.style.transform = "translateY(-50%)";
-      overlay.appendChild(g);
-      (function (gh, idx) {
-        timers.push(setTimeout(function () {
-          gh.style.transition = "transform 0.6s ease, opacity 0.6s ease";
-          gh.style.opacity = String(0.5 - idx * 0.09);
-          gh.style.transform = "translateY(-50%) translateX(" + (idx * 26) + "px) scale(" + (1 + idx * 0.08) + ")";
-        }, 20 + idx * 30));
-        timers.push(setTimeout(function () { gh.style.opacity = "0"; }, 520 + idx * 30));
-      })(g, i);
-    }
+  function tintFlash(dur) {
+    var t = overlay._tint; t.style.transition = "none"; t.style.opacity = "1";
+    at(dur || 80, function () { t.style.opacity = "0"; });
   }
 
   var RUN = {
-    chroma: function () { done(560); },
-    frame: function () { done(460); },
-    static: function () { drawStatic(); done(720); },
-    tear: function (t) { word.style.opacity = "0"; buildBands(t); done(700); },
-    sweep: function () { var bar = document.createElement("div"); bar.className = "bar"; overlay.insertBefore(bar, word); done(760); },
-    invert: function () { done(560); },
-    decode: function (t) { decode(t); done(1060); },
-    rush: function () { done(600); },
-    echo: function (t) { word.style.opacity = "0"; buildEcho(t); done(760); },
-    crt: function () { done(720); },
+    // rapid blips, each at a fresh random spot/tilt
+    scatter: function (text) {
+      var t = 0;
+      for (var i = 0; i < 15; i++) { (function (tt) { at(tt, function () { blip(pool[0], text, { dur: rnd(60, 140) }); }); })(t); t += rnd(70, 190); }
+      return t + 200;
+    },
+    // successive blips linger and overlap as glowing afterimages
+    afterimage: function (text) {
+      var t = 0;
+      for (var i = 0; i < 11; i++) { (function (tt, idx) { at(tt, function () { blip(pool[idx % POOL], text, { dur: 420, fade: 380, glow: GLOW_CYAN }); }); })(t, i); t += rnd(150, 240); }
+      return t + 500;
+    },
+    // sparse, then accelerating into a burst
+    escalate: function (text) {
+      var t = 0, gap = 280;
+      for (var i = 0; i < 20; i++) { (function (tt) { at(tt, function () { blip(pool[0], text, { dur: rnd(50, 110) }); }); })(t); t += gap; gap = Math.max(38, gap * 0.86); }
+      return t + 220;
+    },
+    // two words alternate at mirrored positions
+    twin: function (text) {
+      var t = 0;
+      for (var i = 0; i < 16; i++) { (function (tt, idx) { at(tt, function () { var x = rnd(20, 46); blip(pool[idx % 2], text, { x: idx % 2 ? x : 100 - x, y: rnd(28, 72), dur: rnd(80, 150), glow: GLOW_RED }); }); })(t, i); t += rnd(90, 170); }
+      return t + 220;
+    },
+    // each blip a wildly different size
+    zoom: function (text) {
+      var t = 0;
+      for (var i = 0; i < 13; i++) { (function (tt) { at(tt, function () { blip(pool[0], text, { scale: rnd(0.4, 3.0), dur: rnd(70, 130) }); }); })(t); t += rnd(90, 200); }
+      return t + 220;
+    },
+    // alternate normal / inverted with a difference-blend tint
+    invert: function (text) {
+      var t = 0;
+      for (var i = 0; i < 15; i++) { (function (tt, idx) { at(tt, function () { if (idx % 2) { tintFlash(rnd(60, 120)); blip(pool[0], text, { color: "#000", glow: "0 0 6px #fff", dur: rnd(60, 120) }); } else { blip(pool[0], text, { dur: rnd(60, 120) }); } }); })(t, i); t += rnd(80, 170); }
+      return t + 220;
+    },
+    // jump between the four corners and the centre
+    quadrant: function (text) {
+      var spots = [[24, 26], [76, 26], [24, 74], [76, 74], [50, 50]]; var t = 0;
+      for (var i = 0; i < 17; i++) { (function (tt, idx) { at(tt, function () { var s = spots[Math.floor(Math.random() * spots.length)]; blip(pool[0], text, { x: s[0], y: s[1], dur: rnd(80, 150) }); }); })(t, i); t += rnd(90, 180); }
+      return t + 220;
+    },
+    // fewer, longer holds that cross-fade
+    slowburn: function (text) {
+      var t = 0;
+      for (var i = 0; i < 6; i++) { (function (tt, idx) { at(tt, function () { blip(pool[idx % POOL], text, { dur: rnd(420, 620), fade: 420, glow: GLOW_WHITE, scale: rnd(1.0, 1.5) }); }); })(t, i); t += rnd(360, 460); }
+      return t + 700;
+    },
+    // machine-gun stutter, tiny drift, big tilt swings
+    stutter: function (text) {
+      var t = 0, cx = rnd(35, 65), cy = rnd(35, 65);
+      for (var i = 0; i < 30; i++) { (function (tt) { at(tt, function () { cx += rnd(-4, 4); cy += rnd(-4, 4); blip(pool[0], text, { x: cx, y: cy, rot: rnd(-38, 38), scale: rnd(0.9, 1.3), dur: rnd(22, 48) }); }); })(t); t += rnd(38, 66); }
+      return t + 160;
+    },
+    // several copies tiled at once, flickering as a group
+    cascade: function (text) {
+      var t = 0;
+      for (var burst = 0; burst < 4; burst++) {
+        (function (tt) {
+          at(tt, function () {
+            for (var k = 0; k < POOL; k++) blip(pool[k], text, { x: rnd(15, 85), y: rnd(18, 82), rot: rnd(-20, 20), scale: rnd(0.6, 1.4), dur: rnd(120, 220), glow: k % 2 ? GLOW_RED : GLOW_WHITE });
+          tintFlash(90);
+        });
+        })(t);
+        t += rnd(420, 560);
+      }
+      return t + 260;
+    },
   };
-
-  function done(ms) {
-    overlay.classList.add("show", "on");
-    timers.push(setTimeout(function () { clearFx(); }, ms));
-  }
 
   function flash(which, message) {
     ensure(); clearFx();
     var idx = typeof which === "number" ? which : 0;
     var fx = EFFECTS[idx] || EFFECTS[0];
     var text = message != null ? String(message) : MESSAGES[Math.floor(Math.random() * MESSAGES.length)];
-    overlay.dataset.fx = fx.key;
-    word.textContent = text;
-    word.setAttribute("data-t", text);
-    void overlay.offsetWidth;
-    (RUN[fx.key] || RUN.chroma)(text);
+    var total = (RUN[fx.key] || RUN.scatter)(text);
+    at(total || 2400, clearFx);
   }
 
   return { flash: flash, effects: EFFECTS.map(function (e) { return e.name; }), messages: MESSAGES };
