@@ -6,7 +6,7 @@
   <title>Dashboard - angeldom.me</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/site.css" />
   <script src="/me.js"></script>
   <script src="/glitch.js"></script>
@@ -133,6 +133,24 @@
     .adm-toggle { border: 1px solid #7fd6ee; background: transparent; color: #1aa9d1; cursor: pointer; padding: 0.28rem 0.6rem; border-radius: 999px; font-family: "Quicksand"; font-weight: 700; font-size: 0.72rem; }
     .adm-toggle.on { background: var(--button-bg); color: #fff; border-color: var(--button-bg); }
     .adm-empty { color: #6aa0b8; font-size: 0.85rem; }
+    .adm-doc { display: block; color: #1aa9d1; text-decoration: none; padding: 0.3rem 0; font-weight: 600; font-size: 0.9rem; }
+    .adm-doc:hover { text-decoration: underline; }
+    .adm-log { display: flex; justify-content: space-between; gap: 0.5rem; align-items: baseline; padding: 0.5rem 0.65rem; border: 1px solid rgba(30,120,160,0.14); border-radius: 10px; margin-bottom: 0.45rem; cursor: pointer; }
+    .adm-log:hover { border-color: var(--button-bg); }
+    .adm-log .who2 { font-weight: 700; color: #22506a; }
+    .adm-log .meta2 { color: #5e8ba3; font-size: 0.8rem; text-align: right; }
+    /* Penance-style result modal */
+    #pmodal { position: fixed; inset: 0; z-index: 500; display: none; align-items: center; justify-content: center; background: rgba(4,6,10,0.72); backdrop-filter: blur(3px); }
+    #pmodal.open { display: flex; }
+    #pmodal .term { width: min(520px, 90vw); background: #04060a; border: 1px solid #16324a; box-shadow: 0 30px 80px rgba(0,0,0,0.7); padding: 1.8rem 2rem; position: relative; font-family: "IBM Plex Mono", monospace; color: #8fd0ff; }
+    #pmodal .term::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(0,0,0,0.22) 0 1px, transparent 1px 3px); }
+    #pmodal .pt-title { letter-spacing: 0.16em; text-transform: uppercase; font-size: 1rem; }
+    #pmodal hr { border: none; border-top: 1px solid #274a63; margin: 0.9rem 0; }
+    #pmodal .prow { display: flex; }
+    #pmodal .prow .pk { color: #3f6a94; width: 9rem; }
+    #pmodal .pdim { color: #3f6a94; }
+    #pmodal .pclose { margin-top: 1.3rem; background: none; border: none; color: #3f6a94; cursor: pointer; font-family: inherit; letter-spacing: 0.1em; text-transform: uppercase; text-decoration: underline; text-underline-offset: 4px; font-size: 0.85rem; }
+    #pmodal .pclose:hover { color: #8fd0ff; }
 
     /* dailies */
     .daily-list { display: flex; flex-direction: column; gap: 0.6rem; }
@@ -263,6 +281,18 @@
       <div class="clk-reset" id="clk-reset"></div>
     </aside>
   </div>
+
+  <div id="pmodal"><div class="term">
+    <div class="pt-title" id="pt-title">:: session complete ::</div>
+    <hr />
+    <div class="prow"><span class="pk">servant</span><span id="pt-who"></span></div>
+    <div class="prow"><span class="pk">mode</span><span id="pt-mode"></span></div>
+    <div class="prow"><span class="pk">lines</span><span id="pt-lines"></span></div>
+    <div class="prow"><span class="pk">errors</span><span id="pt-err"></span></div>
+    <div class="prow"><span class="pk">time</span><span id="pt-time"></span></div>
+    <div class="prow"><span class="pk">when</span><span class="pdim" id="pt-when"></span></div>
+    <button class="pclose" id="pt-close">close</button>
+  </div></div>
 
   <script>
     let myRank = "—";
@@ -574,8 +604,59 @@
         accSec.append(row);
       }
       wrap.append(accSec);
+
+      // lines completed (Penance / Devotion series), clickable to view
+      const logSec = document.createElement("div"); logSec.className = "adm-sec";
+      logSec.append(mk("h3", "Lines completed"));
+      const logList = document.createElement("div");
+      const logEmpty = document.createElement("p"); logEmpty.className = "adm-empty"; logEmpty.textContent = "No series finished yet.";
+      logSec.append(logList, logEmpty); wrap.append(logSec);
+
+      // documentation
+      const docSec = document.createElement("div"); docSec.className = "adm-sec";
+      docSec.append(mk("h3", "Documentation"));
+      [["Guide", "/guide"], ["Technical notes", "/tech"], ["Card nav demo", "/cardnav"]].forEach(([t, h]) => {
+        const a = document.createElement("a"); a.className = "adm-doc"; a.href = h; a.textContent = t; docSec.append(a);
+      });
+      wrap.append(docSec);
       body.append(wrap);
+
+      // gather every account's finished series
+      const rows = [];
+      for (const u of users) {
+        const r = await fetch("/api/users/" + encodeURIComponent(u.username) + "/writing").catch(() => null);
+        if (!r || !r.ok) continue;
+        const data = await r.json();
+        (data.log || []).forEach((e) => rows.push({ name: u.username, e }));
+      }
+      rows.sort((a, b) => String(b.e.at || "").localeCompare(String(a.e.at || "")));
+      logEmpty.hidden = rows.length > 0;
+      const fmt = (ms) => { const s = Math.round((ms || 0) / 1000); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); };
+      rows.slice(0, 40).forEach(({ name, e }) => {
+        const row = document.createElement("div"); row.className = "adm-log";
+        const who = document.createElement("span"); who.className = "who2"; who.textContent = name;
+        const meta = document.createElement("span"); meta.className = "meta2";
+        meta.textContent = (e.category || "series") + " · " + e.passages + " lines · " + e.mistakes + " err";
+        row.append(who, meta);
+        row.addEventListener("click", () => showResult(name, e, fmt));
+        logList.append(row);
+      });
     }
+
+    // Penance-style modal showing a finished series
+    function showResult(name, e, fmt) {
+      const mode = (e.category || "penance");
+      document.getElementById("pt-title").textContent = ":: " + mode + " complete ::";
+      document.getElementById("pt-who").textContent = name;
+      document.getElementById("pt-mode").textContent = mode;
+      document.getElementById("pt-lines").textContent = e.passages + " / " + e.passages;
+      document.getElementById("pt-err").textContent = e.mistakes;
+      document.getElementById("pt-time").textContent = fmt(e.elapsedMs);
+      document.getElementById("pt-when").textContent = e.at ? new Date(e.at).toLocaleString() : "";
+      document.getElementById("pmodal").classList.add("open");
+    }
+    document.getElementById("pt-close").addEventListener("click", () => document.getElementById("pmodal").classList.remove("open"));
+    document.getElementById("pmodal").addEventListener("click", (ev) => { if (ev.target.id === "pmodal") document.getElementById("pmodal").classList.remove("open"); });
 
     function applyTitheState(points, tithedToday) {
       const tithe = document.getElementById("tithe");

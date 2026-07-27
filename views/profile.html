@@ -10,6 +10,15 @@
   <link rel="stylesheet" href="/site.css" />
   <script src="/me.js"></script>
   <style>
+    /* nav removed: top-align the profile (no more vertical-centre gap), and use
+       the login/dashboard sky background */
+    body.has-top-nav { justify-content: flex-start !important; padding-top: 3.5rem;
+      background: linear-gradient(180deg, #8fd8f2 0%, #63bde3 62%, #52aed8 100%) !important; background-attachment: fixed; }
+    .sky-clouds { position: fixed; inset: 0; overflow: hidden; z-index: 0; pointer-events: none; }
+    .sky-clouds .c { position: absolute; border-radius: 50%; background: radial-gradient(closest-side, rgba(255,255,255,0.9), rgba(255,255,255,0) 72%); filter: blur(4px); }
+    @keyframes driftL { from { transform: translateX(22vw); } to { transform: translateX(-140vw); } }
+    @keyframes driftR { from { transform: translateX(-22vw); } to { transform: translateX(140vw); } }
+    #profile-card-main { position: relative; z-index: 2; }
     .site-header {
       font-family: "Cause", sans-serif;
       font-size: 3rem;
