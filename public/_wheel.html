@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Wheel mockups</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=Cinzel:wght@600;800&family=Cormorant+Garamond:ital,wght@0,600;1,600&family=UnifrakturMaguntia&family=Orbitron:wght@600;800&family=Archivo+Black&display=swap" rel="stylesheet" />
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; }
+  body { background: #05060a; color: #fff; font-family: "IBM Plex Mono", monospace;
+    --a: #6dffa0; --seg1: #123; --seg2: #061; --rim: #58f58c; --hub: #d6ffe4; }
+  #scene { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .bg { position: absolute; inset: 0; z-index: 0; }
+  .scan { position: absolute; inset: 0; pointer-events: none; z-index: 15; background: repeating-linear-gradient(0deg, rgba(0,0,0,0.28) 0 1px, transparent 1px 3px); opacity: 0; }
+  .vignette { position: absolute; inset: 0; pointer-events: none; z-index: 14; box-shadow: inset 0 0 30vh 10vh rgba(0,0,0,0.72); }
+  .grain { position: absolute; inset: 0; pointer-events: none; z-index: 13; opacity: 0; mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
+  .title { position: absolute; top: 4vh; left: 0; right: 0; text-align: center; z-index: 10;
+    font-size: clamp(1.3rem, 3vw, 2.2rem); letter-spacing: 0.34em; text-transform: uppercase; }
+  .sub { display: block; font-size: 0.34em; letter-spacing: 0.5em; opacity: 0.6; margin-top: 0.8em; }
+
+  .stage { position: relative; z-index: 10; display: flex; flex-direction: column; align-items: center; }
+  .wheelwrap { position: relative; width: 58vh; height: 58vh; }
+  .pointer { position: absolute; top: -1.4vh; left: 50%; transform: translateX(-50%); z-index: 6;
+    width: 0; height: 0; border-left: 1.6vh solid transparent; border-right: 1.6vh solid transparent; border-top: 3vh solid var(--a);
+    filter: drop-shadow(0 0 8px var(--a)); }
+  .wheel { position: absolute; inset: 0; border-radius: 50%; box-shadow: 0 0 0 0.8vh var(--rim), 0 0 40px rgba(0,0,0,0.6), 0 0 60px var(--a);
+    overflow: hidden; }
+  .seg { position: absolute; inset: 0; }
+  .label { position: absolute; left: 50%; top: 50%; transform-origin: 0 0; z-index: 3;
+    font-weight: 700; font-size: 1.5vh; }
+  .label span { display: inline-block; transform: translate(-50%, -20vh) ; }
+  .hub { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); z-index: 5;
+    width: 15vh; height: 15vh; border-radius: 50%; background: radial-gradient(circle at 50% 40%, var(--hub), rgba(0,0,0,0.6));
+    border: 0.5vh solid var(--rim); display: flex; align-items: center; justify-content: center; color: #05060a;
+    font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; box-shadow: 0 0 30px var(--a); cursor: pointer; }
+  .hub small { font-size: 1.5vh; }
+  .result { margin-top: 3vh; text-align: center; z-index: 10; }
+  .result .k { font-size: 0.72rem; letter-spacing: 0.3em; text-transform: uppercase; opacity: 0.6; }
+  .result .v { font-weight: 800; font-size: clamp(1.6rem, 4vw, 3rem); color: var(--a); }
+
+  /* ===== themes ===== */
+  body[data-d="1"] { background:#030a04; color:#6dffa0; --a:#58f58c; --seg1:#0a1f10; --seg2:#04120a; --rim:#58f58c; --hub:#d6ffe4; }
+  body[data-d="1"] .bg { background: linear-gradient(0deg, rgba(60,255,150,0.05) 1px, transparent 1px) 0 0/100% 3.4vh, radial-gradient(120% 90% at 50% 40%, #063312 0,#020703 100%); }
+  body[data-d="1"] .scan { opacity:1; }
+
+  body[data-d="2"] { background:#060102; color:#cf3730; --a:#ff3b2f; --seg1:#2a0605; --seg2:#120202; --rim:#b8231d; --hub:#ffd9d5; }
+  body[data-d="2"] .bg { background: repeating-linear-gradient(0deg, rgba(207,55,48,0.06) 0 1px, transparent 1px 4px), radial-gradient(120% 100% at 50% 45%, #1a0405 0,#050101 100%); }
+  body[data-d="2"] .scan { opacity:0.8; }
+
+  body[data-d="3"] { background:#0a021a; color:#ff43c8; font-family:"Orbitron",sans-serif; --a:#00f0ff; --seg1:#2a0642; --seg2:#12002a; --rim:#ff43c8; --hub:#eaffff; }
+  body[data-d="3"] .bg { background: linear-gradient(90deg, rgba(0,240,255,0.1) 2px, transparent 2px) 0 0/5vw 5vw, linear-gradient(0deg, rgba(0,240,255,0.1) 2px, transparent 2px) 0 0/5vw 5vw, radial-gradient(90% 80% at 50% 10%, #2a0642 0,#06010f 90%); }
+
+  body[data-d="4"] { background:#0c130d; color:#cfe6cf; font-family:"Cormorant Garamond",serif; --a:#86c060; --seg1:#1c3322; --seg2:#0e1c12; --rim:#4e7a3f; --hub:#eaf6ea; }
+  body[data-d="4"] .bg { background: radial-gradient(120% 90% at 50% 15%, rgba(150,190,150,0.14) 0, transparent 55%), linear-gradient(180deg,#16241a,#070c08); }
+  body[data-d="4"] .grain { opacity:0.5; }
+  body[data-d="4"] .title,.sub,.result .k { font-family:"IBM Plex Mono",monospace; }
+
+  body[data-d="5"] { background:#0a0803; color:#e7c661; font-family:"Cinzel",serif; --a:#e7c661; --seg1:#241a05; --seg2:#0f0b02; --rim:#c9a13c; --hub:#ffe9a8; }
+  body[data-d="5"] .bg { background: radial-gradient(circle at 50% 45%, #1a1405 0,#060400 72%); }
+  body[data-d="5"] .bg::after { content:""; position:absolute; top:50%; left:50%; width:72vh; height:72vh; transform:translate(-50%,-50%); border:1.5px solid rgba(231,198,97,0.3); border-radius:50%; box-shadow:inset 0 0 60px rgba(231,198,97,0.1); }
+
+  body[data-d="6"] { background:#04040a; color:#d8d8ff; --a:#ff005a; --seg1:#12122a; --seg2:#05050f; --rim:#00dcff; --hub:#eaeaff; }
+  body[data-d="6"] .bg { background: repeating-linear-gradient(90deg, rgba(255,0,90,0.05) 0 6px, rgba(0,220,255,0.05) 6px 12px), linear-gradient(180deg,#0a0a18,#020208); }
+  body[data-d="6"] .scan { opacity:0.5; } body[data-d="6"] .grain { opacity:0.4; }
+  body[data-d="6"] .result .v { text-shadow:3px 0 #ff005a,-3px 0 #00dcff; color:#fff; }
+
+  body[data-d="7"] { background:#050308; color:#e9d8ff; font-family:"UnifrakturMaguntia",serif; --a:#ffd54a; --seg1:#2a1140; --seg2:#12061f; --rim:#7b3ff2; --hub:#fff0c0; }
+  body[data-d="7"] .bg { background: conic-gradient(from 0deg at 50% 50%, rgba(120,40,200,0.14), rgba(40,80,200,0.14), rgba(200,40,120,0.14), rgba(40,160,120,0.14), rgba(120,40,200,0.14)), radial-gradient(90% 90% at 50% 30%, #170a26 0,#04020a 90%); }
+  body[data-d="7"] .title,.sub,.result .k { font-family:"Cinzel",serif; }
+
+  body[data-d="8"] { background:#0e0b07; color:#e8dcc0; font-family:"Cinzel",serif; --a:#e8dcc0; --seg1:#2a2114; --seg2:#120d06; --rim:#a08a5a; --hub:#fff4dc; }
+  body[data-d="8"] .bg { background: radial-gradient(120% 90% at 50% 30%, #241d12 0,#080602 90%), repeating-linear-gradient(45deg, rgba(0,0,0,0.12) 0 3px, transparent 3px 9px); }
+  body[data-d="8"] .grain { opacity:0.45; }
+
+  body[data-d="9"] { background:#ece5d4; color:#1a1712; font-family:"Cinzel",serif; --a:#b02a12; --seg1:#1a1712; --seg2:#e7dfca; --rim:#1a1712; --hub:#ece5d4; }
+  body[data-d="9"] .bg { background: repeating-linear-gradient(45deg, rgba(0,0,0,0.05) 0 2px, transparent 2px 7px), #e7dfca; }
+  body[data-d="9"] .vignette { box-shadow: inset 0 0 22vh 7vh rgba(120,100,70,0.4); }
+  body[data-d="9"] .hub { color:#ece5d4; }
+
+  body[data-d="10"] { background:#04030f; color:#cdd6ff; font-family:"Cormorant Garamond",serif; --a:#ffd36b; --seg1:#141a3c; --seg2:#080a1f; --rim:#7f8cff; --hub:#eef2ff; }
+  body[data-d="10"] .bg { background: radial-gradient(60% 60% at 22% 30%, rgba(120,80,255,0.25) 0, transparent 60%), radial-gradient(50% 60% at 80% 70%, rgba(40,140,255,0.22) 0, transparent 60%), radial-gradient(circle at 50% 50%, #0a0826 0,#02010a 90%); }
+  body[data-d="10"] .title,.sub,.result .k { font-family:"IBM Plex Mono",monospace; }
+</style>
+</head>
+<body>
+  <div id="scene">
+    <div class="bg"></div>
+    <div class="scan"></div><div class="grain"></div><div class="vignette"></div>
+    <div class="title" id="ttl">THE WHEEL<span class="sub" id="sub">what will she grant you</span></div>
+    <div class="stage">
+      <div class="wheelwrap">
+        <div class="pointer"></div>
+        <div class="wheel" id="wheel"><div class="seg" id="seg"></div></div>
+        <div class="hub" id="hub">SPIN</div>
+      </div>
+      <div class="result"><div class="k">last spin</div><div class="v" id="res">+7 points</div></div>
+    </div>
+  </div>
+<script>
+  const d = new URLSearchParams(location.search).get("d") || "1";
+  document.body.dataset.d = d;
+  const N = 12;
+  const vals = [3,7,1,10,4,8,2,6,9,5,7,3];
+  const seg = document.getElementById("seg");
+  const cs = getComputedStyle(document.body);
+  const s1 = cs.getPropertyValue("--seg1").trim(), s2 = cs.getPropertyValue("--seg2").trim();
+  // conic segments
+  let stops = [];
+  for (let i = 0; i < N; i++) {
+    const a0 = (360/N)*i, a1 = (360/N)*(i+1);
+    stops.push((i%2? s2 : s1) + " " + a0 + "deg " + a1 + "deg");
+  }
+  seg.style.background = "conic-gradient(from -" + (180/N) + "deg, " + stops.join(",") + ")";
+  // labels
+  const wheel = document.getElementById("wheel");
+  for (let i = 0; i < N; i++) {
+    const ang = (360/N)*i;
+    const l = document.createElement("div"); l.className = "label";
+    l.style.transform = "rotate(" + ang + "deg)";
+    const sp = document.createElement("span"); sp.textContent = vals[i];
+    l.appendChild(sp); wheel.appendChild(l);
+  }
+  const TITLES = {
+    "1":["FORTUNE.EXE","query the oracle process"],
+    "2":["THE WHEEL","her mercy, measured in points"],
+    "3":["LUCKY SPIN","insert faith to play"],
+    "4":["the wheel of seasons","what the grove yields"],
+    "5":["ROTA FORTUNAE","the wheel of fortune turns"],
+    "6":["W̷H̷E̷E̷L̷","corrupted fortune // spin to resolve"],
+    "7":["The Wheel","a fortune in coloured glass"],
+    "8":["THE RELIC WHEEL","turn the old brass ring"],
+    "9":["FORTUNE","an engraving of chance"],
+    "10":["WHEEL OF STARS","let the heavens decide"],
+  };
+  document.getElementById("ttl").firstChild.textContent = TITLES[d][0];
+  document.getElementById("sub").textContent = TITLES[d][1];
+</script>
+</body>
+</html>

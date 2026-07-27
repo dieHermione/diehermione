@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Game select mockups</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=Cinzel:wght@600;800&family=Cormorant+Garamond:ital,wght@0,600;1,600&family=UnifrakturMaguntia&family=Orbitron:wght@600;800&family=Archivo+Black&family=Bebas+Neue&display=swap" rel="stylesheet" />
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; background: #05060a; color: #fff; }
+  .scene { position: fixed; inset: 0; display: none; }
+  .scene.on { display: block; }
+  .grain { position: absolute; inset: 0; pointer-events: none; z-index: 40; opacity: 0.35; mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .vig { position: absolute; inset: 0; pointer-events: none; z-index: 39; box-shadow: inset 0 0 34vh 12vh rgba(0,0,0,0.78); }
+
+  /* ================= 1 · FILM PROJECTOR ================= */
+  #s1 { background: radial-gradient(120% 100% at 50% 30%, #14100a 0, #050303 90%); font-family: "Bebas Neue", sans-serif; }
+  #s1 .marquee { position: absolute; top: 4vh; left: 0; right: 0; text-align: center; z-index: 20; }
+  #s1 .marquee h1 { font-size: 6vh; letter-spacing: 0.3em; color: #ffd98a; text-shadow: 0 0 24px rgba(255,200,120,0.6); }
+  #s1 .marquee p { font-family: "IBM Plex Mono", monospace; letter-spacing: 0.5em; font-size: 1.4vh; color: #b89a6a; text-transform: uppercase; margin-top: 1vh; }
+  #s1 .beam { position: absolute; bottom: 20vh; left: 50%; transform: translateX(-50%); width: 8vw; height: 44vh; z-index: 5;
+    background: linear-gradient(0deg, rgba(255,230,180,0.5), rgba(255,230,180,0.02)); clip-path: polygon(42% 100%, 58% 100%, 100% 0, 0 0); filter: blur(3px); }
+  #s1 .screen { position: absolute; top: 20vh; left: 50%; transform: translateX(-50%); width: 46vw; height: 40vh; z-index: 8;
+    border: 0.7vh solid #241a10; background: radial-gradient(120% 120% at 50% 40%, #2a2015 0, #0c0906 100%); box-shadow: 0 0 60px rgba(255,210,140,0.25), inset 0 0 40px rgba(0,0,0,0.7); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  #s1 .screen .now { font-family: "IBM Plex Mono", monospace; letter-spacing: 0.4em; font-size: 1.3vh; color: #b89a6a; }
+  #s1 .screen .feat { font-size: 9vh; color: #fff3dc; letter-spacing: 0.14em; text-shadow: 0 0 30px rgba(255,220,150,0.5); }
+  #s1 .strip { position: absolute; bottom: 3vh; left: 0; right: 0; height: 13vh; background: #0a0806; border-top: 3px dashed #2c2418; border-bottom: 3px dashed #2c2418; z-index: 12; display: flex; align-items: center; gap: 1vw; padding: 0 4vw;
+    justify-content: center; }
+  #s1 .strip::before, #s1 .strip::after { content: ""; position: absolute; left: 0; right: 0; height: 1.6vh; background-image: radial-gradient(circle, #0a0806 38%, transparent 40%); background-size: 3vh 100%; background-repeat: repeat-x; }
+  #s1 .strip::before { top: -0.2vh; background-color: #17130c; }
+  #s1 .strip::after { bottom: -0.2vh; background-color: #17130c; }
+  #s1 .frame { width: 12vw; height: 8vh; border: 2px solid #2c2418; background: #100c08; display: flex; align-items: center; justify-content: center;
+    color: #cdb488; font-size: 2.4vh; letter-spacing: 0.14em; }
+  #s1 .frame.sel { border-color: #ffd98a; color: #fff3dc; box-shadow: 0 0 24px rgba(255,210,140,0.5); background: #1c1710; }
+
+  /* ================= 2 · TAROT FAN ================= */
+  #s2 { background: radial-gradient(120% 100% at 50% 120%, #1a1230 0, #06040d 80%); font-family: "Cinzel", serif; }
+  #s2 h1 { position: absolute; top: 6vh; left: 0; right: 0; text-align: center; z-index: 20; font-size: 5vh; letter-spacing: 0.3em; color: #e7c661; text-shadow: 0 0 24px rgba(231,198,97,0.4); }
+  #s2 .sub { position: absolute; top: 15vh; left: 0; right: 0; text-align: center; z-index: 20; font-family: "IBM Plex Mono", monospace; font-size: 1.4vh; letter-spacing: 0.5em; color: #9a86c0; text-transform: uppercase; }
+  #s2 .fan { position: absolute; bottom: 8vh; left: 50%; z-index: 10; }
+  #s2 .tcard { position: absolute; bottom: 0; left: 0; width: 15vw; height: 44vh; margin-left: -7.5vw; transform-origin: 50% 90%;
+    border-radius: 10px; border: 2px solid #6c5a2a; background: linear-gradient(160deg, #201a3a 0, #0c0a1a 100%);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.6); display: flex; flex-direction: column; align-items: center; padding: 2vh 1vw; }
+  #s2 .tcard .num { font-size: 2vh; color: #e7c661; letter-spacing: 0.1em; }
+  #s2 .tcard .emblem { flex: 1; display: flex; align-items: center; justify-content: center; font-size: 8vh; color: #cdb6ff; text-shadow: 0 0 20px rgba(150,110,255,0.5); }
+  #s2 .tcard .nm { font-size: 2.4vh; letter-spacing: 0.14em; color: #f0e6c0; text-align: center; }
+  #s2 .tcard.sel { border-color: #ffe9a8; box-shadow: 0 0 40px rgba(231,198,97,0.55); background: linear-gradient(160deg, #2c2450 0, #12102a 100%); }
+
+  /* ================= 3 · TURNTABLE ================= */
+  #s3 { background: radial-gradient(100% 100% at 30% 20%, #12081f 0, #050208 80%); font-family: "Orbitron", sans-serif; }
+  #s3 h1 { position: absolute; top: 5vh; left: 5vw; z-index: 20; font-size: 5vh; letter-spacing: 0.16em; color: #00f0ff; text-shadow: 0 0 26px rgba(0,240,255,0.5); }
+  #s3 .sub { position: absolute; top: 14vh; left: 5vw; z-index: 20; font-family: "IBM Plex Mono", monospace; font-size: 1.4vh; letter-spacing: 0.4em; color: #ff43c8; text-transform: uppercase; }
+  #s3 .deck { position: absolute; top: 50%; left: 34vw; transform: translate(-50%,-50%); width: 60vh; height: 60vh; border-radius: 50%; z-index: 8;
+    background: repeating-radial-gradient(circle at 50% 50%, #0a0a0a 0 0.5vh, #141414 0.5vh 1vh); box-shadow: 0 0 0 1.5vh #05050a, 0 0 60px rgba(0,240,255,0.25); }
+  #s3 .deck .lbl { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 22vh; height: 22vh; border-radius: 50%;
+    background: radial-gradient(circle, #ff43c8 0, #7a1e63 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 0 30px rgba(255,67,200,0.5); }
+  #s3 .deck .lbl .nm { font-size: 3vh; color: #fff; letter-spacing: 0.1em; text-align: center; }
+  #s3 .deck .lbl .k { font-family: "IBM Plex Mono", monospace; font-size: 1.2vh; letter-spacing: 0.3em; color: #ffd4f0; margin-bottom: 1vh; }
+  #s3 .arm { position: absolute; top: 18%; right: 22vw; width: 3vh; height: 42vh; background: linear-gradient(#c9d2e0,#7c8595); transform: rotate(24deg); transform-origin: top center; border-radius: 3vh; z-index: 10; box-shadow: 0 0 14px rgba(0,0,0,0.6); }
+  #s3 .arm::after { content: ""; position: absolute; bottom: -1vh; left: -1vh; width: 5vh; height: 5vh; background: #2a2f3a; border-radius: 2px; }
+  #s3 .tracks { position: absolute; right: 4vw; top: 24vh; width: 26vw; z-index: 12; }
+  #s3 .trk { display: flex; align-items: center; gap: 1vw; padding: 1.4vh 1.2vw; border-left: 3px solid transparent; color: #9fb0c8; font-family: "IBM Plex Mono", monospace; letter-spacing: 0.14em; font-size: 2vh; }
+  #s3 .trk .no { opacity: 0.5; font-size: 1.5vh; width: 2vw; }
+  #s3 .trk.sel { border-color: #00f0ff; color: #fff; background: linear-gradient(90deg, rgba(0,240,255,0.14), transparent); }
+
+  /* ================= 4 · POSTER WALL ================= */
+  #s4 { background: #14110d; font-family: "Archivo Black", sans-serif; }
+  #s4 .wall { position: absolute; inset: 0; background:
+     repeating-linear-gradient(90deg, rgba(0,0,0,0.35) 0 1px, transparent 1px 8vh),
+     repeating-linear-gradient(0deg, rgba(0,0,0,0.3) 0 1px, transparent 1px 4vh),
+     linear-gradient(180deg, #211c15, #100d09); }
+  #s4 h1 { position: absolute; top: 4vh; left: 50%; transform: translateX(-50%) rotate(-2deg); z-index: 30; font-size: 6vh; letter-spacing: 0.06em; color: #f4ede0;
+     background: #b0201a; padding: 1vh 3vw; box-shadow: 6px 6px 0 rgba(0,0,0,0.5); }
+  #s4 .poster { position: absolute; z-index: 10; width: 20vw; height: 40vh; padding: 2vh 1.4vw; display: flex; flex-direction: column; justify-content: space-between;
+     box-shadow: 8px 10px 24px rgba(0,0,0,0.6); border: 1px solid rgba(0,0,0,0.3); }
+  #s4 .poster .top { font-family: "IBM Plex Mono", monospace; font-size: 1.4vh; letter-spacing: 0.24em; }
+  #s4 .poster .big { font-size: 5vh; line-height: 0.92; letter-spacing: 0.02em; }
+  #s4 .poster .bot { font-family: "IBM Plex Mono", monospace; font-size: 1.3vh; letter-spacing: 0.2em; }
+  #s4 .poster .tape { position: absolute; top: -1.6vh; left: 50%; transform: translateX(-50%) rotate(-4deg); width: 8vw; height: 3vh; background: rgba(220,210,180,0.35); }
+  #s4 .poster.sel { outline: 4px solid #ffd400; z-index: 20; }
+
+  /* ================= 5 · CORRIDOR OF DOORS ================= */
+  #s5 { background: #05070a; perspective: 90vh; font-family: "Cinzel", serif; }
+  #s5 .hall { position: absolute; inset: 0; transform-style: preserve-3d; }
+  #s5 .floor { position: absolute; bottom: 0; left: 0; right: 0; height: 50vh; background: linear-gradient(0deg, #0c1016, #05070a);
+     transform-origin: bottom; transform: rotateX(72deg); background-image: repeating-linear-gradient(90deg, rgba(80,120,160,0.12) 0 1px, transparent 1px 6vw), linear-gradient(0deg, #0c1016, #05070a); }
+  #s5 .ceil { position: absolute; top: 0; left: 0; right: 0; height: 50vh; background: linear-gradient(180deg, #0a0d12, #05070a);
+     transform-origin: top; transform: rotateX(-72deg); }
+  #s5 .end { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 14vw; height: 46vh; z-index: 15;
+     background: linear-gradient(180deg, #241a30, #0c0814); border: 3px solid #6a4fa0; box-shadow: 0 0 70px rgba(150,110,255,0.5), inset 0 0 30px rgba(120,80,220,0.4);
+     display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  #s5 .end .nm { color: #eadfff; font-size: 3vh; letter-spacing: 0.16em; text-shadow: 0 0 20px rgba(160,120,255,0.7); }
+  #s5 .end .k { font-family: "IBM Plex Mono", monospace; color: #b9a6e6; font-size: 1.2vh; letter-spacing: 0.4em; margin-bottom: 1.4vh; }
+  #s5 .door { position: absolute; top: 50%; width: 10vw; height: 34vh; transform: translateY(-50%); background: linear-gradient(180deg, #12161d, #080a0f); border: 2px solid #2a3340; z-index: 10;
+     display: flex; align-items: flex-end; justify-content: center; padding-bottom: 2vh; }
+  #s5 .door span { color: #7f93a8; font-size: 1.8vh; letter-spacing: 0.14em; }
+  #s5 h1 { position: absolute; top: 5vh; left: 0; right: 0; text-align: center; z-index: 30; font-size: 4.4vh; letter-spacing: 0.34em; color: #cdb6ff; text-shadow: 0 0 24px rgba(150,110,255,0.4); }
+  #s5 .sub { position: absolute; top: 13vh; left: 0; right: 0; text-align: center; z-index: 30; font-family: "IBM Plex Mono", monospace; font-size: 1.3vh; letter-spacing: 0.5em; color: #8a7ab0; text-transform: uppercase; }
+</style>
+</head>
+<body>
+<script>
+  const GAMES = [
+    { nm: "PENANCE",  em: "✝", k: "I / rite" },
+    { nm: "DEVOTION", em: "❀", k: "II / calm" },
+    { nm: "SNAKE",    em: "⚫", k: "III / hunt" },
+    { nm: "WHEEL",    em: "☉", k: "IV / fate" },
+    { nm: "DEATHROLL",em: "☠", k: "V / duel" },
+    { nm: "ELYSIUM",  em: "☘", k: "VI / grove" },
+  ];
+  const SEL = 0;
+  const d = new URLSearchParams(location.search).get("d") || "1";
+
+  function el(tag, cls, html) { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; }
+  const scene = el("div", "scene on"); scene.id = "s" + d; document.body.appendChild(scene);
+  scene.appendChild(el("div", "grain")); scene.appendChild(el("div", "vig"));
+
+  if (d === "1") {
+    scene.appendChild(el("div", "marquee", '<h1>THE PICTURE HOUSE</h1><p>select tonight&rsquo;s feature</p>'));
+    scene.appendChild(el("div", "beam"));
+    const scr = el("div", "screen", '<div class="now">now showing</div><div class="feat">' + GAMES[SEL].nm + '</div>');
+    scene.appendChild(scr);
+    const strip = el("div", "strip");
+    GAMES.forEach((g, i) => strip.appendChild(el("div", "frame" + (i === SEL ? " sel" : ""), g.nm)));
+    scene.appendChild(strip);
+  }
+  else if (d === "2") {
+    scene.appendChild(el("h1", null, "THE DECK"));
+    scene.appendChild(el("div", "sub", "draw the rite you will keep"));
+    const fan = el("div", "fan");
+    const n = GAMES.length;
+    GAMES.forEach((g, i) => {
+      const c = el("div", "tcard" + (i === SEL ? " sel" : ""),
+        '<div class="num">' + g.k.split(" ")[0] + '</div><div class="emblem">' + g.em + '</div><div class="nm">' + g.nm + '</div>');
+      // spread hand: offset from centre -> horizontal position + gentle tilt + arc
+      const off = i - (n - 1) / 2;
+      const tx = off * 14;                       // vw
+      const ty = Math.abs(off) * 2.4 - (i === SEL ? 5 : 0); // vh, edges dip, selected lifts
+      const rot = off * 7;                       // deg
+      c.style.transform = "translateX(" + tx + "vw) translateY(" + ty + "vh) rotate(" + rot + "deg)";
+      c.style.zIndex = i === SEL ? 30 : 20 - Math.abs(off);
+      fan.appendChild(c);
+    });
+    scene.appendChild(fan);
+  }
+  else if (d === "3") {
+    scene.appendChild(el("h1", null, "THE BOOTH"));
+    scene.appendChild(el("div", "sub", "drop the needle"));
+    const deck = el("div", "deck", '<div class="lbl"><div class="k">side a</div><div class="nm">' + GAMES[SEL].nm + '</div></div>');
+    scene.appendChild(deck);
+    scene.appendChild(el("div", "arm"));
+    const tr = el("div", "tracks");
+    GAMES.forEach((g, i) => tr.appendChild(el("div", "trk" + (i === SEL ? " sel" : ""), '<span class="no">' + String(i+1).padStart(2,"0") + '</span><span>' + g.nm + '</span>')));
+    scene.appendChild(tr);
+  }
+  else if (d === "4") {
+    scene.appendChild(el("div", "wall"));
+    scene.appendChild(el("h1", null, "PICK YOUR POISON"));
+    const pos = [
+      { l: "5vw",  t: "22vh", rot: -5, bg: "#b0201a", fg: "#f4ede0" },
+      { l: "26vw", t: "16vh", rot: 3,  bg: "#0f0d0a", fg: "#ffd400" },
+      { l: "46vw", t: "24vh", rot: -3, bg: "#1c4a2a", fg: "#eafbe0" },
+      { l: "66vw", t: "15vh", rot: 4,  bg: "#2a1c52", fg: "#e6dcff" },
+      { l: "16vw", t: "50vh", rot: 2,  bg: "#0f0d0a", fg: "#ff5a3c" },
+      { l: "58vw", t: "52vh", rot: -4, bg: "#7a1240", fg: "#ffe0ec" },
+    ];
+    GAMES.forEach((g, i) => {
+      const p = pos[i];
+      const el2 = el("div", "poster" + (i === SEL ? " sel" : ""),
+        '<div class="tape"></div><div class="top">angeldom presents</div><div class="big">' + g.nm + '</div><div class="bot">' + g.k + ' &middot; enter</div>');
+      el2.style.left = p.l; el2.style.top = p.t; el2.style.background = p.bg; el2.style.color = p.fg;
+      el2.style.transform = "rotate(" + p.rot + "deg)";
+      scene.appendChild(el2);
+    });
+  }
+  else if (d === "5") {
+    scene.appendChild(el("h1", null, "CHOOSE YOUR DOOR"));
+    scene.appendChild(el("div", "sub", "one opens, the rest stay shut"));
+    const hall = el("div", "hall");
+    hall.appendChild(el("div", "ceil")); hall.appendChild(el("div", "floor"));
+    // side doors receding (approximate perspective by size + horizontal position)
+    const depths = [ {s:1, x:6},  {s:0.72, x:20}, {s:0.5, x:31} ];
+    const sideGames = [GAMES[1], GAMES[2], GAMES[3], GAMES[4], GAMES[5]];
+    let gi = 1;
+    depths.forEach((dp) => {
+      ["left","right"].forEach((side) => {
+        if (gi >= GAMES.length) return;
+        const g = GAMES[gi++];
+        const dr = el("div", "door", '<span>' + g.nm + '</span>');
+        dr.style.height = (34*dp.s) + "vh";
+        dr.style.width = (10*dp.s) + "vw";
+        dr.style.opacity = 0.4 + dp.s*0.6;
+        if (side === "left") dr.style.left = dp.x + "vw"; else dr.style.right = dp.x + "vw";
+        hall.appendChild(dr);
+      });
+    });
+    const end = el("div", "end", '<div class="k">' + GAMES[SEL].k + '</div><div class="nm">' + GAMES[SEL].nm + '</div>');
+    hall.appendChild(end);
+    scene.appendChild(hall);
+  }
+</script>
+</body>
+</html>

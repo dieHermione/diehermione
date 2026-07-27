@@ -146,6 +146,13 @@
     .adm-log:hover { border-color: var(--button-bg); }
     .adm-log .who2 { font-weight: 700; color: #22506a; }
     .adm-log .meta2 { color: #5e8ba3; font-size: 0.8rem; text-align: right; }
+    /* devotion preset editor */
+    .adm-preset { border: 1px solid rgba(30,120,160,0.16); border-radius: 11px; padding: 0.6rem; margin-bottom: 0.6rem; }
+    .adm-preset-head { display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem; }
+    .adm-preset input, .adm-preset textarea { width: 100%; font-family: inherit; font-size: 0.85rem; color: #1c4e63; background: rgba(255,255,255,0.72); border: 1px solid rgba(30,120,160,0.25); border-radius: 8px; padding: 0.4rem 0.55rem; }
+    .adm-preset input { flex: 1; }
+    .adm-preset textarea { resize: vertical; line-height: 1.55; }
+    .adm-preset-bar { display: flex; gap: 0.5rem; margin-top: 0.6rem; }
     /* Penance-style result modal */
     #pmodal { position: fixed; inset: 0; z-index: 500; display: none; align-items: center; justify-content: center; background: rgba(4,6,10,0.72); backdrop-filter: blur(3px); }
     #pmodal.open { display: flex; }
@@ -623,6 +630,37 @@
       const logList = document.createElement("div");
       const logEmpty = document.createElement("p"); logEmpty.className = "adm-empty"; logEmpty.textContent = "No series finished yet.";
       logSec.append(logList, logEmpty); wrap.append(logSec);
+
+      // devotion presets editor (Hermione-editable line sets)
+      const preSec = document.createElement("div"); preSec.className = "adm-sec";
+      preSec.append(mk("h3", "Devotion presets"));
+      const preHint = mk("p", "The first line is always typed first; the rest are shuffled (no immediate repeat). One line per row.");
+      preHint.className = "adm-empty"; preSec.append(preHint);
+      const preList = document.createElement("div"); preSec.append(preList);
+      const addPreset = (p) => {
+        const box = document.createElement("div"); box.className = "adm-preset";
+        const nm = document.createElement("input"); nm.value = p.name || ""; nm.placeholder = "preset name";
+        const del = mkChip("Remove", "ghost", () => box.remove());
+        const head = document.createElement("div"); head.className = "adm-preset-head"; head.append(nm, del);
+        const ta = document.createElement("textarea"); ta.rows = Math.max(4, (p.lines || []).length + 1); ta.value = (p.lines || []).join("\n");
+        box.append(head, ta); preList.append(box);
+      };
+      let dpresets = [];
+      try { const pr = await fetch("/api/devotion/presets"); dpresets = (await pr.json()).presets || []; } catch (e) {}
+      (dpresets.length ? dpresets : [{ name: "devotion", lines: [] }]).forEach(addPreset);
+      const preBar = document.createElement("div"); preBar.className = "adm-preset-bar";
+      preBar.append(mkChip("+ Add preset", "ghost", () => addPreset({ name: "", lines: [] })));
+      const preSave = mkChip("Save presets", "", async () => {
+        const out = [...preList.querySelectorAll(".adm-preset")].map((box) => ({
+          name: box.querySelector("input").value.trim(),
+          lines: box.querySelector("textarea").value.split("\n").map((s) => s.trim()).filter(Boolean),
+        })).filter((p) => p.lines.length);
+        preSave.textContent = "Saving...";
+        const r = await fetch("/api/devotion/presets", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ presets: out }) });
+        preSave.textContent = r.ok ? "Saved" : "Error";
+        setTimeout(() => { preSave.textContent = "Save presets"; }, 1500);
+      });
+      preBar.append(preSave); preSec.append(preBar); wrap.append(preSec);
 
       // documentation
       const docSec = document.createElement("div"); docSec.className = "adm-sec";

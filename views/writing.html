@@ -176,13 +176,24 @@
   // corrupts), preset line-sets instead of free text, and it feeds the dailies.
   const MODE = new URLSearchParams(location.search).get("mode") === "devotion" ? "devotion" : "penance";
   const DEVOTION = MODE === "devotion";
-  // preset line-sets (defaults; Hermione-editable later)
-  const PRESETS = {
-    "preset 1": ["I am grateful to serve.", "I offer myself gladly.", "Her will is my peace."],
-    "preset 2": ["I am worthy of devotion.", "I grow through practice.", "I am gentle with myself."],
-    "preset 3": ["I give thanks for this moment.", "I am present and calm.", "I honour my Princess."],
-  };
-  let devPreset = Object.keys(PRESETS)[0];
+  // Preset line-sets are Hermione-editable and loaded from the server.
+  // Each preset is { id, name, lines[] }: lines[0] is always typed first, and
+  // lines[1..] are the shuffle pool (randomised each cycle, no immediate repeat).
+  let PRESETS = {};          // keyed by preset id, filled from /api/devotion/presets
+  let devPreset = null;
+  function shuffle(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+  function buildDevotionSequence(lines, reps) {
+    const first = lines[0];
+    const pool = lines.slice(1);
+    const seq = [first]; let last = first;
+    while (seq.length < reps) {
+      if (!pool.length) { seq.push(first); continue; }
+      const sh = shuffle(pool);
+      if (sh.length > 1 && sh[0] === last) { [sh[0], sh[1]] = [sh[1], sh[0]]; }
+      for (const l of sh) { if (seq.length >= reps) break; seq.push(l); last = l; }
+    }
+    return seq.slice(0, reps);
+  }
 
   /* ---------- corruption model ---------- */
   const DIFF_BASE = { meek: 0, exacting: 0.4, merciless: 0.85 };
@@ -340,15 +351,26 @@
     lf.querySelector(".flabel").textContent = "line set";
     $("lines").style.display = "none";
     const po = document.createElement("div"); po.className = "opts"; po.id = "preset-opts";
-    Object.keys(PRESETS).forEach((k, i) => { const b = document.createElement("button"); b.className = "opt" + (i === 0 ? " sel" : ""); b.dataset.preset = k; b.textContent = k; po.append(b); });
     lf.append(po);
     po.addEventListener("click", (e) => { const b = e.target.closest("[data-preset]"); if (!b) return; devPreset = b.dataset.preset; po.querySelectorAll(".opt").forEach((o) => o.classList.toggle("sel", o === b)); refreshBegin(); });
     const note = document.createElement("div"); note.className = "diffnote"; note.textContent = "at your own pace. complete 50 to fulfil today's devotion."; lf.append(note);
+    // presets come from the server (Hermione-editable); until they load, begin stays disabled
+    fetch("/api/devotion/presets").then((r) => r.json()).then((data) => {
+      (data.presets || []).forEach((p, i) => {
+        PRESETS[p.id] = p;
+        const b = document.createElement("button"); b.className = "opt" + (i === 0 ? " sel" : "");
+        b.dataset.preset = p.id; b.textContent = p.name; po.append(b);
+        if (i === 0) devPreset = p.id;
+      });
+      refreshBegin();
+    }).catch(() => {});
   }
 
   /* ---------- game ---------- */
   function startGame() {
-    state.lines = DEVOTION ? PRESETS[devPreset].slice() : parseLines();
+    state.lines = DEVOTION
+      ? buildDevotionSequence((PRESETS[devPreset] || {}).lines || [], state.reps)
+      : parseLines();
     if (!state.lines.length) return;
     state.category = MODE;
     state.idx = 0; state.typed = 0; state.mistakes = 0; state.correct = 0; state.done = false;
@@ -437,10 +459,13 @@
     const acc = state.correct + state.mistakes > 0 ? Math.round(state.correct / (state.correct + state.mistakes) * 100) : 100;
     $("r-acc").textContent = acc + "%";
     $("r-integrity-row").hidden = t <= 0.6;
+    // transcript lists each unique line once with how many times it was typed
+    const counts = new Map();
+    for (let i = 0; i < state.reps; i++) { const l = state.lines[i % state.lines.length]; counts.set(l, (counts.get(l) || 0) + 1); }
     const tr = $("r-transcript"); tr.innerHTML = "";
-    state.lines.forEach((l) => {
+    counts.forEach((c, l) => {
       const d = document.createElement("div");
-      d.innerHTML = '"' + escapeHtml(l) + '"  <span class="n">× ' + Math.floor(state.reps / state.lines.length) + "</span>";
+      d.innerHTML = '"' + escapeHtml(l) + '"  <span class="n">× ' + c + "</span>";
       tr.appendChild(d);
     });
     document.body.style.setProperty("--c", mix(PURE.c, FOUL.c, t));

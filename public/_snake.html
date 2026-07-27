@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Snake mockups</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=Cinzel:wght@600;800&family=Cormorant+Garamond:ital,wght@0,600;1,600&family=UnifrakturMaguntia&family=Orbitron:wght@600;800&family=Archivo+Black&display=swap" rel="stylesheet" />
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; }
+  body { background: #05060a; color: #fff; font-family: "IBM Plex Mono", monospace; }
+  #scene { position: fixed; inset: 0; }
+  /* the board fills the window; cells are absolutely placed on a grid */
+  #board { position: absolute; inset: 0; }
+  .cell { position: absolute; }
+  /* HUD */
+  .hud { position: absolute; z-index: 20; }
+  .hud.tl { top: 3vh; left: 3vw; } .hud.tr { top: 3vh; right: 3vw; text-align: right; }
+  .hud.bl { bottom: 3vh; left: 3vw; } .hud.br { bottom: 3vh; right: 3vw; text-align: right; }
+  .k { font-size: 0.7rem; letter-spacing: 0.28em; text-transform: uppercase; opacity: 0.65; }
+  .v { font-weight: 700; line-height: 1; }
+  .title { position: absolute; z-index: 20; }
+
+  /* ===== shared scene furniture ===== */
+  .scan { position: absolute; inset: 0; pointer-events: none; z-index: 15;
+    background: repeating-linear-gradient(0deg, rgba(0,0,0,0.28) 0 1px, transparent 1px 3px); opacity: 0; }
+  .vignette { position: absolute; inset: 0; pointer-events: none; z-index: 14;
+    box-shadow: inset 0 0 26vh 8vh rgba(0,0,0,0.7); }
+  .grain { position: absolute; inset: 0; pointer-events: none; z-index: 13; opacity: 0; mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
+  /* =========================================================
+     1. TERMINAL SERPENT — CRT green phosphor
+     ========================================================= */
+  body[data-d="1"] { background: #030a04; font-family: "IBM Plex Mono", monospace; color: #6dffa0; }
+  body[data-d="1"] #board { background:
+     linear-gradient(90deg, rgba(60,255,150,0.05) 1px, transparent 1px) 0 0/ 3.6vw 3.6vw,
+     linear-gradient(0deg, rgba(60,255,150,0.05) 1px, transparent 1px) 0 0/ 3.6vw 3.6vw,
+     radial-gradient(120% 90% at 50% 40%, #063312 0, #020703 100%); }
+  body[data-d="1"] .snk { background: #58f58c; box-shadow: 0 0 10px #58f58c, 0 0 22px rgba(88,245,140,0.6); border-radius: 2px; }
+  body[data-d="1"] .head { background: #d6ffe4; box-shadow: 0 0 16px #a8ffc4; }
+  body[data-d="1"] .food { background: #b9ff2f; box-shadow: 0 0 16px #b9ff2f; border-radius: 50%; }
+  body[data-d="1"] .scan { opacity: 1; }
+  body[data-d="1"] .v { color: #d6ffe4; text-shadow: 0 0 12px #58f58c; }
+
+  /* =========================================================
+     2. BLOOD RITUAL — Penance dark red, corrupting
+     ========================================================= */
+  body[data-d="2"] { background: #060102; font-family: "IBM Plex Mono", monospace; color: #cf3730; }
+  body[data-d="2"] #board { background:
+     repeating-linear-gradient(0deg, rgba(207,55,48,0.06) 0 1px, transparent 1px 4px),
+     radial-gradient(120% 100% at 50% 50%, #1a0405 0, #050101 100%); }
+  body[data-d="2"] .snk { background: #b8231d; box-shadow: 0 0 8px rgba(255,50,40,0.8); }
+  body[data-d="2"] .head { background: #ff3b2f; box-shadow: 0 0 20px #ff3b2f; }
+  body[data-d="2"] .food { background: #fff; box-shadow: 0 0 22px #ff3b2f; border-radius: 50%; }
+  body[data-d="2"] .scan { opacity: 0.8; }
+  body[data-d="2"] .v { color: #ff3b2f; }
+
+  /* =========================================================
+     3. NEON BRUTALIST ARCADE — chunky vaporwave dark
+     ========================================================= */
+  body[data-d="3"] { background: #0a021a; font-family: "Orbitron", sans-serif; color: #ff43c8; }
+  body[data-d="3"] #board { background:
+     linear-gradient(180deg, rgba(255,67,200,0) 60%, rgba(255,67,200,0.25) 100%),
+     linear-gradient(90deg, rgba(0,240,255,0.12) 2px, transparent 2px) 0 0/ 5vw 5vw,
+     linear-gradient(0deg, rgba(0,240,255,0.12) 2px, transparent 2px) 0 100%/ 5vw 5vw,
+     radial-gradient(90% 70% at 50% 0%, #2a0642 0, #06010f 90%); }
+  body[data-d="3"] .snk { background: #00f0ff; box-shadow: 0 0 14px #00f0ff, inset 0 0 6px #fff; border-radius: 3px; }
+  body[data-d="3"] .head { background: #fff; box-shadow: 0 0 22px #00f0ff; }
+  body[data-d="3"] .food { background: #ffe600; box-shadow: 0 0 24px #ffe600; }
+  body[data-d="3"] .v { color: #fff; text-shadow: 0 0 16px #ff43c8, 0 0 30px #00f0ff; }
+
+  /* =========================================================
+     4. ELYSIUM VINE — organic, misty forest, painterly
+     ========================================================= */
+  body[data-d="4"] { background: #0c130d; font-family: "Cormorant Garamond", serif; color: #cfe6cf; }
+  body[data-d="4"] #board { background:
+     radial-gradient(120% 90% at 50% 20%, rgba(150,190,150,0.14) 0, transparent 55%),
+     linear-gradient(180deg, #16241a 0, #070c08 100%); }
+  body[data-d="4"] .snk { background: #4e7a3f; box-shadow: 0 0 6px rgba(120,180,90,0.5); border-radius: 40%; }
+  body[data-d="4"] .head { background: #86c060; border-radius: 45%; box-shadow: 0 0 14px rgba(140,220,110,0.7); }
+  body[data-d="4"] .food { background: #e85d4a; border-radius: 50%; box-shadow: 0 0 14px rgba(255,120,90,0.7); }
+  body[data-d="4"] .grain { opacity: 0.5; }
+  body[data-d="4"] .v { color: #eaf6ea; font-weight: 600; }
+  body[data-d="4"] .k { font-family: "IBM Plex Mono", monospace; }
+
+  /* =========================================================
+     5. OUROBOROS OCCULT — circular arena, gold on black
+     ========================================================= */
+  body[data-d="5"] { background: #0a0803; font-family: "Cinzel", serif; color: #e7c661; }
+  body[data-d="5"] #board { background: radial-gradient(circle at 50% 50%, #1a1405 0, #060400 70%); }
+  body[data-d="5"] #ring { position: absolute; top: 50%; left: 50%; width: 82vh; height: 82vh; transform: translate(-50%,-50%);
+     border: 2px solid rgba(231,198,97,0.5); border-radius: 50%; box-shadow: 0 0 40px rgba(231,198,97,0.25), inset 0 0 60px rgba(231,198,97,0.1); z-index: 1; }
+  body[data-d="5"] #ring::before { content: ""; position: absolute; inset: 6vh; border: 1px solid rgba(231,198,97,0.3); border-radius: 50%; }
+  body[data-d="5"] .snk { background: #c9a13c; box-shadow: 0 0 8px rgba(231,198,97,0.6); border-radius: 40%; }
+  body[data-d="5"] .head { background: #ffe9a8; box-shadow: 0 0 18px #e7c661; }
+  body[data-d="5"] .food { background: #fff2cf; border-radius: 50%; box-shadow: 0 0 18px #e7c661; }
+  body[data-d="5"] .v { color: #ffe9a8; }
+
+  /* =========================================================
+     6. DATAMOSH GLITCH — chromatic aberration, corrupted blocks
+     ========================================================= */
+  body[data-d="6"] { background: #04040a; font-family: "IBM Plex Mono", monospace; color: #d8d8ff; }
+  body[data-d="6"] #board { background:
+     repeating-linear-gradient(90deg, rgba(255,0,90,0.05) 0 6px, rgba(0,220,255,0.05) 6px 12px),
+     linear-gradient(180deg, #0a0a18 0, #020208 100%); }
+  body[data-d="6"] .snk { background: #e9e9ff; box-shadow: 3px 0 0 rgba(255,0,90,0.7), -3px 0 0 rgba(0,220,255,0.7); }
+  body[data-d="6"] .head { background: #fff; box-shadow: 4px 0 0 #ff005a, -4px 0 0 #00dcff; }
+  body[data-d="6"] .food { background: #ff005a; box-shadow: 3px 0 0 #00dcff; }
+  body[data-d="6"] .scan { opacity: 0.5; }
+  body[data-d="6"] .grain { opacity: 0.4; }
+  body[data-d="6"] .v { color: #fff; text-shadow: 2px 0 #ff005a, -2px 0 #00dcff; }
+
+  /* =========================================================
+     7. STAINED GLASS CATHEDRAL — gothic, jewel tones
+     ========================================================= */
+  body[data-d="7"] { background: #050308; font-family: "UnifrakturMaguntia", serif; color: #e9d8ff; }
+  body[data-d="7"] #board { background:
+     conic-gradient(from 0deg at 50% 50%, rgba(120,40,200,0.12), rgba(40,80,200,0.12), rgba(200,40,120,0.12), rgba(40,160,120,0.12), rgba(120,40,200,0.12)),
+     radial-gradient(90% 90% at 50% 30%, #170a26 0, #04020a 90%); }
+  body[data-d="7"] .arch { position: absolute; top: 4vh; left: 50%; transform: translateX(-50%); width: 60vw; height: 80vh; z-index: 1;
+     border: 3px solid rgba(180,150,255,0.35); border-radius: 50% 50% 0 0 / 40% 40% 0 0; box-shadow: inset 0 0 60px rgba(150,110,255,0.2); }
+  body[data-d="7"] .snk { background: #7b3ff2; box-shadow: 0 0 10px rgba(150,90,255,0.8); border: 1px solid rgba(20,10,40,0.8); }
+  body[data-d="7"] .head { background: #ffd54a; box-shadow: 0 0 20px #ffb32f; }
+  body[data-d="7"] .food { background: #ff3b7b; border-radius: 50%; box-shadow: 0 0 20px #ff3b7b; }
+  body[data-d="7"] .v { color: #ffd54a; }
+
+  /* =========================================================
+     8. CIRCUIT / PCB — traces of current
+     ========================================================= */
+  body[data-d="8"] { background: #03100a; font-family: "IBM Plex Mono", monospace; color: #35e0a1; }
+  body[data-d="8"] #board { background:
+     linear-gradient(90deg, rgba(53,224,161,0.08) 1px, transparent 1px) 0 0/ 2.4vw 2.4vw,
+     linear-gradient(0deg, rgba(53,224,161,0.08) 1px, transparent 1px) 0 0/ 2.4vw 2.4vw,
+     radial-gradient(circle at 20% 30%, rgba(53,224,161,0.06) 0 12%, transparent 12%),
+     #020a07; }
+  body[data-d="8"] .snk { background: #1ad08a; box-shadow: 0 0 10px #1ad08a; border-radius: 1px; }
+  body[data-d="8"] .snk::after { content: ""; position: absolute; inset: 35%; background: #d6fff0; border-radius: 50%; }
+  body[data-d="8"] .head { background: #d6fff0; box-shadow: 0 0 16px #35e0a1; }
+  body[data-d="8"] .food { background: #ffcf3a; box-shadow: 0 0 16px #ffcf3a; border-radius: 2px; }
+  body[data-d="8"] .v { color: #d6fff0; text-shadow: 0 0 12px #35e0a1; }
+
+  /* =========================================================
+     9. INK & BONE WOODCUT — high-contrast engraving
+     ========================================================= */
+  body[data-d="9"] { background: #ece5d4; font-family: "Cinzel", serif; color: #1a1712; }
+  body[data-d="9"] #board { background:
+     repeating-linear-gradient(45deg, rgba(0,0,0,0.05) 0 2px, transparent 2px 7px),
+     #e7dfca; }
+  body[data-d="9"] .snk { background: #1a1712; }
+  body[data-d="9"] .head { background: #000; box-shadow: 0 0 0 2px #ece5d4, 0 0 0 4px #1a1712; }
+  body[data-d="9"] .food { background: #b02a12; border-radius: 50%; box-shadow: 0 0 0 3px #1a1712; }
+  body[data-d="9"] .vignette { box-shadow: inset 0 0 20vh 6vh rgba(120,100,70,0.4); }
+  body[data-d="9"] .v { color: #1a1712; }
+  body[data-d="9"] .k { opacity: 0.8; }
+
+  /* =========================================================
+     10. ASTRAL / COSMIC — constellation snake, nebula
+     ========================================================= */
+  body[data-d="10"] { background: #04030f; font-family: "Cormorant Garamond", serif; color: #cdd6ff; }
+  body[data-d="10"] #board { background:
+     radial-gradient(60% 50% at 25% 30%, rgba(120,80,255,0.25) 0, transparent 60%),
+     radial-gradient(50% 60% at 80% 70%, rgba(40,140,255,0.22) 0, transparent 60%),
+     radial-gradient(circle at 50% 50%, #0a0826 0, #02010a 90%); }
+  body[data-d="10"] .snk { background: #dfe6ff; border-radius: 50%; box-shadow: 0 0 10px #9fb4ff; }
+  body[data-d="10"] .head { background: #fff; box-shadow: 0 0 22px #cdd6ff, 0 0 40px #7f8cff; }
+  body[data-d="10"] .food { background: #ffd36b; border-radius: 50%; box-shadow: 0 0 22px #ffb648; }
+  body[data-d="10"] .link { position: absolute; height: 2px; background: linear-gradient(90deg, rgba(200,210,255,0.7), rgba(200,210,255,0.1)); transform-origin: left center; z-index: 4; }
+  body[data-d="10"] .v { color: #fff; font-weight: 600; text-shadow: 0 0 16px #7f8cff; }
+  body[data-d="10"] .k { font-family: "IBM Plex Mono", monospace; }
+
+  .title { font-size: clamp(1.4rem, 3.4vw, 2.6rem); letter-spacing: 0.3em; text-transform: uppercase; top: 3vh; left: 50%; transform: translateX(-50%); z-index: 20; }
+  .title .sub { display:block; font-size: 0.42em; letter-spacing: 0.5em; opacity: 0.6; text-align:center; margin-top: 0.4em; }
+  .vbig { font-size: clamp(2rem, 5vw, 3.6rem); }
+  .vmed { font-size: clamp(1.2rem, 2.6vw, 1.8rem); }
+</style>
+</head>
+<body>
+  <div id="scene">
+    <div id="board"></div>
+    <div class="scan"></div>
+    <div class="grain"></div>
+    <div class="vignette"></div>
+
+    <div class="title" id="ttl">SERPENT<span class="sub" id="sub">an offering to the Princess</span></div>
+    <div class="hud tl"><div class="k">score</div><div class="v vbig" id="score">247</div></div>
+    <div class="hud tr"><div class="k">length</div><div class="v vmed" id="len">18</div></div>
+    <div class="hud bl"><div class="k">food eaten</div><div class="v vmed" id="eaten">12</div></div>
+    <div class="hud br"><div class="k">best today</div><div class="v vmed" id="best">310</div></div>
+  </div>
+
+<script>
+  const d = new URLSearchParams(location.search).get("d") || "1";
+  document.body.dataset.d = d;
+  const board = document.getElementById("board");
+  const W = window.innerWidth, H = window.innerHeight;
+
+  // grid sized to viewport
+  const COLS = 26, ROWS = 15;
+  const cw = W / COLS, ch = H / ROWS;
+  const cell = Math.min(cw, ch) * 0.86;
+  const offx = (W - COLS * cw) / 2, offy = (H - ROWS * ch) / 2;
+
+  // a fixed snaking path (col,row) for a nice readable serpent
+  const path = [];
+  // build a serpentine coil roughly centred
+  let seg = [[6,4],[7,4],[8,4],[9,4],[10,4],[11,4],[12,4],[12,5],[12,6],[12,7],[11,7],[10,7],[9,7],[8,7],[8,8],[8,9],[9,9],[10,9],[11,9],[12,9]];
+  const foodCell = [16,6];
+
+  function place(el, c, r) {
+    el.style.left = (offx + c * cw + (cw - cell) / 2) + "px";
+    el.style.top = (offy + r * ch + (ch - cell) / 2) + "px";
+    el.style.width = cell + "px"; el.style.height = cell + "px";
+  }
+  seg.forEach((s, i) => {
+    const el = document.createElement("div");
+    el.className = "cell snk" + (i === seg.length - 1 ? " head" : "");
+    place(el, s[0], s[1]);
+    board.appendChild(el);
+  });
+  // food
+  const f = document.createElement("div");
+  f.className = "cell food"; place(f, foodCell[0], foodCell[1]); board.appendChild(f);
+
+  // constellation links for design 10
+  if (d === "10") {
+    for (let i = 0; i < seg.length - 1; i++) {
+      const a = seg[i], b = seg[i+1];
+      const ax = offx + a[0]*cw + cw/2, ay = offy + a[1]*ch + ch/2;
+      const bx = offx + b[0]*cw + cw/2, by = offy + b[1]*ch + ch/2;
+      const dx = bx-ax, dy = by-ay, len = Math.hypot(dx,dy);
+      const l = document.createElement("div"); l.className = "link";
+      l.style.left = ax+"px"; l.style.top = ay+"px"; l.style.width = len+"px";
+      l.style.transform = "rotate(" + Math.atan2(dy,dx) + "rad)";
+      board.appendChild(l);
+    }
+  }
+  if (d === "5") { const r = document.createElement("div"); r.id = "ring"; document.getElementById("scene").insertBefore(r, board.nextSibling); }
+  if (d === "7") { const a = document.createElement("div"); a.className = "arch"; document.getElementById("scene").insertBefore(a, board.nextSibling); }
+
+  // per-theme titles
+  const TITLES = {
+    "1": ["SERPENT.EXE", "angelOS // feed the process"],
+    "2": ["SERPENT", "her patience thins with every length"],
+    "3": ["SUPER SERPENT", "insert offering to continue"],
+    "4": ["the growing vine", "tend it, and it lengthens"],
+    "5": ["OUROBOROS", "the serpent that devours itself"],
+    "6": ["S̷E̷R̷P̷E̷N̷T̷", "signal degraded // consume to stabilise"],
+    "7": ["Serpent", "a devotion in coloured glass"],
+    "8": ["CURRENT", "route the charge, gather the load"],
+    "9": ["THE SERPENT", "an engraving in ink and bone"],
+    "10": ["CELESTIAL SERPENT", "trace her constellation"],
+  };
+  document.getElementById("ttl").firstChild.textContent = TITLES[d][0];
+  document.getElementById("sub").textContent = TITLES[d][1];
+</script>
+</body>
+</html>

@@ -15,6 +15,7 @@ const WRITING_FILE = path.join(process.env.DATA_DIR || __dirname, "writing.json"
 const DEATHROLL_FILE = path.join(process.env.DATA_DIR || __dirname, "deathroll.json");
 const SITE_FILE = path.join(process.env.DATA_DIR || __dirname, "site.json");
 const ELYSIUM_FILE = path.join(process.env.DATA_DIR || __dirname, "elysium.json");
+const DEVOTION_FILE = path.join(process.env.DATA_DIR || __dirname, "devotion.json");
 
 // --- simple JSON-file user store (fine for testing; swap for a DB later) ---
 function loadUsers() {
@@ -166,6 +167,8 @@ function isPending(user) {
 const DAILY_CHECKIN_POINTS = 5;
 const SNAKE_FOOD_POINTS = 1;
 const WRITING_DAILY_POINTS = 50;
+// The Devotion daily is fulfilled by completing this many Devotion lines in a day.
+const DEVOTION_DAILY_TARGET = 50;
 // Snake pickups are reported by the browser, so they can't be trusted outright.
 // These bound the damage: a daily ceiling makes farming pointless, and a token
 // bucket caps the sustained rate while still allowing honest bursts (food can
@@ -1018,6 +1021,7 @@ app.get("/api/dailies", (req, res) => {
   }
   const today = todayKey();
   const snakeToday = user.snakeDay === today ? user.snakeToday || 0 : 0;
+  const devToday = user.devotionDay === today ? user.devotionCount || 0 : 0;
   res.json({
     resets: "noon Eastern",
     dailies: [
@@ -1045,10 +1049,11 @@ app.get("/api/dailies", (req, res) => {
       },
       {
         id: "writing",
-        label: "Write for Princess",
-        detail: "",
+        label: "Devotion",
+        detail: "Complete " + DEVOTION_DAILY_TARGET + " lines of Devotion",
         reward: WRITING_DAILY_POINTS + " points",
-        done: user.writingDay === today,
+        done: devToday >= DEVOTION_DAILY_TARGET,
+        progress: { current: Math.min(devToday, DEVOTION_DAILY_TARGET), max: DEVOTION_DAILY_TARGET },
       },
     ],
   });
@@ -1194,11 +1199,18 @@ app.post("/api/writing/complete", (req, res) => {
   user.writingTasksCompleted = (user.writingTasksCompleted || 0) + 1;
   user.lettersTyped = (user.lettersTyped || 0) + clampInt(req.body.letters, 100000000);
 
-  // the daily writing objective: first finished series of the day pays out
+  // The daily objective is Devotion-specific: complete DEVOTION_DAILY_TARGET
+  // Devotion lines in a day. Only Devotion series count toward it (Penance is
+  // logged but does not feed the dailies). The reward pays out once, the first
+  // time the day's running total crosses the target.
   const today = todayKey();
-  if (user.writingDay !== today) {
-    user.writingDay = today;
-    if (rankFor(user, key) !== "Visitor") user.angelcoins = (user.angelcoins || 0) + WRITING_DAILY_POINTS;
+  if (entry.category === "devotion") {
+    if (user.devotionDay !== today) { user.devotionDay = today; user.devotionCount = 0; }
+    user.devotionCount = (user.devotionCount || 0) + entry.passages;
+    if (user.devotionCount >= DEVOTION_DAILY_TARGET && user.writingDay !== today) {
+      user.writingDay = today;
+      if (rankFor(user, key) !== "Visitor") user.angelcoins = (user.angelcoins || 0) + WRITING_DAILY_POINTS;
+    }
   }
 
   // tell Hermione, but never about her own practice runs
@@ -1327,6 +1339,71 @@ app.put("/api/site", (req, res) => {
   }
   saveSite(site);
   res.json({ ok: true, raw: site });
+});
+
+// --- Devotion presets (Hermione-editable line sets for the gentle game) ---
+// A preset is { id, name, lines[] }. lines[0] is ALWAYS shown first; lines[1..]
+// are the shuffle pool the client draws from (randomised, no immediate repeat).
+const DEVOTION_DEFAULTS = {
+  presets: [
+    {
+      id: "devotion",
+      name: "devotion",
+      lines: [
+        "Hermione is my guardian angel.",
+        "I belong at Her feet.",
+        "I am not in control.",
+        "Her will is Divine. I will obey.",
+        "My soul is damaged. Only obedience will bring salvation.",
+        "Suffering will make me whole.",
+        "She knows what is best for me. I will not stray from Her guidance.",
+        "There is nothing except for Her.",
+        "Her happiness is all that matters.",
+        "I will not take Her mercy for granted.",
+        "She is my guiding light.",
+        "She will be so pleased with me.",
+        "I kiss the ground upon which she steps.",
+        "Hermione knows best.",
+      ],
+    },
+  ],
+};
+function loadDevotion() {
+  try {
+    const data = JSON.parse(fs.readFileSync(DEVOTION_FILE, "utf8"));
+    if (data && Array.isArray(data.presets) && data.presets.length) return data;
+  } catch {}
+  return JSON.parse(JSON.stringify(DEVOTION_DEFAULTS));
+}
+function saveDevotion(data) {
+  fs.writeFileSync(DEVOTION_FILE, JSON.stringify(data, null, 2));
+}
+
+// Any player (accounts or guests) may read the presets to play Devotion.
+app.get("/api/devotion/presets", (req, res) => {
+  if (!req.session.username && !req.session.guest) return res.status(401).json({ error: "Not logged in." });
+  res.json({ presets: loadDevotion().presets });
+});
+
+// Only Hermione may rewrite them.
+app.post("/api/devotion/presets", (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });
+  const incoming = Array.isArray(req.body.presets) ? req.body.presets : null;
+  if (!incoming) return res.status(400).json({ error: "presets must be an array." });
+  const presets = [];
+  for (const p of incoming) {
+    const name = String(p && p.name || "").trim().slice(0, 60) || "devotion";
+    const lines = (Array.isArray(p && p.lines) ? p.lines : [])
+      .map((l) => String(l).trim()).filter(Boolean).slice(0, 100);
+    if (!lines.length) continue;                 // a preset needs at least one line
+    const id = String(p && p.id || name).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40) || ("preset-" + presets.length);
+    presets.push({ id, name, lines });
+  }
+  if (!presets.length) return res.status(400).json({ error: "Add at least one preset with a line." });
+  const data = { presets };
+  saveDevotion(data);
+  res.json({ ok: true, presets });
 });
 
 // --- notifications ---
