@@ -16,6 +16,71 @@ identity: `hermione`. Push after each task; the user likes frequent pushes.
 
 ---
 
+## Where things stand now (latest big session — read this first)
+
+A large batch of reworks landed. Current truth, superseding stale sections below:
+
+**Login + dashboard (Cirrus, but evolved).** Background is now **blue all the
+way down** (`linear-gradient(180deg,#8fd8f2,#63bde3 62%,#52aed8)`, no white at
+the bottom) with the small drifting clouds; dashboard cards are translucent
+white `rgba(255,255,255,0.82)`; the **login card is opaque white**. Buttons are
+**flat** (solid `#35b6e6`, no gloss/shadow) to match the flat heading text; text
+is the site blue `#24c5ed` (the old near-black navy is gone). Both pages
+**scale/shrink to fit the viewport** rather than scrolling (dashboard uses a
+`ResizeObserver` scale-to-fit leaving top/bottom margin; login uses max-height
+media queries).
+
+**Login is a card navigator** (`cardnav.js`): just two cards now, the **opaque
+sign-in card** (interactive) and a **Penance game card** skinned like the game
+(black/red terminal) that starts a guest session at `/writing`. Guest play moved
+off the register form onto that card. On sign-in a **transition** plays then
+navigates to `/dashboard` (`transitions.js`, 10 effects; default = coverflow
+slide; the temporary test bar was removed).
+
+**Dashboard specifics:** control card holds Profile + a Games dropdown
+(Snake/Writing→Penance/Wheel/Deathroll/Elysium + Devotion) + Hermione links;
+**no tithe for Hermione**. A **clock card** shows US Eastern time (24-hour,
+EST/EDT via `Intl`) with a countdown to the **6am** daily reset. Balance card
+shows **points and angelcoins** (both blue). **Account age** ("Member for N
+days", from `createdAt` now in `/api/me`). The dailies card doubles as a generic
+scrolling panel; on Hermione it is the **admin panel** (approvals, per-account
+points + leaderboard listing, **Lines completed** list that opens a Penance-style
+result modal, and a Documentation section).
+
+**Subliminals (`glitch.js`)**: shared overlay, dashboard has a test dropdown +
+Flash. Message flashes **full-screen, no transforms/tilt/movement**, sized to
+the edges; on narrow/portrait screens a phrase breaks one-word-per-line. Ten
+flash rhythms. No random trigger yet.
+
+**Top pill nav is gone site-wide.** `nav.js` now injects only an Elysium-style
+**back-to-dashboard button** (top-left chevron) on `has-top-nav` pages, and the
+dark/light toggle is fully removed.
+
+**Penance (was "Writing"), `views/writing.html`, route `/writing`.** Terminal
+game: boot (`angelOS`) → selection (repetitions / difficulty / your own lines)
+→ typing that **corrupts** (black/red, in-game glitch hooked into the game, hex
+noise, chromatic split) with difficulty and mistakes; **merciless** sends you to
+the line start on a slip. Synthesised **old-keyboard typing clicks** and a
+**harshening ambience**. Results log via `/api/writing/complete`. **Devotion** is
+the gentle sibling (`/writing?mode=devotion`, own Games entry): same code, "penance"
+→ "devotion" everywhere, **preset line-sets** (defaults in-file, Hermione-editable
+still TODO), no difficulty, feeds the dailies. No more Restart/Abandon; no
+category box (top-left just shows the mode).
+
+**Elysium (`views/elysium.html`)**: the **drawn tree was removed** — text-only
+now (canopy state moved into inspect text); stats are all **white/lowercase**;
+the event toast floats **down from above**; a **back button** + `Version 0.01`.
+Trees **start damaged** (nurse them back) and growth is **tripled**.
+
+**Profiles (`views/profile.html`)**: admin panel **removed** (admin is
+dashboard-only now), **guestbook removed** (server routes + UI), lightmode
+toggle gone, and it uses the login/dashboard blue background, top-aligned.
+
+**Deprecated / removed:** task assignment, guestbook, the light/dark toggle, the
+top pill nav, the site-preview login card.
+
+---
+
 ## The redesign in progress (most important context)
 
 The site is being **re-skinned page by page** into new, self-contained looks.
@@ -116,7 +181,7 @@ ladder + Visitor.
 
 ---
 
-## Admin is now on Hermione's profile (the /admin page is gone)
+## Admin (SUPERSEDED — admin is now the dashboard panel, not the profile)
 
 The whole admin panel moved into an **"Admin" tab** on `/profile`, shown only
 when Hermione views her own profile. `views/admin.html` was deleted; `/admin`
@@ -206,7 +271,7 @@ hand-drawn; no tree-specific dailies yet; no site-points hookup (intentional).
 - Everything daily resets at **noon America/New_York** via `todayKey()`. Compute
   day keys no other way.
 
-## Guestbook now has replies
+## Guestbook (SUPERSEDED — guestbook was removed entirely)
 One reply per comment, by the profile owner or Hermione (no chains). Server
 routes `POST|DELETE /api/profile/:name/guestbook/:id/reply`; GET returns
 `reply` + `canReply` per entry.
@@ -276,34 +341,28 @@ deleted from the repo. Reuse that pattern for design options.
 
 ---
 
-## Pending / roadmap
+## Pending / roadmap (current)
 
-The user gave an ordered roadmap (D -> A -> B -> G -> K -> C -> L) then diverted
-into the dashboard/login/tree work. Still open:
+**Next up — mockups (explicitly deferred to last, do these once fixes settle):**
+- **Snake / Deathroll / Wheel: 10 maximalist mockups each** to match the newer
+  (Penance/Elysium/terminal) look before implementing. Snake should stretch the
+  **full window** (not the tiny box it lives in now); Deathroll keeps
+  player/enemy cards. Go maximalist, not the calm Cirrus theme.
+- **Re-output the not-yet-implemented mockups for selection** — the maximalist
+  game-selection screens (the last batch of 5 concepts: film projector, tarot
+  fan, turntable, poster wall, corridor of doors — the user wanted "more
+  creative/maximalist"; earlier 20-uniform and 5-concept batches were rejected/
+  parked). No game-selection screen is implemented yet; it is still mockups only.
 
-- **D. Chess redesign** - 10 full-window mockups were sent; **user has not
-  picked one yet**. Chess is wired but not in the nav and not redesigned. (There
-  is also a range-of-styles reference from a friend's games.) Build only after
-  they pick.
-- **A. Profile directory** page: all registered profiles as cards on the card
-  navigator.
-- **B. Games** dropdown -> a dedicated page using the card navigator.
-- **G. Card navigator touch controls** for mobile (swipe).
-- **K. Notifications auto-clear** when their associated page is visited.
-- **C. Login -> card-navigator format** (login dash is the first card; FAQ card;
-  a wide "preview" card; two placeholder cards to its left; lorem ipsum for now).
-- **L. Card navigator polish:** stronger tilt / cylinder illusion, regular
-  spacing for the farthest cards, **wide card counts as two normal cards** for
-  spacing.
-- **Elysium (done this session):** full mechanics engine, persistence, realistic
-  procedural tree, responsive background, new rain, icon audio controls, guide +
-  admin debug panels, renamed everywhere. Remaining polish noted in its section.
-- **Login (done this session):** buttons retheme to the Cirrus pill style; the
-  light/dark toggle was **removed from login** (dark mode deprecated there, and
-  `nav.js` now only runs `setUpTheme()` on `has-top-nav` pages).
+**Smaller follow-ups noted during the big session:**
+- **Devotion presets should be Hermione-editable** (currently default line-sets
+  hardcoded in `views/writing.html`); needs server storage + an admin editor.
+- **Devotion "must complete 50" daily nuance** — right now finishing any series
+  counts toward the writing daily; the 50-line requirement isn't enforced.
+- **Chess** is still wired but unlinked and not redesigned (mockups never picked).
 - **Docs pass:** README.md + `/tech` are still stale (see top).
-
-Dashboard design = Cirrus (done). Login design = Cirrus (done).
+- Sandbox seed users lack `createdAt`, so profiles/dashboard show "Invalid
+  Date / NaN days" locally; real accounts have it. Harmless, sandbox-only.
 
 ## Older open items still unverified
 - Windows tofu fix on the login bows (the login header no longer uses the bows,
