@@ -240,8 +240,7 @@
       --card-w: 400px; --card-h: 560px; --card-w-wide: 640px; --cardnav-h: 600px; }
     #card-src[hidden] { display: none; }
     #login-nav .cardnav-card {
-      background: rgba(255, 255, 255, 0.5);
-      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      background: #ffffff;
       border-radius: 22px;
       box-shadow: 0 24px 60px rgba(80, 150, 190, 0.28);
       color: var(--text-color);
@@ -265,19 +264,19 @@
     #xtest button { border: none; cursor: pointer; border-radius: 999px; padding: 0.35rem 0.9rem; font-family: "Quicksand", sans-serif; font-weight: 700; font-size: 0.8rem; color: #fff; background: linear-gradient(180deg,#b6eefb,#6fd5f0); }
 
     /* the writing-game card wears the game's own terminal skin, not Cirrus */
-    #login-nav .cardnav-card.wcard-host { padding: 0; background: #04060a; overflow: hidden; }
-    #login-nav .cardnav-card.wcard-host.focused { box-shadow: 0 0 0 2px #8fd0ff, 0 24px 60px rgba(0,0,0,0.5), 0 0 26px 2px rgba(60,140,220,0.5); }
+    #login-nav .cardnav-card.wcard-host { padding: 0; background: #070203; overflow: hidden; }
+    #login-nav .cardnav-card.wcard-host.focused { box-shadow: 0 0 0 2px #e0403a, 0 24px 60px rgba(0,0,0,0.6), 0 0 30px 2px rgba(200,40,30,0.5); }
     .wcard { position: relative; width: 100%; height: 100%; padding: 1.8rem; display: flex; flex-direction: column; gap: 0.5rem;
-      font-family: "IBM Plex Mono", monospace; color: #8fd0ff; text-align: left; text-shadow: 0 0 8px rgba(60,140,220,0.4); }
+      font-family: "IBM Plex Mono", monospace; color: #e0403a; text-align: left; text-shadow: 0 0 8px rgba(200,40,30,0.45); }
     .wcard .wc-scan { position: absolute; inset: 0; pointer-events: none;
-      background: repeating-linear-gradient(0deg, rgba(0,0,0,0.28) 0 1px, transparent 1px 3px); }
-    .wcard .wc-head { font-size: 0.72rem; letter-spacing: 0.06em; color: #6fb4e6; }
-    .wcard .wc-dim { color: #3f6a94; }
+      background: repeating-linear-gradient(0deg, rgba(0,0,0,0.42) 0 1px, transparent 1px 2px); }
+    .wcard .wc-head { font-size: 0.72rem; letter-spacing: 0.06em; color: #8a5550; }
+    .wcard .wc-dim { color: #6e2420; }
     .wcard .wc-title { font-size: 1.9rem; font-weight: 600; letter-spacing: 0.04em; margin-top: auto; }
-    .wcard .wc-sub { color: #3f6a94; font-size: 0.85rem; }
+    .wcard .wc-sub { color: #8a4a44; font-size: 0.85rem; }
     .wcard .wc-line { font-size: 0.95rem; margin-top: 0.6rem; }
-    .wcard .wc-cur { background: #8fd0ff; color: #04060a; text-shadow: none; }
-    .wcard .wc-foot { margin-top: auto; color: #5fe08a; font-size: 0.82rem; letter-spacing: 0.08em; }
+    .wcard .wc-cur { background: #e0403a; color: #070203; text-shadow: none; }
+    .wcard .wc-foot { margin-top: auto; color: #b8564e; font-size: 0.82rem; letter-spacing: 0.08em; }
     /* small guest-game cards flanking the login */
     #login-nav .guestcard .cardnav-title { color: #12608a; }
     #login-nav .guestcard .cardnav-sub { color: #5e8ba3; }
@@ -337,10 +336,10 @@
   <div id="writing-content">
     <div class="wcard">
       <div class="wc-scan"></div>
-      <div class="wc-head">angeldom OS <span class="wc-dim">· writing</span></div>
-      <div class="wc-title">&gt; WRITING</div>
-      <div class="wc-sub">lines for the Princess</div>
-      <div class="wc-line">&gt; I will not disa<span class="wc-cur">p</span>point<span class="wc-dim">…</span></div>
+      <div class="wc-head">angelOS <span class="wc-dim">· penance</span></div>
+      <div class="wc-title">&gt; PENANCE</div>
+      <div class="wc-sub">purify your soul</div>
+      <div class="wc-line">&gt; I must be for<span class="wc-cur">g</span>iven<span class="wc-dim">…</span></div>
       <div class="wc-foot">play as guest ▸</div>
     </div>
   </div>
@@ -448,7 +447,7 @@
 
     // login -> dashboard transition: a test dropdown previews each; the chosen
     // one plays for real on sign-in. Remembered in localStorage.
-    function activeTransition() { return Number(localStorage.getItem("login.transition") || 0); }
+    function activeTransition() { return Number(localStorage.getItem("login.transition") || 4); }
     if (window.Transitions) {
       const xs = document.getElementById("xt-select");
       Transitions.list.forEach((n, i) => { const o = document.createElement("option"); o.value = i; o.textContent = (i + 1) + ". " + n; xs.append(o); });

@@ -40,7 +40,8 @@
       "  width: 100%;",
       "  height: var(--cardnav-h, 420px);",
       "  perspective: 1500px;",
-      "  overflow: hidden;",
+      /* clip (not hidden) with a margin so card shadows aren't cut off top/bottom */
+      "  overflow: clip; overflow-clip-margin: 80px;",
       "  outline: none;",
       "  touch-action: pan-y;",           /* let vertical page scroll through, we own horizontal */
       "}",
@@ -74,7 +75,9 @@
       ".cardnav-card.cardnav-interactive {",
       "  cursor: default; user-select: auto; align-items: stretch;",
       "  justify-content: flex-start; overflow-y: auto; padding: 1.8rem;",
+      "  scrollbar-width: none;",           /* no visible scrollbar on mobile */
       "}",
+      ".cardnav-card.cardnav-interactive::-webkit-scrollbar { width: 0; height: 0; }",
       ".cardnav-card.cardnav-interactive > * { width: 100%; }",
       ".cardnav-card.wide {",
       "  width: var(--card-w-wide, 640px);",
@@ -106,13 +109,16 @@
   // keyboard-focused one. Set up once, shared by every strip on the page.
   var instances = [];
   var hovered = null;
+  // the strip last interacted with (wheel / touch / click) keeps the keyboard
+  // even after the pointer leaves, so arrow keys work without a click first
+  var lastActive = null;
 
   function keyboardTarget() {
     if (hovered) return hovered;
     for (var i = 0; i < instances.length; i++) {
       if (document.activeElement === instances[i].el) return instances[i];
     }
-    return null;
+    return lastActive;
   }
 
   document.addEventListener("keydown", function (e) {
@@ -257,28 +263,40 @@
       else if (k === " " || k === "Spacebar" || k === "Enter") { e.preventDefault(); activate(focus); }
     }
 
-    // Trackpad / horizontal wheel. Accumulate until a step's worth, then move
-    // one card; always preventDefault on a horizontal gesture so the browser
-    // never turns it into a back/forward swipe.
-    var wheelAcc = 0;
-    var wheelLock = false;
+    // Trackpad / horizontal wheel. One card per continuous gesture: after a
+    // move, ignore further wheel deltas until the gesture pauses (~150ms of no
+    // wheel events), so a momentum flick can't run past a single card.
+    var wheelAcc = 0, gestureUsed = false, gestureEnd = null;
     function onWheel(e) {
       if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return; // vertical: leave the page alone
       e.preventDefault();
-      if (wheelLock) return;
+      lastActive = api;
+      clearTimeout(gestureEnd);
+      gestureEnd = setTimeout(function () { gestureUsed = false; wheelAcc = 0; }, 150);
+      if (gestureUsed) return;
       wheelAcc += e.deltaX;
-      if (Math.abs(wheelAcc) >= 42) {
+      if (Math.abs(wheelAcc) >= 40) {
         setFocus(focus + (wheelAcc > 0 ? 1 : -1));
-        wheelAcc = 0;
-        wheelLock = true;
-        setTimeout(function () { wheelLock = false; }, 200);
+        gestureUsed = true; wheelAcc = 0;
       }
     }
+
+    // Touch swipe (mobile): one card per swipe.
+    var tx = 0, ty = 0, tActive = false;
+    container.addEventListener("touchstart", function (e) { var t = e.touches[0]; tx = t.clientX; ty = t.clientY; tActive = true; lastActive = api; }, { passive: true });
+    container.addEventListener("touchmove", function (e) {
+      if (!tActive) return;
+      var t = e.touches[0], dx = t.clientX - tx, dy = t.clientY - ty;
+      if (Math.abs(dx) > 46 && Math.abs(dx) > Math.abs(dy)) {
+        setFocus(focus + (dx < 0 ? 1 : -1)); tActive = false;
+      }
+    }, { passive: true });
+    container.addEventListener("touchend", function () { tActive = false; });
 
     container.addEventListener("wheel", onWheel, { passive: false });
     container.addEventListener("pointerenter", function () { hovered = api; });
     container.addEventListener("pointerleave", function () { if (hovered === api) hovered = null; });
-    container.addEventListener("pointerdown", function () { container.focus(); });
+    container.addEventListener("pointerdown", function () { container.focus(); lastActive = api; });
     window.addEventListener("resize", function () { computeSteps(); render(); });
 
     var api = { setFocus: setFocus, getFocus: function () { return focus; }, el: container, onKey: onKey };

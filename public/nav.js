@@ -141,22 +141,31 @@
     }
   }
 
+  // The old pill nav and the dark/light toggle are both deprecated. Shared-shell
+  // pages now just get a back-to-dashboard button in the Elysium style.
+  function injectBackStyle() {
+    if (document.getElementById("dashback-style")) return;
+    var s = document.createElement("style");
+    s.id = "dashback-style";
+    s.textContent = ".dash-back{position:fixed;top:1.3rem;left:1.3rem;z-index:1000;width:2.6rem;height:2.6rem;" +
+      "border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.55);" +
+      "backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);box-shadow:0 6px 16px rgba(40,90,120,0.2);" +
+      "color:#2a6a86;text-decoration:none;transition:transform .2s ease,background .2s ease;}" +
+      ".dash-back:hover{transform:translateY(-2px);background:rgba(255,255,255,0.85);}" +
+      ".dash-back svg{width:22px;height:22px;}";
+    document.head.appendChild(s);
+  }
+
   function init() {
-    // The dark/light toggle belongs to the shared-shell pages only. The login
-    // page (no top nav) has deprecated it, so skip theme setup entirely there.
     if (!document.body.classList.contains("has-top-nav")) return;
-    setUpTheme();
-
-    var nav = buildNav();
-    markActive(nav);
-
-    // via /me.js, so this shares the page's single /api/me request rather than
-    // racing the page and the bell for the once-a-day check-in result
+    injectBackStyle();
+    var back = el("a", { className: "dash-back", href: "/dashboard", "aria-label": "Back to dashboard", title: "Back to dashboard" });
+    back.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>';
+    back.hidden = true;
+    document.body.insertBefore(back, document.body.firstChild);
+    // gate: bounce signed-out visitors, and point a guest's back button at sign-in
     window.siteMe()
-      .then(function (d) {
-        nav.hidden = false;
-        if (d && d.guest) applyGuestNav();
-      })
+      .then(function (d) { back.hidden = false; if (d && d.guest) back.setAttribute("href", "/"); })
       .catch(function () { window.location.href = "/"; });
   }
 

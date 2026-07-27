@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Writing - angeldom.me</title>
+<title>Penance - angeldom.me</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
@@ -68,6 +68,13 @@
   #play .bar { margin-top: 1.2rem; }
   .barfill { display: inline-block; letter-spacing: -1px; }
   .tear { position: absolute; left: -6vw; right: -6vw; height: 5px; background: #ff2a20; opacity: 0.16; pointer-events: none; }
+  /* active corruption glitch, hooked into the game (not a screen overlay) */
+  #play.glitch .big { animation: gJit 0.16s steps(2,end) infinite; }
+  #play.glitch .status, #play.glitch .hex { animation: gJit 0.24s steps(2,end) infinite; }
+  @keyframes gJit { 0%{transform:translate(0,0)} 25%{transform:translate(-3px,1px)} 50%{transform:translate(3px,-2px)} 75%{transform:translate(-2px,2px)} 100%{transform:translate(1px,0)} }
+  #play.glitch::before { content:""; position:absolute; inset:-4vh -6vw; pointer-events:none; z-index:1;
+    background: rgba(255,20,15,0.06); animation: gRed 0.42s steps(1,end) infinite; }
+  @keyframes gRed { 0%,100%{opacity:0.25} 40%{opacity:0.7} 60%{opacity:0.15} }
   #play .actions { margin-top: 1.6rem; display: flex; gap: 1.4rem; }
   .tbtn { background: none; border: none; color: var(--dim); cursor: pointer; font-size: 0.85rem; letter-spacing: 0.1em;
     text-transform: uppercase; text-decoration: underline; text-underline-offset: 4px; }
@@ -101,7 +108,7 @@
           <button class="opt sel" data-reps="50">50</button>
           <button class="opt" data-reps="100">100</button>
           <span class="dim">/</span>
-          <input class="term custom" id="reps-custom" type="number" min="1" max="9999" placeholder="custom" />
+          <input class="term custom" id="reps-custom" type="text" inputmode="numeric" maxlength="4" placeholder="custom" />
         </div>
       </div>
       <div class="field">
@@ -114,12 +121,8 @@
         <div class="diffnote" id="diffnote"></div>
       </div>
       <div class="field">
-        <div class="flabel">category</div>
-        <input class="term" id="category" maxlength="40" value="devotion" />
-      </div>
-      <div class="field">
         <div class="flabel">your lines · one per row</div>
-        <textarea class="term" id="lines" rows="3" maxlength="600" placeholder="I will not disappoint my Princess."></textarea>
+        <textarea class="term" id="lines" rows="3" maxlength="600" placeholder="I must be forgiven."></textarea>
       </div>
       <button class="begin" id="begin" disabled>begin</button>
     </section>
@@ -127,7 +130,7 @@
     <!-- typing -->
     <section class="screen" id="play">
       <div class="sm dim cap status">
-        <span id="p-cat">devotion</span>
+        <span id="p-cat">penance</span>
         <span>rep <span id="p-rep">00</span> / <span id="p-total">00</span></span>
         <span>diff <span id="p-diff">exacting</span></span>
         <span>err <span id="p-err">00</span></span>
@@ -137,10 +140,6 @@
       <div class="big"><span class="c">&gt; </span><span class="target" id="target"></span></div>
       <div class="hex" id="p-hex2"></div>
       <div class="bar sm"><span class="barfill" id="p-barfill"></span> <span class="dim" id="p-barlabel">signal clean</span></div>
-      <div class="actions">
-        <button class="tbtn" id="restart">restart line</button>
-        <button class="tbtn" id="quit">abandon</button>
-      </div>
     </section>
 
     <!-- results -->
@@ -168,6 +167,18 @@
   const $ = (id) => document.getElementById(id);
   function show(id) { document.querySelectorAll(".screen").forEach((s) => s.classList.toggle("on", s.id === id)); }
 
+  // Devotion is the gentle sibling of Penance: same code, no difficulty (never
+  // corrupts), preset line-sets instead of free text, and it feeds the dailies.
+  const MODE = new URLSearchParams(location.search).get("mode") === "devotion" ? "devotion" : "penance";
+  const DEVOTION = MODE === "devotion";
+  // preset line-sets (defaults; Hermione-editable later)
+  const PRESETS = {
+    "preset 1": ["I am grateful to serve.", "I offer myself gladly.", "Her will is my peace."],
+    "preset 2": ["I am worthy of devotion.", "I grow through practice.", "I am gentle with myself."],
+    "preset 3": ["I give thanks for this moment.", "I am present and calm.", "I honour my Princess."],
+  };
+  let devPreset = Object.keys(PRESETS)[0];
+
   /* ---------- corruption model ---------- */
   const DIFF_BASE = { meek: 0, exacting: 0.4, merciless: 0.85 };
   const PURE = { c: "#8fd0ff", dim: "#3f6a94", glow: "rgba(60,140,220,0.4)" };
@@ -194,10 +205,51 @@
     const warn = t > 0.7 ? "!! SIGNAL DEGRADED — HER PATIENCE THINS"
       : t > 0.4 ? "! signal loss — realign input" : "";
     $("p-warn").textContent = warn;
+    setAmbience(t); updateGlitch(t);
   }
   function addTear(pos) {
     const d = document.createElement("div"); d.className = "tear";
     d.style.top = (pos * 100) + "%"; $("play").appendChild(d);
+  }
+
+  /* ---------- audio: old-keyboard clicks + harshening ambience ---------- */
+  let actx = null, ambGain = null, ambFilt = null, ambStarted = false;
+  function audio() { if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} } if (actx && actx.state === "suspended") actx.resume(); return actx; }
+  function startAmbience() {
+    const a = audio(); if (!a || ambStarted) return; ambStarted = true;
+    const size = 2 * a.sampleRate, buf = a.createBuffer(1, size, a.sampleRate), d = buf.getChannelData(0);
+    for (let i = 0; i < size; i++) d[i] = Math.random() * 2 - 1;
+    const n = a.createBufferSource(); n.buffer = buf; n.loop = true;
+    ambFilt = a.createBiquadFilter(); ambFilt.type = "lowpass"; ambFilt.frequency.value = 360;
+    ambGain = a.createGain(); ambGain.gain.value = DEVOTION ? 0.02 : 0.045;
+    n.connect(ambFilt).connect(ambGain).connect(a.destination); n.start();
+  }
+  function setAmbience(t) {
+    if (!ambGain || !actx) return; const now = actx.currentTime;
+    ambGain.gain.setTargetAtTime((DEVOTION ? 0.02 : 0.045) + t * 0.11, now, 0.3);
+    ambFilt.frequency.setTargetAtTime(360 + t * 2800, now, 0.3);
+    ambFilt.type = t > 0.6 ? "highpass" : "lowpass";
+  }
+  function keyClick(bad) {
+    const a = audio(); if (!a) return; const now = a.currentTime;
+    const len = Math.floor(a.sampleRate * 0.03), b = a.createBuffer(1, len, a.sampleRate), dd = b.getChannelData(0);
+    for (let i = 0; i < len; i++) dd[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3);
+    const n = a.createBufferSource(); n.buffer = b;
+    const f = a.createBiquadFilter(); f.type = "bandpass"; f.frequency.value = bad ? 1300 : 2100; f.Q.value = 0.8;
+    const g = a.createGain(); g.gain.value = bad ? 0.16 : 0.09;
+    n.connect(f).connect(g).connect(a.destination); n.start(now); n.stop(now + 0.03);
+    const o = a.createOscillator(); o.type = "sine"; o.frequency.setValueAtTime(bad ? 88 : 150, now); o.frequency.exponentialRampToValueAtTime(60, now + 0.04);
+    const og = a.createGain(); og.gain.setValueAtTime(bad ? 0.12 : 0.06, now); og.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+    o.connect(og).connect(a.destination); o.start(now); o.stop(now + 0.06);
+  }
+
+  /* active glitch loop: reshuffles the corrupt glyphs while corrupted */
+  let glitchTimer = null, glitchTick = 0;
+  function updateGlitch(t) {
+    const on = t > 0.5 && $("play").classList.contains("on") && !state.done;
+    $("play").classList.toggle("glitch", on);
+    if (on && !glitchTimer) glitchTimer = setInterval(() => { glitchTick++; renderTarget(); }, 110);
+    else if (!on && glitchTimer) { clearInterval(glitchTimer); glitchTimer = null; }
   }
   let hexSeed = 0x51;
   function hexline() {
@@ -206,14 +258,14 @@
     return s;
   }
   const GLYPH = "▓▒░█▚▞#%&@";
-  function corruptGlyph(i) { return GLYPH[(i * 7 + state.mistakes) % GLYPH.length]; }
+  function corruptGlyph(i) { return GLYPH[(i * 7 + state.mistakes + glitchTick) % GLYPH.length]; }
 
   /* ---------- state ---------- */
   const state = { reps: 50, diff: "exacting", category: "devotion", lines: [], idx: 0, typed: 0, mistakes: 0, correct: 0, startedAt: 0, done: false };
 
   /* ---------- boot ---------- */
   const BOOT = [
-    ["angeldom OS", " v3.1  ", "session 0x1F3A"],
+    ["angelOS", " v3.1  ", "session 0x1F3A"],
     ["> power-on self test .............. ", "OK"],
     ["> mounting /devotion .............. ", "OK"],
     ["> establishing link to Her ........ ", "OK"],
@@ -260,14 +312,32 @@
   });
   $("diffnote").textContent = DIFF_NOTE.exacting;
   function parseLines() { return $("lines").value.split("\n").map((l) => l.trim()).filter(Boolean); }
-  function refreshBegin() { $("begin").disabled = parseLines().length === 0; }
+  function refreshBegin() { $("begin").disabled = DEVOTION ? !devPreset : parseLines().length === 0; }
   $("lines").addEventListener("input", refreshBegin);
   $("begin").addEventListener("click", startGame);
 
+  // apply the mode: labels everywhere, and Devotion's calmer selection screen
+  document.title = (DEVOTION ? "Devotion" : "Penance") + " - angeldom.me";
+  document.querySelector("#select .cap").textContent = ":: configure " + MODE + " ::";
+  $("p-cat").textContent = MODE;
+  if (DEVOTION) {
+    state.diff = "meek";                    // never corrupts
+    $("diff-opts").closest(".field").style.display = "none";
+    const lf = $("lines").closest(".field");
+    lf.querySelector(".flabel").textContent = "line set";
+    $("lines").style.display = "none";
+    const po = document.createElement("div"); po.className = "opts"; po.id = "preset-opts";
+    Object.keys(PRESETS).forEach((k, i) => { const b = document.createElement("button"); b.className = "opt" + (i === 0 ? " sel" : ""); b.dataset.preset = k; b.textContent = k; po.append(b); });
+    lf.append(po);
+    po.addEventListener("click", (e) => { const b = e.target.closest("[data-preset]"); if (!b) return; devPreset = b.dataset.preset; po.querySelectorAll(".opt").forEach((o) => o.classList.toggle("sel", o === b)); refreshBegin(); });
+    const note = document.createElement("div"); note.className = "diffnote"; note.textContent = "at your own pace. complete 50 to fulfil today's devotion."; lf.append(note);
+  }
+
   /* ---------- game ---------- */
   function startGame() {
-    state.lines = parseLines(); if (!state.lines.length) return;
-    state.category = ($("category").value || "devotion").trim();
+    state.lines = DEVOTION ? PRESETS[devPreset].slice() : parseLines();
+    if (!state.lines.length) return;
+    state.category = MODE;
     state.idx = 0; state.typed = 0; state.mistakes = 0; state.correct = 0; state.done = false;
     state.startedAt = Date.now();
     $("p-cat").textContent = state.category;
@@ -318,14 +388,17 @@
     if (key === "Enter") key = "\n";
     if (key.length !== 1 && key !== "\n") return;
     e.preventDefault();
+    startAmbience();
     const text = current();
     if (key === text[state.typed]) {
-      state.typed++; state.correct++;
+      state.typed++; state.correct++; keyClick(false);
       if (state.typed >= text.length) { finishPassage(); return; }
       renderTarget();
     } else {
-      state.mistakes++;
+      state.mistakes++; keyClick(true);
       $("p-err").textContent = String(state.mistakes).padStart(2, "0");
+      // merciless: a single slip sends you back to the start of the line
+      if (state.diff === "merciless") state.typed = 0;
       applyCorruption(); renderTarget();
     }
   });
@@ -340,6 +413,8 @@
 
   function finishSession() {
     state.done = true;
+    if (glitchTimer) { clearInterval(glitchTimer); glitchTimer = null; }
+    $("play").classList.remove("glitch");
     const elapsed = Date.now() - state.startedAt;
     const t = corruption();
     $("done-title").innerHTML = t > 0.6 ? ':: s<span class="err">█</span>ssion c<span class="err">░</span>mplete :: <span class="err sm">[signal recovered]</span>' : ":: session complete ::";
@@ -365,8 +440,6 @@
     }).then((r) => { $("r-log").textContent = r.ok ? "> logged to her record" : ""; }).catch(() => {});
   }
 
-  $("restart").addEventListener("click", () => { state.typed = 0; renderTarget(); });
-  $("quit").addEventListener("click", () => { show("select"); document.body.style.setProperty("--c", PURE.c); document.body.style.setProperty("--dim", PURE.dim); $("scan").classList.remove("heavy"); });
   $("again").addEventListener("click", () => { show("select"); document.body.style.setProperty("--c", PURE.c); document.body.style.setProperty("--dim", PURE.dim); $("scan").classList.remove("heavy"); refreshBegin(); });
 
   // no pasting; it would defeat the exercise
