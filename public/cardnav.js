@@ -71,6 +71,11 @@
       "  transition: transform 0.42s cubic-bezier(0.22, 0.61, 0.36, 1),",
       "              opacity 0.42s ease, box-shadow 0.3s ease;",
       "}",
+      ".cardnav-card.cardnav-interactive {",
+      "  cursor: default; user-select: auto; align-items: stretch;",
+      "  justify-content: flex-start; overflow-y: auto; padding: 1.8rem;",
+      "}",
+      ".cardnav-card.cardnav-interactive > * { width: 100%; }",
       ".cardnav-card.wide {",
       "  width: var(--card-w-wide, 640px);",
       "  margin-left: calc(var(--card-w-wide, 640px) / -2);",
@@ -152,18 +157,28 @@
       el.setAttribute("role", "option");
       if (c.href) el.href = c.href;
 
-      var title = document.createElement("div");
-      title.className = "cardnav-title";
-      title.textContent = c.label || ("Card " + (i + 1));
-      el.appendChild(title);
+      if (c.label) {
+        var title = document.createElement("div");
+        title.className = "cardnav-title";
+        title.textContent = c.label;
+        el.appendChild(title);
+      }
       if (c.sub) {
         var sub = document.createElement("div");
         sub.className = "cardnav-sub";
         sub.textContent = c.sub;
         el.appendChild(sub);
       }
+      // rich cards may carry an arbitrary element (e.g. the login form)
+      if (c.content instanceof HTMLElement) {
+        if (c.interactive) el.classList.add("cardnav-interactive");
+        el.appendChild(c.content);
+      }
 
       el.addEventListener("click", function (e) {
+        // an interactive card lets its own form controls receive the click
+        // instead of stealing focus to the strip or "activating" the card
+        if (c.interactive && e.target.closest("input,textarea,select,button,a,label,option")) return;
         e.preventDefault();
         container.focus();
         if (i === focus) activate(i);
@@ -233,6 +248,9 @@
     }
 
     function onKey(e) {
+      // never hijack typing inside a form control living in an interactive card
+      var tag = (e.target && e.target.tagName) || "";
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || (e.target && e.target.isContentEditable)) return;
       var k = e.key;
       if (k === "ArrowLeft" || k === "a" || k === "A") { e.preventDefault(); setFocus(focus - 1); }
       else if (k === "ArrowRight" || k === "d" || k === "D") { e.preventDefault(); setFocus(focus + 1); }

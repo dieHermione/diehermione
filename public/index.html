@@ -9,13 +9,14 @@
   <link href="https://fonts.googleapis.com/css2?family=Cause:wght@400..700&family=Noto+Sans+Bengali&family=Noto+Sans+Saurashtra&family=Quicksand:wght@700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/site.css" />
   <script src="/glitch.js"></script>
+  <script src="/cardnav.js"></script>
   <style>
     /* This page has no nav, so it would fall to the shared centred body in
        site.css. Pull the header and card up to the top the way it was before
        the shared shell centralised body layout. */
     /* centre the login card, header above it, with breathing room up top */
-    body { justify-content: center; padding: 3.25rem 1rem; gap: 1.75rem;
-      background: linear-gradient(180deg, #8fd8f2 0%, #e8f6fd 72%); }
+    body { justify-content: center; padding: 3.25rem 1rem; gap: 1.75rem; min-height: 100vh;
+      background: linear-gradient(180deg, #8fd8f2 0%, #e8f6fd 72%); background-attachment: fixed; }
 
     /* Cirrus: soft clouds drifting to the sides, looping */
     .sky-clouds { position: fixed; inset: 0; overflow: hidden; z-index: 0; pointer-events: none; }
@@ -237,6 +238,41 @@
       margin-bottom: 1.25rem;
     }
     #register-fields[hidden], #form[hidden], .tabs[hidden] { display: none; }
+
+    /* --- card-navigator login layout --- */
+    #login-nav { width: 100%; z-index: 2; position: relative;
+      --card-w: 400px; --card-h: 560px; --card-w-wide: 640px; --cardnav-h: 600px; }
+    #card-src[hidden] { display: none; }
+    #login-nav .cardnav-card {
+      background: rgba(255, 255, 255, 0.72);
+      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      border-radius: 22px;
+      box-shadow: 0 24px 60px rgba(80, 150, 190, 0.28);
+      color: var(--text-color);
+    }
+    #login-nav .cardnav-card.focused {
+      box-shadow: 0 0 0 3px #6fd5f0, 0 24px 60px rgba(80, 150, 190, 0.34), 0 0 26px 2px rgba(110, 210, 240, 0.5);
+    }
+    #login-nav .cardnav-title { color: #12405c; }
+    #login-nav .cardnav-sub { color: #5e8ba3; }
+    #login-content { text-align: left; }
+    @media (max-width: 640px) {
+      #login-nav { --card-w: min(88vw, 400px); --card-h: 540px; --card-w-wide: min(88vw, 400px); }
+    }
+
+    /* mini site preview inside the wide card */
+    .preview { display: flex; flex-direction: column; gap: 0.7rem; text-align: left; }
+    .preview .pv-eyebrow { font-size: 0.68rem; letter-spacing: 0.16em; text-transform: uppercase; color: #6aa0b8; }
+    .preview .pv-hero { background: linear-gradient(180deg, #bfeaf8, #e8f6fd); border-radius: 16px; padding: 1.1rem 1.2rem; }
+    .preview .pv-hero .pv-title { font-family: "Quicksand", sans-serif; font-weight: 700; font-size: 1.5rem; color: #12405c; }
+    .preview .pv-hero .pv-line { color: #5e8ba3; font-size: 0.85rem; margin-top: 0.2rem; }
+    .preview .pv-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    .preview .pv-pill { padding: 0.36rem 0.85rem; border-radius: 999px; background: linear-gradient(180deg, #b6eefb, #6fd5f0); color: #fff; font-size: 0.78rem; font-weight: 700; }
+    .preview .pv-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+    .preview .pv-card { background: rgba(255, 255, 255, 0.72); border-radius: 14px; padding: 0.85rem 1rem; }
+    .preview .pv-card .pv-k { font-size: 0.66rem; letter-spacing: 0.12em; text-transform: uppercase; color: #6aa0b8; }
+    .preview .pv-card .pv-v { font-family: "Quicksand", sans-serif; font-weight: 700; font-size: 1.6rem; color: #12405c; }
+    .preview .pv-card .pv-small { font-size: 0.82rem; color: #5e8ba3; }
   </style>
 </head>
 <body>
@@ -250,7 +286,9 @@
     <div class="c" style="top:44%; left:40%; width:150px; height:52px; animation: driftR 58s linear infinite; animation-delay:-15s;"></div>
   </div>
   <h1 class="site-header"><span class="halo" aria-hidden="true"></span>angeldom.me</h1>
-  <main class="card">
+  <div id="login-nav"></div>
+  <div id="card-src" hidden>
+  <div id="login-content">
     <div class="tabs">
       <button id="tab-login" class="active" type="button">Log in</button>
       <button id="tab-register" type="button">Register</button>
@@ -287,7 +325,28 @@
       <p>Your account has been created, but you can't sign in yet. Hermione approves each one by hand. Come back and log in once she has.</p>
       <button class="submit" type="button" onclick="window.location.reload()">Back to sign in</button>
     </div>
-  </main>
+  </div>
+
+  <div id="preview-content">
+    <div class="preview">
+      <div class="pv-eyebrow">A peek inside</div>
+      <div class="pv-hero">
+        <div class="pv-title">Welcome, Princess</div>
+        <div class="pv-line">Tithe, tend your tree, and serve.</div>
+      </div>
+      <div class="pv-row">
+        <span class="pv-pill">Profile</span>
+        <span class="pv-pill">Games</span>
+        <span class="pv-pill">Elysium</span>
+      </div>
+      <div class="pv-cards">
+        <div class="pv-card"><div class="pv-k">Balance</div><div class="pv-v">340</div><div class="pv-small">points · Devoted</div></div>
+        <div class="pv-card"><div class="pv-k">Today</div><div class="pv-v">✓</div><div class="pv-small">daily check-in</div></div>
+      </div>
+      <div class="pv-card"><div class="pv-k">Leaderboard</div><div class="pv-small">wren · seraphina · …</div></div>
+    </div>
+  </div>
+  </div>
   <script>
 
     let mode = "login";
@@ -379,6 +438,22 @@
         errorBox.style.display = "block";
       }
     });
+
+    // Present the sign-in as the focused card in a horizontal navigator, with a
+    // wide site-preview card to its right and placeholders to its left.
+    if (window.CardNav) {
+      CardNav.mount(document.getElementById("login-nav"), {
+        start: 2,
+        ariaLabel: "Sign in",
+        cards: [
+          { label: "angeldom.me", sub: "invite only" },
+          { label: "FAQ", sub: "what is this place?" },
+          { content: document.getElementById("login-content"), interactive: true },
+          { type: "wide", content: document.getElementById("preview-content") },
+          { label: "About", sub: "a small devotion" },
+        ],
+      });
+    }
   </script>
   <script src="/nav.js" defer></script>
 </body>
