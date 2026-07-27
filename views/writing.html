@@ -7,13 +7,18 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<!-- set the mode before first paint so the terminal never flashes the wrong palette -->
+<script>document.documentElement.dataset.mode = new URLSearchParams(location.search).get("mode") === "devotion" ? "devotion" : "penance";</script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   [hidden] { display: none !important; }
   html, body { height: 100%; overflow: hidden; }
-  body { font-family: "IBM Plex Mono", monospace; background: #04060a; color: #8fd0ff;
-    /* corruption palette, interpolated in JS via these custom props */
-    --c: #8fd0ff; --dim: #3f6a94; --ok: #5fe08a; --err: #e0543a; --glow: rgba(60,140,220,0.4); }
+  /* Penance is a dark-red terminal at rest (corrupts toward hotter red in JS).
+     Devotion is the blue sibling and never corrupts. These are the resting
+     palettes; JS lerps --c/--dim toward the corruption target during play. */
+  :root { --c: #cf3730; --dim: #7a2b27; --ok: #ffffff; --err: #ff2a20; --glow: rgba(207,55,48,0.4); }
+  :root[data-mode="devotion"] { --c: #8fd0ff; --dim: #3f6a94; --ok: #ffffff; --err: #e0543a; --glow: rgba(60,140,220,0.4); }
+  body { font-family: "IBM Plex Mono", monospace; background: #04060a; color: var(--c); }
   #app { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; padding: 4vh 5vw; }
   .scan { position: fixed; inset: 0; pointer-events: none; z-index: 40;
     background: repeating-linear-gradient(0deg, rgba(0,0,0,0.22) 0 1px, transparent 1px 3px); }
@@ -181,12 +186,20 @@
 
   /* ---------- corruption model ---------- */
   const DIFF_BASE = { meek: 0, exacting: 0.4, merciless: 0.85 };
-  const PURE = { c: "#8fd0ff", dim: "#3f6a94", glow: "rgba(60,140,220,0.4)" };
-  const FOUL = { c: "#e0403a", dim: "#6e211d", glow: "rgba(210,40,30,0.42)" };
+  // Per-mode palette. Penance rests on a dark red and corrupts toward hotter
+  // red; Devotion is blue and never leaves it (corruption() is pinned to 0).
+  const PAL = {
+    penance:  { pure: { c: "#cf3730", dim: "#7a2b27", glow: "rgba(207,55,48,0.4)" },
+                foul: { c: "#ff3b2f", dim: "#9a201a", glow: "rgba(255,50,40,0.5)" } },
+    devotion: { pure: { c: "#8fd0ff", dim: "#3f6a94", glow: "rgba(60,140,220,0.4)" },
+                foul: { c: "#8fd0ff", dim: "#3f6a94", glow: "rgba(60,140,220,0.4)" } },
+  };
+  const PURE = PAL[MODE].pure, FOUL = PAL[MODE].foul;
   function lerp(a, b, t) { return Math.round(a + (b - a) * t); }
   function hex2rgb(h) { return [parseInt(h.slice(1,3),16), parseInt(h.slice(3,5),16), parseInt(h.slice(5,7),16)]; }
   function mix(h1, h2, t) { const a = hex2rgb(h1), b = hex2rgb(h2); return "rgb(" + lerp(a[0],b[0],t) + "," + lerp(a[1],b[1],t) + "," + lerp(a[2],b[2],t) + ")"; }
   function corruption() {
+    if (DEVOTION) return 0;                 // Devotion stays clean and blue
     const base = DIFF_BASE[state.diff] || 0;
     const ramp = Math.min(0.6, state.mistakes * 0.03);
     return Math.min(1, base + ramp);
@@ -195,7 +208,7 @@
     const t = corruption();
     document.body.style.setProperty("--c", mix(PURE.c, FOUL.c, t));
     document.body.style.setProperty("--dim", mix(PURE.dim, FOUL.dim, t));
-    document.body.style.setProperty("--err", "#ff2a20");
+    if (!DEVOTION) document.body.style.setProperty("--err", "#ff2a20");
     $("scan").classList.toggle("heavy", t > 0.6);
     // hex noise + tears at higher corruption
     $("p-hex1").textContent = t > 0.35 ? hexline() : "";

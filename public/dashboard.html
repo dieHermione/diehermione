@@ -59,7 +59,12 @@
     .dailies-card { grid-area: day; }
     .leaderboard-card { grid-area: lead; }
     .control-card { grid-area: act; position: relative; z-index: 20; }
-    .acct-age { margin-top: 0.4rem; font-size: 0.82rem; color: #5e8ba3; }
+    /* greeting eyebrow on the left, "Member for N days" (same styling) on the right */
+    /* greeting eyebrow, then "Member for N days" right after it (same styling) */
+    .hero-top { display: flex; align-items: baseline; gap: 0.7rem; margin-bottom: 0.5rem; }
+    .hero-top .eyebrow { margin-bottom: 0; }
+    .acct-age { color: #6aa0b8; }
+    .acct-age::before { content: "·"; margin-right: 0.7rem; opacity: 0.6; }
     /* clock card sits in the half freed up by trimming the buttons card */
     .clock-card { grid-area: clk; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.35rem; }
     .clock-card .clk-eyebrow { font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; color: #6aa0b8; }
@@ -220,11 +225,13 @@
   <div class="dash">
     <section class="card hero">
       <div id="notif-slot"></div>
-      <div class="eyebrow" id="greeting">Welcome</div>
+      <div class="hero-top">
+        <div class="eyebrow" id="greeting">Welcome</div>
+        <div class="eyebrow acct-age" id="acct-age"></div>
+      </div>
       <h1><span class="editable" id="welcome-wrap"><span id="welcome">Welcome!</span></span></h1>
       <p><span class="editable" id="message-wrap"><span id="dashboard-message">There is no text here yet.</span></span></p>
       <div class="copy-editor" id="copy-editor"></div>
-      <p class="acct-age" id="acct-age"></p>
       <p class="checkin-notice" id="checkin-notice" hidden></p>
     </section>
 
@@ -536,6 +543,9 @@
       const mkMini = (label, fn) => {
         const b = document.createElement("button");
         b.className = "adm-mini"; b.textContent = label; b.addEventListener("click", fn); return b;
+      };
+      const mk = (tag, text) => {
+        const el = document.createElement(tag); if (text != null) el.textContent = text; return el;
       };
 
       // approvals
