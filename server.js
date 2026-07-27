@@ -277,6 +277,7 @@ app.get("/api/me", (req, res) => {
     rank,
     noEconomy,
     points: noEconomy ? null : users[key].points || 0,
+    angelcoins: users[key].angelcoins || 0,
     tithedToday: users[key].tithedOn === todayKey(),
     checkIn,
   });
@@ -893,14 +894,14 @@ app.post("/api/snake/food", (req, res) => {
     user.snakeToday = 0;
   }
   user.snakeToday += 1;
-  if (!visitor) user.points = (user.points || 0) + SNAKE_FOOD_POINTS;   // every pickup pays
+  if (!visitor) user.angelcoins = (user.angelcoins || 0) + SNAKE_FOOD_POINTS;   // every pickup pays angelcoins
 
   // completing the daily (20 eaten) triggers an extra payout, once per day
   let bonus = 0;
   if (user.snakeToday >= SNAKE_DAILY_TARGET && user.snakeBonusDay !== today) {
     user.snakeBonusDay = today;
     bonus = SNAKE_COMPLETION_BONUS;
-    if (!visitor) user.points += bonus;
+    if (!visitor) user.angelcoins = (user.angelcoins || 0) + bonus;
   }
   saveUsers(users);
   res.json({
@@ -908,6 +909,7 @@ app.post("/api/snake/food", (req, res) => {
     earned: SNAKE_FOOD_POINTS,
     bonus,
     points: user.points,
+    angelcoins: user.angelcoins || 0,
     eaten: user.snakeToday,
     target: SNAKE_DAILY_TARGET,
   });
@@ -1114,7 +1116,7 @@ app.post("/api/wheel/spin", (req, res) => {
   // hermione still records the day so the daily objective completes; it just
   // doesn't gate her next spin
   user.wheelDay = todayKey();
-  if (rankFor(user, key) !== "Visitor") user.points = (user.points || 0) + prize.points;
+  if (rankFor(user, key) !== "Visitor") user.angelcoins = (user.angelcoins || 0) + prize.points;
   saveUsers(users);
   res.json({
     ok: true,
@@ -1122,6 +1124,7 @@ app.post("/api/wheel/spin", (req, res) => {
     label: prize.label,
     won: prize.points,
     points: user.points,
+    angelcoins: user.angelcoins || 0,
     canSpin: unlimited,
   });
 });
@@ -1318,7 +1321,7 @@ app.post("/api/writing/complete", (req, res) => {
   const today = todayKey();
   if (user.writingDay !== today) {
     user.writingDay = today;
-    if (rankFor(user, key) !== "Visitor") user.points = (user.points || 0) + WRITING_DAILY_POINTS;
+    if (rankFor(user, key) !== "Visitor") user.angelcoins = (user.angelcoins || 0) + WRITING_DAILY_POINTS;
   }
 
   // tell Hermione, but never about her own practice runs

@@ -253,7 +253,7 @@
     #login-nav .cardnav-card.focused {
       box-shadow: 0 0 0 3px #6fd5f0, 0 24px 60px rgba(80, 150, 190, 0.34), 0 0 26px 2px rgba(110, 210, 240, 0.5);
     }
-    #login-nav .cardnav-title { color: #12405c; }
+    #login-nav .cardnav-title { color: #24c5ed; }
     #login-nav .cardnav-sub { color: #5e8ba3; }
     #login-content { text-align: left; }
     @media (max-width: 640px) {
@@ -264,14 +264,14 @@
     .preview { display: flex; flex-direction: column; gap: 0.7rem; text-align: left; }
     .preview .pv-eyebrow { font-size: 0.68rem; letter-spacing: 0.16em; text-transform: uppercase; color: #6aa0b8; }
     .preview .pv-hero { background: linear-gradient(180deg, #bfeaf8, #e8f6fd); border-radius: 16px; padding: 1.1rem 1.2rem; }
-    .preview .pv-hero .pv-title { font-family: "Quicksand", sans-serif; font-weight: 700; font-size: 1.5rem; color: #12405c; }
+    .preview .pv-hero .pv-title { font-family: "Quicksand", sans-serif; font-weight: 700; font-size: 1.5rem; color: #24c5ed; }
     .preview .pv-hero .pv-line { color: #5e8ba3; font-size: 0.85rem; margin-top: 0.2rem; }
     .preview .pv-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
     .preview .pv-pill { padding: 0.36rem 0.85rem; border-radius: 999px; background: linear-gradient(180deg, #b6eefb, #6fd5f0); color: #fff; font-size: 0.78rem; font-weight: 700; }
     .preview .pv-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
     .preview .pv-card { background: rgba(255, 255, 255, 0.72); border-radius: 14px; padding: 0.85rem 1rem; }
     .preview .pv-card .pv-k { font-size: 0.66rem; letter-spacing: 0.12em; text-transform: uppercase; color: #6aa0b8; }
-    .preview .pv-card .pv-v { font-family: "Quicksand", sans-serif; font-weight: 700; font-size: 1.6rem; color: #12405c; }
+    .preview .pv-card .pv-v { font-family: "Quicksand", sans-serif; font-weight: 700; font-size: 1.6rem; color: #24c5ed; }
     .preview .pv-card .pv-small { font-size: 0.82rem; color: #5e8ba3; }
   </style>
 </head>
@@ -443,14 +443,11 @@
     // wide site-preview card to its right and placeholders to its left.
     if (window.CardNav) {
       CardNav.mount(document.getElementById("login-nav"), {
-        start: 2,
+        start: 0,
         ariaLabel: "Sign in",
         cards: [
-          { label: "angeldom.me", sub: "invite only" },
-          { label: "FAQ", sub: "what is this place?" },
           { content: document.getElementById("login-content"), interactive: true },
           { type: "wide", content: document.getElementById("preview-content") },
-          { label: "About", sub: "a small devotion" },
         ],
       });
     }

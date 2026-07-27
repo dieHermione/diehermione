@@ -1,591 +1,380 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Writing - angeldom.me</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cause:wght@400..700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/site.css" />
-  <script src="/me.js"></script>
-  <style>
-    .site-header {
-      font-family: "Cause", sans-serif;
-      font-size: 3rem;
-      font-weight: 700;
-      color: var(--header-color);
-      text-shadow: 0 2px 12px rgba(255, 255, 255, 0.6);
-      text-align: center;
-      margin-bottom: 1.25rem;
-      padding: 20px 0;
-    }
-    .bow { display: inline-block; }
-    .bow.flip { transform: scaleX(-1); }
-    .card {
-      background: var(--panel-bg);
-      border-radius: 12px;
-      box-shadow: 0 10px 40px var(--shadow);
-      width: 100%;
-      max-width: 792px;
-      padding: 2.2rem;
-      color: var(--text-color);
-    }
-    h2 {
-      font-family: "Cause", sans-serif;
-      font-size: 1.1rem;
-      color: var(--heading-color);
-      margin-bottom: 1rem;
-      text-align: center;
-    }
-    /* --- the shelf of passages --- */
-    .shelf {
-      display: flex;
-      flex-direction: column;
-      gap: 0.7rem;
-      max-height: 26rem;
-      overflow-y: auto;
-      padding: 0.35rem 0.25rem;
-      scroll-snap-type: y proximity;
-    }
-    .shelf::-webkit-scrollbar { width: 8px; }
-    .shelf::-webkit-scrollbar-track { background: transparent; }
-    .shelf::-webkit-scrollbar-thumb {
-      background: var(--button-bg);
-      border-radius: 999px;
-    }
-    .passage-card {
-      flex: 0 0 auto;
-      width: 100%;
-      scroll-snap-align: start;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 0.75rem;
-      padding: 1rem 1.1rem;
-      border: 1px solid var(--table-border);
-      border-radius: 12px;
-      background: rgba(36, 197, 237, 0.08);
-      color: var(--text-color);
-      font-family: inherit;
-      text-align: left;
-      cursor: pointer;
-      transition: transform 0.12s ease, border-color 0.12s ease;
-    }
-    .passage-card:hover {
-      transform: translateY(-2px);
-      border-color: var(--button-bg);
-    }
-    .passage-card { position: relative; }
-    .edit-pencil {
-      position: absolute;
-      top: 50%;
-      right: 0.6rem;
-      transform: translateY(-50%);
-      width: 1.5rem;
-      height: 1.5rem;
-      padding: 0;
-      border: none;
-      border-radius: 50%;
-      background: var(--button-bg);
-      color: var(--button-text);
-      font-size: 0.78rem;
-      line-height: 1;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      opacity: 0.85;
-      transition: opacity 0.12s ease, transform 0.12s ease;
-    }
-    .edit-pencil:hover { opacity: 1; }
-    .passage-card { padding-right: 2.9rem; }   /* room for the pencil */
-    .editor label {
-      display: block;
-      font-size: 0.78rem;
-      font-weight: 600;
-      color: var(--table-header-color);
-      margin-bottom: 0.3rem;
-    }
-    .editor input, .editor textarea {
-      width: 100%;
-      padding: 0.55rem 0.7rem;
-      margin-bottom: 1rem;
-      border: 1px solid var(--input-border);
-      border-radius: 8px;
-      font-family: inherit;
-      font-size: 0.95rem;
-      background: var(--input-bg);
-      color: var(--input-text);
-    }
-    .editor textarea { min-height: 8rem; resize: vertical; line-height: 1.5; }
-    .editor input:focus, .editor textarea:focus { outline: none; border-color: var(--button-hover-bg); }
-    .editor .error {
-      display: none;
-      color: #d4607f;
-      background: transparent;
-      border: 1px solid #d4607f;
-      border-radius: 8px;
-      padding: 0.5rem 0.75rem;
-      font-size: 0.85rem;
-      margin-bottom: 1rem;
-    }
-    .passage-card .name {
-      font-weight: 700;
-      font-size: 0.95rem;
-      color: var(--heading-color);
-    }
-    .passage-card .count {
-      font-size: 0.75rem;
-      font-weight: 700;
-      color: var(--muted-color);
-      white-space: nowrap;
-    }
-    .mistakes {
-      display: inline-block;
-      margin-left: 0.5rem;
-      font-weight: 700;
-      color: #d4607f;
-    }
-    .progress-note { color: var(--muted-color); font-size: 0.8rem; margin-bottom: 0.75rem; }
-    /* hover hint describing what a category holds, like the signup rank tips */
-    .passage-card[data-tip]::after {
-      content: attr(data-tip);
-      position: absolute;
-      bottom: calc(100% + 0.4rem);
-      left: 1rem;
-      right: 1rem;
-      padding: 0.55rem 0.7rem;
-      border-radius: 8px;
-      background: var(--panel-solid, #ffffff);
-      color: var(--text-color);
-      box-shadow: 0 8px 24px var(--shadow);
-      border: 1px solid var(--table-border);
-      font-size: 0.78rem;
-      font-weight: 500;
-      line-height: 1.35;
-      text-align: left;
-      white-space: normal;
-      opacity: 0;
-      visibility: hidden;
-      pointer-events: none;
-      transition: opacity 0.15s ease;
-      z-index: 30;
-    }
-    .passage-card[data-tip]:hover::after,
-    .passage-card[data-tip]:focus-visible::after { opacity: 1; visibility: visible; }
-    /* --- the typing game --- */
-    #game[hidden] { display: none; }
-    .target {
-      font-size: 1.05rem;
-      line-height: 1.7;
-      letter-spacing: 0.01em;
-      padding: 1.25rem;
-      border-radius: 10px;
-      background: var(--input-bg);
-      color: var(--muted-color);
-      border: 2px solid var(--table-border);
-      user-select: none;
-      white-space: pre-wrap;
-      overflow-wrap: anywhere;
-      margin-bottom: 1rem;
-      transition: border-color 0.15s ease;
-    }
-    .target.armed { border-color: var(--button-bg); }
-    .target.wrong { border-color: #e8748f; animation: shake 0.25s; }
-    @keyframes shake {
-      0%, 100% { transform: translateX(0); }
-      25% { transform: translateX(-4px); }
-      75% { transform: translateX(4px); }
-    }
-    .target .done { color: var(--heading-color); font-weight: 600; }
-    .target .cursor {
-      background: var(--button-bg);
-      color: var(--button-text);
-      border-radius: 2px;
-    }
-    .status {
-      text-align: center;
-      font-weight: 600;
-      min-height: 1.4em;
-      margin-bottom: 1rem;
-    }
-    .status.win { color: var(--heading-color); }
-    .bar {
-      height: 6px;
-      border-radius: 999px;
-      background: var(--table-border);
-      overflow: hidden;
-      margin-bottom: 1.25rem;
-    }
-    .bar span {
-      display: block;
-      height: 100%;
-      width: 0%;
-      background: var(--button-bg);
-      transition: width 0.1s linear;
-    }
-    .actions { display: flex; gap: 0.75rem; justify-content: center; }
-    button.pill {
-      padding: 0.6rem 1.25rem;
-      background: var(--button-bg);
-      color: var(--button-text);
-      border: none;
-      border-radius: 8px;
-      font-family: inherit;
-      font-size: 0.95rem;
-      font-weight: 600;
-      cursor: pointer;
-    }
-    button.pill:hover { background: var(--button-hover-bg); }
-    .note { color: var(--muted-color); font-size: 0.85rem; margin-top: 1rem; text-align: center; }
-    .results { text-align: center; }
-    .results[hidden] { display: none; }
-    .results-line {
-      font-weight: 700;
-      font-size: 1rem;
-      color: var(--heading-color);
-      margin-bottom: 1rem;
-    }
-    #target[hidden], #play-actions[hidden] { display: none; }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Writing - angeldom.me</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  [hidden] { display: none !important; }
+  html, body { height: 100%; overflow: hidden; }
+  body { font-family: "IBM Plex Mono", monospace; background: #04060a; color: #8fd0ff;
+    /* corruption palette, interpolated in JS via these custom props */
+    --c: #8fd0ff; --dim: #3f6a94; --ok: #5fe08a; --err: #e0543a; --glow: rgba(60,140,220,0.4); }
+  #app { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; padding: 4vh 5vw; }
+  .scan { position: fixed; inset: 0; pointer-events: none; z-index: 40;
+    background: repeating-linear-gradient(0deg, rgba(0,0,0,0.22) 0 1px, transparent 1px 3px); }
+  .scan.heavy { background: repeating-linear-gradient(0deg, rgba(0,0,0,0.45) 0 1px, transparent 1px 2px); }
+  .screen { width: min(880px, 92vw); position: relative; z-index: 2; display: none; }
+  .screen.on { display: block; }
+  .c { color: var(--c); } .dim { color: var(--dim); } .ok { color: var(--ok); } .err { color: var(--err); }
+  .cap { letter-spacing: 0.24em; text-transform: uppercase; }
+  .md { font-size: 15px; line-height: 2; }
+  .sm { font-size: 12.5px; line-height: 1.9; letter-spacing: 0.04em; }
+  .big { font-size: clamp(1.1rem, 2.4vw, 1.5rem); line-height: 1.9; }
+  a, button { font-family: inherit; }
+  .blink { animation: blink 1s steps(1,end) infinite; }
+  @keyframes blink { 0%,50% { opacity: 1; } 50.01%,100% { opacity: 0; } }
+  hr.d { border: none; border-top: 1px solid var(--dim); opacity: 0.5; margin: 0.9rem 0; }
+  .cur { background: var(--c); color: #04060a; }
+  .glitchblk { background: var(--err); color: #000; }
 
-    /* greyscale dark mode */
-    body[data-theme="dark"] .mistakes { color: #bdbdbd; }
-    body[data-theme="dark"] .editor .error { color: #d0d0d0; }
-    body[data-theme="dark"] .passage-card { background: rgba(255, 255, 255, 0.05); }
-  </style>
+  /* boot */
+  #boot .hint { margin-top: 1.6rem; color: var(--dim); }
+
+  /* selection */
+  .field { margin: 1.1rem 0; }
+  .flabel { color: var(--dim); font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 0.5rem; }
+  .opts { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+  .opt { cursor: pointer; padding: 0.35rem 0.9rem; border: 1px solid var(--dim); color: var(--c); background: transparent;
+    border-radius: 2px; font-size: 0.9rem; letter-spacing: 0.04em; transition: background 0.12s, color 0.12s, border-color 0.12s; }
+  .opt:hover { border-color: var(--c); }
+  .opt.sel { background: var(--c); color: #04060a; border-color: var(--c); }
+  .opt.danger.sel { background: var(--err); border-color: var(--err); }
+  .diffnote { color: var(--dim); font-size: 12px; margin-top: 0.45rem; min-height: 1.2em; }
+  input.term, textarea.term { width: 100%; background: rgba(0,0,0,0.35); border: 1px solid var(--dim); color: var(--c);
+    font-family: inherit; font-size: 1rem; padding: 0.6rem 0.7rem; border-radius: 2px; }
+  input.term:focus, textarea.term:focus { outline: none; border-color: var(--c); }
+  textarea.term { min-height: 5rem; line-height: 1.8; resize: vertical; }
+  input.custom { width: 6rem; }
+  .begin { margin-top: 1.6rem; cursor: pointer; padding: 0.55rem 1.6rem; border: 1px solid var(--c); background: transparent;
+    color: var(--c); font-size: 1rem; letter-spacing: 0.14em; text-transform: uppercase; border-radius: 2px; }
+  .begin:hover { background: var(--c); color: #04060a; }
+  .begin:disabled { opacity: 0.4; cursor: not-allowed; }
+  .begin:disabled:hover { background: transparent; color: var(--c); }
+
+  /* play */
+  #play .status { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+  #play .warn { color: var(--err); min-height: 1.3em; margin: 0.4rem 0; }
+  #play .hex { color: var(--dim); font-size: 11px; line-height: 1.7; white-space: pre; opacity: 0.75; min-height: 1.2em; }
+  #play .target { position: relative; }
+  #play .target.split::before, #play .target.split::after {
+    content: attr(data-t); position: absolute; left: 0; top: 0; pointer-events: none; }
+  #play .target.split::before { color: #ff2a20; opacity: 0.55; transform: translateX(-2px); clip-path: inset(0 0 55% 0); }
+  #play .target.split::after { color: #000; opacity: 0.6; transform: translateX(2px); clip-path: inset(55% 0 0 0); }
+  #play .bar { margin-top: 1.2rem; }
+  .barfill { display: inline-block; letter-spacing: -1px; }
+  .tear { position: absolute; left: -6vw; right: -6vw; height: 5px; background: #ff2a20; opacity: 0.16; pointer-events: none; }
+  #play .actions { margin-top: 1.6rem; display: flex; gap: 1.4rem; }
+  .tbtn { background: none; border: none; color: var(--dim); cursor: pointer; font-size: 0.85rem; letter-spacing: 0.1em;
+    text-transform: uppercase; text-decoration: underline; text-underline-offset: 4px; }
+  .tbtn:hover { color: var(--c); }
+
+  /* results */
+  #done .row { display: flex; }
+  #done .k { color: var(--dim); width: 10rem; }
+  #done .transcript { margin-top: 0.6rem; color: var(--c); font-size: 0.95rem; line-height: 1.9; }
+  #done .transcript .n { color: var(--dim); }
+
+  @media (prefers-reduced-motion: reduce) { .blink { animation: none; } }
+</style>
 </head>
-<body class="has-top-nav">
-  <section class="card" id="picker">
-    <h2>Choose a category</h2>
-    <div class="shelf" id="shelf"></div>
-    <p class="note">Type for Princess.</p>
-  </section>
+<body>
+  <div id="app">
+    <!-- opening / boot -->
+    <section class="screen on md" id="boot">
+      <div id="boot-log"></div>
+      <div class="hint" id="boot-hint" hidden><span class="cap">press any key to begin</span> <span class="blink">_</span></div>
+    </section>
 
-  <section class="card editor" id="editor" hidden>
-    <h2>Edit category</h2>
-    <div class="error" id="edit-error"></div>
-    <label for="edit-title">Title</label>
-    <input type="text" id="edit-title" maxlength="120" />
-    <label for="edit-desc">Description (shown on hover)</label>
-    <input type="text" id="edit-desc" maxlength="200" />
-    <label for="edit-text">Passages, leave a blank line between each</label>
-    <textarea id="edit-text" maxlength="2000"></textarea>
-    <div class="actions">
-      <button class="pill" id="edit-save" type="button">Save</button>
-      <button class="pill" id="edit-cancel" type="button">Cancel</button>
-    </div>
-  </section>
+    <!-- selection -->
+    <section class="screen md" id="select">
+      <div class="c cap" style="font-size:1.1rem">:: configure penance ::</div>
+      <hr class="d" />
+      <div class="field">
+        <div class="flabel">repetitions</div>
+        <div class="opts" id="reps-opts">
+          <button class="opt" data-reps="25">25</button>
+          <button class="opt sel" data-reps="50">50</button>
+          <button class="opt" data-reps="100">100</button>
+          <span class="dim">/</span>
+          <input class="term custom" id="reps-custom" type="number" min="1" max="9999" placeholder="custom" />
+        </div>
+      </div>
+      <div class="field">
+        <div class="flabel">difficulty</div>
+        <div class="opts" id="diff-opts">
+          <button class="opt" data-diff="meek">meek</button>
+          <button class="opt sel" data-diff="exacting">exacting</button>
+          <button class="opt danger" data-diff="merciless">merciless</button>
+        </div>
+        <div class="diffnote" id="diffnote"></div>
+      </div>
+      <div class="field">
+        <div class="flabel">category</div>
+        <input class="term" id="category" maxlength="40" value="devotion" />
+      </div>
+      <div class="field">
+        <div class="flabel">your lines · one per row</div>
+        <textarea class="term" id="lines" rows="3" maxlength="600" placeholder="I will not disappoint my Princess."></textarea>
+      </div>
+      <button class="begin" id="begin" disabled>begin</button>
+    </section>
 
-  <section class="card" id="game" hidden>
-    <h2 id="game-title">…</h2>
-    <p class="progress-note" id="progress"></p>
-    <p class="status" id="status">Start typing.</p>
-    <div class="bar"><span id="bar-fill"></span></div>
-    <div class="target" id="target"></div>
-    <div class="actions" id="play-actions">
-      <button class="pill" id="restart" type="button">Restart</button>
-      <button class="pill" id="exit-early" type="button" hidden>Exit early</button>
-    </div>
-    <div class="results" id="results" hidden>
-      <p class="results-line" id="results-summary"></p>
-      <button class="pill" id="results-done" type="button">Back to categories</button>
-    </div>
-  </section>
+    <!-- typing -->
+    <section class="screen" id="play">
+      <div class="sm dim cap status">
+        <span id="p-cat">devotion</span>
+        <span>rep <span id="p-rep">00</span> / <span id="p-total">00</span></span>
+        <span>diff <span id="p-diff">exacting</span></span>
+        <span>err <span id="p-err">00</span></span>
+      </div>
+      <div class="sm warn" id="p-warn"></div>
+      <div class="hex" id="p-hex1"></div>
+      <div class="big"><span class="c">&gt; </span><span class="target" id="target"></span></div>
+      <div class="hex" id="p-hex2"></div>
+      <div class="bar sm"><span class="barfill" id="p-barfill"></span> <span class="dim" id="p-barlabel">signal clean</span></div>
+      <div class="actions">
+        <button class="tbtn" id="restart">restart line</button>
+        <button class="tbtn" id="quit">abandon</button>
+      </div>
+    </section>
 
-  <script>
+    <!-- results -->
+    <section class="screen md" id="done">
+      <div class="c cap" style="font-size:1.1rem" id="done-title">:: session complete ::</div>
+      <hr class="d" />
+      <div class="row"><span class="k">lines</span><span><span id="r-lines">0</span> / <span id="r-total">0</span> <span class="ok" id="r-check">✓</span></span></div>
+      <div class="row"><span class="k">errors</span><span id="r-err">0</span></div>
+      <div class="row"><span class="k">time</span><span id="r-time">0:00</span></div>
+      <div class="row"><span class="k">accuracy</span><span id="r-acc">100%</span></div>
+      <div class="row" id="r-integrity-row" hidden><span class="k">integrity</span><span class="err">frayed</span></div>
+      <hr class="d" />
+      <div class="dim sm cap">transcript · in your own words</div>
+      <div class="transcript" id="r-transcript"></div>
+      <div class="dim sm" id="r-log" style="margin-top:1rem"></div>
+      <div class="actions" style="margin-top:1.4rem; display:flex; gap:1.4rem;">
+        <button class="tbtn" id="again">again</button>
+        <a class="tbtn" href="/dashboard" style="text-decoration:underline">exit</a>
+      </div>
+    </section>
+  </div>
+  <div class="scan" id="scan"></div>
 
+<script>
+  const $ = (id) => document.getElementById(id);
+  function show(id) { document.querySelectorAll(".screen").forEach((s) => s.classList.toggle("on", s.id === id)); }
 
-    // --- game state ---
-    let categories = [];
-    let isAdmin = false;
-    let queue = [];        // this run's passages, already shuffled by the server
-    let index = 0;         // which passage of the category we're on
-    let current = null;    // the passage being typed
-    let typed = 0;         // characters correct so far in this passage
-    let mistakes = 0;      // wrong keys across the whole category
-    let finished = false;
-    let categoryTitle = "";
-    let startedAt = 0;     // when this series began, for the results screen
-    let passagesDone = 0;  // successful passages this series
-    let lettersThisSeries = 0;
-    const REQUIRED_PASSAGES = 50;   // a series is 50 passages, looping the category
-    function shuffleInPlace(a) {
-      for (let i = a.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [a[i], a[j]] = [a[j], a[i]];
-      }
+  /* ---------- corruption model ---------- */
+  const DIFF_BASE = { meek: 0, exacting: 0.4, merciless: 0.85 };
+  const PURE = { c: "#8fd0ff", dim: "#3f6a94", glow: "rgba(60,140,220,0.4)" };
+  const FOUL = { c: "#e0403a", dim: "#6e211d", glow: "rgba(210,40,30,0.42)" };
+  function lerp(a, b, t) { return Math.round(a + (b - a) * t); }
+  function hex2rgb(h) { return [parseInt(h.slice(1,3),16), parseInt(h.slice(3,5),16), parseInt(h.slice(5,7),16)]; }
+  function mix(h1, h2, t) { const a = hex2rgb(h1), b = hex2rgb(h2); return "rgb(" + lerp(a[0],b[0],t) + "," + lerp(a[1],b[1],t) + "," + lerp(a[2],b[2],t) + ")"; }
+  function corruption() {
+    const base = DIFF_BASE[state.diff] || 0;
+    const ramp = Math.min(0.6, state.mistakes * 0.03);
+    return Math.min(1, base + ramp);
+  }
+  function applyCorruption() {
+    const t = corruption();
+    document.body.style.setProperty("--c", mix(PURE.c, FOUL.c, t));
+    document.body.style.setProperty("--dim", mix(PURE.dim, FOUL.dim, t));
+    document.body.style.setProperty("--err", "#ff2a20");
+    $("scan").classList.toggle("heavy", t > 0.6);
+    // hex noise + tears at higher corruption
+    $("p-hex1").textContent = t > 0.35 ? hexline() : "";
+    $("p-hex2").textContent = t > 0.35 ? hexline() : "";
+    document.querySelectorAll("#play .tear").forEach((n) => n.remove());
+    if (t > 0.7) { addTear(0.34); addTear(0.62); }
+    const warn = t > 0.7 ? "!! SIGNAL DEGRADED — HER PATIENCE THINS"
+      : t > 0.4 ? "! signal loss — realign input" : "";
+    $("p-warn").textContent = warn;
+  }
+  function addTear(pos) {
+    const d = document.createElement("div"); d.className = "tear";
+    d.style.top = (pos * 100) + "%"; $("play").appendChild(d);
+  }
+  let hexSeed = 0x51;
+  function hexline() {
+    let s = "0x" + (0x7F2A).toString(16).toUpperCase() + "  ";
+    for (let j = 0; j < 12; j++) { hexSeed = (hexSeed * 1103515245 + 12345) & 0x7fffffff; s += (hexSeed % 256).toString(16).padStart(2, "0").toUpperCase() + " "; }
+    return s;
+  }
+  const GLYPH = "▓▒░█▚▞#%&@";
+  function corruptGlyph(i) { return GLYPH[(i * 7 + state.mistakes) % GLYPH.length]; }
+
+  /* ---------- state ---------- */
+  const state = { reps: 50, diff: "exacting", category: "devotion", lines: [], idx: 0, typed: 0, mistakes: 0, correct: 0, startedAt: 0, done: false };
+
+  /* ---------- boot ---------- */
+  const BOOT = [
+    ["angeldom OS", " v3.1  ", "session 0x1F3A"],
+    ["> power-on self test .............. ", "OK"],
+    ["> mounting /devotion .............. ", "OK"],
+    ["> establishing link to Her ........ ", "OK"],
+    ["> penance module .................. ", "READY"],
+  ];
+  function runBoot() {
+    const log = $("boot-log"); log.innerHTML = "";
+    let i = 0;
+    (function step() {
+      if (i >= BOOT.length) { $("boot-hint").hidden = false; return; }
+      const parts = BOOT[i];
+      const line = document.createElement("div");
+      line.innerHTML = parts.map((p, k) => k === parts.length - 1 && /OK|READY/.test(p) ? '<span class="ok">' + p + "</span>" : (k === 0 && i === 0 ? '<span class="c">' + p + "</span>" : k === 2 ? '<span class="dim">' + p + "</span>" : p)).join("");
+      log.appendChild(line); i++;
+      setTimeout(step, 260);
+    })();
+  }
+  function leaveBoot() { if ($("boot").classList.contains("on")) { show("select"); refreshBegin(); $("lines").focus(); } }
+  document.addEventListener("keydown", (e) => { if ($("boot").classList.contains("on")) { e.preventDefault(); leaveBoot(); } }, true);
+  $("boot").addEventListener("click", leaveBoot);
+
+  /* ---------- selection ---------- */
+  const DIFF_NOTE = {
+    meek: "a clean signal. forgiving.",
+    exacting: "the signal frays as mistakes mount.",
+    merciless: "corrupted from the first keystroke. she is watching.",
+  };
+  function pickGroup(container, attr, value) {
+    container.querySelectorAll(".opt").forEach((b) => b.classList.toggle("sel", b.dataset[attr] === value));
+  }
+  $("reps-opts").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-reps]"); if (!b) return;
+    state.reps = Number(b.dataset.reps); $("reps-custom").value = "";
+    pickGroup($("reps-opts"), "reps", b.dataset.reps);
+  });
+  $("reps-custom").addEventListener("input", (e) => {
+    const n = parseInt(e.target.value);
+    if (Number.isInteger(n) && n > 0) { state.reps = Math.min(9999, n); $("reps-opts").querySelectorAll(".opt").forEach((b) => b.classList.remove("sel")); }
+  });
+  $("diff-opts").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-diff]"); if (!b) return;
+    state.diff = b.dataset.diff; pickGroup($("diff-opts"), "diff", state.diff);
+    $("diffnote").textContent = DIFF_NOTE[state.diff];
+  });
+  $("diffnote").textContent = DIFF_NOTE.exacting;
+  function parseLines() { return $("lines").value.split("\n").map((l) => l.trim()).filter(Boolean); }
+  function refreshBegin() { $("begin").disabled = parseLines().length === 0; }
+  $("lines").addEventListener("input", refreshBegin);
+  $("begin").addEventListener("click", startGame);
+
+  /* ---------- game ---------- */
+  function startGame() {
+    state.lines = parseLines(); if (!state.lines.length) return;
+    state.category = ($("category").value || "devotion").trim();
+    state.idx = 0; state.typed = 0; state.mistakes = 0; state.correct = 0; state.done = false;
+    state.startedAt = Date.now();
+    $("p-cat").textContent = state.category;
+    $("p-diff").textContent = state.diff;
+    $("p-total").textContent = String(state.reps).padStart(2, "0");
+    show("play"); startPassage();
+  }
+  function current() { return state.lines[state.idx % state.lines.length]; }
+  function startPassage() {
+    state.typed = 0;
+    $("p-rep").textContent = String(state.idx + 1).padStart(2, "0");
+    $("p-err").textContent = String(state.mistakes).padStart(2, "0");
+    applyCorruption(); renderTarget();
+  }
+  function renderTarget() {
+    const text = current(), t = corruption();
+    const el = $("target");
+    const done = text.slice(0, state.typed);
+    const cur = text.slice(state.typed, state.typed + 1);
+    const rest = text.slice(state.typed + 1);
+    let restHtml = "";
+    for (let i = 0; i < rest.length; i++) {
+      const ch = rest[i];
+      // at higher corruption, some upcoming glyphs are visually scrambled (you
+      // still type the real character)
+      if (ch !== " " && t > 0.45 && ((i * 13 + state.mistakes) % 7) === 0) {
+        restHtml += '<span class="err">' + corruptGlyph(i) + "</span>";
+      } else restHtml += escapeHtml(ch);
     }
+    el.className = "target" + (t > 0.55 ? " split" : "");
+    el.setAttribute("data-t", text);
+    el.innerHTML = '<span class="dim">' + escapeHtml(done) + '</span>' +
+      '<span class="cur">' + escapeHtml(cur || " ") + "</span>" + restHtml;
+    // progress bar
+    const frac = state.typed / text.length;
+    const width = 20, filled = Math.round(frac * width);
+    $("p-barfill").textContent = "█".repeat(filled) + "░".repeat(width - filled);
+    $("p-barlabel").textContent = t > 0.7 ? "degrading" : t > 0.4 ? "unstable" : "signal clean";
+    $("p-barfill").style.color = "var(--c)";
+  }
+  function escapeHtml(s) { return s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
 
-    const targetEl = document.getElementById("target");
-    const statusEl = document.getElementById("status");
-    const fillEl = document.getElementById("bar-fill");
-
-    function renderShelf() {
-      const shelf = document.getElementById("shelf");
-      shelf.replaceChildren(...categories.map((c) => {
-        const card = document.createElement("button");
-        card.type = "button";
-        card.className = "passage-card";
-        const name = document.createElement("span");
-        name.className = "name";
-        name.textContent = c.title;
-        const count = document.createElement("span");
-        count.className = "count";
-        count.textContent = c.count + (c.count === 1 ? " passage" : " passages");
-        card.append(name, count);
-        if (c.description) card.setAttribute("data-tip", c.description);
-        card.addEventListener("click", () => openCategory(c));
-        if (isAdmin) {
-          const pencil = document.createElement("button");
-          pencil.type = "button";
-          pencil.className = "edit-pencil";
-          pencil.textContent = "✎";
-          pencil.title = "Edit this category";
-          pencil.setAttribute("aria-label", "Edit " + c.title);
-          pencil.addEventListener("click", (e) => {
-            e.stopPropagation();          // don't start the game
-            openEditor(c);
-          });
-          card.append(pencil);
-        }
-        return card;
-      }));
-    }
-
-    function renderTarget() {
-      const done = current.text.slice(0, typed);
-      const next = current.text.slice(typed, typed + 1);
-      const rest = current.text.slice(typed + 1);
-      targetEl.replaceChildren();
-      const doneEl = document.createElement("span");
-      doneEl.className = "done";
-      doneEl.textContent = done;
-      const cursorEl = document.createElement("span");
-      cursorEl.className = "cursor";
-      cursorEl.textContent = next;
-      targetEl.append(doneEl, cursorEl, document.createTextNode(rest));
-      const pct = (typed / current.text.length) * 100;
-      fillEl.style.width = pct + "%";
-    }
-
-    async function openCategory(c) {
-      const res = await fetch("/api/writing/" + encodeURIComponent(c.id));
-      if (!res.ok) return;
-      const data = await res.json();
-      queue = data.passages || [];
-      if (!queue.length) return;
-      categoryTitle = data.category.title;
-      index = 0;
-      mistakes = 0;
-      passagesDone = 0;
-      lettersThisSeries = 0;
-      startedAt = Date.now();
-      document.getElementById("results").hidden = true;
-      document.getElementById("target").hidden = false;
-      document.getElementById("play-actions").hidden = false;
-      startPassage();
-      document.getElementById("picker").hidden = true;
-      document.getElementById("game").hidden = false;
-    }
-
-    function startPassage() {
-      current = queue[index];
-      typed = 0;
-      finished = false;
-      document.getElementById("game-title").textContent = categoryTitle;
-      statusEl.textContent = "Start typing.";
-      statusEl.classList.remove("win");
-      targetEl.classList.add("armed");
-      renderProgress();
+  document.addEventListener("keydown", (e) => {
+    if (!$("play").classList.contains("on") || state.done) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.key === "Backspace") { e.preventDefault(); return; }   // no going back
+    let key = e.key;
+    if (key === "Enter") key = "\n";
+    if (key.length !== 1 && key !== "\n") return;
+    e.preventDefault();
+    const text = current();
+    if (key === text[state.typed]) {
+      state.typed++; state.correct++;
+      if (state.typed >= text.length) { finishPassage(); return; }
       renderTarget();
+    } else {
+      state.mistakes++;
+      $("p-err").textContent = String(state.mistakes).padStart(2, "0");
+      applyCorruption(); renderTarget();
     }
+  });
 
-    function renderProgress() {
-      const el = document.getElementById("progress");
-      el.textContent = "Passage " + (passagesDone + 1) + " of " + REQUIRED_PASSAGES;
-      if (mistakes) {
-        const m = document.createElement("span");
-        m.className = "mistakes";
-        m.textContent = "· " + mistakes + (mistakes === 1 ? " mistake" : " mistakes");
-        el.append(m);
-      }
-    }
+  function finishPassage() {
+    state.idx++;
+    if (state.idx >= state.reps) { finishSession(); return; }
+    startPassage();
+  }
 
-    function restart() {
-      typed = 0;
-      finished = false;
-      statusEl.textContent = "Start typing.";
-      statusEl.classList.remove("win");
-      targetEl.classList.remove("wrong");
-      renderTarget();
-    }
+  function fmtTime(ms) { const s = Math.round(ms / 1000); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); }
 
-    function noteMistake() {
-      mistakes++;
-      renderProgress();
-      targetEl.classList.remove("wrong");
-      void targetEl.offsetWidth;   // reflow so the shake can replay
-      targetEl.classList.add("wrong");
-    }
-
-    function finish() {
-      lettersThisSeries += [...current.text].length;
-      passagesDone++;
-      if (passagesDone < REQUIRED_PASSAGES) {
-        index++;
-        if (index >= queue.length) { shuffleInPlace(queue); index = 0; }  // loop the category
-        startPassage();
-        statusEl.textContent = "Next one.";
-        return;
-      }
-      finished = true;
-      targetEl.classList.remove("armed");
-      statusEl.textContent = mistakes
-        ? "Complete with " + mistakes + (mistakes === 1 ? " mistake." : " mistakes.")
-        : "Complete, flawlessly.";
-      statusEl.classList.add("win");
-      showResults(passagesDone, mistakes, Date.now() - startedAt);
-    }
-
-    function fmtDuration(ms) {
-      const total = Math.round(ms / 1000);
-      const m = Math.floor(total / 60);
-      const sec = total % 60;
-      return m ? m + "m " + sec + "s" : sec + "s";
-    }
-
-    function showResults(passages, misses, elapsedMs) {
-      document.getElementById("play-actions").hidden = true;
-      document.getElementById("target").hidden = true;
-      document.getElementById("results-summary").textContent =
-        passages + (passages === 1 ? " passage" : " passages") + " · " +
-        misses + (misses === 1 ? " mistake" : " mistakes") + " · " + fmtDuration(elapsedMs);
-      document.getElementById("results").hidden = false;
-      // report the finished series so Hermione can see it
-      fetch("/api/writing/complete", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ category: categoryTitle, passages, mistakes: misses, elapsedMs, letters: lettersThisSeries }),
-      }).catch(() => {});
-    }
-
-    document.addEventListener("keydown", (e) => {
-      if (!current || finished) return;
-      if (e.metaKey || e.ctrlKey || e.altKey) return;   // leave shortcuts alone
-
-      if (e.key === "Backspace") {
-        e.preventDefault();                              // no going back
-        return;
-      }
-
-      let key = e.key;
-      if (key === "Enter") key = "\n";
-      if (key.length !== 1 && key !== "\n") return;      // ignore Shift, arrows, F-keys…
-      e.preventDefault();
-
-      if (key === current.text[typed]) {
-        typed++;
-        targetEl.classList.remove("wrong");
-        if (typed === current.text.length) {
-          renderTarget();
-          finish();
-          return;
-        }
-        renderTarget();
-      } else {
-        noteMistake();
-      }
+  function finishSession() {
+    state.done = true;
+    const elapsed = Date.now() - state.startedAt;
+    const t = corruption();
+    $("done-title").innerHTML = t > 0.6 ? ':: s<span class="err">█</span>ssion c<span class="err">░</span>mplete :: <span class="err sm">[signal recovered]</span>' : ":: session complete ::";
+    $("r-lines").textContent = state.reps; $("r-total").textContent = state.reps;
+    $("r-err").textContent = state.mistakes;
+    $("r-time").textContent = fmtTime(elapsed);
+    const acc = state.correct + state.mistakes > 0 ? Math.round(state.correct / (state.correct + state.mistakes) * 100) : 100;
+    $("r-acc").textContent = acc + "%";
+    $("r-integrity-row").hidden = t <= 0.6;
+    const tr = $("r-transcript"); tr.innerHTML = "";
+    state.lines.forEach((l) => {
+      const d = document.createElement("div");
+      d.innerHTML = '"' + escapeHtml(l) + '"  <span class="n">× ' + Math.floor(state.reps / state.lines.length) + "</span>";
+      tr.appendChild(d);
     });
+    document.body.style.setProperty("--c", mix(PURE.c, FOUL.c, t));
+    show("done");
+    // log the finished series so it appears under Hermione's "Lines Completed"
+    const letters = state.lines.reduce((a, l) => a + l.length, 0) * Math.ceil(state.reps / state.lines.length);
+    fetch("/api/writing/complete", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ category: state.category, passages: state.reps, mistakes: state.mistakes, elapsedMs: elapsed, letters }),
+    }).then((r) => { $("r-log").textContent = r.ok ? "> logged to her record" : ""; }).catch(() => {});
+  }
 
-    // pasting would defeat the whole exercise
-    ["paste", "drop"].forEach((evt) =>
-      document.addEventListener(evt, (e) => e.preventDefault())
-    );
+  $("restart").addEventListener("click", () => { state.typed = 0; renderTarget(); });
+  $("quit").addEventListener("click", () => { show("select"); document.body.style.setProperty("--c", PURE.c); document.body.style.setProperty("--dim", PURE.dim); $("scan").classList.remove("heavy"); });
+  $("again").addEventListener("click", () => { show("select"); document.body.style.setProperty("--c", PURE.c); document.body.style.setProperty("--dim", PURE.dim); $("scan").classList.remove("heavy"); refreshBegin(); });
 
-    let editing = null;
+  // no pasting; it would defeat the exercise
+  ["paste", "drop"].forEach((evt) => document.addEventListener(evt, (e) => {
+    if ($("play").classList.contains("on")) e.preventDefault();
+  }));
 
-    function openEditor(c) {
-      editing = c;
-      document.getElementById("picker").hidden = true;
-      document.getElementById("editor").hidden = false;
-      document.getElementById("edit-error").style.display = "none";
-      document.getElementById("edit-title").value = c.title;
-      document.getElementById("edit-desc").value = c.description || "";
-      // fetch the passages only when actually editing them
-      fetch("/api/writing/" + encodeURIComponent(c.id))
-        .then((r) => (r.ok ? r.json() : Promise.reject()))
-        .then((d) => {
-          document.getElementById("edit-text").value =
-            (d.passages || []).map((x) => x.text).join("\n\n");
-        })
-        .catch(() => {});
-    }
-
-    function closeEditor() {
-      editing = null;
-      document.getElementById("editor").hidden = true;
-      document.getElementById("picker").hidden = false;
-    }
-
-    document.getElementById("edit-cancel").addEventListener("click", closeEditor);
-
-    document.getElementById("edit-save").addEventListener("click", async () => {
-      if (!editing) return;
-      const passages = document.getElementById("edit-text").value
-        .split(/\n\s*\n/)                      // a blank line separates passages
-        .map((t) => t.trim())
-        .filter(Boolean);
-      const res = await fetch("/api/writing/" + encodeURIComponent(editing.id), {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: document.getElementById("edit-title").value,
-          description: document.getElementById("edit-desc").value,
-          passages,
-        }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        const err = document.getElementById("edit-error");
-        err.textContent = data.error || "Saving failed.";
-        err.style.display = "block";
-        return;
-      }
-      Object.assign(editing, data.category);
-      renderShelf();
-      closeEditor();
-    });
-
-    document.getElementById("restart").addEventListener("click", () => restart());
-    // control only returns once the series is finished (or Hermione exits early)
-    function leaveGame() {
-      current = null;
-      finished = true;
-      document.getElementById("game").hidden = true;
-      document.getElementById("results").hidden = true;
-      document.getElementById("target").hidden = false;
-      document.getElementById("play-actions").hidden = false;
-      document.getElementById("picker").hidden = false;
-    }
-    document.getElementById("results-done").addEventListener("click", leaveGame);
-    // shown only for Hermione (set up on load); lets her bail out of a series
-    document.getElementById("exit-early").addEventListener("click", leaveGame);
-
-    window.siteMe()
-      .then((d) => {
-        isAdmin = Boolean(d.isAdmin);
-        document.getElementById("exit-early").hidden = !isAdmin;   // only she may bail out
-        return fetch("/api/writing");
-      })
-      .then((r) => (r.ok ? r.json() : Promise.reject()))
-      .then((d) => {
-        categories = d.categories || [];
-        renderShelf();
-      })
-      .catch(() => (window.location.href = "/"));
-  </script>
-  <script src="/nav.js" defer></script>
-  <script src="/notifications.js" defer></script>
+  runBoot();
+</script>
 </body>
 </html>

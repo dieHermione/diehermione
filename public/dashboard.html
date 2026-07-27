@@ -15,7 +15,7 @@
     body {
       font-family: "Quicksand", -apple-system, BlinkMacSystemFont, sans-serif;
       background: linear-gradient(180deg, #8fd8f2 0%, #e8f6fd 72%);
-      color: #22506a;
+      color: #24c5ed;
       justify-content: flex-start;
       padding: 2.5rem 1rem 3rem;
       gap: 0;
@@ -50,7 +50,7 @@
       border-radius: 22px;
       box-shadow: 0 18px 46px rgba(80, 150, 190, 0.22);
       padding: 1.9rem 2rem;
-      color: #22506a;
+      color: #24c5ed;
       text-align: left;
       min-width: 0;
     }
@@ -62,7 +62,7 @@
     /* clock card sits in the half freed up by trimming the buttons card */
     .clock-card { grid-area: clk; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.35rem; }
     .clock-card .clk-eyebrow { font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; color: #6aa0b8; }
-    .clock-card .clk-time { font-family: "Quicksand", sans-serif; font-size: 2.9rem; font-weight: 700; color: #12405c; line-height: 1; font-variant-numeric: tabular-nums; }
+    .clock-card .clk-time { font-family: "Quicksand", sans-serif; font-size: 2.9rem; font-weight: 700; color: #24c5ed; line-height: 1; font-variant-numeric: tabular-nums; }
     .clock-card .clk-ampm { font-size: 1.1rem; font-weight: 600; color: #4f88a3; }
     .clock-card .clk-date { font-size: 0.9rem; color: #5e8ba3; }
     .clock-card .clk-reset { margin-top: 0.5rem; font-size: 0.78rem; color: #6aa0b8; }
@@ -70,14 +70,14 @@
     /* subliminal test control (temporary scaffolding, no random trigger yet) */
     .sub-test { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-top: 1rem; padding-top: 0.9rem; border-top: 1px solid rgba(30,120,160,0.16); }
     .sub-test .lbl { width: 100%; font-size: 0.68rem; letter-spacing: 0.14em; text-transform: uppercase; color: #6aa0b8; }
-    .sub-test select { flex: 1; min-width: 8rem; padding: 0.45rem 0.6rem; border: 1px solid var(--input-border); border-radius: 999px; background: rgba(255,255,255,0.85); color: #22506a; font-family: inherit; font-size: 0.85rem; cursor: pointer; }
+    .sub-test select { flex: 1; min-width: 8rem; padding: 0.45rem 0.6rem; border: 1px solid var(--input-border); border-radius: 999px; background: rgba(255,255,255,0.85); color: #24c5ed; font-family: inherit; font-size: 0.85rem; cursor: pointer; }
 
     h2 { font-family: "Quicksand", sans-serif; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: var(--button-bg); margin-bottom: 1rem; }
 
     .hero .eyebrow { font-size: 0.74rem; letter-spacing: 0.16em; text-transform: uppercase; color: #6aa0b8; margin-bottom: 0.5rem; }
-    .hero h1 { font-family: "Quicksand", sans-serif; font-size: 2.5rem; font-weight: 700; color: #12405c; line-height: 1.06; margin-bottom: 0.5rem; }
+    .hero h1 { font-family: "Quicksand", sans-serif; font-size: 2.5rem; font-weight: 700; color: #24c5ed; line-height: 1.06; margin-bottom: 0.5rem; }
     .hero p { color: #5e8ba3; font-size: 1rem; margin: 0; }
-    .checkin-notice { margin-top: 1.1rem; background: transparent; border: 1px solid var(--button-bg); border-radius: 12px; padding: 0.6rem 0.9rem; color: #22506a; font-size: 0.9rem; font-weight: 600; }
+    .checkin-notice { margin-top: 1.1rem; background: transparent; border: 1px solid var(--button-bg); border-radius: 12px; padding: 0.6rem 0.9rem; color: #24c5ed; font-size: 0.9rem; font-weight: 600; }
     .checkin-notice[hidden] { display: none; }
     .editable { position: relative; display: inline-block; }
     .editable::after { content: ""; position: absolute; top: 0; bottom: 0; left: 100%; width: 2.1rem; }
@@ -98,9 +98,15 @@
     .copy-editor .hint { color: var(--muted-color); font-size: 0.72rem; margin: -0.4rem 0 0.7rem; }
 
     .bal-eyebrow { font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: #6aa0b8; }
-    .bal-num { font-family: "Quicksand", sans-serif; font-size: 3.4rem; font-weight: 700; color: #12405c; line-height: 1; }
+    .bal-num { font-family: "Quicksand", sans-serif; font-size: 3.4rem; font-weight: 700; color: #24c5ed; line-height: 1; }
     .bal-num[hidden], .bal-eyebrow[hidden] { display: none; }
     .bal-sub { font-size: 0.9rem; color: #5e8ba3; letter-spacing: 0.03em; }
+    /* angelcoins: a warm accent to set them apart from the blue points */
+    .bal-coins { display: flex; align-items: baseline; gap: 0.35rem; margin-top: 0.6rem; font-family: "Quicksand", sans-serif; }
+    .bal-coins .coin-ico { color: #e6c98a; font-size: 1.1rem; }
+    .bal-coins #coin-num { font-size: 1.6rem; font-weight: 700; color: #d1a03c; font-variant-numeric: tabular-nums; }
+    .bal-coins .coin-lbl { font-size: 0.85rem; font-weight: 600; color: #b98a3e; letter-spacing: 0.03em; }
+    #coin-num[hidden], .bal-coins[hidden] { display: none; }
 
     /* the dailies card is now a generic content panel: its body scrolls when
        the contents (e.g. the admin controls on Hermione's account) overflow */
@@ -114,7 +120,7 @@
     .adm-sec { margin-bottom: 1.1rem; }
     .adm-row { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.65rem; border: 1px solid rgba(30,120,160,0.14); border-radius: 11px; margin-bottom: 0.5rem; }
     .adm-row.pending { background: rgba(36,197,237,0.08); border-color: var(--button-bg); flex-wrap: wrap; }
-    .adm-row .nm { font-weight: 700; font-size: 0.9rem; color: #22506a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .adm-row .nm { font-weight: 700; font-size: 0.9rem; color: #24c5ed; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .adm-row .grow { flex: 1; min-width: 0; }
     .adm-row .pts { font-variant-numeric: tabular-nums; color: #4f88a3; font-size: 0.85rem; font-weight: 700; }
     .adm-row .intro { flex-basis: 100%; font-size: 0.8rem; color: #6aa0b8; line-height: 1.4; }
@@ -134,7 +140,7 @@
     .daily .tick { flex-shrink: 0; width: 1.25rem; height: 1.25rem; margin-top: 0.1rem; border-radius: 50%; border: 2px solid var(--button-bg); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; color: #fff; }
     .daily.done .tick { background: var(--button-bg); }
     .daily .body { flex: 1; min-width: 0; }
-    .daily .label { font-weight: 700; font-size: 0.92rem; color: #22506a; }
+    .daily .label { font-weight: 700; font-size: 0.92rem; color: #24c5ed; }
     .daily .detail { color: #6aa0b8; font-size: 0.8rem; margin-top: 0.1rem; }
     .daily .reward { flex-shrink: 0; align-self: center; padding: 0.15rem 0.6rem; border-radius: 999px; font-size: 0.75rem; font-weight: 700; background: var(--button-bg); color: #fff; text-shadow: 0 1px 2px rgba(20, 90, 120, 0.3); }
     .daily .mini-bar { height: 5px; border-radius: 999px; background: rgba(30,120,160,0.14); overflow: hidden; margin-top: 0.45rem; }
@@ -146,7 +152,7 @@
     th, td { padding: 0.5rem 0.6rem; font-size: 0.95rem; }
     th { color: var(--table-header-color); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; }
     tr + tr td { border-top: 1px solid rgba(30,120,160,0.14); }
-    td { color: #22506a; }
+    td { color: #24c5ed; }
     td.rank { color: #6aa0b8; width: 2rem; }
     td a { color: inherit; text-decoration: underline; text-decoration-color: var(--button-hover-bg); text-underline-offset: 3px; }
     td a:hover { color: var(--button-hover-bg); }
@@ -207,6 +213,7 @@
     <aside class="card balance-card" id="balance-card">
       <div class="bal-num" id="bal-num">—</div>
       <div class="bal-sub" id="bal-sub">—</div>
+      <div class="bal-coins" id="bal-coins"><span class="coin-ico">✦</span><span id="coin-num">0</span><span class="coin-lbl">angelcoins</span></div>
     </aside>
 
     <aside class="card dailies-card panel-card" id="dailies-card">
@@ -264,7 +271,7 @@
     document.getElementById("greeting").textContent =
       h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
 
-    function setBalance(points) {
+    function setBalance(points, coins) {
       const num = document.getElementById("bal-num");
       const sub = document.getElementById("bal-sub");
       if (points === null || points === undefined) {
@@ -275,6 +282,7 @@
         num.textContent = Number(points).toLocaleString();
         sub.textContent = "points · " + myRank;
       }
+      document.getElementById("coin-num").textContent = Number(coins || 0).toLocaleString();
     }
 
     // Hermione has no real points or daily obligation; show placeholders so her
@@ -284,6 +292,7 @@
       num.hidden = false;
       num.textContent = "∞";
       document.getElementById("bal-sub").textContent = "points · Princess";
+      document.getElementById("coin-num").textContent = "∞";
     }
     function setupFakeTithe() {
       fakeTithe = true;
@@ -307,13 +316,14 @@
         document.getElementById("hermione-link").hidden = isHermione;
         if (isHermione) {
           setFakeBalance();
-          setupFakeTithe();
+          // no tithe for Hermione
+          document.getElementById("tithe").hidden = true;
           // her panel holds the admin controls instead of dailies
           document.getElementById("dailies-card").hidden = false;
           document.getElementById("panel-title").textContent = "Admin controls";
           buildAdminPanel();
         } else {
-          setBalance(d.points);
+          setBalance(d.points, d.angelcoins);
           document.getElementById("tithe").hidden = noEcon;
           document.getElementById("dailies-card").hidden = noEcon;
           if (!noEcon) { applyTitheState(d.points, d.tithedToday); loadDailies(); }
@@ -611,11 +621,11 @@
     function tickClock() {
       const now = new Date();
       const time = new Intl.DateTimeFormat("en-US", {
-        timeZone: "America/New_York", hour: "numeric", minute: "2-digit", second: "2-digit", hour12: true,
+        timeZone: "America/New_York", hourCycle: "h23", hour: "2-digit", minute: "2-digit", second: "2-digit",
       }).formatToParts(now);
       const val = (t) => (time.find((x) => x.type === t) || {}).value || "";
       document.getElementById("clk-time").textContent = val("hour") + ":" + val("minute") + ":" + val("second");
-      document.getElementById("clk-ampm").textContent = (val("dayPeriod") || "").toUpperCase();
+      document.getElementById("clk-ampm").textContent = "";
       const tz = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", timeZoneName: "short" })
         .formatToParts(now).find((x) => x.type === "timeZoneName").value;
       document.getElementById("clk-eyebrow").textContent = "Eastern Time · " + tz;

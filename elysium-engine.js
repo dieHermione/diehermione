@@ -23,7 +23,7 @@ const STAGES = ["Seedling", "Sapling", "Young", "Growing", "Mature", "Ancient"];
 // cumulative growth needed to *reach* each stage index
 const STAGE_GROWTH = [0, 34, 90, 180, 320, 520];
 const GROWTH_HEALTH = 55;             // health floor for growth to continue
-const GROWTH_RATE = 1;                // growth added per eligible tick
+const GROWTH_RATE = 3;                // growth per eligible tick (+200% vs the original 1)
 
 const ZONES = ["roots", "trunk", "leftBranch", "rightBranch", "crown", "leaves"];
 const ADJACENT = {
