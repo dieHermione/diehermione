@@ -696,12 +696,13 @@
   </style>
 </head>
 <body class="has-top-nav">
+  <div class="sky-clouds" aria-hidden="true">
+    <div class="c" style="top:8%;left:-6%;width:300px;height:96px;animation:driftR 80s linear infinite;"></div>
+    <div class="c" style="top:30%;left:64%;width:220px;height:74px;animation:driftL 64s linear infinite;animation-delay:-24s;"></div>
+    <div class="c" style="top:62%;left:14%;width:190px;height:64px;animation:driftR 96s linear infinite;animation-delay:-44s;"></div>
+    <div class="c" style="top:80%;left:70%;width:250px;height:80px;animation:driftL 88s linear infinite;"></div>
+  </div>
     <main class="card" id="profile-card-main">
-    <div class="ptabs">
-      <button id="tab-profile" class="ptab active" type="button">Profile</button>
-      <button id="tab-guestbook" class="ptab" type="button">Guestbook</button>
-      <button id="tab-admin" class="ptab" type="button" hidden>Admin</button>
-    </div>
     <div id="view-mode">
       <div id="avatar-slot"></div>
       <input type="file" id="quick-icon" accept="image/*" hidden />
@@ -754,44 +755,7 @@
       </div>
     </form>
 
-    <div id="guestbook-view" hidden>
-      <div class="gb-list" id="gb-list"></div>
-      <p class="gb-empty" id="gb-empty" hidden>No comments yet.</p>
-      <form class="gb-form" id="gb-form">
-        <textarea id="gb-text" maxlength="1000" rows="3" placeholder="Leave a comment…"></textarea>
-        <p class="form-error" id="gb-error"></p>
-        <button type="submit">Post</button>
-      </form>
-    </div>
   </main>
-  <div id="admin-view" hidden>    <section class="card" id="approvals-card" hidden>
-      <h2>Pending approvals</h2>
-      <p class="count" id="approvals-count"></p>
-      <div class="approval-list" id="approvals"></div>
-    </section>
-    <section class="card">
-      <h2>Accounts</h2>
-      <p class="count" id="count">Loading…</p>
-      <table>
-        <thead>
-          <tr><th>Username</th><th>Registered</th><th>Points</th><th>Listed</th><th></th></tr>
-        </thead>
-        <tbody id="rows"></tbody>
-      </table>
-    </section>
-    <section class="card">
-      <h2>Lines Completed</h2>
-      <p class="panel-empty" id="writing-empty">No writing series finished yet.</p>
-      <div class="task-admin-list" id="writing-list"></div>
-    </section>
-    <section class="card">
-      <h2>Documentation</h2>
-      <div class="doc-links">
-        <a href="/guide">Guide</a>
-        <a href="/tech">Technical notes</a>
-        <a href="/cardnav">Card nav demo</a>
-      </div>
-    </section></div>
   <script>
 
     // --- profile logic ---
@@ -968,26 +932,7 @@
       setEditing(false);
     });
 
-    // --- profile / guestbook tabs ---
-    function showTab(name) {
-      const gb = name === "guestbook";
-      const adm = name === "admin";
-      document.getElementById("tab-profile").classList.toggle("active", !gb && !adm);
-      document.getElementById("tab-guestbook").classList.toggle("active", gb);
-      const at = document.getElementById("tab-admin");
-      if (at) at.classList.toggle("active", adm);
-      // the card (with its tabs) stays put; only its body content swaps out, and
-      // the admin panels appear below it
-      document.getElementById("admin-view").hidden = !adm;
-      document.getElementById("guestbook-view").hidden = !gb;
-      document.getElementById("view-mode").style.display = (gb || adm) ? "none" : "";
-      document.getElementById("edit-form").style.display = (gb || adm) ? "none" : "";
-      if (gb) loadGuestbook();
-      if (adm) initAdmin();
-    }
-    document.getElementById("tab-profile").addEventListener("click", () => showTab("profile"));
-    document.getElementById("tab-guestbook").addEventListener("click", () => showTab("guestbook"));
-    document.getElementById("tab-admin").addEventListener("click", () => showTab("admin"));
+    // guestbook + admin tabs removed; the profile shows its single view.
 
     async function loadGuestbook() {
       const res = await fetch("/api/profile/" + encodeURIComponent(profileUser) + "/guestbook");
@@ -1101,21 +1046,6 @@
       }
     }
 
-    document.getElementById("gb-form").addEventListener("submit", async (ev) => {
-      ev.preventDefault();
-      const ta = document.getElementById("gb-text");
-      const err = document.getElementById("gb-error");
-      err.style.display = "none";
-      const res = await fetch("/api/profile/" + encodeURIComponent(profileUser) + "/guestbook", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: ta.value }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) { err.textContent = data.error || "Couldn't post."; err.style.display = "block"; return; }
-      ta.value = "";
-      loadGuestbook();
-    });
 
     let adminInited = false;
     function initAdmin() {
@@ -1468,10 +1398,6 @@
       .then(async (d) => {
         me = d;
         profileUser = params.get("user") || d.username;
-        // Hermione's admin panels live on her own profile now; the tab only
-        // appears when she is viewing it
-        const showAdmin = Boolean(d.isAdmin) && profileUser.toLowerCase() === "hermione";
-        document.getElementById("tab-admin").hidden = !showAdmin;
         await loadProfile();
       })
       .catch(() => (window.location.href = "/"));

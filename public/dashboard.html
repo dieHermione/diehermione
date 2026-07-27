@@ -44,7 +44,7 @@
     }
 
     .card {
-      background: rgba(255, 255, 255, 0.5);
+      background: rgba(255, 255, 255, 0.82);
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
       border-radius: 22px;
@@ -663,7 +663,7 @@
     function fitDash() {
       if (!_dash) return;
       _dash.style.transform = "";
-      const avail = window.innerHeight - 44;
+      const avail = window.innerHeight - 88;  // leave top+bottom margin
       const h = _dash.getBoundingClientRect().height;
       if (h > avail + 2) {
         _dash.style.transformOrigin = "top center";
