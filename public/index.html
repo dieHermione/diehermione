@@ -244,8 +244,7 @@
       --card-w: 400px; --card-h: 560px; --card-w-wide: 640px; --cardnav-h: 600px; }
     #card-src[hidden] { display: none; }
     #login-nav .cardnav-card {
-      background: rgba(255, 255, 255, 0.72);
-      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      background: #ffffff;
       border-radius: 22px;
       box-shadow: 0 24px 60px rgba(80, 150, 190, 0.28);
       color: var(--text-color);
@@ -445,11 +444,9 @@
     // own terminal skin.
     if (window.CardNav) {
       CardNav.mount(document.getElementById("login-nav"), {
-        start: 2,
+        start: 0,
         ariaLabel: "Sign in",
         cards: [
-          { label: "Snake", sub: "play as guest", cardClass: "guestcard", onSelect: () => startGuest("/snake") },
-          { label: "Wheel", sub: "play as guest", cardClass: "guestcard", onSelect: () => startGuest("/wheel") },
           { content: document.getElementById("login-content"), interactive: true },
           { content: document.getElementById("writing-content"), cardClass: "wcard-host", onSelect: () => startGuest("/writing") },
         ],
