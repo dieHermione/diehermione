@@ -6,465 +6,184 @@
   <title>Sign in - angeldom.me</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cause:wght@400..700&family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+Bengali&family=Noto+Sans+Saurashtra&family=Quicksand:wght@700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/site.css" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <script src="/glitch.js"></script>
-  <script src="/cardnav.js"></script>
-  <script src="/transitions.js"></script>
+  <script src="/boot.js"></script>
   <style>
-    /* This page has no nav, so it would fall to the shared centred body in
-       site.css. Pull the header and card up to the top the way it was before
-       the shared shell centralised body layout. */
-    /* centre the login card, header above it, with breathing room up top */
-    body { justify-content: center; padding: 3.25rem 1rem; gap: 1.75rem; min-height: 100vh;
-      background: linear-gradient(180deg, #8fd8f2 0%, #63bde3 62%, #52aed8 100%); background-attachment: fixed; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --c: #aee3ff; --dim: #4f7ea0; --dim2: #37576f; --bright: #eafaff; --accent: #8fd0ff; --bg: #04070d; --glow: rgba(120,190,255,0.35); --err: #ff7a6d; }
+    [hidden] { display: none !important; }
+    html, body { height: 100%; overflow: hidden; }
+    body { background: var(--bg); color: var(--c); font-family: "IBM Plex Mono", monospace; }
+    #scene { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; padding: 5vh 5vw; }
+    .glow-bg { position: absolute; inset: 0; z-index: 0; background: radial-gradient(70% 60% at 50% 42%, rgba(60,130,210,0.14) 0, transparent 70%); }
+    .scan { position: absolute; inset: 0; pointer-events: none; z-index: 40; background: repeating-linear-gradient(0deg, rgba(0,0,0,0.28) 0 1px, transparent 1px 3px); }
+    .vig { position: absolute; inset: 0; pointer-events: none; z-index: 41; box-shadow: inset 0 0 30vh 10vh rgba(0,0,0,0.6); }
+    .content { position: relative; z-index: 5; width: min(640px, 92vw); font-size: 1.05rem; line-height: 1.9; }
+    .dim { color: var(--dim); } .dim2 { color: var(--dim2); } .br { color: var(--bright); text-shadow: 0 0 12px var(--glow); }
+    .ok { color: var(--bright); }
+    .cap { letter-spacing: 0.22em; text-transform: uppercase; }
+    .blink { animation: bl 1s steps(1) infinite; } @keyframes bl { 0%,50%{opacity:1} 50.01%,100%{opacity:0} }
+    .head { color: var(--dim); margin-bottom: 1.1rem; }
+    .row { margin: 0.2rem 0; }
 
-    /* Cirrus: soft clouds drifting to the sides, looping */
-    .sky-clouds { position: fixed; inset: 0; overflow: hidden; z-index: 0; pointer-events: none; }
-    .sky-clouds .c { position: absolute; border-radius: 50%;
-      background: radial-gradient(closest-side, rgba(255,255,255,0.95), rgba(255,255,255,0) 72%); filter: blur(4px); }
-    @keyframes driftL { from { transform: translateX(22vw); } to { transform: translateX(-140vw); } }
-    @keyframes driftR { from { transform: translateX(-22vw); } to { transform: translateX(140vw); } }
-    @media (prefers-reduced-motion: reduce) { .sky-clouds .c { animation: none !important; } }
-    /* Browsers (notably on Linux) paint autofilled fields with their own
-       yellow/blue background. Force our own colours so the fields stay on
-       theme. The long transition delay is the standard trick to stop the UA
-       background ever showing. */
-    input:-webkit-autofill,
-    input:-webkit-autofill:hover,
-    input:-webkit-autofill:focus {
-      -webkit-text-fill-color: var(--input-text);
-      -webkit-box-shadow: 0 0 0 1000px var(--input-bg) inset;
-      box-shadow: 0 0 0 1000px var(--input-bg) inset;
-      caret-color: var(--input-text);
-      transition: background-color 100000s ease-in-out 0s;
+    /* terminal fields: a label then an inline text input that looks typed */
+    .fl { display: flex; align-items: baseline; gap: 0.6rem; margin: 0.55rem 0; }
+    .fl .lab { color: var(--dim); min-width: 8.5rem; }
+    .fl input {
+      flex: 1; background: transparent; border: none; border-bottom: 1px solid var(--dim2);
+      color: var(--bright); font-family: inherit; font-size: 1.02rem; padding: 0 0 3px; caret-color: var(--accent);
     }
-    input:autofill {
-      background: var(--input-bg);
-      -webkit-text-fill-color: var(--input-text);
+    .fl input::placeholder { color: var(--dim2); }
+    .fl input:focus { outline: none; border-bottom-color: var(--accent); }
+    .fl input:disabled { opacity: 0.4; }
+    .fl select {
+      flex: 1; background: transparent; border: none; border-bottom: 1px solid var(--dim2);
+      color: var(--bright); font-family: inherit; font-size: 1.02rem; padding: 0 0 3px; cursor: pointer;
     }
-    .site-header {
-      font-family: "Quicksand", "Cause", -apple-system, sans-serif;
-      font-size: clamp(3.2rem, 10vw, 5rem);
-      font-weight: 700;
-      letter-spacing: -0.01em;
-      color: #ffffff;
-      /* white neon glow (idea 6, whitened), softened to reduce eye strain */
-      text-shadow: 0 0 3px rgba(255,255,255,0.85), 0 0 9px rgba(255,255,255,0.6), 0 0 20px rgba(255,255,255,0.4);
-      text-align: center;
-      margin: 0.4rem 0 0.5rem;
-      padding: 0;
-      position: relative;
-      z-index: 2;
-      display: inline-block;
+    .fl select:focus { outline: none; border-bottom-color: var(--accent); }
+    .fl select option { background: #0a1420; color: var(--bright); }
+    .fl textarea {
+      flex: 1; background: transparent; border: 1px solid var(--dim2); border-radius: 3px;
+      color: var(--bright); font-family: inherit; font-size: 0.98rem; padding: 0.4rem 0.5rem; resize: vertical; min-height: 3.2rem; caret-color: var(--accent);
     }
-    /* white halo above the wordmark (idea 2, whitened), glowing like the text */
-    .site-header .halo {
-      position: absolute;
-      top: -0.34em;
-      left: 50%;
-      transform: translateX(-50%) rotate(-8deg);
-      width: 92px;
-      height: 30px;
-      border: 5px solid #ffffff;
-      border-radius: 50%;
-      box-shadow: 0 0 4px rgba(255,255,255,0.8), 0 0 11px rgba(255,255,255,0.5), 0 0 22px rgba(255,255,255,0.35),
-                  inset 0 0 6px rgba(255,255,255,0.6), inset 0 0 12px rgba(255,255,255,0.4);
-    }
-    /* U+A8D1 (Saurashtra) and U+09CE (Bengali) have no font on Windows, so the
-       bows rendered as tofu. Ship the Noto faces that cover them. */
-    .bow {
-      display: inline-block;
-      font-family: "Noto Sans Saurashtra", "Noto Sans Bengali", "Cause", sans-serif;
-    }
-    .bow.flip { transform: scaleX(-1); }
-    .card {
-      background: rgba(255, 255, 255, 0.72);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      border-radius: 22px;
-      box-shadow: 0 24px 60px rgba(80, 150, 190, 0.28);
-      width: 100%;
-      max-width: 418px;
-      padding: 2.2rem;
-      color: var(--text-color);
-      position: relative;
-      z-index: 2;
-    }
-    h1 { font-family: "Cause", sans-serif; font-size: 1.4rem; margin-bottom: 1.25rem; text-align: center; color: var(--heading-color); }
-    .tabs { display: flex; margin-bottom: 1.5rem; border-bottom: 2px solid var(--table-border); }
-    .tabs button {
-      flex: 1;
-      background: none;
-      border: none;
-      padding: 0.6rem;
-      font-size: 1rem;
-      cursor: pointer;
-      color: var(--heading-color);
-      border-bottom: 2px solid transparent;
-      margin-bottom: -2px;
-    }
-    .tabs button.active { color: var(--heading-color); border-bottom-color: var(--heading-color); font-weight: 600; }
-    label { display: block; font-size: 0.85rem; color: var(--heading-color); margin-bottom: 0.3rem; }
-    input {
-      width: 100%;
-      padding: 0.6rem 0.75rem;
-      margin-bottom: 1rem;
-      border: 1px solid var(--input-border);
-      border-radius: 8px;
-      font-size: 1rem;
-      background: var(--input-bg);
-      color: var(--input-text);
-    }
-    input:focus { outline: none; border-color: var(--active-color); }
-    /* guest mode greys out the fields it doesn't need */
-    input:disabled, select:disabled, textarea:disabled { opacity: 0.45; cursor: not-allowed; }
-    select {
-      width: 100%;
-      padding: 0.6rem 0.75rem;
-      margin-bottom: 1rem;
-      border: 1px solid var(--input-border);
-      border-radius: 8px;
-      font-size: 1rem;
-      background: var(--input-bg);
-      color: var(--input-text);
-      font-family: inherit;
-      cursor: pointer;
-    }
-    select:focus { outline: none; border-color: var(--active-color); }
-    .role-toggle { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
-    .role-option {
-      flex: 1;
-      padding: 0.6rem;
-      border: 1px solid var(--input-border);
-      border-radius: 8px;
-      background: var(--input-bg);
-      color: var(--input-text);
-      font-family: inherit;
-      font-size: 0.95rem;
-      font-weight: 600;
-      cursor: pointer;
-    }
-    .role-option:hover { border-color: var(--button-hover-bg); }
-    .role-option { position: relative; }
-    .role-option::after {
-      content: attr(data-tip);
-      position: absolute;
-      bottom: calc(100% + 0.55rem);
-      left: 50%;
-      transform: translateX(-50%);
-      width: 12.5rem;
-      padding: 0.55rem 0.7rem;
-      border-radius: 8px;
-      background: rgba(255, 255, 255, 0.97);
-      color: #24c5ed;
-      box-shadow: 0 8px 24px var(--shadow);
-      font-size: 0.75rem;
-      font-weight: 600;
-      line-height: 1.35;
-      text-align: left;
-      opacity: 0;
-      visibility: hidden;
-      pointer-events: none;
-      transition: opacity 0.15s ease;
-      z-index: 30;
-    }
-    .role-option:hover::after, .role-option:focus-visible::after {
-      opacity: 1;
-      visibility: visible;
-    }
-    body[data-theme="dark"] .role-option::after { color: #6f6f6f; }
-    .role-option.selected {
-      background: #35b6e6;
-      color: #fff;
-      border-color: #35b6e6;
-    }
-    /* matches the dashboard's Cirrus pill buttons */
-    .submit {
-      width: 100%;
-      padding: 0.72rem;
-      background: #35b6e6;
-      color: #fff;
-      border: none;
-      border-radius: 999px;
-      font-family: "Quicksand", "Cause", sans-serif;
-      font-size: 1rem;
-      font-weight: 700;
-      cursor: pointer;
-      transition: background 0.12s ease;
-    }
-    .submit:hover { background: #2aa9dc; }
-    .error {
-      display: none;
-      background: transparent;
-      color: var(--error-color);
-      border: 1px solid var(--error-color);
-      border-radius: 8px;
-      padding: 0.6rem 0.75rem;
-      margin-bottom: 1rem;
-      font-size: 0.9rem;
-    }
-    .hint { font-size: 0.8rem; color: var(--heading-color); margin-top: -0.5rem; margin-bottom: 1rem; }
-    textarea {
-      width: 100%;
-      padding: 0.6rem 0.75rem;
-      margin-bottom: 0.75rem;
-      border: 1px solid var(--input-border);
-      border-radius: 8px;
-      font-size: 0.95rem;
-      font-family: inherit;   /* textareas fall back to a monospace UI font */
-      background: var(--input-bg);
-      color: var(--input-text);
-      resize: vertical;
-      min-height: 4.5rem;
-    }
-    textarea:focus { outline: none; border-color: var(--active-color); }
-    .pending[hidden] { display: none; }
-    .pending { text-align: center; }
-    .pending h2 {
-      font-family: "Cause", sans-serif;
-      font-size: 1.25rem;
-      color: var(--heading-color);
-      margin-bottom: 0.6rem;
-    }
-    .pending p {
-      font-size: 0.9rem;
-      line-height: 1.55;
-      color: var(--text-color);
-      margin-bottom: 1.25rem;
-    }
-    #register-fields[hidden], #form[hidden], .tabs[hidden] { display: none; }
+    .fl textarea:focus { outline: none; border-color: var(--accent); }
+    input:-webkit-autofill { -webkit-text-fill-color: var(--bright); -webkit-box-shadow: 0 0 0 1000px var(--bg) inset; transition: background-color 100000s ease 0s; caret-color: var(--accent); }
 
-    /* --- card-navigator login layout --- */
-    #login-nav { width: 100%; z-index: 2; position: relative;
-      --card-w: 400px; --card-h: 560px; --card-w-wide: 640px; --cardnav-h: 600px; }
-    #card-src[hidden] { display: none; }
-    #login-nav .cardnav-card {
-      background: #ffffff;
-      border-radius: 22px;
-      box-shadow: 0 24px 60px rgba(80, 150, 190, 0.28);
-      color: var(--text-color);
-    }
-    #login-nav .cardnav-card.focused {
-      box-shadow: 0 0 0 3px #6fd5f0, 0 24px 60px rgba(80, 150, 190, 0.34), 0 0 26px 2px rgba(110, 210, 240, 0.5);
-    }
-    #login-nav .cardnav-title { color: #24c5ed; }
-    #login-nav .cardnav-sub { color: #5e8ba3; }
-    #login-content { text-align: left; }
-    /* short viewports (laptops): shrink so the page never scrolls */
-    @media (max-height: 880px) {
-      #login-nav { --cardnav-h: 540px; --card-h: 500px; }
-      .site-header { font-size: clamp(2.4rem, 8vw, 3.8rem); }
-      body { gap: 1rem; padding-top: 2rem; }
-    }
-    @media (max-height: 740px) {
-      #login-nav { --cardnav-h: 452px; --card-h: 416px; }
-      .site-header { font-size: clamp(2rem, 7vw, 3rem); }
-    }
-    @media (max-width: 640px) {
-      #login-nav { --card-w: min(88vw, 400px); --card-h: 540px; --card-w-wide: min(88vw, 400px); }
-    }
+    /* account-type options as terminal chips */
+    .roles { display: flex; gap: 0.6rem; margin: 0.4rem 0 0.2rem; }
+    .role { cursor: pointer; border: 1px solid var(--dim2); color: var(--dim); background: transparent; font-family: inherit;
+      padding: 0.3rem 0.9rem; letter-spacing: 0.08em; text-transform: lowercase; font-size: 0.95rem; position: relative; }
+    .role:hover { border-color: var(--dim); color: var(--c); }
+    .role.sel { border-color: var(--accent); color: var(--bg); background: var(--accent); box-shadow: 0 0 16px var(--glow); }
+    .role::after { content: attr(data-tip); position: absolute; bottom: calc(100% + 0.5rem); left: 50%; transform: translateX(-50%);
+      width: 13rem; padding: 0.5rem 0.6rem; border: 1px solid var(--dim2); background: #071019; color: var(--c); font-size: 0.72rem;
+      line-height: 1.4; letter-spacing: 0; text-transform: none; text-align: left; opacity: 0; visibility: hidden; transition: opacity 0.12s; z-index: 20; }
+    .role:hover::after { opacity: 1; visibility: visible; }
 
-    /* the writing-game card wears the game's own terminal skin, not Cirrus */
-    #login-nav .cardnav-card.wcard-host { padding: 0; background: #070203; overflow: hidden; }
-    #login-nav .cardnav-card.wcard-host.focused { box-shadow: 0 0 0 2px #e0403a, 0 24px 60px rgba(0,0,0,0.6), 0 0 30px 2px rgba(200,40,30,0.5); }
-    .wcard { position: relative; width: 100%; height: 100%; padding: 1.8rem; display: flex; flex-direction: column; gap: 0.5rem;
-      font-family: "IBM Plex Mono", monospace; color: #e0403a; text-align: left; text-shadow: 0 0 8px rgba(200,40,30,0.45); }
-    .wcard .wc-scan { position: absolute; inset: 0; pointer-events: none;
-      background: repeating-linear-gradient(0deg, rgba(0,0,0,0.42) 0 1px, transparent 1px 2px); }
-    .wcard .wc-head { font-size: 0.72rem; letter-spacing: 0.06em; color: #8a5550; }
-    .wcard .wc-dim { color: #6e2420; }
-    .wcard .wc-title { font-size: 1.9rem; font-weight: 600; letter-spacing: 0.04em; margin-top: auto; }
-    .wcard .wc-sub { color: #8a4a44; font-size: 0.85rem; }
-    .wcard .wc-line { font-size: 0.95rem; margin-top: 0.6rem; }
-    .wcard .wc-cur { background: #e0403a; color: #070203; text-shadow: none; }
-    .wcard .wc-foot { margin-top: auto; color: #b8564e; font-size: 0.82rem; letter-spacing: 0.08em; }
-    /* small guest-game cards flanking the login */
-    #login-nav .guestcard .cardnav-title { color: #12608a; }
-    #login-nav .guestcard .cardnav-sub { color: #5e8ba3; }
+    .btn { display: inline-block; border: 1px solid var(--c); padding: 0.42rem 1.5rem; letter-spacing: 0.18em; text-transform: uppercase;
+      color: var(--c); background: transparent; font-family: inherit; font-size: 0.92rem; cursor: pointer; }
+    .btn.solid { background: var(--c); color: var(--bg); box-shadow: 0 0 22px var(--glow); }
+    .btn:hover { box-shadow: 0 0 22px var(--glow); }
+    .cur { display: inline-block; width: 0.6em; height: 1.05em; background: var(--c); transform: translateY(2px); }
+    .link { color: var(--dim); cursor: pointer; }
+    .link b { color: var(--bright); text-shadow: 0 0 10px var(--glow); font-weight: 400; }
+    .link:hover b { text-decoration: underline; }
+    .errline { color: var(--err); min-height: 1.2em; margin: 0.6rem 0 0; }
+    .fields { margin-top: 0.4rem; }
   </style>
 </head>
 <body>
-  <div class="sky-clouds" aria-hidden="true">
-    <div class="c" style="top:6%;  left:-6%; width:300px; height:96px; animation: driftR 74s linear infinite;"></div>
-    <div class="c" style="top:16%; left:58%; width:220px; height:74px; animation: driftL 62s linear infinite; animation-delay:-20s;"></div>
-    <div class="c" style="top:34%; left:12%; width:180px; height:62px; animation: driftR 90s linear infinite; animation-delay:-40s;"></div>
-    <div class="c" style="top:52%; left:70%; width:260px; height:84px; animation: driftL 80s linear infinite; animation-delay:-10s;"></div>
-    <div class="c" style="top:70%; left:20%; width:200px; height:66px; animation: driftR 68s linear infinite; animation-delay:-30s;"></div>
-    <div class="c" style="top:82%; left:64%; width:240px; height:78px; animation: driftL 96s linear infinite;"></div>
-    <div class="c" style="top:44%; left:40%; width:150px; height:52px; animation: driftR 58s linear infinite; animation-delay:-15s;"></div>
-  </div>
-  <h1 class="site-header"><span class="halo" aria-hidden="true"></span>angeldom.me</h1>
-  <div id="login-nav"></div>
-  <div id="card-src" hidden>
-  <div id="login-content">
-    <div class="tabs">
-      <button id="tab-login" class="active" type="button">Log in</button>
-      <button id="tab-register" type="button">Register</button>
-    </div>
-    <div class="error" id="error"></div>
-    <form id="form">
-      <label for="username">Username</label>
-      <input id="username" name="username" autocomplete="username" required minlength="3" maxlength="30" />
-      <label for="password">Password</label>
-      <input id="password" name="password" type="password" autocomplete="current-password" required minlength="8" />
-      <p class="hint" id="hint" hidden>At least 8 characters.</p>
-      <div id="register-fields" hidden>
-        <label for="pronouns">Pronouns</label>
-        <select id="pronouns">
-          <option value="">Choose…</option>
-          <option value="She/Her">She/Her</option>
-          <option value="He/Him">He/Him</option>
-          <option value="They/Them">They/Them</option>
-        </select>
-        <label>Account type</label>
-        <div class="role-toggle">
-          <button type="button" class="role-option" data-role="Sub" data-tip="Worship your Princess. :3">Sub</button>
-          <button type="button" class="role-option" data-role="Visitor" data-tip="A persistent account for playing games. No dailies or points.">Visitor</button>
-        </div>
-        <label for="intro">Who are you?</label>
-        <textarea id="intro" maxlength="500" rows="3"></textarea>
-        <p class="hint">This site is invite only. Each account is manually approved.</p>
-      </div>
-      <button class="submit" id="submit" type="submit">Log in</button>
-    </form>
-    <div id="pending" class="pending" hidden>
-      <h2>Thank you.</h2>
-      <p>Your account has been created, but you can't sign in yet. Hermione approves each one by hand. Come back and log in once she has.</p>
-      <button class="submit" type="button" onclick="window.location.reload()">Back to sign in</button>
-    </div>
-  </div>
+  <div id="scene">
+    <div class="glow-bg"></div>
+    <div class="content">
+      <div class="head cap">angelOS v3.1 &nbsp; secure terminal</div>
+      <div class="row dim">&gt; establishing link to Her ......... <span class="ok">OK</span></div>
+      <div class="row dim" id="statusline">&gt; awaiting credentials</div>
 
-  <div id="writing-content">
-    <div class="wcard">
-      <div class="wc-scan"></div>
-      <div class="wc-head">angelOS <span class="wc-dim">· penance</span></div>
-      <div class="wc-title">&gt; PENANCE</div>
-      <div class="wc-sub">purify your soul</div>
-      <div class="wc-line">&gt; I must be for<span class="wc-cur">g</span>iven<span class="wc-dim">…</span></div>
-      <div class="wc-foot">play as guest ▸</div>
+      <form id="form" class="fields" autocomplete="on">
+        <div class="fl"><span class="lab" id="lab-user">login:</span><input id="username" name="username" autocomplete="username" required minlength="3" maxlength="30" placeholder="vessel name" /></div>
+        <div class="fl"><span class="lab">passphrase:</span><input id="password" name="password" type="password" autocomplete="current-password" required minlength="8" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;" /></div>
+
+        <div id="register-fields" hidden>
+          <div class="fl"><span class="lab">pronouns:</span>
+            <select id="pronouns">
+              <option value="">choose…</option>
+              <option value="She/Her">She/Her</option>
+              <option value="He/Him">He/Him</option>
+              <option value="They/Them">They/Them</option>
+            </select>
+          </div>
+          <div class="fl"><span class="lab">account type:</span>
+            <div class="roles" id="roles">
+              <button type="button" class="role" data-role="Sub" data-tip="Worship your Princess. Gains and loses points, has dailies.">sub</button>
+              <button type="button" class="role" data-role="Visitor" data-tip="A persistent account for playing games. No dailies or points.">visitor</button>
+              <button type="button" class="role" data-role="Guest" data-tip="No account. An ephemeral session, straight into the games.">guest</button>
+            </div>
+          </div>
+          <div class="fl"><span class="lab">who are you?</span><textarea id="intro" maxlength="500" rows="3" placeholder="tell Hermione who you are"></textarea></div>
+          <div class="row dim2" style="font-size:0.82rem; margin-top:0.2rem">// invite only. each vessel is approved by hand.</div>
+        </div>
+
+        <div class="errline" id="error"></div>
+        <div class="row" style="margin-top:1.3rem">
+          <button class="btn solid" id="submit" type="submit">enter</button>
+          <span class="dim" style="margin-left:1rem">&crarr; sign in</span>
+        </div>
+      </form>
+
+      <div class="row dim" id="toggle-line" style="margin-top:1.7rem">no vessel yet? &nbsp;<span class="link" id="to-register">&gt; <b>register</b></span></div>
+
+      <div id="pending" hidden>
+        <div class="br" style="font-size:1.3rem; margin-bottom:0.6rem">// petition received</div>
+        <div class="dim" style="line-height:1.7; max-width:44ch">Your vessel has been created, but you cannot sign in yet. Hermione approves each one by hand. Return and sign in once she has.</div>
+        <div class="row" style="margin-top:1.4rem"><span class="btn" id="back-signin">back to sign in</span></div>
+      </div>
     </div>
   </div>
-  </div>
+  <div class="scan"></div>
+  <div class="vig"></div>
 
   <script>
-
-    let mode = "login";
-    const tabLogin = document.getElementById("tab-login");
-    const tabRegister = document.getElementById("tab-register");
-    const errorBox = document.getElementById("error");
-    const hint = document.getElementById("hint");
+    const $ = (id) => document.getElementById(id);
+    let mode = "login", selectedRole = "";
+    const errorBox = $("error");
+    function err(msg) { errorBox.textContent = msg ? "! " + msg : ""; }
 
     function setMode(next) {
-      mode = next;
+      mode = next; err("");
       const login = mode === "login";
-      tabLogin.classList.toggle("active", login);
-      tabRegister.classList.toggle("active", !login);
-      document.getElementById("submit").textContent = login ? "Log in" : "Register";
-      document.getElementById("password").autocomplete = login ? "current-password" : "new-password";
-      hint.hidden = login;
-      document.getElementById("register-fields").hidden = login;
-      errorBox.style.display = "none";
+      $("register-fields").hidden = login;
+      $("lab-user").textContent = login ? "login:" : "vessel:";
+      $("statusline").innerHTML = login ? "&gt; awaiting credentials" : "&gt; petitioning for a new vessel";
+      $("password").autocomplete = login ? "current-password" : "new-password";
+      $("toggle-line").innerHTML = login
+        ? 'no vessel yet? &nbsp;<span class="link" id="to-register">&gt; <b>register</b></span>'
+        : 'already a vessel? &nbsp;<span class="link" id="to-login">&gt; <b>sign in</b></span>';
+      $(login ? "to-register" : "to-login").addEventListener("click", () => setMode(login ? "register" : "login"));
       applyRoleState();
     }
 
-    let selectedRole = "";
-    // Guest needs no account details, so those fields grey out and the button
-    // changes to reflect that you are not registering.
+    // Guest needs no account details, so those fields grey out.
     function applyRoleState() {
       const guest = mode === "register" && selectedRole === "Guest";
-      ["username", "password", "pronouns", "intro"].forEach((id) => {
-        const el = document.getElementById(id);
-        if (el) el.disabled = guest;
-      });
-      if (mode === "register") {
-        document.getElementById("submit").textContent = guest ? "Continue as guest" : "Register";
-      }
+      ["username", "password", "pronouns", "intro"].forEach((id) => { const el = $(id); if (el) el.disabled = guest; });
+      $("submit").textContent = mode === "login" ? "enter" : guest ? "continue as guest" : "register";
     }
-    document.querySelectorAll(".role-option").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        selectedRole = btn.dataset.role;
-        document.querySelectorAll(".role-option").forEach((b) => {
-          b.classList.toggle("selected", b === btn);
-        });
-        applyRoleState();
-      });
-    });
-    tabLogin.addEventListener("click", () => setMode("login"));
-    tabRegister.addEventListener("click", () => setMode("register"));
+    document.querySelectorAll(".role").forEach((btn) => btn.addEventListener("click", () => {
+      selectedRole = btn.dataset.role;
+      document.querySelectorAll(".role").forEach((b) => b.classList.toggle("sel", b === btn));
+      applyRoleState();
+    }));
+    $("to-register").addEventListener("click", () => setMode("register"));
+    $("back-signin").addEventListener("click", () => window.location.reload());
 
-    // Registration ends here rather than on the dashboard: the account exists
-    // but can't sign in until hermione approves it.
-    function showPending() {
-      document.getElementById("form").hidden = true;
-      document.querySelector(".tabs").hidden = true;
-      document.getElementById("pending").hidden = false;
-    }
+    function showPending() { $("form").hidden = true; $("toggle-line").hidden = true; $("pending").hidden = false; }
 
-    document.getElementById("form").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      errorBox.style.display = "none";
-      // guest: no account, just a session, then straight to the games
-      if (mode === "register" && selectedRole === "Guest") {
-        const gr = await fetch("/api/guest", { method: "POST" });
-        if (gr.ok) { window.location.href = "/snake"; return; }
-        errorBox.textContent = "Couldn't start a guest session.";
-        errorBox.style.display = "block";
-        return;
-      }
-      const payload = {
-        username: document.getElementById("username").value.trim(),
-        password: document.getElementById("password").value,
-      };
-      if (mode === "register") {
-        payload.pronouns = document.getElementById("pronouns").value;
-        payload.rank = selectedRole;
-        payload.intro = document.getElementById("intro").value.trim();
-      }
-      const body = JSON.stringify(payload);
-      const res = await fetch("/api/" + mode, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body,
-      });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok && data.pending) {
-        // registering no longer signs you in, the account waits for approval
-        showPending();
-      } else if (res.ok) {
-        // play the chosen transition, then land on the dashboard
-        if (window.Transitions) Transitions.play(activeTransition(), { navigateTo: "/dashboard" });
-        else window.location.href = "/dashboard";
-      } else {
-        errorBox.textContent = data.error || "Something went wrong.";
-        errorBox.style.display = "block";
-      }
-    });
-
-    // login -> dashboard transition: a test dropdown previews each; the chosen
-    // one plays for real on sign-in. Remembered in localStorage.
-    function activeTransition() { return Number(localStorage.getItem("login.transition") || 4); }
-    // Start a no-account session, then drop straight into a game.
     async function startGuest(path) {
       try { const r = await fetch("/api/guest", { method: "POST" }); if (r.ok) { window.location.href = path; return; } } catch (e) {}
-      errorBox.textContent = "Couldn't start a guest session.";
-      errorBox.style.display = "block";
+      err("couldn't start a guest session.");
     }
 
-    // Sign-in is the focused centre card. Flanking it are normal cards that open
-    // the single-player games with no account; the writing card wears the game's
-    // own terminal skin.
-    if (window.CardNav) {
-      CardNav.mount(document.getElementById("login-nav"), {
-        start: 0,
-        ariaLabel: "Sign in",
-        cards: [
-          { content: document.getElementById("login-content"), interactive: true },
-          { content: document.getElementById("writing-content"), cardClass: "wcard-host", onSelect: () => startGuest("/writing") },
-        ],
-      });
-    }
+    $("form").addEventListener("submit", async (e) => {
+      e.preventDefault(); err("");
+      if (mode === "register" && selectedRole === "Guest") { startGuest("/writing"); return; }
+      const payload = { username: $("username").value.trim(), password: $("password").value };
+      if (mode === "register") { payload.pronouns = $("pronouns").value; payload.rank = selectedRole; payload.intro = $("intro").value.trim(); }
+      let res, data;
+      try {
+        res = await fetch("/api/" + mode, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+        data = await res.json().catch(() => ({}));
+      } catch (e2) { err("connection lost. try again."); return; }
+      if (res.ok && data.pending) { showPending(); }
+      else if (res.ok) {
+        // decrypt/bootstrap loading, then land on the dashboard
+        if (window.Boot) Boot.play({ navigateTo: "/dashboard" });
+        else window.location.href = "/dashboard";
+      } else { err(data.error || "something went wrong."); }
+    });
+
+    setMode("login");
   </script>
-  <script src="/nav.js" defer></script>
 </body>
 </html>
