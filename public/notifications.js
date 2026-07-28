@@ -38,7 +38,14 @@
       flex-direction: column;
       gap: 0.4rem;
       text-align: left;
+      max-height: 70vh;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(120,190,255,0.45) transparent;
     }
+    .notif-panel::-webkit-scrollbar { width: 7px; }
+    .notif-panel::-webkit-scrollbar-track { background: transparent; }
+    .notif-panel::-webkit-scrollbar-thumb { background: rgba(120,190,255,0.35); border-radius: 999px; }
     .notif-wrap.open .notif-panel { display: flex; }
     .notif-item {
       display: flex;
