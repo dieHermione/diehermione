@@ -27,7 +27,6 @@
     .site-header { display: none; }
 
     .dr-grid { position: relative; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 3vw; width: min(1500px, 96vw); z-index: 2; }
-    .dr-grid::before { content: "VS"; position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); font-weight: 800; font-size: 20vw; color: var(--c); opacity: 0.08; z-index: 0; pointer-events: none; }
 
     .dr-grid > .card:not(.player-card) { grid-column: 2; z-index: 2; background: transparent; box-shadow: none; text-align: center; padding: 0; }
     .player-card { grid-column: auto; width: 26vw; max-width: 340px; border: 1.5px solid var(--dim); background: rgba(30,6,5,0.5);
@@ -67,7 +66,7 @@
     .pill:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
     .picker .pill { padding: 0.5rem 1.2rem; font-size: 0.85rem; letter-spacing: 0.1em; }
 
-    .log { display: flex; justify-content: center; flex-wrap: wrap; gap: 0.5rem; margin-top: 1.8rem; }
+    .log { display: flex; flex-direction: column; align-items: center; gap: 0.4rem; margin-top: 1.8rem; }
     .log-empty { color: var(--dim); }
     .log-row { font-size: 0.82rem; padding: 0.25rem 0.7rem; border: 1px solid var(--dim); color: var(--c); letter-spacing: 0.04em; }
     .log-row .who { color: var(--br); }
@@ -262,7 +261,7 @@
 
       if (p.rank) {
         const badge = document.createElement("span");
-        badge.className = "badge" + (p.rank === "Princess" ? " princess" : "");
+        badge.className = "badge" + (p.rank === "Archangel" ? " princess" : "");
         badge.textContent = p.rank;
         parts.push(badge);
       }

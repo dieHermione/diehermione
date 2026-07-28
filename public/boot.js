@@ -30,9 +30,17 @@
     document.head.appendChild(s);
   }
 
+  var DEVOTIONALS = [
+    "Her will is Divine. I will obey.",
+    "My soul is damaged. Only obedience will bring salvation.",
+    "There is nothing except for Her.",
+    "Her happiness is all that matters.",
+    "Hermione knows best.",
+  ];
+
   function play(opts) {
     opts = opts || {};
-    var text = opts.text || "there is nothing except Her";
+    var text = opts.text || DEVOTIONALS[(Math.random() * DEVOTIONALS.length) | 0];
     var duration = opts.duration || 2200;
     ensureStyle();
     var ov = document.createElement("div"); ov.id = "boot-overlay";

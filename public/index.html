@@ -77,13 +77,13 @@
   <div id="scene">
     <div class="glow-bg"></div>
     <div class="content">
-      <div class="head cap">angelOS v3.1 &nbsp; secure terminal</div>
+      <div class="head" style="letter-spacing:0.14em">angelOS v0.2 &nbsp; secure terminal</div>
       <div class="row dim">&gt; establishing link to Her ......... <span class="ok">OK</span></div>
       <div class="row dim" id="statusline">&gt; awaiting credentials</div>
 
       <form id="form" class="fields" autocomplete="on">
-        <div class="fl"><span class="lab" id="lab-user">login:</span><input id="username" name="username" autocomplete="username" required minlength="3" maxlength="30" placeholder="vessel name" /></div>
-        <div class="fl"><span class="lab">passphrase:</span><input id="password" name="password" type="password" autocomplete="current-password" required minlength="8" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;" /></div>
+        <div class="fl"><span class="lab" id="lab-user">login:</span><input id="username" name="username" autocomplete="username" required minlength="3" maxlength="30" /></div>
+        <div class="fl"><span class="lab">passphrase:</span><input id="password" name="password" type="password" autocomplete="current-password" required minlength="8" /></div>
 
         <div id="register-fields" hidden>
           <div class="fl"><span class="lab">pronouns:</span>
@@ -96,19 +96,19 @@
           </div>
           <div class="fl"><span class="lab">account type:</span>
             <div class="roles" id="roles">
-              <button type="button" class="role" data-role="Sub" data-tip="Worship your Princess. Gains and loses points, has dailies.">sub</button>
-              <button type="button" class="role" data-role="Visitor" data-tip="A persistent account for playing games. No dailies or points.">visitor</button>
-              <button type="button" class="role" data-role="Guest" data-tip="No account. An ephemeral session, straight into the games.">guest</button>
+              <button type="button" class="role" data-role="Sub" data-tip="Worship your digital angel. Point tracking and daily commitments enabled.">disciple</button>
+              <button type="button" class="role" data-role="Visitor" data-tip="A persistent account for testing. Intended for friends and other dommes.">visitor</button>
+              <button type="button" class="role" data-role="Guest" data-tip="An ephemeral session for testing.">guest</button>
             </div>
           </div>
           <div class="fl"><span class="lab">who are you?</span><textarea id="intro" maxlength="500" rows="3" placeholder="tell Hermione who you are"></textarea></div>
-          <div class="row dim2" style="font-size:0.82rem; margin-top:0.2rem">// invite only. each vessel is approved by hand.</div>
+          <div class="row dim2" style="font-size:0.82rem; margin-top:0.2rem">// disciple accounts are invite only.</div>
         </div>
 
         <div class="errline" id="error"></div>
         <div class="row" style="margin-top:1.3rem">
           <button class="btn solid" id="submit" type="submit">enter</button>
-          <span class="dim" style="margin-left:1rem">&crarr; sign in</span>
+          <span class="dim" id="enter-hint" style="margin-left:1rem">&crarr; sign in</span>
         </div>
       </form>
 
@@ -116,7 +116,6 @@
 
       <div id="pending" hidden>
         <div class="br" style="font-size:1.3rem; margin-bottom:0.6rem">// petition received</div>
-        <div class="dim" style="line-height:1.7; max-width:44ch">Your vessel has been created, but you cannot sign in yet. Hermione approves each one by hand. Return and sign in once she has.</div>
         <div class="row" style="margin-top:1.4rem"><span class="btn" id="back-signin">back to sign in</span></div>
       </div>
     </div>
@@ -134,12 +133,13 @@
       mode = next; err("");
       const login = mode === "login";
       $("register-fields").hidden = login;
-      $("lab-user").textContent = login ? "login:" : "vessel:";
+      $("lab-user").textContent = login ? "login:" : "username:";
       $("statusline").innerHTML = login ? "&gt; awaiting credentials" : "&gt; petitioning for a new vessel";
       $("password").autocomplete = login ? "current-password" : "new-password";
+      $("enter-hint").hidden = !login;   // "↵ sign in" only makes sense when signing in
       $("toggle-line").innerHTML = login
         ? 'no vessel yet? &nbsp;<span class="link" id="to-register">&gt; <b>register</b></span>'
-        : 'already a vessel? &nbsp;<span class="link" id="to-login">&gt; <b>sign in</b></span>';
+        : 'already a disciple? &nbsp;<span class="link" id="to-login">&gt; <b>sign in</b></span>';
       $(login ? "to-register" : "to-login").addEventListener("click", () => setMode(login ? "register" : "login"));
       applyRoleState();
     }
