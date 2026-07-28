@@ -13,15 +13,14 @@
   <style>
     /* Big-Type terminal dashboard (black / baby-blue). Self-contained; overrides
        the shared shell. Green is avoided (white used for "done"/ok). */
-    :root { --c:#aee3ff; --dim:#4f7ea0; --dim2:#37576f; --bright:#eafaff; --accent:#8fd0ff; --bg:#04070d; --glow:rgba(120,190,255,0.32); --ok:#eafaff; --err:#ff7a6d; --button-bg:#8fd0ff; }
+    :root { --c:#aee3ff; --dim:#4f7ea0; --dim2:#37576f; --bright:#eafaff; --accent:#8fd0ff; --bg:#000000; --glow:rgba(120,190,255,0.32); --ok:#eafaff; --err:#ff7a6d; --button-bg:#8fd0ff; }
     * { box-sizing: border-box; }
     [hidden] { display: none !important; }
     html, body { height: 100%; overflow: hidden; }
     body { margin: 0; padding: 0; background: var(--bg); color: var(--c); font-family: "IBM Plex Mono", monospace; font-size: 15px; display: block; }
     .sky-clouds { display: none !important; }
-    .term-glow { position: fixed; inset: 0; z-index: 0; pointer-events: none; background: radial-gradient(70% 60% at 30% 30%, rgba(60,130,210,0.10) 0, transparent 72%); }
-    .term-grid { position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: 0.5;
-      background: linear-gradient(90deg, rgba(80,140,190,0.045) 1px, transparent 1px) 0 0/3vw 3vw, linear-gradient(0deg, rgba(80,140,190,0.045) 1px, transparent 1px) 0 0/3vw 3vw; }
+    .term-glow { display: none; }
+    .term-grid { display: none; }
     .term-scan { position: fixed; inset: 0; z-index: 60; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(0,0,0,0.24) 0 1px, transparent 1px 3px); }
     .term-vig { position: fixed; inset: 0; z-index: 59; pointer-events: none; box-shadow: inset 0 0 26vh 9vh rgba(0,0,0,0.6); }
     a { color: inherit; text-decoration: none; }

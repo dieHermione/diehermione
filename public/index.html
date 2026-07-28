@@ -11,12 +11,12 @@
   <script src="/boot.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    :root { --c: #aee3ff; --dim: #4f7ea0; --dim2: #37576f; --bright: #eafaff; --accent: #8fd0ff; --bg: #04070d; --glow: rgba(120,190,255,0.35); --err: #ff7a6d; }
+    :root { --c: #aee3ff; --dim: #4f7ea0; --dim2: #37576f; --bright: #eafaff; --accent: #8fd0ff; --bg: #000000; --glow: rgba(120,190,255,0.35); --err: #ff7a6d; }
     [hidden] { display: none !important; }
     html, body { height: 100%; overflow: hidden; }
     body { background: var(--bg); color: var(--c); font-family: "IBM Plex Mono", monospace; }
     #scene { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; padding: 5vh 5vw; }
-    .glow-bg { position: absolute; inset: 0; z-index: 0; background: radial-gradient(70% 60% at 50% 42%, rgba(60,130,210,0.14) 0, transparent 70%); }
+    .glow-bg { display: none; }
     .scan { position: absolute; inset: 0; pointer-events: none; z-index: 40; background: repeating-linear-gradient(0deg, rgba(0,0,0,0.28) 0 1px, transparent 1px 3px); }
     .vig { position: absolute; inset: 0; pointer-events: none; z-index: 41; box-shadow: inset 0 0 30vh 10vh rgba(0,0,0,0.6); }
     .content { position: relative; z-index: 5; width: min(640px, 92vw); font-size: 1.05rem; line-height: 1.9; }
