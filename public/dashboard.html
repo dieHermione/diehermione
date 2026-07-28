@@ -134,9 +134,11 @@
     .adm-toggle.on { border-color: var(--accent); color: var(--bright); }
     .adm-doc { display: block; color: var(--accent); padding: 0.2rem 0; }
     .adm-doc:hover { text-decoration: underline; }
-    .adm-log { display: flex; justify-content: space-between; gap: 0.5rem; align-items: baseline; padding: 0.4rem 0.5rem; border: 1px solid var(--dim2); margin-bottom: 0.4rem; cursor: pointer; }
+    .adm-log { display: flex; gap: 0.5rem; align-items: center; padding: 0.4rem 0.5rem; border: 1px solid var(--dim2); margin-bottom: 0.4rem; }
     .adm-log:hover { border-color: var(--accent); }
-    .adm-log .who2 { color: var(--bright); } .adm-log .meta2 { color: var(--dim); font-size: 0.8rem; text-align: right; }
+    .adm-log .who2 { color: var(--bright); cursor: pointer; } .adm-log .meta2 { color: var(--dim); font-size: 0.8rem; text-align: right; flex: 1; cursor: pointer; }
+    .adm-log-x { background: transparent; border: none; color: var(--dim); font-size: 1rem; line-height: 1; cursor: pointer; padding: 0 0.15rem; }
+    .adm-log-x:hover { color: var(--err); }
     .adm-preset { border: 1px solid var(--dim2); padding: 0.6rem; margin-bottom: 0.6rem; }
     .adm-preset-head { display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem; }
     .adm-preset input, .adm-preset textarea { width: 100%; background: rgba(120,190,255,0.06); border: 1px solid var(--dim2); color: var(--bright); font-family: inherit; font-size: 0.85rem; padding: 0.4rem 0.5rem; }
@@ -614,8 +616,15 @@
         const who = document.createElement("span"); who.className = "who2"; who.textContent = name;
         const meta = document.createElement("span"); meta.className = "meta2";
         meta.textContent = (e.category || "series") + " · " + e.passages + " lines · " + e.mistakes + " err";
-        row.append(who, meta);
-        row.addEventListener("click", () => showResult(name, e, fmt));
+        who.addEventListener("click", () => showResult(name, e, fmt));
+        meta.addEventListener("click", () => showResult(name, e, fmt));
+        const dismiss = document.createElement("button"); dismiss.className = "adm-log-x"; dismiss.textContent = "×"; dismiss.title = "Dismiss";
+        dismiss.addEventListener("click", async (ev) => {
+          ev.stopPropagation();
+          const r = await fetch("/api/users/" + encodeURIComponent(name) + "/writing/" + encodeURIComponent(e.id), { method: "DELETE" });
+          if (r.ok) row.remove();
+        });
+        row.append(who, meta, dismiss);
         logList.append(row);
       });
     }

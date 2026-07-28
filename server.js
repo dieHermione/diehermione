@@ -1237,6 +1237,19 @@ app.get("/api/users/:username/writing", (req, res) => {
   res.json({ log: Array.isArray(u.writingLog) ? u.writingLog : [] });
 });
 
+// Hermione dismisses a finished-series entry so the list doesn't pile up.
+app.delete("/api/users/:username/writing/:id", (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });
+  const users = loadUsers();
+  const u = users[req.params.username.toLowerCase()];
+  if (!u) return res.status(404).json({ error: "No such account." });
+  const before = Array.isArray(u.writingLog) ? u.writingLog.length : 0;
+  u.writingLog = (Array.isArray(u.writingLog) ? u.writingLog : []).filter((e) => e.id !== req.params.id);
+  if (u.writingLog.length !== before) saveUsers(users);
+  res.json({ ok: true });
+});
+
 // --- tithe: give up points ---
 // The points are burned, not transferred. Hermione doesn't keep points: they
 // read as null on her profile and she can't be granted them, so crediting her
