@@ -314,8 +314,8 @@
   /* ---------- selection ---------- */
   const DIFF_NOTE = {
     meek: "a clean signal. forgiving.",
-    exacting: "the signal frays as mistakes mount.",
-    merciless: "corrupted from the first keystroke. she is watching.",
+    exacting: "the signal frays; a slip restarts the current line.",
+    merciless: "corrupted from the first keystroke; a slip restarts every repetition.",
   };
   function pickGroup(container, attr, value) {
     container.querySelectorAll(".opt").forEach((b) => b.classList.toggle("sel", b.dataset[attr] === value));
@@ -432,8 +432,10 @@
     } else {
       state.mistakes++; keyClick(true);
       $("p-err").textContent = String(state.mistakes).padStart(2, "0");
-      // merciless: a single slip sends you back to the start of the line
-      if (state.diff === "merciless") state.typed = 0;
+      // merciless (Penance only): a slip throws you back to the very first rep
+      if (state.diff === "merciless" && !DEVOTION) { state.idx = 0; startPassage(); return; }
+      // exacting and Devotion both restart the current line on a slip; meek Penance is forgiving
+      if (state.diff === "exacting" || DEVOTION) state.typed = 0;
       applyCorruption(); renderTarget();
     }
   });

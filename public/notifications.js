@@ -1,8 +1,9 @@
 // Notification bell for the shared top nav. Injects its own markup and styles so
 // each page only needs to include this file.
 (function () {
+  // Dark terminal skin (baby-blue on black) to match the new site theme.
   const STYLES = `
-    .notif-wrap { position: relative; display: inline-flex; }
+    .notif-wrap { position: relative; display: inline-flex; font-family: "IBM Plex Mono", ui-monospace, monospace; }
     .notif-btn {
       position: relative;
       padding: 0.45rem 0.7rem !important;
@@ -18,7 +19,8 @@
       width: 0.38rem;
       height: 0.38rem;
       border-radius: 50%;
-      background: #ffffff;
+      background: #eafaff;
+      box-shadow: 0 0 8px rgba(120,190,255,0.7);
       display: none;
     }
     .notif-wrap.has-unread .notif-dot { display: block; }
@@ -26,15 +28,12 @@
       position: absolute;
       top: calc(100% + 0.45rem);
       right: 0;
-      z-index: 20;
-      width: min(19rem, 78vw);
+      z-index: 200;
+      width: min(20rem, 80vw);
       padding: 0.5rem;
-      /* solid, not the translucent --panel-bg: text behind the panel showed
-         through and made notifications hard to read */
-      background: var(--panel-solid, #ffffff);
-      border: 1px solid var(--table-border);
-      border-radius: 12px;
-      box-shadow: 0 10px 30px var(--shadow);
+      background: #05080f;
+      border: 1px solid rgba(120,190,255,0.3);
+      box-shadow: 0 12px 34px rgba(0,0,0,0.7), 0 0 24px rgba(120,190,255,0.12);
       display: none;
       flex-direction: column;
       gap: 0.4rem;
@@ -46,54 +45,57 @@
       align-items: flex-start;
       gap: 0.5rem;
       padding: 0.55rem 0.65rem;
-      border-radius: 8px;
-      background: var(--notif-item-bg, rgba(36, 197, 237, 0.1));
-      color: var(--text-color);
+      border: 1px solid rgba(120,190,255,0.16);
+      background: rgba(120,190,255,0.05);
+      color: #aee3ff;
       font-size: 0.85rem;
-      font-weight: 500;
-      line-height: 1.35;
+      line-height: 1.4;
     }
     .notif-item .body { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 0.4rem; }
     .notif-item .text { overflow-wrap: anywhere; }
     .notif-go {
       display: inline-block;
-      padding: 0.22rem 0.7rem;
-      border-radius: 999px;
-      background: var(--button-bg);
-      color: var(--button-text);
+      padding: 0.2rem 0.7rem;
+      border: 1px solid #8fd0ff;
+      background: transparent;
+      color: #aee3ff;
       font-family: inherit;
-      font-size: 0.74rem;
-      font-weight: 700;
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
       text-decoration: none;
     }
-    .notif-go:hover { background: var(--button-hover-bg); }
+    .notif-go:hover { background: #8fd0ff; color: #04070d; }
     .notif-item .dismiss {
       flex-shrink: 0;
       padding: 0 !important;
       width: 1.15rem;
       height: 1.15rem;
-      border-radius: 50% !important;
       background: transparent !important;
-      color: var(--muted-color) !important;
+      color: #4f7ea0 !important;
       font-size: 0.95rem !important;
       line-height: 1;
       cursor: pointer;
       border: none;
     }
-    .notif-item .dismiss:hover { background: var(--button-bg) !important; color: var(--button-text) !important; }
+    .notif-item .dismiss:hover { color: #eafaff !important; }
     .notif-empty {
       padding: 0.85rem 0.65rem;
-      color: var(--muted-color);
+      color: #4f7ea0;
       font-size: 0.85rem;
-      font-style: italic;
       text-align: center;
     }
     .notif-clear {
       width: 100%;
-      font-size: 0.8rem !important;
-      padding: 0.4rem !important;
-      border-radius: 8px !important;
+      font-size: 0.72rem !important;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 0.45rem !important;
+      background: transparent !important;
+      color: #aee3ff !important;
+      border: 1px solid rgba(120,190,255,0.3) !important;
     }
+    .notif-clear:hover { background: rgba(120,190,255,0.1) !important; }
   `;
 
   // Wording per destination, so the button says where it goes rather than a
