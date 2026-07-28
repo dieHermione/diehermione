@@ -12,11 +12,11 @@
     if (document.getElementById("boot-style")) return;
     var s = document.createElement("style"); s.id = "boot-style";
     s.textContent =
-      '#boot-overlay{position:fixed;inset:0;z-index:9999;background:#04070d;color:#aee3ff;' +
+      '#boot-overlay{position:fixed;inset:0;z-index:9999;background:#000000;color:#aee3ff;' +
       'font-family:"IBM Plex Mono",ui-monospace,monospace;display:flex;align-items:center;justify-content:center;' +
       'opacity:0;transition:opacity .28s ease}' +
       '#boot-overlay.on{opacity:1}' +
-      '#boot-overlay .glow{position:absolute;inset:0;background:radial-gradient(60% 55% at 50% 45%,rgba(60,130,210,.12) 0,transparent 70%)}' +
+      '#boot-overlay .glow{display:none}' +
       '#boot-overlay .scan{position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.3) 0 1px,transparent 1px 3px)}' +
       '#boot-overlay .vig{position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 30vh 10vh rgba(0,0,0,.6)}' +
       '#boot-overlay .wrap{position:relative;z-index:2;text-align:center;width:min(820px,92vw)}' +
