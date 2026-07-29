@@ -255,19 +255,79 @@ app.post("/api/logout", (req, res) => {
   req.session.destroy(() => res.json({ ok: true }));
 });
 
-// Start a guest session: no account is created, and there is no username.
+// --- guests ---
+// A guest has no account, but multiplayer needs to tell one from another, so
+// each session claims a transient name (guest1, guest2, ...) from an in-memory
+// registry. Nothing is written to users.json. Names are reclaimed once a guest
+// has been quiet for a while, and their game state goes with them, so an
+// abandoned session cannot squat a name or leave orphaned games behind.
+const activeGuests = new Map();          // name -> last seen (ms)
+const GUEST_TTL = 3 * 60 * 60 * 1000;    // 3 hours of silence and the name is free
+
+function reclaimGuests() {
+  const cutoff = Date.now() - GUEST_TTL;
+  for (const [name, seen] of activeGuests) {
+    if (seen >= cutoff) continue;
+    activeGuests.delete(name);
+    dropPlayerGames(name);
+  }
+}
+// a guest leaves nothing behind: their chess and deathroll games go too
+function dropPlayerGames(name) {
+  try {
+    const games = loadGames();
+    if (games[name]) { delete games[name]; saveGames(games); }
+  } catch {}
+  try {
+    const rolls = loadRolls();
+    if (rolls[name]) { delete rolls[name]; saveRolls(rolls); }
+  } catch {}
+}
+function claimGuestName() {
+  reclaimGuests();
+  for (let i = 1; ; i++) {
+    const name = "guest" + i;
+    if (!activeGuests.has(name)) { activeGuests.set(name, Date.now()); return name; }
+  }
+}
+function touchGuest(req) {
+  if (req.session.guest && req.session.guestName) activeGuests.set(req.session.guestName, Date.now());
+}
+
+// The identity a game is filed under: a real account's username, or the
+// transient name held by a guest session.
+function playerId(req) {
+  if (req.session.username) return req.session.username.toLowerCase();
+  if (req.session.guest && req.session.guestName) return req.session.guestName;
+  return null;
+}
+function listActiveGuests() {
+  reclaimGuests();
+  return [...activeGuests.keys()].sort((a, b) => Number(a.slice(5)) - Number(b.slice(5)));
+}
+
+// Start a guest session: no account is created, just a name to play under.
 app.post("/api/guest", (req, res) => {
   req.session.username = undefined;
   req.session.guest = true;
-  res.json({ ok: true });
+  if (!req.session.guestName || !activeGuests.has(req.session.guestName)) {
+    req.session.guestName = claimGuestName();
+  }
+  res.json({ ok: true, username: req.session.guestName });
 });
 
 app.get("/api/me", (req, res) => {
   if (!req.session.username) {
     if (req.session.guest) {
-      // a guest is signed in only enough to try games; no account behind it
+      // a guest is signed in only enough to play; no account behind it. The
+      // name is claimed lazily so a session that predates the registry, or one
+      // whose name has since been reclaimed, still gets a usable identity.
+      if (!req.session.guestName || !activeGuests.has(req.session.guestName)) {
+        req.session.guestName = claimGuestName();
+      }
+      touchGuest(req);
       return res.json({
-        guest: true, username: "Guest", isAdmin: false, rank: "Guest",
+        guest: true, username: req.session.guestName, isAdmin: false, rank: "Guest",
         points: null, noEconomy: true, tithedToday: false, checkIn: null,
       });
     }
@@ -299,6 +359,13 @@ app.get("/api/me", (req, res) => {
     photosensitive: users[key].photosensitive === true,
     checkIn,
   });
+});
+
+// A guest's landing page: the games they can actually reach, nothing else.
+app.get("/guest", requirePlayer, (req, res) => {
+  if (req.session.username) return res.redirect("/dashboard");
+  touchGuest(req);
+  res.sendFile(path.join(__dirname, "views", "guest.html"));
 });
 
 app.get("/dashboard", requireLogin, (req, res) => {
@@ -562,11 +629,12 @@ function chessKeyFor(req, opponent) {
     const key = String(opponent || "").toLowerCase();
     return key && key !== "hermione" ? key : null;
   }
-  return req.session.username.toLowerCase();
+  return playerId(req);
 }
 
 app.get("/api/chess/game", (req, res) => {
-  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  if (!playerId(req)) return res.status(401).json({ error: "Not logged in." });
+  touchGuest(req);
   const key = chessKeyFor(req, req.query.opponent);
   if (!key) return res.status(400).json({ error: "A valid opponent is required." });
   const games = loadGames();
@@ -579,7 +647,8 @@ app.get("/api/chess/game", (req, res) => {
 });
 
 app.post("/api/chess/move", (req, res) => {
-  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  if (!playerId(req)) return res.status(401).json({ error: "Not logged in." });
+  touchGuest(req);
   const key = chessKeyFor(req, req.body.opponent);
   if (!key) return res.status(400).json({ error: "A valid opponent is required." });
   const games = loadGames();
@@ -752,7 +821,7 @@ app.post("/api/elysium/debug", requireLogin, (req, res) => {
   res.json({ tree: elysium.publicView(next), debug: elysium.debugView(next) });
 });
 
-app.get("/chess", requireLogin, (req, res) => {
+app.get("/chess", requirePlayer, (req, res) => {
   res.sendFile(path.join(__dirname, "views", "chess.html"));
 });
 
@@ -831,7 +900,7 @@ function deathrollKeyFor(req, opponent) {
     const key = String(opponent || "").toLowerCase();
     return key && key !== "hermione" ? key : null;
   }
-  return req.session.username.toLowerCase();
+  return playerId(req);
 }
 
 function deathrollState(game, viewerIsAdmin) {
@@ -849,7 +918,8 @@ function deathrollState(game, viewerIsAdmin) {
 }
 
 app.get("/api/deathroll/game", (req, res) => {
-  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  if (!playerId(req)) return res.status(401).json({ error: "Not logged in." });
+  touchGuest(req);
   const key = deathrollKeyFor(req, req.query.opponent);
   if (!key) return res.status(400).json({ error: "Pick an opponent." });
   const games = loadRolls();
@@ -863,15 +933,19 @@ app.get("/api/deathroll/games", (req, res) => {
   if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });
   const games = loadRolls();
   const users = loadUsers();
+  const row = (key, label, guest) => ({
+    username: label,
+    guest: Boolean(guest),
+    hasGame: Boolean(games[key]),
+    yourTurn: Boolean(games[key] && !games[key].over && games[key].turn === "hermione"),
+    over: Boolean(games[key] && games[key].over),
+  });
   res.json({
-    players: Object.keys(users)
-      .filter((k) => k !== "hermione")
-      .map((k) => ({
-        username: users[k].username,
-        hasGame: Boolean(games[k]),
-        yourTurn: Boolean(games[k] && !games[k].over && games[k].turn === "hermione"),
-        over: Boolean(games[k] && games[k].over),
-      })),
+    players: [
+      ...Object.keys(users).filter((k) => k !== "hermione").map((k) => row(k, users[k].username, false)),
+      // guests are playable opponents too, for as long as their session lasts
+      ...listActiveGuests().map((g) => row(g, g, true)),
+    ],
   });
 });
 
@@ -882,7 +956,9 @@ app.post("/api/deathroll/start", (req, res) => {
   const key = deathrollKeyFor(req, req.body.opponent);
   if (!key) return res.status(400).json({ error: "Pick an opponent." });
   const users = loadUsers();
-  if (!users[key]) return res.status(404).json({ error: "No such account." });
+  const isGuest = !users[key] && activeGuests.has(key);
+  if (!users[key] && !isGuest) return res.status(404).json({ error: "No such player." });
+  const opponentName = users[key] ? users[key].username : key;
   const sides = Number(req.body.sides);
   if (!Number.isInteger(sides) || sides < DEATHROLL_MIN_SIDES || sides > DEATHROLL_MAX_SIDES) {
     return res.status(400).json({
@@ -891,7 +967,7 @@ app.post("/api/deathroll/start", (req, res) => {
   }
   const games = loadRolls();
   games[key] = {
-    opponent: users[key].username,
+    opponent: opponentName,
     startedWith: sides,
     sides,
     turn: "hermione",       // she picked the number, so she rolls it
@@ -905,7 +981,8 @@ app.post("/api/deathroll/start", (req, res) => {
 });
 
 app.post("/api/deathroll/roll", (req, res) => {
-  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  if (!playerId(req)) return res.status(401).json({ error: "Not logged in." });
+  touchGuest(req);
   const key = deathrollKeyFor(req, req.body.opponent);
   if (!key) return res.status(400).json({ error: "Pick an opponent." });
   const games = loadRolls();
@@ -1854,7 +1931,7 @@ app.get("/tasks", requireLogin, (req, res) => {
   res.sendFile(path.join(__dirname, "views", "tasks.html"));
 });
 
-app.get("/deathroll", requireLogin, (req, res) => {
+app.get("/deathroll", requirePlayer, (req, res) => {
   res.sendFile(path.join(__dirname, "views", "deathroll.html"));
 });
 

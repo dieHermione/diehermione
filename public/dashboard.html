@@ -68,6 +68,25 @@
     .controls { display: flex; flex-direction: column; align-items: flex-start; gap: 0.1rem; }
     .ctl-btn, .controls a { display: block; background: none; border: none; color: var(--c); font-family: inherit; font-size: 1.08rem; letter-spacing: 0.04em; padding: 0.16rem 0; cursor: pointer; text-align: left; }
     .controls a::before, .ctl-dropdown > .ctl-btn::before, #hermione-link::before, #logout::before { content: "› "; color: var(--dim2); }
+
+    /* in-theme tooltips: the native title popup is unstyled OS chrome, so the
+       game links carry data-tip and draw their own terminal panel instead */
+    .controls a[data-tip] { position: relative; }
+    .controls a[data-tip]::after {
+      content: "// " attr(data-tip);
+      position: absolute; left: calc(100% + 0.9rem); top: 50%; transform: translateY(-50%);
+      width: 15rem; padding: 0.55rem 0.7rem; z-index: 30;
+      background: rgba(0,0,0,0.96); border: 1px solid var(--accent); box-shadow: 0 0 22px var(--glow);
+      color: var(--c); font-size: 0.72rem; line-height: 1.5; letter-spacing: 0.02em;
+      text-transform: none; text-align: left; white-space: normal;
+      opacity: 0; visibility: hidden; transition: opacity 0.12s ease;
+      clip-path: polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 7px 100%, 0 calc(100% - 7px));
+    }
+    .controls a[data-tip]:hover::after, .controls a[data-tip]:focus-visible::after { opacity: 1; visibility: visible; }
+    /* the tooltip would run off the right edge on a narrow window */
+    @media (max-width: 900px) {
+      .controls a[data-tip]::after { left: 0; top: calc(100% + 0.4rem); transform: none; width: min(15rem, 80vw); }
+    }
     .controls a:hover, .ctl-btn:hover { color: var(--bright); text-shadow: 0 0 10px var(--glow); }
     .ctl-dropdown { position: relative; }
     .ctl-menu { display: flex; flex-direction: column; padding-left: 1.1rem; }
@@ -210,11 +229,11 @@
     <section class="control-card">
       <div class="stitle">enter</div>
       <div class="controls">
-        <a href="/snake" title="Chase the food. Classic Snake clone.">Snake</a>
-        <a href="/writing" title="A writeforme clone for punishments.">Penance</a>
-        <a href="/writing?mode=devotion" title="A calmer writeforme clone for mantras.">Devotion</a>
-        <a href="/deathroll" title="A two-player dice game. The first player to roll a 1 loses.">Deathroll</a>
-        <a href="/elysium" title="A simple game about caring for a tree.">Elysium</a>
+        <a href="/snake" data-tip="Chase the food. Classic Snake clone.">Snake</a>
+        <a href="/writing" data-tip="A writeforme clone for punishments.">Penance</a>
+        <a href="/writing?mode=devotion" data-tip="A calmer writeforme clone for mantras.">Devotion</a>
+        <a href="/deathroll" data-tip="A two-player dice game. The first player to roll a 1 loses.">Deathroll</a>
+        <a href="/elysium" data-tip="A simple game about caring for a tree.">Elysium</a>
         <a id="hermione-link" class="ctl-btn" href="/profile?user=hermione" hidden>Hermione</a>
         <button id="logout" class="ctl-btn" type="button">Log out</button>
       </div>

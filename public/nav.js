@@ -164,9 +164,9 @@
     back.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>';
     back.hidden = true;
     document.body.insertBefore(back, document.body.firstChild);
-    // gate: bounce signed-out visitors, and point a guest's back button at sign-in
+    // gate: bounce signed-out visitors, and send a guest back to the guest page
     window.siteMe()
-      .then(function (d) { back.hidden = false; if (d && d.guest) back.setAttribute("href", "/"); })
+      .then(function (d) { back.hidden = false; if (d && d.guest) back.setAttribute("href", "/guest"); })
       .catch(function () { window.location.href = "/"; });
   }
 
