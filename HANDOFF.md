@@ -382,6 +382,69 @@ as `state.actions.fertilize || -999`, so tick `0` counted as "never fed" and a
 fresh tree could be fertilized every tick. Now `??` via a shared
 `fertilizeLeft(state)` helper used by the action and both view fields.
 
+### Landed 2026-07-28, second pass (all ten features)
+Every feature from the big pass is now in. Commits `86b6747`, `ae906f6`,
+`e58d3d1`, `e26bd0a`, `641008e`, `b44a4bb`.
+
+- **Subliminals.** Cut to the four rhythms that were 1/3/5/7, picked at random.
+  All timing runs through `at()`, which multiplies by `SPEED = 0.5`, so the
+  system is halved in one place. `startRandom()` reschedules itself one gap at
+  a time (5 to 30 min) and skips hidden tabs. Messages are server-stored in
+  `subliminal.json` (gitignored): `GET /api/subliminal` for any player, `POST`
+  admin only. The test dropdown moved from the control card, where every user
+  could see it, into the admin panel.
+- **Photosensitivity.** Registration demands an explicit yes/no, stored on the
+  account, reported by `/api/me`. A flagged account gets `setEnabled(false)` on
+  both the subliminal and glitch systems. The login page runs before we know
+  who the visitor is, so it trusts a flag cached in `localStorage` on the last
+  signed-in visit. **Gap: a flagged account is unprotected on the first visit
+  from a new browser.** Guests are not asked, so they default to effects on.
+  There is also no way to change the answer after registering.
+- **Screen glitch** (`public/dashglitch.js`): eight effects (tear bands, red
+  shift, scan roll, chroma bleed, vertical hold, block corruption, static
+  burst, signal loss), dropdown in the admin panel, one at random every 40 to
+  180 seconds. **Two rules are load-bearing and documented in the file: never
+  put a `filter` on page content** (a filtered ancestor becomes the containing
+  block for `position:fixed` descendants and throws the console/scanlines/
+  modals around) **and never transform `.dash`** (scale-to-fit lives there).
+  Effects use `backdrop-filter` overlays, palette vars and a body offset.
+- **Snake subliminals**: `Subliminal.blip()`, one short flash, fired when the
+  food escapes, rate limited to one per 2.5s, own taunt pool.
+- **Wheel**: points to angelcoins, 10 to 30 outcomes, 1 to 200 biased low
+  (weights sum to 1000, so 1 is 20%, 200 is 0.1%, 61% pay 5 or less, mean 9.5).
+  Segment field is `coins`, not `points`. Wheel UI otherwise untouched pending
+  its reskin.
+- **Update notice** (`public/updatecheck.js`): `BUILD_ID` stamped at boot,
+  `GET /api/version` unauthenticated, pages poll every 90s and on regaining
+  visibility, then offer a reload. Assumes a single instance.
+- **Console** (`public/console.js`): `` ` ``/`~` slides it down, Esc closes.
+  On all fourteen signed-in pages, **not** on login. Themes itself from the
+  page's own custom properties. Swallows keystrokes in the capture phase so
+  the typing games do not also receive them. `CODES` maps a string to a
+  function; six placeholders exist and **the real secret codes still need
+  inventing.**
+- **Ambience** (`public/ambience.js`): fluorescent hum (120Hz mains buzz,
+  harmonics, ballast hiss, slow LFO, periodic flicker) plus the Penance key
+  click on any text field. Starts on first gesture; mute toggle bottom right,
+  remembered in localStorage.
+- **Guests**: transient names (`guest1`, `guest2`, ...) from an in-memory
+  registry, reclaimed after 3h of silence along with their games. `playerId()`
+  gives chess and deathroll one identity to file games under. Both games now
+  accept guests, and Hermione's opponent list includes live guests. New
+  `/guest` landing page.
+- **Snake**: free circular movement, no grid, no self-collision, one tapered
+  body drawn from the trail. **There is now no way to lose** (walls wrap,
+  nothing else kills), so `gameOver()` is gone. Ask the user whether walls
+  should become lethal. Geometry covered by 13 Node checks.
+
+**Testing note worth keeping:** the Browser pane usually runs as a *hidden*
+tab, where `requestAnimationFrame` never fires and `setTimeout` is clamped to
+~1s. That makes canvas games look broken and makes any timing measurement
+meaningless. Call `tabs_select` to front the tab first, and do the whole
+measurement inside a single `javascript_tool` call, because it can go hidden
+again between calls. For durations, wrap `setTimeout` and record the delays
+asked for rather than timing them.
+
 ### Still queued from the big pass
 
 **Mockups only (nothing wired). Eight batches:**
@@ -405,38 +468,6 @@ fresh tree could be fertilized every tick. Now `??` via a shared
    fictional character), pull source text from somewhere public like Wikipedia,
    show it, player summarises in a set number of words.
 8. **Slots.** Generic for now; custom symbol art comes later. Uses angelcoins.
-
-**Features:**
-- **Subliminals system.** Keep only test types **1, 3, 5, 7**; effect chosen at
-  random. Admin-editable message list (build it like the Devotion presets box).
-  **Halve current durations.** Random trigger every **5 to 30 minutes**, kept
-  uncommon. Move the test dropdown out of the control card into the admin panel
-  so ordinary users never see it. Then a **photosensitivity question in
-  registration**, and subliminals must be **disabled** for flagged accounts.
-  (Note: the test dropdown is still on the control card and visible to every
-  user until this lands.)
-- **Subtle occasional glitch on the dashboard**, plus a test button in the admin
-  panel.
-- **Guest accounts**: allow several at once (`guest1`, `guest2`), make them
-  eligible for multiplayer (Chess, Deathroll), and give them a guest dashboard
-  linking those games. Still no points, dailies, or persistence.
-- **"Update available" notice** for logged-in users to reload after a redeploy.
-- **Snake, circular movement.** Drop the 4-direction grid for a full circular
-  range of motion, keep growth on eating, **remove self-collision**, and replace
-  the square body segments with one shape that twists as it moves.
-- **Wheel economy**: convert from points to **angelcoins**, 3x the number of
-  outcomes, payouts 1 to 200 angelcoins biased toward the low end.
-- **Snake subliminals**: a lighter variant, text like "keep trying" when the
-  food escapes.
-- **Dashboard console**: in-theme, slides out on `~` while the window has focus,
-  used to enter secret codes.
-- **Atmosphere for dashboard + login**: port the Penance typing sounds, make the
-  blue elements periodically glitch red, and add ambience (fluorescent-light hum
-  or similar).
-- **Docs**: reskin `/tech` and `/guide`, then rewrite both to current truth.
-  (The user said "wait on the doc pass" early in the same message and then asked
-  for this explicitly. Read as: the reskin plus rewrite is wanted; confirm if it
-  comes up again.)
 
 ### Older entries below
 
