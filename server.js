@@ -21,6 +21,7 @@ const SITE_FILE = path.join(process.env.DATA_DIR || __dirname, "site.json");
 const ELYSIUM_FILE = path.join(process.env.DATA_DIR || __dirname, "elysium.json");
 const DEVOTION_FILE = path.join(process.env.DATA_DIR || __dirname, "devotion.json");
 const SUBLIMINAL_FILE = path.join(process.env.DATA_DIR || __dirname, "subliminal.json");
+const PARSE_FILE = path.join(process.env.DATA_DIR || __dirname, "parses.json");
 
 // --- simple JSON-file user store (fine for testing; swap for a DB later) ---
 function loadUsers() {
@@ -822,6 +823,63 @@ app.post("/api/elysium/debug", requireLogin, (req, res) => {
 
 app.get("/chess", requirePlayer, (req, res) => {
   res.sendFile(path.join(__dirname, "views", "chess.html"));
+});
+
+// --- Dummy Parse: a damage sim against a target that does not fight back ---
+app.get("/dummyparse", requirePlayer, (req, res) => {
+  touchGuest(req);
+  res.sendFile(path.join(__dirname, "views", "dummyparse.html"));
+});
+
+function loadParses() {
+  try { const d = JSON.parse(fs.readFileSync(PARSE_FILE, "utf8")); return Array.isArray(d.parses) ? d.parses : []; }
+  catch { return []; }
+}
+function saveParses(list) {
+  fs.writeFileSync(PARSE_FILE, JSON.stringify({ parses: list }, null, 2));
+}
+
+// A finished parse. Stored whole, including the event list, because the point
+// of a parse is the detail: a leaderboard can be built off dps later, but the
+// log is what makes a run auditable.
+app.post("/api/parse", (req, res) => {
+  const who = playerId(req);
+  if (!who) return res.status(401).json({ error: "Not logged in." });
+  touchGuest(req);
+  const b = req.body || {};
+  const duration = Number(b.duration), total = Number(b.total), dps = Number(b.dps);
+  if (!Number.isFinite(duration) || duration <= 0) return res.status(400).json({ error: "Bad duration." });
+  if (!Number.isFinite(total) || total < 0) return res.status(400).json({ error: "Bad total." });
+  const events = Array.isArray(b.events) ? b.events.slice(0, 4000) : [];
+  const entry = {
+    id: Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 7),
+    player: who,
+    guest: Boolean(req.session.guest),
+    cls: String(b.cls || "priest").slice(0, 20),
+    at: new Date().toISOString(),
+    duration: +duration.toFixed(2),
+    total: Math.round(total),
+    dps: Math.round(Number.isFinite(dps) ? dps : total / duration),
+    build: b.build && typeof b.build === "object" ? b.build : {},
+    byAbility: b.byAbility && typeof b.byAbility === "object" ? b.byAbility : {},
+    events,
+  };
+  const list = loadParses();
+  list.unshift(entry);
+  saveParses(list.slice(0, 400));
+  res.json({ ok: true, id: entry.id, dps: entry.dps });
+});
+
+// Summaries only. The event list is large and nothing needs it yet.
+app.get("/api/parses", (req, res) => {
+  if (!playerId(req)) return res.status(401).json({ error: "Not logged in." });
+  const mine = String(req.query.mine || "") === "1";
+  const who = playerId(req);
+  let list = loadParses();
+  if (mine) list = list.filter((p) => p.player === who);
+  res.json({
+    parses: list.slice(0, 60).map(({ events, ...rest }) => ({ ...rest, eventCount: events ? events.length : 0 })),
+  });
 });
 
 app.get("/snake", requirePlayer, (req, res) => {
