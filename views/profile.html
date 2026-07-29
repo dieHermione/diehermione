@@ -6,860 +6,404 @@
   <title>Profile - angeldom.me</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cause:wght@400..700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/site.css" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <script src="/me.js"></script>
   <style>
-    /* nav removed: top-align the profile (no more vertical-centre gap), and use
-       the login/dashboard sky background */
-    body.has-top-nav { justify-content: flex-start !important; padding-top: 3.5rem;
-      background: linear-gradient(180deg, #8fd8f2 0%, #63bde3 62%, #52aed8 100%) !important; background-attachment: fixed; }
-    .sky-clouds { position: fixed; inset: 0; overflow: hidden; z-index: 0; pointer-events: none; }
-    .sky-clouds .c { position: absolute; border-radius: 50%; background: radial-gradient(closest-side, rgba(255,255,255,0.9), rgba(255,255,255,0) 72%); filter: blur(4px); }
-    @keyframes driftL { from { transform: translateX(22vw); } to { transform: translateX(-140vw); } }
-    @keyframes driftR { from { transform: translateX(-22vw); } to { transform: translateX(140vw); } }
-    #profile-card-main { position: relative; z-index: 2; }
-    .site-header {
-      font-family: "Cause", sans-serif;
-      font-size: 3rem;
-      font-weight: 700;
-      color: var(--header-color);
-      text-shadow: 0 2px 12px rgba(255, 255, 255, 0.6);
-      text-align: center;
-      margin-bottom: 1.25rem;
-      padding: 20px 0;
-    }
-    .bow { display: inline-block; }
-    .bow.flip { transform: scaleX(-1); }
-    .card {
-      background: var(--panel-bg);
-      border-radius: 12px;
-      box-shadow: 0 10px 40px var(--shadow);
-      width: 100%;
-      max-width: 572px;
-      padding: 2.75rem;
-      text-align: center;
-      color: var(--text-color);
-    }
-    .avatar.clickable, .avatar-fallback.clickable { cursor: pointer; }
-    .avatar.clickable:hover, .avatar-fallback.clickable:hover { filter: brightness(0.94); }
-    .avatar {
-      width: 120px;
-      height: 120px;
-      border-radius: 50%;
-      object-fit: cover;
-      display: block;
-      margin: 0 auto 1rem;
-      box-shadow: 0 6px 20px var(--shadow);
-      border: 4px solid var(--button-bg);
-      background: linear-gradient(135deg, #24c5ed, #1aa9d1);
-    }
-    .avatar-fallback {
-      width: 120px;
-      height: 120px;
-      border-radius: 50%;
-      margin: 0 auto 1rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: "Cause", sans-serif;
-      font-size: 3rem;
-      font-weight: 700;
-      color: #ffffff;
-      background: linear-gradient(135deg, #24c5ed, #1aa9d1);
-      box-shadow: 0 6px 20px var(--shadow);
-      border: 4px solid var(--button-bg);
-    }
-    h1.username {
-      font-family: "Cause", sans-serif;
-      font-size: 1.6rem;
-      color: var(--heading-color);
-      margin-bottom: 0.35rem;
-    }
-    .badge {
-      display: inline-block;
-      padding: 0.25rem 0.9rem;
-      border-radius: 999px;
-      font-size: 0.85rem;
-      font-weight: 700;
-      margin-bottom: 1.25rem;
-    }
-    .badge.princess {
-      background: linear-gradient(135deg, #24c5ed, #1aa9d1);
-      color: #ffffff;
-      box-shadow: 0 4px 12px rgba(36, 197, 237, 0.5);
-    }
-    .badge.user {
-      background: var(--table-border);
-      color: var(--muted-color);
-    }
-    .bio {
-      color: var(--text-color);
-      margin: 0 auto 1.5rem;
-      max-width: 380px;
-      white-space: pre-wrap;
-      overflow-wrap: anywhere;
-    }
-    .bio.empty { color: var(--muted-color); font-style: italic; }
-    .details {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-      gap: 0.75rem;
-      margin-bottom: 1.5rem;
-    }
-    .detail[hidden] { display: none; }
-    .detail {
-      background: transparent;
-      border: 1px solid var(--table-border);
-      border-radius: 10px;
-      padding: 0.75rem 0.5rem;
-    }
-    .detail .label {
-      display: block;
-      font-size: 0.72rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--table-header-color);
-      margin-bottom: 0.3rem;
-    }
-    .detail .value {
-      font-family: "Cause", sans-serif;
-      font-weight: 600;
-      font-size: 1.35rem;
-      color: var(--heading-color);
-      overflow-wrap: anywhere;
-    }
-    .joined { color: var(--muted-color); font-size: 0.85rem; margin-bottom: 1.5rem; }
-    button {
-      padding: 0.6rem 1.5rem;
-      background: var(--button-bg);
-      color: var(--button-text);
-      border: none;
-      border-radius: 8px;
-      font-size: 0.95rem;
-      font-weight: 600;
-      cursor: pointer;
-    }
-    button:hover { background: var(--button-hover-bg); }
-    button + button { margin-left: 0.5rem; }
-    /* edit mode */
-    #edit-form { display: none; text-align: left; }
-    #edit-form.open { display: block; }
-    #view-mode.closed { display: none; }
-    .field { margin-bottom: 1rem; }
-    .field label {
-      display: block;
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: var(--table-header-color);
-      margin-bottom: 0.3rem;
-    }
-    .field select {
-      width: 100%;
-      padding: 0.55rem 0.7rem;
-      border: 1px solid var(--input-border);
-      border-radius: 8px;
-      font-size: 0.95rem;
-      background: var(--input-bg);
-      color: var(--input-text);
-      font-family: inherit;
-      cursor: pointer;
-    }
-    .field select:focus { outline: none; border-color: var(--button-hover-bg); }
-    .field input[type="text"], .field textarea {
-      width: 100%;
-      padding: 0.55rem 0.7rem;
-      border: 1px solid var(--input-border);
-      border-radius: 8px;
-      font-size: 0.95rem;
-      background: var(--input-bg);
-      color: var(--input-text);
-      font-family: inherit;
-    }
-    .field textarea { min-height: 90px; resize: vertical; }
-    .field input:focus, .field textarea:focus { outline: none; border-color: var(--button-hover-bg); }
-    .form-actions { text-align: center; margin-top: 1.25rem; }
-    .form-error {
-      display: none;
-      color: #b3261e;
-      background: transparent;
-      border: 1px solid #b3261e;
-      border-radius: 8px;
-      padding: 0.5rem 0.75rem;
-      font-size: 0.85rem;
-      margin-bottom: 1rem;
+    /* The profile is the "man page" design: the account rendered as its own
+       entry in the angeldom manual. Self-contained, no site.css. */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    /* site.css normally carries this; the fix has to come with us */
+    [hidden] { display: none !important; }
+
+    :root {
+      --c: #aee3ff;
+      --dim: #4f7ea0;
+      --dim2: #2c4a5e;
+      --bright: #eafaff;
+      --accent: #8fd0ff;
+      --glow: rgba(120, 190, 255, 0.32);
+      --err: #ff5a4a;
+
+      /* ranks.js styles its modal off the shared-shell variables; map those
+         onto the terminal palette so the ladder matches this page */
+      --panel-bg: #05080b;
+      --panel-solid: #05080b;
+      --text-color: var(--c);
+      --heading-color: var(--bright);
+      --muted-color: var(--dim);
+      --table-border: var(--dim2);
+      --table-header-color: var(--dim);
+      --button-bg: var(--c);
+      --button-hover-bg: var(--bright);
+      --button-text: #04070a;
+      --input-bg: rgba(120, 190, 255, 0.05);
+      --input-border: var(--dim2);
+      --input-text: var(--bright);
+      --shadow: rgba(0, 0, 0, 0.8);
+      --notif-item-bg: rgba(120, 190, 255, 0.1);
     }
 
-    .ptabs { display: flex; gap: 0.4rem; justify-content: center; margin-bottom: 1.5rem; }
-    .ptab {
-      padding: 0.4rem 1.1rem;
-      border-radius: 999px;
-      background: transparent;
-      color: var(--heading-color);
-      box-shadow: inset 0 0 0 1.5px var(--button-bg);
-      font-weight: 700;
-      font-size: 0.9rem;
+    html, body { height: 100%; }
+    body {
+      background: #000;
+      color: var(--c);
+      font-family: "IBM Plex Mono", ui-monospace, monospace;
+      font-size: 14px;
+      overflow: hidden;
     }
-    .ptab.active { background: var(--button-bg); color: var(--button-text); box-shadow: none; }
-    #guestbook-view { text-align: left; }
-    #guestbook-view[hidden] { display: none; }
-    .gb-list { display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: 1.25rem; }
-    .gb-entry {
-      border: 1px solid var(--table-border);
-      border-radius: 10px;
-      padding: 0.7rem 0.85rem;
-      background: var(--notif-item-bg, rgba(36, 197, 237, 0.08));
+    .scan {
+      position: fixed; inset: 0; z-index: 200; pointer-events: none;
+      background: repeating-linear-gradient(0deg, rgba(0,0,0,0.30) 0 1px, transparent 1px 3px);
     }
-    .gb-entry .gb-head { display: flex; align-items: baseline; gap: 0.5rem; margin-bottom: 0.25rem; }
-    .gb-entry .gb-author { font-weight: 700; font-size: 0.9rem; color: var(--heading-color); }
-    .gb-entry .gb-when { color: var(--muted-color); font-size: 0.72rem; }
-    .gb-entry .gb-del {
-      margin-left: auto;
-      padding: 0 !important;
-      width: 1.3rem; height: 1.3rem;
-      border-radius: 50%;
-      background: transparent;
-      color: var(--muted-color);
-      font-size: 0.9rem; line-height: 1;
+    .vig {
+      position: fixed; inset: 0; z-index: 199; pointer-events: none;
+      box-shadow: inset 0 0 24vh 8vh rgba(0, 0, 0, 0.7);
     }
-    .gb-entry .gb-del:hover { background: var(--button-bg); color: var(--button-text); }
-    .gb-entry .gb-text { font-size: 0.9rem; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
-    .gb-empty { text-align: center; color: var(--muted-color); font-style: italic; padding: 1rem 0; }
-    .gb-empty[hidden] { display: none; }
-    .gb-form textarea {
-      width: 100%;
-      padding: 0.6rem 0.75rem;
-      border: 1px solid var(--input-border);
-      border-radius: 8px;
-      background: var(--input-bg);
-      color: var(--input-text);
-      font-family: inherit;
-      font-size: 0.92rem;
-      resize: vertical;
-      margin-bottom: 0.5rem;
-    }
-    .gb-form textarea:focus { outline: none; border-color: var(--button-hover-bg); }
-    .gb-form button { display: block; margin: 0 auto; }
 
-    /* a single reply, indented under its comment */
-    .gb-reply {
-      margin: 0.6rem 0 0 1.1rem;
-      padding: 0.55rem 0.7rem;
-      border-left: 2px solid var(--button-bg);
-      border-radius: 0 8px 8px 0;
-      background: var(--notif-item-bg, rgba(36, 197, 237, 0.06));
-    }
-    .gb-reply .gb-head { display: flex; align-items: baseline; gap: 0.5rem; margin-bottom: 0.2rem; }
-    .gb-reply .gb-author { font-weight: 700; font-size: 0.82rem; color: var(--heading-color); }
-    .gb-reply .gb-when { color: var(--muted-color); font-size: 0.68rem; }
-    .gb-reply .gb-text { font-size: 0.85rem; line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; }
-    .gb-reply .gb-del {
-      margin-left: auto;
-      padding: 0 !important;
-      width: 1.2rem; height: 1.2rem;
-      border-radius: 50%;
-      background: transparent;
-      color: var(--muted-color);
-      font-size: 0.85rem; line-height: 1;
-    }
-    .gb-reply .gb-del:hover { background: var(--button-bg); color: var(--button-text); }
-    .gb-reply-btn {
-      margin-top: 0.55rem;
-      padding: 0.25rem 0.85rem;
-      font-size: 0.78rem;
-      font-weight: 700;
-      border-radius: 999px;
-      background: transparent;
-      color: var(--heading-color);
-      box-shadow: inset 0 0 0 1.5px var(--button-bg);
-    }
-    .gb-reply-btn[hidden] { display: none; }
-    .gb-reply-btn:hover { background: var(--button-bg); color: var(--button-text); }
-    .gb-reply-form { margin: 0.55rem 0 0 1.1rem; }
-    .gb-reply-form[hidden] { display: none; }
-    .gb-reply-form textarea {
-      width: 100%;
-      padding: 0.5rem 0.65rem;
-      border: 1px solid var(--input-border);
-      border-radius: 8px;
-      background: var(--input-bg);
-      color: var(--input-text);
-      font-family: inherit;
-      font-size: 0.85rem;
-      resize: vertical;
-      margin-bottom: 0.4rem;
-    }
-    .gb-reply-form textarea:focus { outline: none; border-color: var(--button-hover-bg); }
-    .gb-reply-form .row { display: flex; gap: 0.4rem; }
-    .gb-reply-form .row button { padding: 0.35rem 0.9rem; font-size: 0.8rem; margin: 0; }
-
-    /* greyscale dark mode: neutralise the pinks that live outside the variables */
-    body[data-theme="dark"] .avatar,
-    body[data-theme="dark"] .avatar-fallback { background: linear-gradient(135deg, #5a5a5a, #7a7a7a); }
-    body.embed .top-nav, body.embed .theme-toggle { display: none !important; }
-    body.embed { padding: 2rem; min-height: 0; }
-    body.embed .card { margin: 0; }
-    body[data-theme="dark"] .badge.princess {
-      background: linear-gradient(135deg, #6a6a6a, #8a8a8a);
-      color: #f2f2f2;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-    }
-    #admin-view { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 1.5rem; }
-        :root {
-      --focus-color: #24c5ed;
-    }    body[data-theme="dark"] {
-      --focus-color: #d6d6d6;
-    }
-    @keyframes pts-open {
-      from { opacity: 0; transform: scaleX(0.6); transform-origin: left; }
-      to { opacity: 1; transform: scaleX(1); }
-    }
-    /* greyscale dark mode */
-    body[data-theme="dark"] #admin-view .chip.danger { color: #cfcfcf; box-shadow: inset 0 0 0 1.5px #6a6a6a; }
-    body[data-theme="dark"] #admin-view .chip.danger:hover { background: #6a6a6a; color: #f2f2f2; box-shadow: none; }
-
-#admin-view {
-    .site-header {
-      font-family: "Cause", sans-serif;
-      font-size: 2.5rem;
-      font-weight: 700;
-      color: var(--header-color);
-      text-shadow: 0 2px 12px rgba(255, 255, 255, 0.6);
-      text-align: center;
-      margin-bottom: 1.25rem;
-      padding: 20px 0;
-    }
-    .bow { display: inline-block; }
-    .bow.flip { transform: scaleX(-1); }
-    .card {
-      background: var(--panel-bg);
-      border-radius: 12px;
-      box-shadow: 0 10px 40px var(--shadow);
-      width: 100%;
-      max-width: 946px;
-      padding: 2.2rem;
-      color: var(--text-color);
-    }
-    table { width: 100%; border-collapse: collapse; margin-bottom: 1.5rem; }
-    th, td { text-align: left; padding: 0.5rem 0.75rem; font-size: 0.95rem; }
-    th { color: var(--table-header-color); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
-    tr + tr td { border-top: 1px solid var(--table-border); }
-    td { color: var(--text-color); }
-    td a { color: inherit; text-decoration: underline; text-decoration-color: var(--button-hover-bg); text-underline-offset: 3px; }
-    td a:hover { color: var(--button-hover-bg); }
-    .count { color: var(--muted-color); font-size: 0.85rem; margin-bottom: 1rem; }
-    .admin-grid {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      align-items: start;
-      gap: 1.5rem;
-      width: 100%;
-      max-width: 1240px;
-    }
-    .admin-cards {
+    .mp {
+      position: absolute; inset: 0;
+      padding: 3vh 3vw;
+      max-width: 1000px;
+      margin: 0 auto;
       display: flex;
       flex-direction: column;
-      align-items: stretch;
-      gap: 1.5rem;
-      min-width: 0;
-    }
-    .admin-profile { width: 380px; position: sticky; top: 1.5rem; }
-    .admin-profile iframe {
-      width: 100%;
-      height: 680px;
-      border: none;
-      border-radius: 12px;
-      background: transparent;
-      display: block;
-    }
-    @media (max-width: 1040px) {
-      .admin-grid { display: flex; flex-direction: column; align-items: stretch; }
-      .admin-profile { width: 100%; position: static; }
-    }
-    h2 {
-      font-family: "Cause", sans-serif;
-      font-size: 1.1rem;
-      color: var(--heading-color);
-      margin-bottom: 1rem;
-      text-align: center;
-    }
-    .doc-links { display: flex; gap: 0.6rem; justify-content: center; margin-bottom: 0.5rem; }
-    .doc-links a {
-      padding: 0.5rem 1.25rem;
-      border-radius: 999px;
-      background: var(--button-bg);
-      color: var(--button-text);
-      text-decoration: none;
-      font-size: 0.9rem;
-      font-weight: 700;
-    }
-    .doc-links a:hover { background: var(--button-hover-bg); }
-    .panel-empty {
-      color: var(--muted-color);
-      font-style: italic;
-      font-size: 0.9rem;
-      text-align: center;
-      padding: 0.75rem 0;
-    }
-    .action-menu {
-      padding: 0.3rem 0.4rem;
-      border: 1px solid var(--input-border);
-      border-radius: 6px;
-      font-size: 0.85rem;
-      background: var(--input-bg);
-      color: var(--input-text);
-      cursor: pointer;
-    }
-    .action-menu:focus { outline: none; border-color: var(--focus-color); }
-    .pts-input {
-      width: 4rem;
-      padding: 0.3rem 0.4rem;
-      border: 1px solid var(--input-border);
-      border-radius: 6px;
-      font-size: 0.85rem;
-      margin-right: 0.35rem;
-      background: var(--input-bg);
-      color: var(--input-text);
-    }
-    .pts-input:focus { outline: none; border-color: var(--focus-color); }
-    .action-row { display: flex; flex-wrap: wrap; gap: 0.3rem; align-items: center; }
-    .pts-group { display: inline-flex; gap: 0.25rem; align-items: center; }
-    .pts-select {
-      padding: 0.3rem 0.4rem;
-      border: 1px solid var(--input-border);
-      border-radius: 999px;
-      font-family: inherit;
-      font-size: 0.76rem;
-      font-weight: 700;
-      background: var(--input-bg);
-      color: var(--input-text);
-      cursor: pointer;
-    }
-    .pts-select:focus { outline: none; border-color: var(--focus-color); }
-    .chip.quick { padding: 0.32rem 0.6rem; }
-    .chip.sign { padding: 0.32rem 0.65rem; min-width: 2rem; font-size: 0.95rem; line-height: 1; }
-    .pts-group .pts-input { width: 3.6rem; margin-right: 0; }
-    .pts-reveal {
-      border-radius: 999px;
-      border: 1.5px solid var(--button-bg);
-      background: var(--input-bg);
-      text-align: center;
-      font-weight: 700;
-      animation: pts-open 0.14s ease;
-    }
-    /* delete runs on a timer you can call off */
-    .pending {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      flex-wrap: wrap;
-      font-size: 0.78rem;
-      font-weight: 700;
-      color: var(--text-color);
-    }
-    .pending .countdown {
-      display: inline-flex;
-      align-items: center;
       justify-content: center;
-      min-width: 1.9rem;
-      padding: 0.15rem 0.4rem;
-      border-radius: 999px;
-      background: var(--table-border);
-      color: var(--text-color);
-      font-variant-numeric: tabular-nums;
-    }
-    /* --- assigning tasks --- */
-    .assign {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
-      gap: 0.75rem 0.9rem;
-      align-items: end;
-      text-align: left;
-      margin-bottom: 1.5rem;
-    }
-    .assign .field { display: flex; flex-direction: column; gap: 0.25rem; min-width: 0; }
-    .assign .field[hidden] { display: none; }
-    .assign .field.narrow { max-width: 9rem; }
-    .assign label {
-      font-size: 0.7rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--table-header-color);
-    }
-    .assign input, .assign select, .assign textarea {
-      width: 100%;
-      padding: 0.45rem 0.6rem;
-      border: 1px solid var(--input-border);
-      border-radius: 8px;
-      background: var(--input-bg);
-      color: var(--input-text);
-      font-family: inherit;
-      font-size: 0.88rem;
-      resize: vertical;
-    }
-    .assign input:focus, .assign select:focus, .assign textarea:focus {
-      outline: none;
-      border-color: var(--focus-color);
-    }
-    .assign-actions {
-      grid-column: 1 / -1;
-      display: flex;
-      align-items: center;
-      gap: 0.7rem;
-    }
-    .assign-actions .chip { flex: 0 0 auto; padding: 0.5rem 1.4rem; }
-    .assign-msg { font-size: 0.8rem; color: var(--muted-color); }
-    .assign-msg.bad { color: #d4607f; }
-    .sub-head {
-      font-family: "Cause", sans-serif;
-      font-size: 0.95rem;
-      color: var(--heading-color);
-      margin: 0 0 0.75rem;
-      text-align: center;
-    }
-    .task-admin-list { display: flex; flex-direction: column; gap: 0.6rem; text-align: left; }
-    .task-admin {
-      border: 1px solid var(--table-border);
-      border-radius: 10px;
-      padding: 0.7rem 0.85rem;
-    }
-    .task-admin.done { border-color: var(--button-bg); background: var(--notif-item-bg, rgba(36, 197, 237, 0.1)); }
-    .task-admin .top {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: baseline;
-      gap: 0.5rem;
-      margin-bottom: 0.2rem;
-    }
-    .task-admin .who { font-weight: 700; font-size: 0.9rem; }
-    .task-admin .kind { color: var(--muted-color); font-size: 0.76rem; }
-    .task-admin .state {
-      margin-left: auto;
-      font-size: 0.72rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      color: var(--muted-color);
-    }
-    .task-admin.done .state { color: var(--heading-color); }
-    .task-admin .submission {
-      margin-top: 0.5rem;
-      padding: 0.6rem 0.7rem;
-      border-radius: 8px;
-      background: var(--input-bg);
-      border: 1px solid var(--input-border);
-      font-size: 0.84rem;
-      line-height: 1.5;
-      white-space: pre-wrap;      /* keep her paragraphing */
-      overflow-wrap: anywhere;
-      max-height: 14rem;
       overflow-y: auto;
     }
-    .task-admin .row-actions { display: flex; gap: 0.4rem; margin-top: 0.55rem; }
+    .mp .top, .mp .bottom {
+      display: flex; justify-content: space-between;
+      font-size: 11px; letter-spacing: 0.2em; color: var(--dim);
+      flex-shrink: 0;
+    }
+    .mp .top { border-bottom: 1px solid var(--dim2); padding-bottom: 0.4rem; margin-bottom: 1.4rem; }
+    .mp .bottom { border-top: 1px solid var(--dim2); padding-top: 0.4rem; margin-top: 1rem; }
 
-    .review .note-row { display: flex; gap: 0.4rem; margin-top: 0.55rem; flex-wrap: wrap; }
-    .review .note-row input {
-      flex: 1;
-      min-width: 10rem;
-      padding: 0.4rem 0.6rem;
-      border: 1px solid var(--input-border);
-      border-radius: 8px;
-      background: var(--input-bg);
-      color: var(--input-text);
-      font-family: inherit;
-      font-size: 0.82rem;
+    .sec { margin-bottom: 1.1rem; }
+    .sec h4 {
+      font-size: 12px; letter-spacing: 0.28em; color: var(--bright);
+      font-weight: 400; margin-bottom: 0.35rem;
     }
-    .review .note-row input:focus { outline: none; border-color: var(--focus-color); }
+    .sec .body { padding-left: 2.2rem; color: var(--c); font-size: 13px; line-height: 1.95; }
+    .sec .body b { color: var(--bright); font-weight: 400; }
+    .sec .body .d { color: var(--dim); }
 
-    /* --- signup approvals (note: .pending above is the delete countdown) --- */
-    #approvals-card[hidden] { display: none; }
-    .approval-list { display: flex; flex-direction: column; gap: 0.75rem; }
-    .approval {
-      border: 1px solid var(--button-bg);
-      border-radius: 10px;
-      padding: 0.75rem 0.85rem;
-      background: var(--notif-item-bg, rgba(36, 197, 237, 0.12));
+    /* NAME carries the picture, sized to sit on the same baseline block */
+    .nameline { display: flex; align-items: center; gap: 1rem; }
+    .portrait {
+      flex-shrink: 0;
+      width: 58px; height: 58px;
+      border: 1px solid var(--dim2);
+      display: grid; place-items: center;
+      object-fit: cover;
+      background: rgba(120, 190, 255, 0.05);
+      color: var(--bright);
+      font-size: 1.7rem;
+      line-height: 1;
     }
-    .approval .who {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: baseline;
-      gap: 0.5rem;
-      margin-bottom: 0.4rem;
-    }
-    .approval .who strong { font-size: 0.95rem; }
-    .approval .who .meta { color: var(--muted-color); font-size: 0.76rem; }
-    .approval .intro {
-      font-size: 0.85rem;
-      line-height: 1.5;
-      white-space: pre-wrap;   /* keep the paragraphing they typed */
-      overflow-wrap: anywhere; /* and don't let one long word blow out the card */
-      margin-bottom: 0.7rem;
-      color: var(--text-color);
-    }
-    .approval .chip.refuse { background: var(--table-border); color: var(--text-color); }
-    .approval .chip.refuse:hover { background: var(--muted-color); color: var(--panel-bg); }
-    .chip {
-      flex: 0 0 auto;
-      padding: 0.32rem 0.75rem;
-      border: none;
-      border-radius: 999px;
-      background: var(--button-bg);
-      color: var(--button-text);
-      font-family: inherit;
-      font-size: 0.78rem;
-      font-weight: 700;
-      cursor: pointer;
-      transition: background-color 0.15s ease, transform 0.1s ease;
-    }
-    .chip:hover { background: var(--button-hover-bg); transform: translateY(-1px); }
-    .chip:active { transform: translateY(0); }
-    .chip.on {
-      background: transparent;
-      color: var(--heading-color);
-      box-shadow: inset 0 0 0 1.5px var(--button-bg);
-    }
-    .chip.on:hover { background: var(--button-bg); color: var(--button-text); }
-    .chip.danger {
-      background: transparent;
-      color: #d4607f;
-      box-shadow: inset 0 0 0 1.5px #f0b6c6;
-    }
-    .chip.danger:hover { background: #e8748f; color: #ffffff; box-shadow: none; }
-    .listed-pill {
-      display: inline-block;
-      padding: 0.15rem 0.6rem;
-      border-radius: 999px;
-      font-size: 0.72rem;
-      font-weight: 700;
-      letter-spacing: 0.03em;
-    }
-    .listed-pill.yes { background: var(--button-bg); color: var(--button-text); }
-    .listed-pill.no { background: var(--table-border); color: var(--muted-color); }
-    .pts-input { width: 3.4rem; margin-right: 0.15rem; }
-    .nav { display: flex; gap: 0.75rem; }
-    button {
-      flex: 1;
-      padding: 0.6rem 1rem;
-      background: var(--button-bg);
-      color: var(--button-text);
-      border: none;
-      border-radius: 8px;
-      font-size: 0.95rem;
-      font-weight: 600;
-      cursor: pointer;
-    }
-    button:hover { background: var(--button-hover-bg); }
+    .portrait.clickable { cursor: pointer; }
+    .portrait.clickable:hover { border-color: var(--c); box-shadow: 0 0 14px var(--glow); }
+    .rankword { color: var(--bright); cursor: pointer; border-bottom: 1px dotted var(--dim2); }
+    .rankword:hover { border-bottom-color: var(--c); }
 
-
-    /* the Listed pill is itself the leaderboard toggle now (no Show/Hide button) */
-    .listed-pill { cursor: pointer; border: none; font-family: inherit; transition: filter 0.12s ease; }
-    .listed-pill:hover { filter: brightness(0.94); }
-    .listed-pill:focus-visible { outline: 2px solid var(--focus-color); outline-offset: 1px; }
-
-    /* custom points: a button that opens a small styled popover */
-    .pts-custom { position: relative; display: inline-flex; }
-    .pts-custom-menu {
-      position: absolute;
-      top: calc(100% + 0.35rem);
-      left: 0;
-      z-index: 20;
-      display: flex;
-      gap: 0.3rem;
-      align-items: center;
-      padding: 0.4rem;
-      background: var(--panel-solid);
-      border: 1px solid var(--input-border);
-      border-radius: 10px;
-      box-shadow: 0 8px 24px var(--shadow);
-      animation: pts-open 0.14s ease;
+    .opt {
+      display: grid; grid-template-columns: 15rem 1fr;
+      gap: 0.3rem 0.8rem; padding-left: 2.2rem; font-size: 13px;
     }
-    .pts-custom-menu[hidden] { display: none; }
-    .pts-custom-menu .pts-input {
-      width: 5rem;
-      margin: 0;
-      border-radius: 8px;
-      text-align: center;
-      font-weight: 700;
-    }
+    .opt .o { color: var(--bright); }
+    .opt .t { color: var(--dim); }
 
-    /* collapsible Assigned list */
-    .sub-head.toggle {
-      background: none;
-      border: none;
-      padding: 0;
+    /* SEE ALSO entries are the real controls: edit, log out, Hermione */
+    .also { display: flex; gap: 1.4rem; padding-left: 2.2rem; font-size: 13px; }
+    .also a, .also button {
+      background: none; border: none; padding: 0;
+      font-family: inherit; font-size: inherit;
+      color: var(--bright); text-decoration: none; cursor: pointer;
+    }
+    .also a:hover, .also button:hover { text-shadow: 0 0 12px var(--glow); }
+    .also .n { color: var(--dim); }
+
+    /* edit mode: the same manual page, with the fields opened up */
+    #edit-form { display: none; }
+    #edit-form.open { display: block; }
+    #view-mode.closed { display: none; }
+    .fieldrow {
+      display: grid; grid-template-columns: 15rem 1fr;
+      gap: 0.5rem 0.8rem; padding-left: 2.2rem;
+      align-items: start; margin-bottom: 0.6rem; font-size: 13px;
+    }
+    .fieldrow > label { color: var(--bright); padding-top: 0.35rem; }
+    .fieldrow textarea, .fieldrow select {
       width: 100%;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.4rem;
+      padding: 0.4rem 0.6rem;
+      background: var(--input-bg);
+      border: 1px solid var(--dim2);
+      color: var(--bright);
+      font-family: inherit;
+      font-size: 13px;
+      resize: vertical;
     }
-    .sub-head.toggle .caret { font-size: 0.8rem; transition: transform 0.15s ease; }
-    .sub-head.toggle.collapsed .caret { transform: rotate(-90deg); }
-  
-  button + button { margin-left: 0; }
-}
+    .fieldrow textarea { min-height: 5.5rem; line-height: 1.7; }
+    /* a native select arrow looks wrong against the terminal; draw our own */
+    .fieldrow select {
+      cursor: pointer;
+      appearance: none;
+      padding-right: 2rem;
+      background-image: linear-gradient(45deg, transparent 50%, var(--dim) 50%),
+                        linear-gradient(135deg, var(--dim) 50%, transparent 50%);
+      background-position: calc(100% - 1.05rem) 55%, calc(100% - 0.7rem) 55%;
+      background-size: 0.35rem 0.35rem, 0.35rem 0.35rem;
+      background-repeat: no-repeat;
+    }
+    .fieldrow select option { background: #05080b; }
+    .fieldrow textarea:focus, .fieldrow select:focus {
+      outline: none; border-color: var(--c); box-shadow: 0 0 14px var(--glow);
+    }
+    .form-error {
+      display: none;
+      margin-left: 2.2rem; margin-bottom: 0.8rem;
+      border: 1px solid var(--err); color: var(--err);
+      padding: 0.4rem 0.7rem; font-size: 12px;
+    }
+    .tbtn {
+      background: none;
+      border: 1px solid var(--dim2);
+      color: var(--bright);
+      font-family: inherit;
+      font-size: 12px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      padding: 0.4rem 1.2rem;
+      cursor: pointer;
+    }
+    .tbtn:hover { border-color: var(--c); box-shadow: 0 0 14px var(--glow); }
+    .form-actions { display: flex; gap: 0.6rem; padding-left: 2.2rem; margin-top: 0.9rem; }
 
+    /* ranks.js draws a rounded, soft-shell modal; square it off to match */
+    .rank-modal { border-radius: 0; border: 1px solid var(--dim2); }
+    .rank-row { border-radius: 0; }
+    .rank-close {
+      border-radius: 0; letter-spacing: 0.2em; text-transform: uppercase; font-size: 0.78rem;
+    }
+
+    /* the manual is narrow enough to stack on a phone */
+    @media (max-width: 720px) {
+      .opt, .fieldrow { grid-template-columns: 1fr; padding-left: 1rem; }
+      .sec .body, .also, .form-actions, .form-error { padding-left: 1rem; margin-left: 0; }
+      .mp { justify-content: flex-start; padding-top: 5rem; }
+    }
   </style>
   <script src="/audio.js"></script>
 </head>
 <body class="has-top-nav">
-  <div class="sky-clouds" aria-hidden="true">
-    <div class="c" style="top:8%;left:-6%;width:300px;height:96px;animation:driftR 80s linear infinite;"></div>
-    <div class="c" style="top:30%;left:64%;width:220px;height:74px;animation:driftL 64s linear infinite;animation-delay:-24s;"></div>
-    <div class="c" style="top:62%;left:14%;width:190px;height:64px;animation:driftR 96s linear infinite;animation-delay:-44s;"></div>
-    <div class="c" style="top:80%;left:70%;width:250px;height:80px;animation:driftL 88s linear infinite;"></div>
-  </div>
-    <main class="card" id="profile-card-main">
+  <main class="mp">
+    <div class="top"><span id="hd-l">…</span><span>angeldom manual</span><span id="hd-r">…</span></div>
+
     <div id="view-mode">
-      <div id="avatar-slot"></div>
       <input type="file" id="quick-icon" accept="image/*" hidden />
-      <h1 class="username" id="p-username">…</h1>
-      <div id="p-badge"></div>
-      <p class="bio" id="p-bio"></p>
-      <div class="details">
-        <div class="detail"><span class="label">Pronouns</span><span class="value" id="p-pronouns">-</span></div>
-        <div class="detail stat"><span class="label">Points</span><span class="value" id="p-points">0</span></div>
-        <div class="detail"><span class="label">Food eaten</span><span class="value" id="p-food">0</span></div>
-        <div class="detail"><span class="label">Letters typed</span><span class="value" id="p-letters">0</span></div>
-        <div class="detail"><span class="label">Writing tasks</span><span class="value" id="p-writing">0</span></div>
-        <div class="detail"><span class="label">Custom tasks</span><span class="value" id="p-custom">0</span></div>
+
+      <div class="sec">
+        <h4>NAME</h4>
+        <div class="body">
+          <div class="nameline">
+            <div id="portrait-slot"></div>
+            <div>
+              <b id="p-username">…</b>
+              <span class="d"> - </span><span class="rankword" id="p-rank">…</span><span class="d" id="p-nameline-rest"></span>
+            </div>
+          </div>
+        </div>
       </div>
-      <p class="joined" id="p-joined"></p>
-      <button id="edit-btn" type="button" hidden>Edit profile</button>
-      <button id="logout-btn" type="button">Log out</button>
+
+      <div class="sec">
+        <h4>SYNOPSIS</h4>
+        <div class="body"><b id="p-synopsis-name">…</b>
+          <span class="d">[--penance] [--devotion] [--snake] [--wheel] [--elysium] [--obey]</span></div>
+      </div>
+
+      <div class="sec">
+        <h4>DESCRIPTION</h4>
+        <div class="body"><span id="p-bio"></span><br>
+          <span class="d" id="p-service"></span></div>
+      </div>
+
+      <div class="sec">
+        <h4>COUNTERS</h4>
+        <div class="opt" id="p-counters"></div>
+      </div>
+
+      <div class="sec">
+        <h4>EXIT STATUS</h4>
+        <div class="body"><span class="d">0 on obedience. 1 on a slip. Every count on this page is
+          kept by </span><b>angelOS</b><span class="d"> and cannot be reset by the subject.</span></div>
+      </div>
+
+      <div class="sec">
+        <h4>SEE ALSO</h4>
+        <div class="also">
+          <button type="button" id="edit-btn" hidden>edit<span class="n">(1)</span></button>
+          <button type="button" id="logout-btn">logout<span class="n">(1)</span></button>
+          <a href="/profile?user=hermione" id="hermione-link">hermione<span class="n">(8)</span></a>
+          <a href="/dashboard">dashboard<span class="n">(1)</span></a>
+        </div>
+      </div>
     </div>
 
     <form id="edit-form">
       <div class="form-error" id="form-error"></div>
-      <div class="field">
-        <label for="f-bio">Bio</label>
-        <textarea id="f-bio" maxlength="500" placeholder="Tell everyone a little about yourself…"></textarea>
-      </div>
-      <div class="field">
-        <label for="f-pronouns">Pronouns</label>
-        <select id="f-pronouns">
-          <option value="">Not set</option>
-          <option value="She/Her">She/Her</option>
-          <option value="He/Him">He/Him</option>
-          <option value="They/Them">They/Them</option>
-        </select>
-      </div>
-      <div class="field" id="rank-field" hidden>
-        <label for="f-rank">Rank</label>
-        <select id="f-rank">
-          <option value="">Not set</option>
-          <option value="Servant">Servant</option>
-          <option value="Follower">Follower</option>
-          <option value="Devoted">Devoted</option>
-          <option value="Worshipper">Worshipper</option>
-          <option value="Disciple">Disciple</option>
-          <option value="Visitor">Visitor</option>
-        </select>
-      </div>
-      <div class="form-actions">
-        <button type="submit" id="save-btn">Save</button>
-        <button type="button" id="cancel-btn">Cancel</button>
+      <div class="sec">
+        <h4>EDIT RECORD</h4>
+        <div class="fieldrow">
+          <label for="f-bio">bio</label>
+          <textarea id="f-bio" maxlength="500" placeholder="say something about yourself"></textarea>
+        </div>
+        <div class="fieldrow">
+          <label for="f-pronouns">pronouns</label>
+          <select id="f-pronouns">
+            <option value="">not set</option>
+            <option value="She/Her">She/Her</option>
+            <option value="He/Him">He/Him</option>
+            <option value="They/Them">They/Them</option>
+          </select>
+        </div>
+        <div class="fieldrow" id="rank-field" hidden>
+          <label for="f-rank">rank</label>
+          <select id="f-rank">
+            <option value="">not set</option>
+            <option value="Servant">Servant</option>
+            <option value="Follower">Follower</option>
+            <option value="Devoted">Devoted</option>
+            <option value="Worshipper">Worshipper</option>
+            <option value="Disciple">Disciple</option>
+            <option value="Visitor">Visitor</option>
+          </select>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="tbtn" id="save-btn">Save</button>
+          <button type="button" class="tbtn" id="cancel-btn">Cancel</button>
+        </div>
       </div>
     </form>
 
+    <div class="bottom"><span>angeldom 0.2</span><span id="ft-mid">…</span><span id="ft-r">…</span></div>
   </main>
-  <script>
 
-    // --- profile logic ---
+  <div class="vig"></div>
+  <div class="scan"></div>
+
+  <script>
     const params = new URLSearchParams(window.location.search);
-    // embed mode: the admin panel iframes this page to show the real profile
-    if (params.get("embed")) document.body.classList.add("embed");
     let me = null;
     let profileUser = null; // whose profile is shown
     let profile = null;
 
-    function avatarEl(p, small) {
+    const N = (n) => Number(n || 0).toLocaleString();
+
+    function daysKept(createdAt) {
+      return Math.max(0, Math.floor((Date.now() - new Date(createdAt).getTime()) / 86400000));
+    }
+
+    function portraitEl(p) {
       if (p.icon) {
         const img = document.createElement("img");
-        img.className = "avatar";
+        img.className = "portrait";
         img.src = p.icon;
-        img.alt = p.username + "'s profile picture";
+        img.alt = p.username + "'s picture";
         return img;
       }
       const div = document.createElement("div");
-      div.className = "avatar-fallback";
-      div.textContent = (p.username[0] || "?").toUpperCase();
+      div.className = "portrait";
+      div.textContent = (p.username[0] || "?").toLowerCase();
       return div;
     }
 
-    function ageString(createdAt) {
-      const days = Math.floor((Date.now() - new Date(createdAt).getTime()) / 86400000);
-      if (days < 1) return "brand new";
-      if (days < 31) return days + (days === 1 ? " day old" : " days old");
-      const months = Math.floor(days / 30.44);
-      if (months < 12) return months + (months === 1 ? " month old" : " months old");
-      const years = Math.floor(months / 12);
-      const rem = months % 12;
-      return years + (years === 1 ? " year" : " years") + (rem ? ", " + rem + (rem === 1 ? " month" : " months") : "") + " old";
+    // Which counters are real depends on the account: Hermione keeps no points
+    // and no stats, so her page says so rather than printing a column of zeroes.
+    function counterRows() {
+      const st = profile.stats || {};
+      if (profile.points === null) {
+        return [["records", "not kept"], ["days kept", N(daysKept(profile.createdAt))]];
+      }
+      return [
+        ["points", N(profile.points)],
+        ["angelcoins", N(profile.angelcoins)],
+        ["letters typed", N(st.lettersTyped)],
+        ["lines completed", N(st.linesCompleted)],
+        ["food eaten", N(st.foodEaten)],
+        ["penance series", N(st.penanceSeries)],
+        ["devotion series", N(st.devotionSeries)],
+        ["days kept", N(daysKept(profile.createdAt))],
+      ];
     }
 
     function renderProfile() {
-      const slot = document.getElementById("avatar-slot");
-      const pic = avatarEl(profile);
+      const name = profile.username;
+      const manref = name.toUpperCase() + "(1)";
+      document.getElementById("hd-l").textContent = manref;
+      document.getElementById("hd-r").textContent = manref;
+      document.getElementById("ft-r").textContent = manref;
+
+      const slot = document.getElementById("portrait-slot");
+      const pic = portraitEl(profile);
       if (profile.canEdit) {
         pic.classList.add("clickable");
         pic.title = "Click to change the picture";
         pic.addEventListener("click", () => document.getElementById("quick-icon").click());
       }
       slot.replaceChildren(pic);
-      document.getElementById("p-username").textContent = profile.username;
-      const badge = document.createElement("span");
-      const rank = profile.rank || "";
-      document.querySelector("main.card").classList.toggle("princess-glow", rank === "Princess");
-      badge.className = "badge " + (rank === "Princess" ? "princess" : "user");
-      badge.textContent = rank || "Unranked";
-      document.getElementById("p-badge").replaceChildren(badge);
-      window.RankLegend?.attach(badge, () => ({
+
+      document.getElementById("p-username").textContent = name;
+      document.getElementById("p-synopsis-name").textContent = name;
+
+      const rank = profile.rank || "unranked";
+      const rankEl = document.getElementById("p-rank");
+      rankEl.textContent = rank.toLowerCase();
+      window.RankLegend?.attach(rankEl, () => ({
         rank: profile.rank,
         username: profile.username,
         // hermione can hand out ranks, but not to herself
         canEdit: Boolean(me && me.isAdmin) && profile.username.toLowerCase() !== "hermione",
         onChange: () => loadProfile(),
       }));
-      const bio = document.getElementById("p-bio");
-      bio.textContent = profile.bio || "No bio yet.";
-      bio.classList.toggle("empty", !profile.bio);
-      document.getElementById("p-pronouns").textContent = profile.pronouns || "-";
-      // hermione keeps no points, so the server sends null and the tile goes away
-      const st = profile.stats || {};
-      document.getElementById("p-food").textContent = st.foodEaten || 0;
-      document.getElementById("p-letters").textContent = (st.lettersTyped || 0).toLocaleString();
-      document.getElementById("p-writing").textContent = st.writingTasksCompleted || 0;
-      document.getElementById("p-custom").textContent = st.customTasksCompleted || 0;
-      // Hermione keeps no stats; drop the tiles (the card keeps its size)
-      const princessNoStats = rank === "Princess";
-      ["p-food", "p-letters", "p-writing", "p-custom"].forEach((id) => {
-        document.getElementById(id).closest(".detail").hidden = princessNoStats;
-      });
 
-      const pointsTile = document.getElementById("p-points").closest(".detail");
-      if (profile.points === null) {
-        pointsTile.hidden = true;
-      } else {
-        pointsTile.hidden = false;
-        document.getElementById("p-points").textContent = profile.points;
+      const days = daysKept(profile.createdAt);
+      document.getElementById("p-nameline-rest").textContent =
+        ", " + (profile.pronouns || "no pronouns set").toLowerCase() +
+        ", retained " + days + (days === 1 ? " day" : " days");
+
+      const bio = document.getElementById("p-bio");
+      bio.textContent = profile.bio || "No description has been written for this account.";
+      bio.className = profile.bio ? "" : "d";
+
+      const joined = new Date(profile.createdAt);
+      const joinedText = joined.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
+      document.getElementById("p-service").textContent =
+        "In service since " + joinedText + ". Counted continuously.";
+      document.getElementById("ft-mid").textContent = joinedText.toLowerCase();
+
+      const counters = document.getElementById("p-counters");
+      counters.replaceChildren();
+      for (const [k, v] of counterRows()) {
+        const key = document.createElement("span");
+        key.className = "o";
+        key.textContent = k;
+        const val = document.createElement("span");
+        val.className = "t";
+        val.textContent = v;
+        counters.append(key, val);
       }
-      const created = new Date(profile.createdAt);
-      document.getElementById("p-joined").textContent =
-        "Joined " + created.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" }) +
-        " · account is " + ageString(profile.createdAt);
+
+      // no point linking Hermione to her own page
+      document.getElementById("hermione-link").hidden = name.toLowerCase() === "hermione";
       document.getElementById("edit-btn").hidden = !profile.canEdit;
-      document.title = profile.username + " - Profile";
+      document.title = name + " - Profile";
     }
 
     async function loadProfile() {
       const res = await fetch("/api/profile/" + encodeURIComponent(profileUser));
       if (!res.ok) {
-        document.getElementById("p-username").textContent = "Profile not found";
-        document.getElementById("p-bio").textContent = "That account doesn't seem to exist.";
+        document.getElementById("p-username").textContent = "no such entry";
+        document.getElementById("p-bio").textContent =
+          "No manual entry for " + profileUser + ".";
         return;
       }
       profile = (await res.json()).profile;
@@ -878,7 +422,7 @@
       }
     }
 
-    // picking a file from the avatar uploads straight away, no form needed
+    // picking a file from the portrait uploads straight away, no form needed
     document.getElementById("quick-icon").addEventListener("change", (e) => {
       const file = e.target.files[0];
       if (!file) return;
@@ -896,9 +440,7 @@
     document.getElementById("edit-btn").addEventListener("click", () => setEditing(true));
     document.getElementById("logout-btn").addEventListener("click", async () => {
       await fetch("/api/logout", { method: "POST" });
-      // in the admin embed this page is inside an iframe; navigate the TOP window
-      // so logging out lands on the real login screen, not a login card in a box
-      window.top.location.href = "/";
+      window.location.href = "/";
     });
     document.getElementById("cancel-btn").addEventListener("click", () => setEditing(false));
 
@@ -942,468 +484,6 @@
       setEditing(false);
     });
 
-    // guestbook + admin tabs removed; the profile shows its single view.
-
-    async function loadGuestbook() {
-      const res = await fetch("/api/profile/" + encodeURIComponent(profileUser) + "/guestbook");
-      if (!res.ok) return;
-      const { entries } = await res.json();
-      const list = document.getElementById("gb-list");
-      list.replaceChildren();
-      document.getElementById("gb-empty").hidden = entries.length > 0;
-      // newest first
-      for (const e of entries.slice().reverse()) {
-        const item = document.createElement("div");
-        item.className = "gb-entry";
-        const head = document.createElement("div");
-        head.className = "gb-head";
-        const author = document.createElement("span");
-        author.className = "gb-author";
-        author.textContent = e.author;   // textContent: it is user-written
-        const when = document.createElement("span");
-        when.className = "gb-when";
-        when.textContent = e.at ? new Date(e.at).toLocaleDateString() : "";
-        head.append(author, when);
-        if (e.canDelete) {
-          const del = document.createElement("button");
-          del.type = "button";
-          del.className = "gb-del";
-          del.textContent = "\u00d7";
-          del.title = "Delete";
-          del.addEventListener("click", async () => {
-            const r = await fetch(
-              "/api/profile/" + encodeURIComponent(profileUser) + "/guestbook/" + encodeURIComponent(e.id),
-              { method: "DELETE" }
-            );
-            if (r.ok) loadGuestbook();
-          });
-          head.append(del);
-        }
-        const text = document.createElement("div");
-        text.className = "gb-text";
-        text.textContent = e.text;
-        item.append(head, text);
-
-        // an existing single reply, indented under the comment
-        if (e.reply) {
-          const rep = document.createElement("div");
-          rep.className = "gb-reply";
-          const rhead = document.createElement("div");
-          rhead.className = "gb-head";
-          const rauthor = document.createElement("span");
-          rauthor.className = "gb-author";
-          rauthor.textContent = e.reply.author;
-          const rwhen = document.createElement("span");
-          rwhen.className = "gb-when";
-          rwhen.textContent = e.reply.at ? new Date(e.reply.at).toLocaleDateString() : "";
-          rhead.append(rauthor, rwhen);
-          if (e.reply.canDelete) {
-            const rdel = document.createElement("button");
-            rdel.type = "button";
-            rdel.className = "gb-del";
-            rdel.textContent = "×";
-            rdel.title = "Delete reply";
-            rdel.addEventListener("click", async () => {
-              const r = await fetch(
-                "/api/profile/" + encodeURIComponent(profileUser) + "/guestbook/" + encodeURIComponent(e.id) + "/reply",
-                { method: "DELETE" }
-              );
-              if (r.ok) loadGuestbook();
-            });
-            rhead.append(rdel);
-          }
-          const rtext = document.createElement("div");
-          rtext.className = "gb-text";
-          rtext.textContent = e.reply.text;
-          rep.append(rhead, rtext);
-          item.append(rep);
-        } else if (e.canReply) {
-          // owner or Hermione may add the one reply; no reply to a reply
-          const replyBtn = document.createElement("button");
-          replyBtn.type = "button";
-          replyBtn.className = "gb-reply-btn";
-          replyBtn.textContent = "Reply";
-          const form = document.createElement("div");
-          form.className = "gb-reply-form";
-          form.hidden = true;
-          const ta = document.createElement("textarea");
-          ta.rows = 2;
-          ta.maxLength = 1000;
-          ta.placeholder = "Write a reply…";
-          const rrow = document.createElement("div");
-          rrow.className = "row";
-          const post = document.createElement("button");
-          post.type = "button";
-          post.textContent = "Post reply";
-          const cancel = document.createElement("button");
-          cancel.type = "button";
-          cancel.textContent = "Cancel";
-          cancel.addEventListener("click", () => { form.hidden = true; replyBtn.hidden = false; });
-          post.addEventListener("click", async () => {
-            const r = await fetch(
-              "/api/profile/" + encodeURIComponent(profileUser) + "/guestbook/" + encodeURIComponent(e.id) + "/reply",
-              { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: ta.value }) }
-            );
-            if (r.ok) loadGuestbook();
-          });
-          rrow.append(post, cancel);
-          form.append(ta, rrow);
-          replyBtn.addEventListener("click", () => { replyBtn.hidden = true; form.hidden = false; ta.focus(); });
-          item.append(replyBtn, form);
-        }
-
-        list.append(item);
-      }
-    }
-
-
-    let adminInited = false;
-    function initAdmin() {
-      if (adminInited) return;
-      adminInited = true;
-
-    // Custom task assignment (essays / write-it-out) was deprecated and removed.
-    // The writing game's finished series still show under "Lines Completed".
-    let accounts = [];          // approved, non-hermione, filled by loadAccounts
-
-    async function loadWritingLogs() {
-      const list = document.getElementById("writing-list");
-      list.replaceChildren();
-      const rows = [];
-      for (const name of accounts) {
-        const res = await fetch("/api/users/" + encodeURIComponent(name) + "/writing");
-        if (!res.ok) continue;
-        const data = await res.json();
-        for (const e of data.log || []) rows.push({ name, e });
-      }
-      rows.sort((a, b) => String(b.e.at || "").localeCompare(String(a.e.at || "")));
-      document.getElementById("writing-empty").hidden = rows.length > 0;
-
-      const fmt = (ms) => {
-        const total = Math.round((ms || 0) / 1000);
-        const m = Math.floor(total / 60);
-        const sec = total % 60;
-        return m ? m + "m " + sec + "s" : sec + "s";
-      };
-
-      for (const { name, e } of rows.slice(0, 40)) {
-        const item = document.createElement("div");
-        item.className = "task-admin";
-        const top = document.createElement("div");
-        top.className = "top";
-        const who = document.createElement("span");
-        who.className = "who";
-        who.textContent = name;
-        const kind = document.createElement("span");
-        kind.className = "kind";
-        kind.textContent = (e.category || "a series") + " · " +
-          e.passages + (e.passages === 1 ? " passage" : " passages") + " · " +
-          e.mistakes + (e.mistakes === 1 ? " mistake" : " mistakes") + " · " + fmt(e.elapsedMs);
-        const when = document.createElement("span");
-        when.className = "state";
-        when.textContent = e.at ? new Date(e.at).toLocaleDateString() : "";
-        top.append(who, kind, when);
-        item.append(top);
-        list.append(item);
-      }
-    }
-
-    // --- signup approvals ---
-    function renderApprovals(waiting) {
-      const card = document.getElementById("approvals-card");
-      const list = document.getElementById("approvals");
-      card.hidden = waiting.length === 0;
-      document.getElementById("approvals-count").textContent =
-        waiting.length + (waiting.length === 1 ? " person is" : " people are") + " waiting to be let in";
-      list.replaceChildren();
-
-      for (const u of waiting) {
-        const item = document.createElement("div");
-        item.className = "approval";
-
-        const who = document.createElement("div");
-        who.className = "who";
-        const name = document.createElement("strong");
-        name.textContent = u.username;
-        const meta = document.createElement("span");
-        meta.className = "meta";
-        meta.textContent = "asked " + new Date(u.createdAt).toLocaleDateString();
-        who.append(name, meta);
-
-        const intro = document.createElement("p");
-        intro.className = "intro";
-        // textContent, not innerHTML: this is text a stranger wrote
-        intro.textContent = u.intro || "They didn't say anything.";
-
-        const actions = document.createElement("div");
-        actions.className = "action-row";
-        const approve = document.createElement("button");
-        approve.type = "button";
-        approve.className = "chip";
-        approve.textContent = "Approve";
-        approve.addEventListener("click", () => approveAccount(u.username));
-        const refuse = document.createElement("button");
-        refuse.type = "button";
-        refuse.className = "chip refuse";
-        refuse.textContent = "Turn away";
-        refuse.title = "Deletes the account outright";
-        refuse.addEventListener("click", () => {
-          if (confirm("Turn away " + u.username + "? Their account is deleted.")) {
-            deleteAccount(u.username);
-          }
-        });
-        actions.append(approve, refuse);
-
-        item.append(who, intro, actions);
-        list.append(item);
-      }
-    }
-
-    async function approveAccount(username) {
-      const res = await fetch("/api/users/" + encodeURIComponent(username) + "/approve", {
-        method: "POST",
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        document.getElementById("approvals-count").textContent = data.error || "Approve failed.";
-        return;
-      }
-      loadAccounts();
-    }
-
-    function loadAccounts() {
-      fetch("/api/users")
-        .then((r) => (r.ok ? r.json() : Promise.reject()))
-        .then((d) => {
-          // accounts awaiting approval get their own panel and stay out of the
-          // main table until they're let in
-          const waiting = d.users.filter((u) => u.pending);
-          const approved = d.users.filter((u) => !u.pending);
-          renderApprovals(waiting);
-
-          const assignable = approved.filter((u) => u.username.toLowerCase() !== "hermione");
-          accounts = assignable.map((u) => u.username);
-          loadWritingLogs();
-
-          document.getElementById("count").textContent =
-            approved.length + " registered account" + (approved.length === 1 ? "" : "s");
-          const rows = document.getElementById("rows");
-          rows.replaceChildren();
-          for (const u of approved) {
-            const tr = document.createElement("tr");
-            const name = document.createElement("td");
-            const profileLink = document.createElement("a");
-            profileLink.href = "/profile?user=" + encodeURIComponent(u.username);
-            profileLink.textContent = u.username;
-            name.append(profileLink);
-            const date = document.createElement("td");
-            date.textContent = new Date(u.createdAt).toLocaleDateString();
-            const points = document.createElement("td");
-            points.textContent = u.points;
-            const listed = document.createElement("td");
-            // the pill IS the toggle now; clicking it flips leaderboard visibility
-            const pill = document.createElement("span");
-            pill.className = "listed-pill " + (u.flagged ? "yes" : "no");
-            pill.textContent = u.flagged ? "Listed" : "Hidden";
-            pill.setAttribute("role", "button");
-            pill.tabIndex = 0;
-            pill.title = u.flagged
-              ? "Listed on the leaderboard. Click to hide."
-              : "Hidden from the leaderboard. Click to list.";
-            const toggleFlag = () => setFlag(u.username, !u.flagged);
-            pill.addEventListener("click", toggleFlag);
-            pill.addEventListener("keydown", (e) => {
-              if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleFlag(); }
-            });
-            listed.append(pill);
-
-            const actions = document.createElement("td");
-            const row = document.createElement("div");
-            row.className = "action-row";
-
-            if (u.username.toLowerCase() !== "hermione") {
-              // pick an amount, or use a one-tap preset
-              const group = document.createElement("div");
-              group.className = "pts-group";
-              // sign flips every button in the row, so the presets can take away too
-              let negative = false;
-              const sign = document.createElement("button");
-              sign.type = "button";
-              sign.className = "chip sign";
-              sign.textContent = "+";
-              sign.title = "Switch to taking points away";
-
-              // "Custom" opens a small styled popover with the amount field; it
-              // applies on Enter or Apply and then hides itself again
-              const custom = document.createElement("div");
-              custom.className = "pts-custom";
-              const customBtn = document.createElement("button");
-              customBtn.type = "button";
-              customBtn.className = "chip quick";
-              customBtn.textContent = "Custom";
-
-              const menu = document.createElement("div");
-              menu.className = "pts-custom-menu";
-              menu.hidden = true;
-              const amount = document.createElement("input");
-              amount.type = "number";
-              amount.step = "1";
-              amount.min = "1";
-              amount.className = "pts-input";
-              amount.placeholder = "amount";
-              const apply = document.createElement("button");
-              apply.type = "button";
-              apply.className = "chip";
-              apply.textContent = "Apply";
-              menu.append(amount, apply);
-              custom.append(customBtn, menu);
-
-              function onDocDown(e) { if (!custom.contains(e.target)) closeMenu(); }
-              const closeMenu = () => {
-                menu.hidden = true;
-                document.removeEventListener("mousedown", onDocDown);
-              };
-              const openMenu = () => {
-                menu.hidden = false;
-                document.addEventListener("mousedown", onDocDown);
-                amount.focus();
-              };
-              const applyAmount = () => {
-                const n = parseInt(amount.value, 10);
-                if (!Number.isInteger(n) || n === 0) return;
-                addPoints(u.username, negative ? -Math.abs(n) : Math.abs(n));
-                amount.value = "";
-                closeMenu();
-              };
-              customBtn.addEventListener("click", () => (menu.hidden ? openMenu() : closeMenu()));
-              apply.addEventListener("click", applyAmount);
-              amount.addEventListener("keydown", (e) => {
-                if (e.key === "Enter") { e.preventDefault(); applyAmount(); }
-                if (e.key === "Escape") { amount.value = ""; closeMenu(); }
-              });
-              group.append(sign, custom);
-              row.append(group);
-
-              const quicks = [5, 10, 25, 100].map((n) => {
-                const quick = document.createElement("button");
-                quick.type = "button";
-                quick.className = "chip quick";
-                quick.textContent = "+" + n;
-                quick.addEventListener("click", () => addPoints(u.username, negative ? -n : n));
-                row.append(quick);
-                return { el: quick, n };
-              });
-
-              sign.addEventListener("click", () => {
-                negative = !negative;
-                sign.textContent = negative ? "−" : "+";
-                sign.classList.toggle("danger", negative);
-                sign.title = negative ? "Switch to giving points" : "Switch to taking points away";
-                quicks.forEach(({ el, n }) => { el.textContent = (negative ? "−" : "+") + n; });
-              });
-            }
-
-            if (u.username.toLowerCase() !== "hermione") {
-              const del = document.createElement("button");
-              del.type = "button";
-              del.className = "chip danger";
-              del.textContent = "Delete";
-              del.title = "Delete account";
-              del.addEventListener("click", () => armDelete(u.username, row));
-              row.append(del);
-            }
-            actions.append(row);
-            tr.append(name, date, points, listed, actions);
-            rows.append(tr);
-          }
-        })
-        .catch(() => (window.location.href = "/"));
-    }
-
-    async function addPoints(username, value) {
-      const amount = parseInt(value, 10);
-      if (!Number.isInteger(amount) || amount === 0) return;
-      const res = await fetch("/api/users/" + encodeURIComponent(username) + "/points", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount }),
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        alert(data.error || "Adding points failed.");
-      }
-      loadAccounts();
-    }
-
-    async function setFlag(username, flagged) {
-      const res = await fetch("/api/users/" + encodeURIComponent(username) + "/flag", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ flagged }),
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        alert(data.error || "Updating the leaderboard flag failed.");
-      }
-      loadAccounts();
-    }
-
-    // Deleting is armed rather than confirmed: the row turns into a countdown
-    // you can call off, and only fires if you let it run out.
-    const DELETE_DELAY = 15;
-
-    function armDelete(username, row) {
-      const original = [...row.childNodes];
-      let left = DELETE_DELAY;
-
-      const pending = document.createElement("div");
-      pending.className = "pending";
-      const label = document.createElement("span");
-      label.textContent = "Deleting " + username + " in";
-      const clock = document.createElement("span");
-      clock.className = "countdown";
-      clock.textContent = left + "s";
-      const cancel = document.createElement("button");
-      cancel.type = "button";
-      cancel.className = "chip";
-      cancel.textContent = "Cancel";
-      const now = document.createElement("button");
-      now.type = "button";
-      now.className = "chip danger";
-      now.textContent = "Delete now";
-      pending.append(label, clock, cancel, now);
-      row.replaceChildren(pending);
-
-      const stop = () => {
-        clearInterval(timer);
-        row.replaceChildren(...original);
-      };
-      cancel.addEventListener("click", stop);
-      now.addEventListener("click", () => { clearInterval(timer); deleteAccount(username); });
-
-      const timer = setInterval(() => {
-        left--;
-        clock.textContent = left + "s";
-        if (left <= 0) {
-          clearInterval(timer);
-          deleteAccount(username);
-        }
-      }, 1000);
-    }
-
-    async function deleteAccount(username) {
-      const res = await fetch("/api/users/" + encodeURIComponent(username), { method: "DELETE" });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        const count = document.getElementById("count");
-        count.textContent = data.error || "Delete failed.";
-      }
-      loadAccounts();
-    }
-
-    loadAccounts();
-    }
-
     window.siteMe()
       .then(async (d) => {
         me = d;
@@ -1414,7 +494,6 @@
   </script>
   <script src="/ranks.js"></script>
   <script src="/nav.js" defer></script>
-  <script src="/notifications.js" defer></script>
   <script src="/updatecheck.js" defer></script>
   <script src="/console.js" defer></script>
   <script src="/ambience.js" defer></script>

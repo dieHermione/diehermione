@@ -424,6 +424,24 @@ function canEditProfile(req, key) {
   return isAdmin(req) || req.session.username.toLowerCase() === key;
 }
 
+// Lifetime writing counters. They were added after the fact, so an account that
+// predates them is seeded once from its (capped) writingLog: partial history,
+// but better than starting a long-standing account back at zero. Seeding is
+// idempotent, so calling this on a read-only path costs nothing.
+function writingCounters(user) {
+  if (user.linesCompleted === undefined) {
+    const log = Array.isArray(user.writingLog) ? user.writingLog : [];
+    user.linesCompleted = log.reduce((n, e) => n + (e.passages || 0), 0);
+    user.penanceSeries = log.filter((e) => e.category === "penance").length;
+    user.devotionSeries = log.filter((e) => e.category === "devotion").length;
+  }
+  return {
+    linesCompleted: user.linesCompleted || 0,
+    penanceSeries: user.penanceSeries || 0,
+    devotionSeries: user.devotionSeries || 0,
+  };
+}
+
 app.get("/api/profile/:username", (req, res) => {
   if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
   const users = loadUsers();
@@ -438,11 +456,13 @@ app.get("/api/profile/:username", (req, res) => {
       bio: user.bio || "",
       pronouns: canonical(user.pronouns, PRONOUN_OPTIONS),
       points: key === "hermione" ? null : user.points || 0,   // hermione doesn't keep points
+      angelcoins: key === "hermione" ? null : user.angelcoins || 0,
       stats: {
         foodEaten: user.foodEaten || 0,
         lettersTyped: user.lettersTyped || 0,
         writingTasksCompleted: user.writingTasksCompleted || 0,
         customTasksCompleted: user.customTasksCompleted || 0,
+        ...writingCounters(user),
       },
       createdAt: user.createdAt,
       canEdit: canEditProfile(req, key),
@@ -1364,6 +1384,13 @@ app.post("/api/writing/complete", (req, res) => {
     elapsedMs: clampInt(req.body.elapsedMs, 1000 * 60 * 60 * 24),
     at: new Date().toISOString(),
   };
+  // Seed the lifetime counters before the new entry joins the log, or the
+  // backfill would count this series twice.
+  writingCounters(user);
+  user.linesCompleted += entry.passages;
+  if (entry.category === "penance") user.penanceSeries += 1;
+  if (entry.category === "devotion") user.devotionSeries += 1;
+
   user.writingLog = [entry, ...(Array.isArray(user.writingLog) ? user.writingLog : [])].slice(0, WRITING_LOG_CAP);
   user.writingTasksCompleted = (user.writingTasksCompleted || 0) + 1;
   user.lettersTyped = (user.lettersTyped || 0) + clampInt(req.body.letters, 100000000);
