@@ -9,6 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/site.css" />
   <script src="/me.js"></script>
+  <script src="/glitch.js"></script>
   <style>
     /* Snake — Blood Ritual skin, full window (dark-red terminal). Snake colours
        come from the CSS vars below so the existing draw code stays untouched. */
@@ -117,7 +118,19 @@
       const dy = Math.min(Math.abs(a.y - b.y), ROWS - Math.abs(a.y - b.y));
       return Math.max(dx, dy);
     }
-    function fleeFrom(head) { food = pickSquare(head, TELEPORT_MIN_DISTANCE); }
+    // The food escaping is the game's whole tease, so it gets a subliminal of
+    // its own: a single brief blip, not the dashboard's full strobe, and rate
+    // limited because escapes come thick and fast.
+    const TAUNTS = ["keep trying", "so close", "not for you", "again", "almost",
+                    "try harder", "not yet", "reach", "further", "good servant"];
+    let lastTaunt = 0;
+    function taunt() {
+      const now = Date.now();
+      if (now - lastTaunt < 2500) return;
+      lastTaunt = now;
+      if (window.Subliminal) window.Subliminal.blip(TAUNTS[Math.floor(Math.random() * TAUNTS.length)]);
+    }
+    function fleeFrom(head) { food = pickSquare(head, TELEPORT_MIN_DISTANCE); taunt(); }
 
     function drawBoard() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
     function drawHeart(cx, cy, size) {
@@ -195,10 +208,15 @@
     document.getElementById("start").addEventListener("click", start);
     document.getElementById("back").addEventListener("click", () => { window.location.href = "/dashboard"; });
 
-    window.siteMe().then((d) => { if (d.isAdmin) teleportChance = 0.5; }).catch(() => (window.location.href = "/"));
+    window.siteMe().then((d) => {
+      if (d.isAdmin) teleportChance = 0.5;
+      // same photosensitivity gate as the dashboard
+      if (window.Subliminal) window.Subliminal.setEnabled(!d.photosensitive);
+    }).catch(() => (window.location.href = "/"));
     drawBoard();
   </script>
   <script src="/nav.js" defer></script>
   <script src="/notifications.js" defer></script>
+  <script src="/updatecheck.js" defer></script>
 </body>
 </html>

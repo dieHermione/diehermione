@@ -102,6 +102,18 @@ window.Subliminal = (function () {
   }
   function flashRandom(message) { flash(Math.floor(Math.random() * EFFECTS.length), message); }
 
+  // A single short flash rather than a full rhythm. Snake uses this when the
+  // food escapes, which happens often enough that a 15-flash strobe every time
+  // would be punishing rather than suggestive.
+  function blip(message) {
+    if (!enabled) return;
+    ensure(); clearFx();
+    layout(message != null ? String(message) : MESSAGES[Math.floor(Math.random() * MESSAGES.length)]);
+    show();
+    at(150, function () { word.style.opacity = "0"; });
+    at(260, clearFx);
+  }
+
   // Schedules itself forward one gap at a time rather than on a fixed interval,
   // so the spacing stays irregular.
   function scheduleNext() {
@@ -134,7 +146,7 @@ window.Subliminal = (function () {
   }
 
   return {
-    flash: flash, flashRandom: flashRandom,
+    flash: flash, flashRandom: flashRandom, blip: blip,
     startRandom: startRandom, stopRandom: stopRandom,
     setEnabled: setEnabled, setMessages: setMessages, loadMessages: loadMessages,
     effects: EFFECTS.map(function (e) { return e.name; }),

@@ -197,7 +197,7 @@
 
       wheelEl.addEventListener("transitionend", () => {
         spinning = false;
-        statusEl.textContent = "You won " + data.label + "! You now have " + data.points + " points.";
+        statusEl.textContent = "You won " + data.won + " angelcoins! You now have " + data.angelcoins + ".";
         statusEl.classList.add("win");
         setLocked({ canSpin: data.canSpin, unlimited: data.canSpin, spunToday: !data.canSpin });
       }, { once: true });
@@ -220,5 +220,6 @@
   </script>
   <script src="/nav.js" defer></script>
   <script src="/notifications.js" defer></script>
+  <script src="/updatecheck.js" defer></script>
 </body>
 </html>

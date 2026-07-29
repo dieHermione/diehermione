@@ -9,6 +9,10 @@ const elysium = require("./elysium-engine");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+// Stamped once at boot. A Railway redeploy restarts the process, so this
+// changes; pages compare it against the one they loaded with and offer a
+// reload. (Assumes a single instance, which is how this is deployed.)
+const BUILD_ID = String(Date.now());
 const USERS_FILE = path.join(process.env.DATA_DIR || __dirname, "users.json");
 const GAMES_FILE = path.join(process.env.DATA_DIR || __dirname, "games.json");
 const WRITING_FILE = path.join(process.env.DATA_DIR || __dirname, "writing.json");
@@ -947,19 +951,40 @@ app.post("/api/deathroll/roll", (req, res) => {
 
 // --- wheel: one spin a day for everyone except hermione ---
 // The server picks the winning wedge; the page only animates to it.
-// Every value 1..10 is reachable, but the low ones dominate (1 is ~40%,
-// 10 is ~1%). Weights sum to 100 so the percentages read directly.
+// The wheel pays angelcoins, not points. Thirty outcomes from 1 to 200, heavily
+// biased low: weights sum to 1000, so 1 lands 20% of the time and 200 lands
+// 0.1%. The tail is long enough to be worth chasing and rare enough to matter.
 const WHEEL_SEGMENTS = [
-  { label: "1", points: 1, weight: 40 },
-  { label: "2", points: 2, weight: 22 },
-  { label: "3", points: 3, weight: 13 },
-  { label: "4", points: 4, weight: 8 },
-  { label: "5", points: 5, weight: 6 },
-  { label: "6", points: 6, weight: 4 },
-  { label: "7", points: 7, weight: 3 },
-  { label: "8", points: 8, weight: 2 },
-  { label: "9", points: 9, weight: 1 },
-  { label: "10", points: 10, weight: 1 },
+  { label: "1", coins: 1, weight: 200 },
+  { label: "2", coins: 2, weight: 140 },
+  { label: "3", coins: 3, weight: 110 },
+  { label: "4", coins: 4, weight: 85 },
+  { label: "5", coins: 5, weight: 72 },
+  { label: "6", coins: 6, weight: 60 },
+  { label: "7", coins: 7, weight: 50 },
+  { label: "8", coins: 8, weight: 42 },
+  { label: "9", coins: 9, weight: 36 },
+  { label: "10", coins: 10, weight: 30 },
+  { label: "12", coins: 12, weight: 26 },
+  { label: "14", coins: 14, weight: 22 },
+  { label: "16", coins: 16, weight: 19 },
+  { label: "18", coins: 18, weight: 16 },
+  { label: "20", coins: 20, weight: 14 },
+  { label: "25", coins: 25, weight: 12 },
+  { label: "30", coins: 30, weight: 10 },
+  { label: "35", coins: 35, weight: 9 },
+  { label: "40", coins: 40, weight: 8 },
+  { label: "50", coins: 50, weight: 7 },
+  { label: "60", coins: 60, weight: 6 },
+  { label: "70", coins: 70, weight: 5 },
+  { label: "80", coins: 80, weight: 4 },
+  { label: "90", coins: 90, weight: 4 },
+  { label: "100", coins: 100, weight: 3 },
+  { label: "120", coins: 120, weight: 3 },
+  { label: "140", coins: 140, weight: 2 },
+  { label: "160", coins: 160, weight: 2 },
+  { label: "180", coins: 180, weight: 2 },
+  { label: "200", coins: 200, weight: 1 },
 ];
 
 function pickSegment() {
@@ -975,7 +1000,7 @@ function pickSegment() {
 function wheelState(user, key) {
   const unlimited = key === "hermione";
   return {
-    segments: WHEEL_SEGMENTS.map((s) => ({ label: s.label, points: s.points })),
+    segments: WHEEL_SEGMENTS.map((s) => ({ label: s.label, coins: s.coins })),
     unlimited,
     spunToday: user.wheelDay === todayKey(),
     canSpin: unlimited || user.wheelDay !== todayKey(),
@@ -1006,13 +1031,13 @@ app.post("/api/wheel/spin", (req, res) => {
   // hermione still records the day so the daily objective completes; it just
   // doesn't gate her next spin
   user.wheelDay = todayKey();
-  if (rankFor(user, key) !== "Visitor") user.angelcoins = (user.angelcoins || 0) + prize.points;
+  if (rankFor(user, key) !== "Visitor") user.angelcoins = (user.angelcoins || 0) + prize.coins;
   saveUsers(users);
   res.json({
     ok: true,
     index,
     label: prize.label,
-    won: prize.points,
+    won: prize.coins,
     points: user.points,
     angelcoins: user.angelcoins || 0,
     canSpin: unlimited,
@@ -1046,7 +1071,7 @@ app.get("/api/dailies", (req, res) => {
         id: "wheel",
         label: "Spin the wheel",
         detail: "",
-        reward: "up to " + Math.max(...WHEEL_SEGMENTS.map((s) => s.points)) + " points",
+        reward: "up to " + Math.max(...WHEEL_SEGMENTS.map((s) => s.coins)) + " angelcoins",
         done: user.wheelDay === today,
       },
       {
@@ -1427,6 +1452,13 @@ app.post("/api/devotion/presets", (req, res) => {
   const data = { presets };
   saveDevotion(data);
   res.json({ ok: true, presets });
+});
+
+// Cheap and unauthenticated on purpose: it leaks nothing and every page,
+// signed in or not, needs to be able to poll it.
+app.get("/api/version", (req, res) => {
+  res.set("Cache-Control", "no-store");
+  res.json({ build: BUILD_ID });
 });
 
 // --- subliminal messages (Hermione-editable, flashed by public/glitch.js) ---
