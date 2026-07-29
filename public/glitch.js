@@ -110,8 +110,11 @@ window.Subliminal = (function () {
     ensure(); clearFx();
     layout(message != null ? String(message) : MESSAGES[Math.floor(Math.random() * MESSAGES.length)]);
     show();
-    at(150, function () { word.style.opacity = "0"; });
-    at(260, clearFx);
+    // Deliberately exempt from SPEED. This is a single flash rather than a
+    // rhythm, and halving it left about 75ms on screen, which is easy to miss
+    // entirely. These are real milliseconds.
+    timers.push(setTimeout(function () { word.style.opacity = "0"; }, 190));
+    timers.push(setTimeout(clearFx, 320));
   }
 
   // Schedules itself forward one gap at a time rather than on a fixed interval,

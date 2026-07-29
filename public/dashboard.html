@@ -66,7 +66,8 @@
     .control-card { grid-area: actions; align-self: end; }
     .controls { display: flex; flex-direction: column; align-items: flex-start; gap: 0.1rem; }
     .ctl-btn, .controls a { display: block; background: none; border: none; color: var(--c); font-family: inherit; font-size: 1.08rem; letter-spacing: 0.04em; padding: 0.16rem 0; cursor: pointer; text-align: left; }
-    .controls a::before, .ctl-dropdown > .ctl-btn::before, #hermione-link::before, #logout::before { content: "› "; color: var(--dim2); }
+    .controls a::before, .ctl-dropdown > .ctl-btn::before, #hermione-link::before, #logout::before,
+    #settings-toggle::before { content: "› "; color: var(--dim2); }
 
     /* settings, folded into the control card between the games and log out */
     #settings-toggle[aria-expanded="true"]::before { content: "⌄ "; }

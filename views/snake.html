@@ -100,6 +100,7 @@
     let path = [];              // [{x,y}], newest first; the body is this trail
     let angle = 0, turnInput = 0, targetLen = START_LEN;
     let food = null, score = 0, earned = 0, alive = false, raf = null, last = 0, paused = false;
+    let fleeArmed = true;       // one escape roll per approach, not per frame
 
     // wrap coordinates onto the torus the old grid used
     function wrap(p) {
@@ -166,9 +167,18 @@
         const d = dist(next, food);
         if (d < HEAD_R + FOOD_R) {
           score++; targetLen += GROW_PER_FOOD; awardFood(); showScore();
-          food = placeFood(220);
-        } else if (d < FLEE_R && Math.random() < teleportChance * dt * 6) {
-          food = placeFood(320); taunt();
+          food = placeFood(220); fleeArmed = true;
+        } else if (d < FLEE_R) {
+          // One roll per approach, taken as the head crosses into range. The
+          // old per-frame roll was frame-rate and speed dependent: at the new
+          // 380px/s the head covers the gap in about four frames, so the food
+          // only got away a third of the time instead of teleportChance.
+          if (fleeArmed) {
+            fleeArmed = false;
+            if (Math.random() < teleportChance) { food = placeFood(320); taunt(); }
+          }
+        } else {
+          fleeArmed = true;                       // left the zone, re-arm
         }
       }
     }

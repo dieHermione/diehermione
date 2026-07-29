@@ -245,7 +245,7 @@ app.post("/api/login", async (req, res) => {
   }
   req.session.username = user.username;
   const checkIn = awardDailyCheckIn(users, user.username.toLowerCase());
-  settleTithe(users, user.username.toLowerCase());
+  if (clearTitheLeftovers(users, user.username.toLowerCase())) saveUsers(users);
   seedNotifications(user);
   saveUsers(users);
   res.json({ ok: true, checkIn });
@@ -328,7 +328,7 @@ app.get("/api/me", (req, res) => {
       touchGuest(req);
       return res.json({
         guest: true, username: req.session.guestName, isAdmin: false, rank: "Guest",
-        points: null, noEconomy: true, tithedToday: false, checkIn: null,
+        points: null, noEconomy: true, checkIn: null,
       });
     }
     return res.status(401).json({ error: "Not logged in." });
@@ -342,9 +342,9 @@ app.get("/api/me", (req, res) => {
   }
   // sessions outlive a day, so check in on the first page view of each day too
   const checkIn = awardDailyCheckIn(users, key);
-  settleTithe(users, key);
+  if (clearTitheLeftovers(users, key)) saveUsers(users);
   const rank = rankFor(users[key], key);
-  // Hermione and Visitors sit outside the points/dailies/tithe economy
+  // Hermione and Visitors sit outside the points/dailies economy
   const noEconomy = key === "hermione" || rank === "Visitor";
   res.json({
     username: req.session.username,
@@ -354,7 +354,6 @@ app.get("/api/me", (req, res) => {
     points: noEconomy ? null : users[key].points || 0,
     angelcoins: users[key].angelcoins || 0,
     createdAt: users[key].createdAt || null,
-    tithedToday: users[key].tithedOn === todayKey(),
     // accounts predating the question have no flag; treat that as not flagged
     photosensitive: users[key].photosensitive === true,
     checkIn,
@@ -1362,61 +1361,28 @@ app.delete("/api/users/:username/writing/:id", (req, res) => {
   res.json({ ok: true });
 });
 
-// --- tithe: give up points ---
-// The points are burned, not transferred. Hermione doesn't keep points: they
-// read as null on her profile and she can't be granted them, so crediting her
-// would contradict that. A tithe is a cost, not a transfer.
-const TITHE_POINTS = 5;
-const TITHE_MISS_PENALTY = 25;
-
-// Tithing is a daily obligation. On the first view of a new day, if the account
-// went the previous day without tithing and is not already in the red, the miss
-// penalty is taken. Once negative the obligation is suspended (and the button
-// disabled) until the balance is back to zero or above.
-function settleTithe(users, key) {
+// --- tithe: REMOVED ---
+// Tithing is deprecated. The button came off the dashboard, but settleTithe()
+// was still running on login and on every /api/me, so accounts were quietly
+// still being docked 25 points a day and told so in their notifications. Both
+// the penalty and the /api/tithe route are gone.
+//
+// This sweeps up what the old system already left behind: the stale
+// "You did not tithe" notification, and the bookkeeping fields it kept. It
+// runs once per account, the next time that account is loaded.
+function clearTitheLeftovers(users, key) {
   const user = users[key];
-  if (!user || key === "hermione" || rankFor(user, key) === "Visitor") return;
-  const today = todayKey();
-  if (user.titheCheckedOn === today) return;
-  const firstEver = !user.titheCheckedOn;
-  const tithedLastWindow = user.tithedOn === user.titheCheckedOn;
-  if (!firstEver && (user.points || 0) >= 0 && !tithedLastWindow) {
-    user.points = (user.points || 0) - TITHE_MISS_PENALTY;
-    pushNotification(
-      user,
-      "tithe-miss",
-      "You did not tithe. " + TITHE_MISS_PENALTY + " points have been taken.",
-      "/dashboard"
-    );
+  if (!user) return false;
+  let changed = false;
+  if (Array.isArray(user.notifications)) {
+    const kept = user.notifications.filter((n) => n.id !== "tithe-miss");
+    if (kept.length !== user.notifications.length) { user.notifications = kept; changed = true; }
   }
-  user.titheCheckedOn = today;
-  saveUsers(users);
+  for (const f of ["tithedOn", "titheCheckedOn"]) {
+    if (f in user) { delete user[f]; changed = true; }
+  }
+  return changed;
 }
-
-app.post("/api/tithe", (req, res) => {
-  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
-  const key = req.session.username.toLowerCase();
-  if (key === "hermione") {
-    return res.status(400).json({ error: "Hermione has no one to tithe to." });
-  }
-  const users = loadUsers();
-  const user = users[key];
-  if (!user) return res.status(401).json({ error: "Not logged in." });
-  if (rankFor(user, key) === "Visitor") {
-    return res.status(400).json({ error: "Visitors don't tithe." });
-  }
-  if ((user.points || 0) < 0) {
-    return res.status(400).json({ error: "You are in the red. Earn your points back first." });
-  }
-  // Tithing more than once a day is allowed: the daily obligation is met on the
-  // first tithe, and any further tithes are voluntary. Only being in the red
-  // (checked above) blocks it.
-  // a tithe may take the balance negative; that is the point of it being a cost
-  user.points = (user.points || 0) - TITHE_POINTS;
-  user.tithedOn = todayKey();
-  saveUsers(users);
-  res.json({ ok: true, amount: TITHE_POINTS, points: user.points, tithedToday: true });
-});
 
 // --- editable site copy ---
 // Two audiences, so hermione can word her own dashboard differently from
