@@ -16,3 +16,6 @@ mail.json
 # temp mockup scratch files (parameterised ?d=N), never deploy
 public/_*.html
 parses.json
+
+# regenerated mockup screenshots (large, rebuild with mockups/capture.sh)
+mockups/out/

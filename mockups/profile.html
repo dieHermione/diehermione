@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>profile mockups v2</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Major+Mono+Display&family=Cormorant+Garamond:wght@300;400;600&display=swap" rel="stylesheet" />
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{--c:#aee3ff;--dim:#4f7ea0;--dim2:#2c4a5e;--bright:#eafaff;--accent:#8fd0ff;
+        --glow:rgba(120,190,255,.32);--red:#ff3b2f;--deep:#c11208}
+  html,body{height:100%}
+  body{background:#000;color:var(--c);font-family:"IBM Plex Mono",monospace;font-size:14px;overflow:hidden}
+  .scan{position:fixed;inset:0;z-index:200;pointer-events:none;
+    background:repeating-linear-gradient(0deg,rgba(0,0,0,.30) 0 1px,transparent 1px 3px)}
+  .vig{position:fixed;inset:0;z-index:199;pointer-events:none;box-shadow:inset 0 0 24vh 8vh rgba(0,0,0,.7)}
+  .stage{position:absolute;inset:0;padding:3vh 3vw;overflow:hidden}
+  .tag{position:fixed;right:8px;bottom:6px;z-index:300;color:#444;font-size:10px;letter-spacing:.2em}
+</style></head>
+<body>
+<div class="stage" id="stage"></div><div class="vig"></div><div class="scan"></div><div class="tag" id="tag"></div>
+<script>
+const D={name:"seraph",rank:"Devoted",pronouns:"she/her",joined:"22 june 2025",days:400,
+  bio:"kept, counted and corrected. i type until the words stop being mine.",
+  points:1284,coins:317,food:892,letters:148230,lines:1140,penance:62,devotion:78};
+const N=n=>n.toLocaleString();
+const LOG=[["22:14","penance","48 lines"],["21:02","devotion","50 lines"],["19:47","snake","31 food"],
+  ["18:20","wheel","spin"],["16:55","penance","64 lines"],["15:31","elysium","watered"],
+  ["14:08","devotion","50 lines"],["12:44","check-in","daily"]];
+const STATS=[["points",N(D.points)],["angelcoins",N(D.coins)],["letters typed",N(D.letters)],
+  ["lines completed",N(D.lines)],["food eaten",N(D.food)],["penance series",D.penance],
+  ["devotion series",D.devotion],["days kept",D.days]];
+
+/* 1. BOOT READOUT — the profile prints itself, line by line */
+function d1(){const t=(k,v)=>`<div class="ln"><span class="ok">[ OK ]</span> ${k}<span class="v">${v}</span></div>`;
+ return `<style>
+ .bt{height:100%;display:flex;flex-direction:column;justify-content:center;max-width:1100px;margin:0 auto}
+ .bt .hd{font-size:11px;letter-spacing:.4em;color:var(--dim);margin-bottom:1.4rem}
+ .ln{display:flex;gap:.9rem;align-items:baseline;font-size:15px;padding:.2rem 0;color:var(--c)}
+ .ln .ok{color:var(--dim);font-size:11px}
+ .ln .v{margin-left:auto;color:var(--bright)}
+ .ln.big{font-size:2.6rem;color:var(--bright);text-shadow:0 0 26px var(--glow);padding:.4rem 0}
+ .ln.big .ok{font-size:11px;align-self:center}
+ .ln.warn .v{color:var(--red)}
+ .cur{display:inline-block;width:.55em;height:1.05em;background:var(--c);vertical-align:-3px;margin-left:.3rem}
+ .sep{height:1px;background:var(--dim2);margin:.9rem 0}
+ .quote{color:var(--dim);font-size:13px;line-height:2;margin:.4rem 0 0}
+ </style>
+ <div class="bt">
+  <div class="hd">angelOS 0.2 &nbsp;//&nbsp; LOADING SUBJECT RECORD</div>
+  <div class="ln"><span class="ok">[ OK ]</span> mounting archive<span class="v">done</span></div>
+  <div class="ln big"><span class="ok">[ OK ]</span> ${D.name}<span class="v">${D.rank}</span></div>
+  <div class="sep"></div>
+  ${t("pronouns",D.pronouns)}${t("intake",D.joined)}${t("days retained",D.days)}
+  <div class="sep"></div>
+  ${STATS.slice(0,6).map(([k,v])=>t(k,v)).join("")}
+  <div class="ln warn"><span class="ok">[ !! ]</span> tithe obligations<span class="v">VOID</span></div>
+  <div class="sep"></div>
+  <div class="quote">&gt; ${D.bio}</div>
+  <div class="ln" style="margin-top:.6rem"><span class="ok">[ &gt;&gt; ]</span> awaiting input<span class="cur"></span></div>
+ </div>`;}
+
+/* 2. BIG TYPE — the name is the page */
+function d2(){
+ return `<style>
+ .bg2{height:100%;display:grid;grid-template-rows:auto 1fr auto;gap:1rem}
+ .top2{display:flex;justify-content:space-between;font-size:10px;letter-spacing:.4em;color:var(--dim)}
+ .huge{display:flex;align-items:center;justify-content:center;flex-direction:column;min-height:0}
+ .huge h1{font-family:"Major Mono Display";font-size:min(19vw,15rem);line-height:.85;color:var(--bright);
+   text-shadow:0 0 60px var(--glow);letter-spacing:-.01em}
+ .huge .under{display:flex;gap:3.4rem;margin-top:1.6rem;font-size:10px;letter-spacing:.34em;color:var(--dim)}
+ .huge .under b{color:var(--bright);font-weight:400}
+ .strip2{display:grid;grid-template-columns:repeat(8,1fr);border-top:1px solid var(--dim2)}
+ .cell2{padding:.9rem .4rem;text-align:center;border-right:1px solid var(--dim2)}
+ .cell2:last-child{border-right:none}
+ .cell2 .n{font-size:1.5rem;color:var(--bright);line-height:1}
+ .cell2 .k{font-size:8px;letter-spacing:.2em;color:var(--dim);margin-top:.3rem;text-transform:uppercase}
+ </style>
+ <div class="bg2">
+  <div class="top2"><span>ANGELDOM</span><span>${D.bio}</span><span>EDIT &nbsp; LOG OUT</span></div>
+  <div class="huge"><h1>${D.name}</h1>
+   <div class="under"><span>${D.rank.toUpperCase()}</span><span>${D.pronouns.toUpperCase()}</span>
+     <span>KEPT <b>${D.days}</b> DAYS</span></div></div>
+  <div class="strip2">${STATS.map(([k,v])=>`<div class="cell2"><div class="n">${v}</div><div class="k">${k}</div></div>`).join("")}</div>
+ </div>`;}
+
+/* 3. BLUEPRINT — technical drawing with leader lines */
+function d3(){
+ return `<style>
+ .bp{height:100%;position:relative;border:1px solid var(--dim2);
+   background:repeating-linear-gradient(90deg,rgba(120,190,255,.05) 0 1px,transparent 1px 40px),
+              repeating-linear-gradient(0deg,rgba(120,190,255,.05) 0 1px,transparent 1px 40px)}
+ .bp .frame{position:absolute;inset:16px;border:1px solid var(--dim2)}
+ .figure{position:absolute;left:50%;top:48%;transform:translate(-50%,-50%);width:230px;height:300px;
+   border:1px solid var(--c);display:grid;place-items:center;box-shadow:0 0 40px var(--glow)}
+ .figure .g{font-family:"Major Mono Display";font-size:8rem;color:var(--bright);text-shadow:0 0 30px var(--glow)}
+ .figure .dim-w{position:absolute;left:-1px;right:-1px;bottom:-26px;border-top:1px solid var(--dim);
+   text-align:center;font-size:9px;color:var(--dim);padding-top:3px}
+ .call{position:absolute;font-size:10px;color:var(--dim);letter-spacing:.06em;white-space:nowrap}
+ .call b{color:var(--bright);font-weight:400;font-size:1.05rem;display:block}
+ .call::before{content:"";position:absolute;background:var(--dim2)}
+ .call.l::before{right:-58px;top:9px;width:56px;height:1px}
+ .call.r::before{left:-58px;top:9px;width:56px;height:1px}
+ .call.l{text-align:right}
+ .ttlblk{position:absolute;right:16px;bottom:16px;border:1px solid var(--c);background:#000;padding:.7rem .9rem;min-width:250px}
+ .ttlblk .r{display:flex;justify-content:space-between;font-size:10px;padding:.15rem 0;color:var(--dim)}
+ .ttlblk .r b{color:var(--bright);font-weight:400}
+ .ttlblk h4{font-family:"Major Mono Display";font-size:1.5rem;color:var(--bright);font-weight:400;margin-bottom:.4rem}
+ .note3{position:absolute;left:16px;bottom:16px;font-size:10px;color:var(--dim);max-width:22rem;line-height:1.9}
+ </style>
+ <div class="bp"><div class="frame"></div>
+  <div class="figure"><span class="g">s</span><div class="dim-w">${D.days} DAYS RETAINED</div></div>
+  ${[["points",N(D.points),"l","22%","30%"],["angelcoins",N(D.coins),"l","24%","44%"],
+     ["letters typed",N(D.letters),"l","20%","58%"],["lines completed",N(D.lines),"r","70%","30%"],
+     ["penance",D.penance,"r","70%","44%"],["devotion",D.devotion,"r","70%","58%"]]
+    .map(([k,v,s,x,y])=>`<div class="call ${s}" style="left:${x};top:${y}">${k}<b>${v}</b></div>`).join("")}
+  <div class="note3">&gt; ${D.bio}<br><br>&gt; all dimensions in units of obedience. not to scale.</div>
+  <div class="ttlblk"><h4>${D.name}</h4>
+   <div class="r"><span>designation</span><b>${D.rank}</b></div>
+   <div class="r"><span>pronouns</span><b>${D.pronouns}</b></div>
+   <div class="r"><span>intake</span><b>${D.joined}</b></div>
+   <div class="r"><span>sheet</span><b>1 OF 1</b></div></div>
+ </div>`;}
+
+/* 4. SPEC LABEL — the nutrition-label parody */
+function d4(){
+ return `<style>
+ .lb{height:100%;display:flex;align-items:center;justify-content:center;gap:3rem}
+ .label{width:min(430px,40%);border:3px solid var(--c);padding:1rem 1.2rem;background:#000}
+ .label h1{font-size:2.2rem;color:var(--bright);line-height:1;letter-spacing:-.02em}
+ .label .sub{font-size:10px;letter-spacing:.3em;color:var(--dim);margin:.2rem 0 .5rem}
+ .hr1{height:9px;background:var(--c);margin:.4rem 0}
+ .hr2{height:3px;background:var(--c);margin:.3rem 0}
+ .hr3{height:1px;background:var(--dim2);margin:.25rem 0}
+ .lrow{display:flex;justify-content:space-between;font-size:13px;padding:.16rem 0}
+ .lrow b{font-weight:600;color:var(--bright)}
+ .lrow.ind{padding-left:1.2rem;color:var(--dim)}
+ .serv{font-size:11px;color:var(--dim);display:flex;justify-content:space-between}
+ .foot4{font-size:9px;color:var(--dim);line-height:1.7;margin-top:.5rem}
+ .side4{width:min(430px,42%)}
+ .side4 h2{font-family:"Major Mono Display";font-size:3.4rem;color:var(--bright);
+   text-shadow:0 0 26px var(--glow);line-height:1;font-weight:400}
+ .side4 p{color:var(--dim);line-height:2;margin:1rem 0}
+ .btn4{border:1px solid var(--c);padding:.5rem 1.2rem;display:inline-block;margin-right:.6rem;
+   font-size:.8rem;letter-spacing:.2em;text-transform:uppercase;color:var(--bright)}
+ </style>
+ <div class="lb">
+  <div class="side4"><h2>${D.name}</h2>
+   <p>${D.bio}</p>
+   <p style="font-size:11px;letter-spacing:.24em;color:var(--dim2)">${D.rank.toUpperCase()} &nbsp;·&nbsp; ${D.pronouns.toUpperCase()} &nbsp;·&nbsp; SINCE ${D.joined.toUpperCase()}</p>
+   <div style="margin-top:1.4rem"><span class="btn4">edit</span><span class="btn4">log out</span></div></div>
+  <div class="label">
+   <h1>Devotion Facts</h1>
+   <div class="sub">ACCOUNT ${D.name.toUpperCase()}</div>
+   <div class="hr1"></div>
+   <div class="serv"><span>Days retained</span><span>${D.days}</span></div>
+   <div class="hr2"></div>
+   <div class="lrow"><b>Amount per account</b><b>% daily</b></div>
+   <div class="hr3"></div>
+   <div class="lrow"><b>Points</b><b>${N(D.points)}</b></div><div class="hr3"></div>
+   <div class="lrow"><b>Angelcoins</b><b>${N(D.coins)}</b></div><div class="hr3"></div>
+   <div class="lrow"><b>Letters typed</b><b>${N(D.letters)}</b></div>
+   <div class="lrow ind"><span>of which penance</span><span>62%</span></div>
+   <div class="lrow ind"><span>of which devotion</span><span>38%</span></div><div class="hr3"></div>
+   <div class="lrow"><b>Lines completed</b><b>${N(D.lines)}</b></div><div class="hr3"></div>
+   <div class="lrow"><b>Food eaten</b><b>${N(D.food)}</b></div>
+   <div class="hr2"></div>
+   <div class="lrow"><span>Tithe obligations</span><span style="color:var(--red)">VOID</span></div>
+   <div class="hr1"></div>
+   <div class="foot4">* Percent daily values are set by the Archangel and may change without notice.
+     Not a substitute for obedience.</div>
+  </div>
+ </div>`;}
+
+/* 5. TRANSCRIPT — angelOS talking to you */
+function d5(){
+ const turns=[["sys","identify yourself."],["you",D.name],
+   ["sys","you have been here "+D.days+" days. you have typed "+N(D.letters)+" letters for me."],
+   ["you",D.bio],["sys","and yet you still ask to see your own record."],
+   ["sys","points "+N(D.points)+". angelcoins "+N(D.coins)+". lines "+N(D.lines)+"."],
+   ["sys","penance "+D.penance+". devotion "+D.devotion+". i am counting."],
+   ["you","may i change my bio?"],["sys","you may ask."]];
+ return `<style>
+ .tr5{height:100%;display:grid;grid-template-columns:1fr 260px;gap:2.4rem}
+ .thread{display:flex;flex-direction:column;justify-content:flex-end;gap:.7rem;overflow:hidden;padding-bottom:.5rem}
+ .turn{max-width:78%;padding:.55rem .9rem;border:1px solid var(--dim2);font-size:14px;line-height:1.7}
+ .turn.sys{align-self:flex-start;border-color:var(--dim2);color:var(--c);
+   background:linear-gradient(90deg,rgba(120,190,255,.06),transparent)}
+ .turn.you{align-self:flex-end;border-color:var(--c);color:var(--bright);text-align:right;
+   box-shadow:0 0 18px var(--glow)}
+ .turn .who{display:block;font-size:8px;letter-spacing:.3em;color:var(--dim);margin-bottom:.2rem;text-transform:uppercase}
+ .entry5{border-top:1px solid var(--dim2);padding-top:.7rem;display:flex;gap:.6rem;align-items:center}
+ .entry5 span{color:var(--accent)}
+ .entry5 .fake{flex:1;color:var(--dim2)}
+ .side5{border-left:1px solid var(--dim2);padding-left:1.4rem;display:flex;flex-direction:column;gap:.4rem}
+ .side5 h3{font-family:"Major Mono Display";font-size:2rem;color:var(--bright);font-weight:400;line-height:1;margin-bottom:.6rem}
+ .side5 .r{display:flex;justify-content:space-between;font-size:11px;padding:.18rem 0;border-bottom:1px dotted var(--dim2)}
+ .side5 .r span:first-child{color:var(--dim)}
+ </style>
+ <div class="tr5">
+  <div>
+   <div class="thread">${turns.map(([w,t])=>`<div class="turn ${w}"><span class="who">${w==="sys"?"angelOS":D.name}</span>${t}</div>`).join("")}</div>
+   <div class="entry5"><span>&gt;</span><span class="fake">type your reply</span></div>
+  </div>
+  <div class="side5"><h3>${D.name}</h3>
+   ${[["rank",D.rank],["pronouns",D.pronouns],["intake",D.joined],["days",D.days],
+      ["points",N(D.points)],["angelcoins",N(D.coins)],["lines",N(D.lines)],["food",N(D.food)]]
+     .map(([k,v])=>`<div class="r"><span>${k}</span><span>${v}</span></div>`).join("")}
+   <div style="margin-top:auto;font-size:10px;letter-spacing:.24em;color:var(--dim);padding-top:1rem">EDIT &nbsp; LOG OUT</div>
+  </div>
+ </div>`;}
+
+/* 6. CIRCUIT — stats as nodes on traced copper */
+function d6(){
+ const nodes=[["points",N(D.points),18,24],["angelcoins",N(D.coins),18,64],["letters",N(D.letters),40,14],
+   ["lines",N(D.lines),40,80],["penance",D.penance,74,24],["devotion",D.devotion,74,64],["food",N(D.food),58,46]];
+ return `<style>
+ .cir{height:100%;position:relative;border:1px solid var(--dim2)}
+ .cir svg{position:absolute;inset:0;width:100%;height:100%}
+ .core{position:absolute;left:50%;top:46%;transform:translate(-50%,-50%);z-index:3;text-align:center;
+   border:2px solid var(--c);background:#000;padding:1rem 1.6rem;box-shadow:0 0 44px var(--glow)}
+ .core .n{font-family:"Major Mono Display";font-size:2.6rem;color:var(--bright);line-height:1}
+ .core .r{font-size:9px;letter-spacing:.3em;color:var(--dim);margin-top:.35rem}
+ .node{position:absolute;z-index:3;border:1px solid var(--dim);background:#000;padding:.4rem .7rem;
+   transform:translate(-50%,-50%);text-align:center}
+ .node .v{font-size:1.15rem;color:var(--bright);line-height:1}
+ .node .k{font-size:8px;letter-spacing:.2em;color:var(--dim);text-transform:uppercase;margin-top:.2rem}
+ .pad{position:absolute;width:9px;height:9px;background:var(--accent);border-radius:50%;
+   transform:translate(-50%,-50%);z-index:2;box-shadow:0 0 10px var(--glow)}
+ .hdr6{position:absolute;top:1rem;left:1.2rem;font-size:10px;letter-spacing:.4em;color:var(--dim);z-index:4}
+ .bio6{position:absolute;bottom:1rem;left:1.2rem;right:1.2rem;font-size:11px;color:var(--dim);z-index:4;
+   display:flex;justify-content:space-between}
+ </style>
+ <div class="cir">
+  <svg>${nodes.map(([,,x,y])=>
+    `<path d="M ${x}% ${y}% L ${x}% 46% L 50% 46%" fill="none" stroke="rgba(120,190,255,.28)" stroke-width="1.5"/>`).join("")}</svg>
+  <div class="hdr6">ANGELDOM // SUBJECT BOARD</div>
+  ${nodes.map(([k,v,x,y])=>`<div class="node" style="left:${x}%;top:${y}%"><div class="v">${v}</div><div class="k">${k}</div></div>
+    <div class="pad" style="left:${x}%;top:46%"></div>`).join("")}
+  <div class="core"><div class="n">${D.name}</div><div class="r">${D.rank.toUpperCase()} · ${D.days} DAYS</div></div>
+  <div class="bio6"><span>&gt; ${D.bio}</span><span>EDIT &nbsp; LOG OUT</span></div>
+ </div>`;}
+
+/* 7. RECEIPT — a long till roll */
+function d7(){
+ return `<style>
+ .rc{height:100%;display:flex;align-items:center;justify-content:center;gap:3rem}
+ .roll{width:370px;background:#05080b;border-left:1px dashed var(--dim2);border-right:1px dashed var(--dim2);
+   padding:1.4rem 1.4rem 0;position:relative;max-height:100%;overflow:hidden}
+ .roll::before,.roll::after{content:"";position:absolute;left:-1px;right:-1px;height:12px;
+   background:repeating-linear-gradient(90deg,#000 0 8px,transparent 8px 16px)}
+ .roll::before{top:0}.roll::after{bottom:0;transform:scaleY(-1)}
+ .rc-h{text-align:center;font-size:11px;letter-spacing:.3em;color:var(--dim);margin-bottom:.2rem}
+ .rc-n{text-align:center;font-size:1.9rem;color:var(--bright);margin-bottom:.9rem}
+ .dash7{border-top:1px dashed var(--dim2);margin:.6rem 0}
+ .li{display:flex;justify-content:space-between;font-size:12.5px;padding:.16rem 0}
+ .li span:first-child{color:var(--c)}.li span:last-child{color:var(--bright)}
+ .li.tot{font-size:1.05rem;color:var(--bright);padding-top:.4rem}
+ .rc-f{text-align:center;font-size:10px;color:var(--dim);line-height:1.9;padding:.6rem 0 1.4rem}
+ .barc{display:flex;gap:2px;justify-content:center;height:34px;margin:.6rem 0}
+ .barc i{background:var(--c)}
+ .side7{width:min(420px,38%)}
+ .side7 h2{font-family:"Major Mono Display";font-size:3rem;color:var(--bright);font-weight:400;line-height:1;
+   text-shadow:0 0 24px var(--glow)}
+ .side7 p{color:var(--dim);line-height:2;margin-top:1rem}
+ .side7 .meta{font-size:10px;letter-spacing:.26em;color:var(--dim2);margin-top:1.2rem;line-height:2}
+ </style>
+ <div class="rc">
+  <div class="side7"><h2>${D.name}</h2><p>${D.bio}</p>
+   <div class="meta">${D.rank.toUpperCase()}<br>${D.pronouns.toUpperCase()}<br>KEPT ${D.days} DAYS<br><br>EDIT &nbsp; LOG OUT</div></div>
+  <div class="roll">
+   <div class="rc-h">ANGELDOM</div>
+   <div class="rc-n">${D.name}</div>
+   <div class="rc-h">${D.joined.toUpperCase()} &nbsp; REF 0042</div>
+   <div class="dash7"></div>
+   ${STATS.map(([k,v])=>`<div class="li"><span>${k}</span><span>${v}</span></div>`).join("")}
+   <div class="dash7"></div>
+   <div class="li"><span>tithe</span><span style="color:var(--red)">VOID</span></div>
+   <div class="li tot"><span>TOTAL OWED</span><span>&infin;</span></div>
+   <div class="dash7"></div>
+   <div class="barc">${Array.from({length:40},(_,i)=>`<i style="width:${1+(i*5%4)}px"></i>`).join("")}</div>
+   <div class="rc-f">NO REFUNDS<br>THANK YOU FOR YOUR OBEDIENCE</div>
+  </div>
+ </div>`;}
+
+/* 8. STAR CHART — stats plotted as a constellation */
+function d8(){
+ const pts=[[26,30,"points",N(D.points)],[44,18,"angelcoins",N(D.coins)],[62,34,"letters",N(D.letters)],
+   [74,56,"lines",N(D.lines)],[54,68,"penance",D.penance],[34,60,"devotion",D.devotion],[18,48,"food",N(D.food)]];
+ return `<style>
+ .sc8{height:100%;position:relative;background:radial-gradient(60% 60% at 45% 45%,rgba(120,190,255,.07),transparent 70%)}
+ .sc8 svg{position:absolute;inset:0;width:100%;height:100%}
+ .star{position:absolute;transform:translate(-50%,-50%);z-index:3;text-align:center}
+ .star .dot{width:10px;height:10px;background:var(--bright);border-radius:50%;margin:0 auto;
+   box-shadow:0 0 18px var(--glow),0 0 40px var(--glow)}
+ .star .k{font-size:8px;letter-spacing:.22em;color:var(--dim);text-transform:uppercase;margin-top:.4rem}
+ .star .v{font-size:1.1rem;color:var(--bright)}
+ .name8{position:absolute;left:3rem;top:3rem;z-index:4}
+ .name8 h2{font-family:"Cormorant Garamond",serif;font-size:4.4rem;font-weight:300;color:var(--bright);
+   line-height:1;text-shadow:0 0 30px var(--glow)}
+ .name8 .r{font-size:10px;letter-spacing:.4em;color:var(--dim);margin-top:.5rem}
+ .leg{position:absolute;right:3rem;bottom:3rem;z-index:4;text-align:right;font-size:10px;
+   letter-spacing:.24em;color:var(--dim);line-height:2.1}
+ .leg b{color:var(--bright);font-weight:400}
+ .bio8{position:absolute;left:3rem;bottom:3rem;z-index:4;max-width:24rem;
+   font-family:"Cormorant Garamond",serif;font-style:italic;font-size:1.2rem;color:var(--dim)}
+ .dust i{position:absolute;width:2px;height:2px;background:rgba(174,227,255,.5);border-radius:50%}
+ </style>
+ <div class="sc8">
+  <div class="dust">${Array.from({length:70},()=>`<i style="left:${Math.random()*100}%;top:${Math.random()*100}%"></i>`).join("")}</div>
+  <svg><polyline points="${pts.map(([x,y])=>`${x*15},${y*9}`).join(" ")}" fill="none"
+    stroke="rgba(120,190,255,.35)" stroke-width="1"/></svg>
+  ${pts.map(([x,y,k,v])=>`<div class="star" style="left:${x}%;top:${y}%">
+    <div class="dot"></div><div class="v">${v}</div><div class="k">${k}</div></div>`).join("")}
+  <div class="name8"><h2>${D.name}</h2><div class="r">${D.rank.toUpperCase()} · ${D.pronouns.toUpperCase()}</div></div>
+  <div class="bio8">&ldquo;${D.bio}&rdquo;</div>
+  <div class="leg">FIRST SEEN <b>${D.joined}</b><br>OBSERVED <b>${D.days} NIGHTS</b><br><br>EDIT &nbsp; LOG OUT</div>
+ </div>`;}
+
+/* 9. DIPTYCH — one hard rule, portrait left, data right */
+function d9(){
+ return `<style>
+ .dp{height:100%;display:grid;grid-template-columns:1fr 1fr;gap:0}
+ .left9{border-right:3px solid var(--c);display:flex;flex-direction:column;justify-content:space-between;
+   padding-right:2.6rem}
+ .left9 .glyph{font-family:"Major Mono Display";font-size:min(26vw,20rem);line-height:.8;color:var(--bright);
+   text-shadow:0 0 60px var(--glow);align-self:flex-start}
+ .left9 .nm{font-size:2.6rem;color:var(--bright);line-height:1}
+ .left9 .rk{font-size:10px;letter-spacing:.44em;color:var(--dim);margin-top:.5rem}
+ .left9 .bio{color:var(--dim);line-height:2;margin-top:1.2rem;max-width:26rem}
+ .right9{padding-left:2.6rem;display:flex;flex-direction:column;justify-content:center;gap:0}
+ .r9{display:flex;justify-content:space-between;align-items:baseline;padding:.7rem 0;
+   border-bottom:1px solid var(--dim2)}
+ .r9 .k{font-size:10px;letter-spacing:.3em;color:var(--dim);text-transform:uppercase}
+ .r9 .v{font-size:2rem;color:var(--bright);line-height:1}
+ .r9:first-child{border-top:1px solid var(--dim2)}
+ .acts9{display:flex;gap:1.4rem;margin-top:1.6rem;font-size:10px;letter-spacing:.3em;color:var(--dim)}
+ </style>
+ <div class="dp">
+  <div class="left9">
+   <div class="glyph">s</div>
+   <div><div class="nm">${D.name}</div><div class="rk">${D.rank.toUpperCase()} &nbsp;·&nbsp; ${D.pronouns.toUpperCase()} &nbsp;·&nbsp; ${D.days} DAYS</div>
+    <div class="bio">${D.bio}</div></div>
+  </div>
+  <div class="right9">
+   ${STATS.map(([k,v])=>`<div class="r9"><span class="k">${k}</span><span class="v">${v}</span></div>`).join("")}
+   <div class="acts9"><span>EDIT PROFILE</span><span>LOG OUT</span></div>
+  </div>
+ </div>`;}
+
+/* 10. MAN PAGE — the profile as documentation */
+function d10(){
+ return `<style>
+ .mp{height:100%;max-width:1000px;margin:0 auto;display:flex;flex-direction:column;justify-content:center;overflow:hidden}
+ .mp .top{display:flex;justify-content:space-between;font-size:11px;letter-spacing:.2em;color:var(--dim);
+   border-bottom:1px solid var(--dim2);padding-bottom:.4rem;margin-bottom:1.4rem}
+ .sec10{margin-bottom:1.1rem}
+ .sec10 h4{font-size:12px;letter-spacing:.28em;color:var(--bright);font-weight:400;margin-bottom:.35rem}
+ .sec10 .body{padding-left:2.2rem;color:var(--c);font-size:13px;line-height:1.95}
+ .sec10 .body b{color:var(--bright);font-weight:400}
+ .sec10 .body .d{color:var(--dim)}
+ .opt{display:grid;grid-template-columns:15rem 1fr;gap:.3rem .8rem;padding-left:2.2rem;font-size:13px}
+ .opt .o{color:var(--bright)}.opt .t{color:var(--dim)}
+ .mp .bottom{display:flex;justify-content:space-between;font-size:11px;letter-spacing:.2em;color:var(--dim);
+   border-top:1px solid var(--dim2);padding-top:.4rem;margin-top:1rem}
+ </style>
+ <div class="mp">
+  <div class="top"><span>SERAPH(1)</span><span>angeldom manual</span><span>SERAPH(1)</span></div>
+  <div class="sec10"><h4>NAME</h4><div class="body"><b>${D.name}</b> <span class="d">&mdash; ${D.rank.toLowerCase()}, ${D.pronouns}, retained ${D.days} days</span></div></div>
+  <div class="sec10"><h4>SYNOPSIS</h4><div class="body"><b>${D.name}</b> <span class="d">[--penance] [--devotion] [--snake] [--obey]</span></div></div>
+  <div class="sec10"><h4>DESCRIPTION</h4><div class="body">${D.bio}<br>
+    <span class="d">In service since ${D.joined}. Counted continuously.</span></div></div>
+  <div class="sec10"><h4>COUNTERS</h4>
+   <div class="opt">${STATS.map(([k,v])=>`<span class="o">${k}</span><span class="t">${v}</span>`).join("")}</div></div>
+  <div class="sec10"><h4>EXIT STATUS</h4><div class="body"><span class="d">0 on obedience. 1 on a slip. Tithe obligations are </span><b>void</b><span class="d">.</span></div></div>
+  <div class="sec10"><h4>SEE ALSO</h4><div class="body"><b>edit</b>(1), <b>logout</b>(1), <b>hermione</b>(8)</div></div>
+  <div class="bottom"><span>angeldom 0.2</span><span>${D.joined}</span><span>SERAPH(1)</span></div>
+ </div>`;}
+
+const DS=[d1,d2,d3,d4,d5,d6,d7,d8,d9,d10];
+const NM=["1 · boot readout","2 · big type","3 · blueprint","4 · spec label","5 · transcript",
+  "6 · circuit board","7 · receipt roll","8 · star chart","9 · diptych","10 · man page"];
+const n=Math.min(10,Math.max(1,parseInt(new URLSearchParams(location.search).get("d")||"1",10)));
+document.getElementById("stage").innerHTML=DS[n-1]();
+document.getElementById("tag").textContent=NM[n-1];
+</script></body></html>

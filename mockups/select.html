@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>game selection mockups</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Major+Mono+Display&family=Cormorant+Garamond:wght@300;400&display=swap" rel="stylesheet" />
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{--c:#aee3ff;--dim:#4f7ea0;--dim2:#2c4a5e;--bright:#eafaff;--accent:#8fd0ff;
+        --glow:rgba(120,190,255,.32);--red:#ff3b2f;--deep:#c11208}
+  html,body{height:100%}
+  body{background:#000;color:var(--c);font-family:"IBM Plex Mono",monospace;font-size:14px;overflow:hidden}
+  .scan{position:fixed;inset:0;z-index:200;pointer-events:none;
+    background:repeating-linear-gradient(0deg,rgba(0,0,0,.30) 0 1px,transparent 1px 3px)}
+  .vig{position:fixed;inset:0;z-index:199;pointer-events:none;box-shadow:inset 0 0 24vh 8vh rgba(0,0,0,.7)}
+  .stage{position:absolute;inset:0;padding:3vh 3vw;overflow:hidden}
+  .tag{position:fixed;right:8px;bottom:6px;z-index:300;color:#444;font-size:10px;letter-spacing:.2em}
+  .hdr{display:flex;justify-content:space-between;font-size:10px;letter-spacing:.35em;color:var(--dim);margin-bottom:1.4rem}
+</style></head>
+<body>
+<div class="stage" id="stage"></div><div class="vig"></div><div class="scan"></div><div class="tag" id="tag"></div>
+<script>
+// each game gets its own skin, the way the login cards already do
+const GAMES=[
+  {n:"snake",   t:"red", tag:"chase the food",        sub:"classic snake clone",                    g:"S"},
+  {n:"penance", t:"red", tag:"a writeforme clone",     sub:"for punishments",                        g:"P"},
+  {n:"devotion",t:"blue",tag:"a calmer writeforme",    sub:"for mantras",                            g:"D"},
+  {n:"deathroll",t:"red",tag:"two-player dice",        sub:"first to roll a 1 loses",                g:"X"},
+  {n:"elysium", t:"green",tag:"care for a tree",       sub:"slow, and it remembers",                 g:"E"},
+  {n:"wheel",   t:"blue",tag:"one pull a day",         sub:"pays angelcoins",                        g:"W"},
+  {n:"chess",   t:"red", tag:"against hermione",       sub:"she plays black",                        g:"C"},
+  {n:"slots",   t:"blue",tag:"give to receive",        sub:"pays angelcoins",                        g:"O"},
+];
+const SKIN=`
+ .p{position:relative;border:1px solid var(--dim2);padding:1rem .9rem;display:flex;flex-direction:column;
+   justify-content:space-between;overflow:hidden;background:#000;min-height:0}
+ .p .glyph{font-family:"Major Mono Display";font-size:3.2rem;line-height:1;color:var(--dim);opacity:.5}
+ .p .nm{font-size:1.35rem;color:var(--bright);letter-spacing:.04em;line-height:1.1}
+ .p .tg{font-size:9px;letter-spacing:.24em;color:var(--dim);text-transform:uppercase;margin-top:.3rem}
+ .p .sb{font-size:10px;color:var(--dim2);margin-top:.15rem}
+ .p .strip{position:absolute;top:0;left:0;right:0;height:3px;background:var(--dim2)}
+ .p .num{position:absolute;bottom:.7rem;right:.8rem;font-size:9px;letter-spacing:.24em;color:var(--dim2)}
+ .p::after{content:"";position:absolute;inset:0;pointer-events:none;
+   background:repeating-linear-gradient(0deg,rgba(255,255,255,.02) 0 1px,transparent 1px 4px)}
+ .p.red{border-color:rgba(193,18,8,.55);background:linear-gradient(180deg,rgba(255,20,10,.09),#000 55%)}
+ .p.red .strip{background:var(--red);box-shadow:0 0 16px rgba(255,59,47,.7)}
+ .p.red .glyph{color:var(--red)}.p.red .nm{color:#ffe9e6}.p.red .tg{color:rgba(255,150,140,.75)}
+ .p.blue .strip{background:var(--accent);box-shadow:0 0 16px var(--glow)}
+ .p.blue{border-color:rgba(120,190,255,.4);background:linear-gradient(180deg,rgba(120,190,255,.08),#000 55%)}
+ .p.blue .glyph{color:var(--accent)}
+ .p.green{border-color:rgba(120,200,150,.4);background:linear-gradient(180deg,rgba(90,200,140,.07),#000 55%)}
+ .p.green .strip{background:#6fe0a6;box-shadow:0 0 16px rgba(111,224,166,.5)}
+ .p.green .glyph{color:#6fe0a6}.p.green .nm{color:#e6fff2}.p.green .tg{color:rgba(150,220,185,.7)}
+ .p.sel{box-shadow:0 0 40px var(--glow);outline:1px solid var(--c);outline-offset:3px}
+ .p.red.sel{box-shadow:0 0 40px rgba(255,59,47,.4);outline-color:var(--red)}`;
+
+const card=(g,i,sel)=>`<div class="p ${g.t} ${sel?"sel":""}">
+  <div class="strip"></div>
+  <div class="glyph">${g.g}</div>
+  <div><div class="nm">${g.n}</div><div class="tg">${g.tag}</div><div class="sb">${g.sub}</div></div>
+  <div class="num">${String(i+1).padStart(2,"0")}</div></div>`;
+
+/* 1. POSTER WALL — pasted-up grid, each poster in its own game's skin */
+function d1(){
+ return `<style>${SKIN}
+ .wall{height:calc(100% - 3rem);display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(2,1fr);
+   gap:1rem;position:relative}
+ .wall::before{content:"";position:absolute;inset:-1.4rem;border:1px solid var(--dim2);pointer-events:none;opacity:.5}
+ .p{padding:1.2rem 1.1rem}
+ .p .glyph{font-size:4.4rem}
+ </style>
+ <div class="hdr"><span>ANGELDOM // SELECT</span><span>THE WALL</span><span>8 TITLES</span></div>
+ <div class="wall">${GAMES.map((g,i)=>card(g,i,i===1)).join("")}</div>`;}
+
+/* 2. PASTED WALL — overlapping, torn, angled posters on a board */
+function d2(){
+ const rot=[-3,2,-1.5,3,-2.5,1.5,-2,2.5];
+ return `<style>${SKIN}
+ .board{height:calc(100% - 3rem);position:relative;
+   background:repeating-linear-gradient(90deg,rgba(120,190,255,.02) 0 1px,transparent 1px 46px),
+              repeating-linear-gradient(0deg,rgba(120,190,255,.02) 0 1px,transparent 1px 46px)}
+ .p{position:absolute;width:230px;height:290px;box-shadow:0 18px 40px rgba(0,0,0,.85)}
+ .p .glyph{font-size:4.6rem}
+ .p .tape{position:absolute;top:-9px;left:50%;transform:translateX(-50%) rotate(-2deg);
+   width:64px;height:18px;background:rgba(174,227,255,.14);border:1px solid rgba(174,227,255,.22)}
+ .p.sel{z-index:20}
+ </style>
+ <div class="hdr"><span>ANGELDOM // SELECT</span><span>PASTE-UP</span><span>8 TITLES</span></div>
+ <div class="board">
+  ${GAMES.map((g,i)=>{
+    const col=i%4, row=Math.floor(i/4);
+    const left=col*23+2+(row?3:0), top=row*44+2;
+    return `<div class="p ${g.t} ${i===1?"sel":""}" style="left:${left}%;top:${top}%;transform:rotate(${rot[i]}deg)">
+      <div class="strip"></div><div class="tape"></div>
+      <div class="glyph">${g.g}</div>
+      <div><div class="nm">${g.n}</div><div class="tg">${g.tag}</div><div class="sb">${g.sub}</div></div>
+      <div class="num">${String(i+1).padStart(2,"0")}</div></div>`;}).join("")}
+ </div>`;}
+
+/* 3. WALL + READOUT — posters left, a terminal dossier for the focused title right */
+function d3(){
+ const sel=GAMES[1];
+ return `<style>${SKIN}
+ .split{height:calc(100% - 3rem);display:grid;grid-template-columns:1fr 330px;gap:1.6rem;min-height:0}
+ .grid{display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(2,1fr);gap:.8rem;min-height:0}
+ .p{padding:.8rem .7rem}.p .glyph{font-size:2.6rem}.p .nm{font-size:1.05rem}
+ .read{border:1px solid var(--deep);padding:1.2rem;display:flex;flex-direction:column;gap:.8rem;
+   background:linear-gradient(180deg,rgba(255,20,10,.07),transparent 45%)}
+ .read h3{font-family:"Major Mono Display";font-size:2.4rem;color:#ffe9e6;font-weight:400;line-height:1;
+   text-shadow:0 0 26px rgba(255,59,47,.5)}
+ .read .k{font-size:9px;letter-spacing:.3em;color:var(--red)}
+ .kv{display:flex;justify-content:space-between;font-size:12px;padding:.2rem 0;border-bottom:1px dotted rgba(193,18,8,.3)}
+ .kv span:first-child{color:rgba(255,150,140,.7)}.kv span:last-child{color:#ffe9e6}
+ .desc{font-size:11px;line-height:1.9;color:rgba(255,180,172,.75)}
+ .enter{border:1px solid var(--red);text-align:center;padding:.7rem;letter-spacing:.32em;
+   text-transform:uppercase;color:#fff;background:rgba(255,59,47,.14);margin-top:auto}
+ </style>
+ <div class="hdr"><span>ANGELDOM // SELECT</span><span>ARROWS TO MOVE &middot; ENTER TO OPEN</span><span>8 TITLES</span></div>
+ <div class="split">
+  <div class="grid">${GAMES.map((g,i)=>card(g,i,i===1)).join("")}</div>
+  <div class="read">
+   <div class="k">SELECTED</div>
+   <h3>${sel.n}</h3>
+   <div class="desc">${sel.tag}, ${sel.sub}. the line corrupts as you type it, and a slip sends you back to the beginning.</div>
+   <div class="kv"><span>mode</span><span>solo</span></div>
+   <div class="kv"><span>pays</span><span>points</span></div>
+   <div class="kv"><span>daily</span><span>no</span></div>
+   <div class="kv"><span>last played</span><span>22:14</span></div>
+   <div class="kv"><span>lines typed</span><span>1,140</span></div>
+   <div class="enter">enter</div>
+  </div>
+ </div>`;}
+
+/* 4. INDEX WALL — posters as a card catalogue with tabs and a spine */
+function d4(){
+ return `<style>${SKIN}
+ .cat{height:calc(100% - 3rem);display:grid;grid-template-columns:64px 1fr;gap:1.2rem;min-height:0}
+ .spine{border:1px solid var(--dim2);display:flex;flex-direction:column;align-items:center;
+   justify-content:space-between;padding:1rem .3rem}
+ .spine .vt{writing-mode:vertical-rl;font-size:10px;letter-spacing:.5em;color:var(--dim2)}
+ .tabs{display:flex;flex-direction:column;gap:.35rem;width:100%}
+ .tb{border:1px solid var(--dim2);text-align:center;font-size:9px;padding:.3rem 0;color:var(--dim)}
+ .tb.on{border-color:var(--c);color:var(--bright);background:rgba(120,190,255,.1)}
+ .rack{display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(2,1fr);gap:.9rem;min-height:0}
+ .p{padding:.9rem .8rem}
+ .p .glyph{font-size:3.4rem}
+ .p .idx{position:absolute;top:.55rem;right:.7rem;font-size:8px;letter-spacing:.22em;color:var(--dim2)}
+ .p .bar{position:absolute;bottom:0;left:0;right:0;height:14px;display:flex;gap:2px;padding:0 .5rem 3px}
+ .p .bar i{flex:1;background:var(--dim2);height:100%}
+ .p.red .bar i:nth-child(odd){background:rgba(255,59,47,.5)}
+ .p.blue .bar i:nth-child(odd){background:rgba(143,208,255,.5)}
+ .p.green .bar i:nth-child(odd){background:rgba(111,224,166,.5)}
+ </style>
+ <div class="hdr"><span>ANGELDOM // SELECT</span><span>CARD CATALOGUE</span><span>DRAWER 01</span></div>
+ <div class="cat">
+  <div class="spine">
+   <div class="vt">ANGELDOM INDEX</div>
+   <div class="tabs">${["A","S","D","W","E"].map((t,i)=>`<div class="tb ${i===1?"on":""}">${t}</div>`).join("")}</div>
+   <div class="vt">DRAWER 01</div>
+  </div>
+  <div class="rack">${GAMES.map((g,i)=>`
+   <div class="p ${g.t} ${i===1?"sel":""}">
+    <div class="strip"></div><div class="idx">${String(i+1).padStart(3,"0")}</div>
+    <div class="glyph">${g.g}</div>
+    <div><div class="nm">${g.n}</div><div class="tg">${g.tag}</div><div class="sb">${g.sub}</div></div>
+    <div class="bar">${Array.from({length:22},()=>"<i></i>").join("")}</div>
+   </div>`).join("")}</div>
+ </div>`;}
+
+const DS=[d1,d2,d3,d4];
+const NM=["1 · poster wall","2 · paste-up","3 · wall + dossier","4 · card catalogue"];
+const n=Math.min(4,Math.max(1,parseInt(new URLSearchParams(location.search).get("d")||"1",10)));
+document.getElementById("stage").innerHTML=DS[n-1]();
+document.getElementById("tag").textContent=NM[n-1];
+</script></body></html>

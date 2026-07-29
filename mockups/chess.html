@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>chess mockups v2</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Major+Mono+Display&family=Cormorant+Garamond:wght@300;400&display=swap" rel="stylesheet" />
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{--c:#aee3ff;--dim:#4f7ea0;--dim2:#2c4a5e;--bright:#eafaff;--accent:#8fd0ff;
+        --glow:rgba(120,190,255,.32);--red:#ff3b2f;--deep:#c11208}
+  html,body{height:100%}
+  body{background:#000;color:var(--c);font-family:"IBM Plex Mono",monospace;font-size:14px;overflow:hidden}
+  .scan{position:fixed;inset:0;z-index:200;pointer-events:none;
+    background:repeating-linear-gradient(0deg,rgba(0,0,0,.30) 0 1px,transparent 1px 3px)}
+  .vig{position:fixed;inset:0;z-index:199;pointer-events:none;box-shadow:inset 0 0 24vh 8vh rgba(0,0,0,.7)}
+  .stage{position:absolute;inset:0;padding:3vh 3vw;overflow:hidden}
+  .tag{position:fixed;right:8px;bottom:6px;z-index:300;color:#444;font-size:10px;letter-spacing:.2em}
+</style></head>
+<body>
+<div class="stage" id="stage"></div><div class="vig"></div><div class="scan"></div><div class="tag" id="tag"></div>
+<script>
+const B=[["r","","b","q","k","b","","r"],["p","p","p","","","p","p","p"],["","","n","","","n","",""],
+ ["","","","p","p","","",""],["","","","P","P","","",""],["","","N","","","N","",""],
+ ["P","P","P","","","P","P","P"],["R","","B","Q","K","B","","R"]];
+const G={k:"♚",q:"♛",r:"♜",b:"♝",n:"♞",p:"♟",K:"♔",Q:"♕",R:"♖",B:"♗",N:"♘",P:"♙"};
+const MV=[["1.","e4","e5"],["2.","Nf3","Nc6"],["3.","Bc4","Bc5"],["4.","c3","Nf6"],
+ ["5.","d4","exd4"],["6.","cxd4","Bb4+"],["7.","Nc3","Nxe4"],["8.","O-O","Bxc3"]];
+const FILES="abcdefgh";
+
+function board(o){o=o||{};const tg=o.target,gh=o.ghost;
+ let h=`<div class="bd" style="${o.sz?`--sz:${o.sz}`:""}">`;
+ for(let r=0;r<8;r++)for(let f=0;f<8;f++){const p=B[r][f];
+  const T=tg&&tg[0]===r&&tg[1]===f, GH=gh&&gh[0]===r&&gh[1]===f;
+  h+=`<div class="sq ${(r+f)%2?"d":"l"} ${T?"tg":""} ${GH?"gh":""}">
+   ${p?`<span class="pc ${p===p.toLowerCase()?"h":"y"}">${G[p]}</span>`:""}${T?'<i class="ret"></i>':""}</div>`;}
+ return h+"</div>";}
+const BCSS=`
+ .bd{--sz:60vh;display:grid;grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(8,1fr);
+   width:var(--sz);height:var(--sz);flex:none;position:relative;border:1px solid var(--dim2)}
+ .sq{position:relative;display:grid;place-items:center}
+ .sq.l{background:rgba(120,190,255,.05)}.sq.d{background:rgba(120,190,255,.012)}
+ .pc{font-size:calc(var(--sz)/13);line-height:1}
+ .pc.y{color:var(--bright);text-shadow:0 0 12px var(--glow)}
+ .pc.h{color:var(--red);text-shadow:0 0 14px rgba(255,59,47,.5)}
+ .sq.tg{background:rgba(255,59,47,.13);box-shadow:inset 0 0 22px rgba(255,59,47,.45)}
+ .sq.tg .pc{opacity:.7;filter:blur(.5px)}
+ .ret{position:absolute;inset:10%;border:1px solid var(--red);box-shadow:0 0 16px rgba(255,59,47,.55)}
+ .ret::before,.ret::after{content:"";position:absolute;background:var(--red)}
+ .ret::before{left:50%;top:-34%;bottom:-34%;width:1px;transform:translateX(-50%)}
+ .ret::after{top:50%;left:-34%;right:-34%;height:1px;transform:translateY(-50%)}
+ .sq.gh .pc{opacity:.25;filter:blur(1.4px)}`;
+const HER=`
+ .her{border:1px solid var(--deep);background:rgba(255,20,10,.06);padding:.6rem .7rem}
+ .her .hh{font-size:8px;letter-spacing:.28em;color:var(--red);margin-bottom:.5rem;display:flex;justify-content:space-between}
+ .hb{border:1px solid var(--deep);color:#ffd9d5;padding:.35rem .6rem;font-size:.76rem;letter-spacing:.1em;
+   margin-bottom:.35rem;display:flex;justify-content:space-between}
+ .hb.on{background:rgba(255,59,47,.18);border-color:var(--red);color:#fff;box-shadow:0 0 14px rgba(255,59,47,.4)}
+ .hn{font-size:8px;color:rgba(255,150,140,.6);line-height:1.7;margin-top:.3rem}`;
+const herPanel=(w)=>`<div class="her" style="${w?`width:${w}`:""}">
+  <div class="hh"><span>ARCHANGEL</span><span>HER TURN ONLY</span></div>
+  <div class="hb on">strike &middot; f6<span>ARMED</span></div>
+  <div class="hb">rewind<span>&minus;1</span></div>
+  <div class="hb">rewind<span>&minus;5</span></div>
+  <div class="hn">never drawn on his screen.</div></div>`;
+
+/* 1. FULL BLEED */
+function d1(){return `<style>${BCSS}${HER}
+ .fb{height:100%;display:grid;place-items:center;position:relative}
+ .bd{--sz:min(86vh,86vw);border:none}
+ .ov{position:absolute;font-size:10px;letter-spacing:.3em;color:var(--dim);z-index:5}
+ .o1{top:0;left:0}.o2{top:0;right:0;text-align:right}.o3{bottom:0;left:0}
+ .ov b{color:var(--bright);font-weight:400;display:block;font-size:1.5rem;letter-spacing:0;margin-top:.2rem}
+ </style><div class="fb">${board({target:[2,5]})}
+  <div class="ov o1">BLACK<b>hermione</b></div>
+  <div class="ov o2">WHITE &middot; TO MOVE<b>seraph</b></div>
+  <div class="ov o3">PLY<b>16</b></div>
+  <div style="position:absolute;bottom:0;right:0;z-index:6">${herPanel("210px")}</div></div>`;}
+
+/* 2. TEXT BOARD */
+function d2(){
+ const rows=B.map((r,i)=>`<div class="tr"><span class="rn">${8-i}</span>${
+  r.map((p,f)=>`<span class="tc ${p?(p===p.toLowerCase()?"h":"y"):"e"} ${i===2&&f===5?"tg":""}">${p?G[p]:"·"}</span>`).join("")}</div>`).join("");
+ return `<style>${HER}
+ .tb{height:100%;display:grid;grid-template-columns:1fr auto 1fr;gap:2.4rem;align-items:center}
+ .mono{font-size:min(4.4vh,2.2rem);line-height:1.35;letter-spacing:.45em}
+ .tr{display:flex;align-items:center}
+ .rn{font-size:.42em;color:var(--dim2);width:2em;letter-spacing:0}
+ .tc{width:1.5em;text-align:center}
+ .tc.e{color:var(--dim2)}.tc.y{color:var(--bright)}.tc.h{color:var(--red)}
+ .tc.tg{background:rgba(255,59,47,.2);outline:1px solid var(--red)}
+ .fl{font-size:.42em;color:var(--dim2);margin-left:2em;letter-spacing:1.05em}
+ .col2{display:flex;flex-direction:column;gap:.5rem;font-size:11px}
+ .col2 h4{font-size:9px;letter-spacing:.3em;color:var(--dim);border-bottom:1px solid var(--dim2);padding-bottom:.3rem}
+ .kv2{display:flex;justify-content:space-between;color:var(--dim)}.kv2 b{color:var(--bright);font-weight:400}
+ .mvs{font-size:11px;line-height:1.85;color:var(--dim)}.mvs b{color:var(--bright);font-weight:400}
+ </style><div class="tb">
+  <div class="col2"><h4>GAME</h4>
+   <div class="kv2"><span>white</span><b>seraph</b></div>
+   <div class="kv2"><span>black</span><b>hermione</b></div>
+   <div class="kv2"><span>to move</span><b>white</b></div>
+   <h4 style="margin-top:.6rem">MOVES</h4>
+   <div class="mvs">${MV.map(([n,w,b])=>`${n} <b>${w}</b> ${b}<br>`).join("")}</div></div>
+  <div class="mono">${rows}<div class="fl">${FILES.split("").join(" ")}</div></div>
+  <div class="col2">${herPanel()}</div></div>`;}
+
+/* 3. TIMELINE FIRST */
+function d3(){return `<style>${BCSS}${HER}
+ .tl{height:100%;display:grid;grid-template-rows:auto 1fr auto;gap:1.2rem}
+ .hd3{display:flex;justify-content:space-between;font-size:10px;letter-spacing:.35em;color:var(--dim)}
+ .mid3{display:grid;grid-template-columns:1fr 300px;gap:2rem;min-height:0;align-items:center}
+ .rail{display:flex;flex-direction:column;justify-content:center;gap:.45rem}
+ .row3{display:grid;grid-template-columns:44px 1fr 1fr;gap:.8rem;align-items:center;
+   border-bottom:1px solid rgba(120,190,255,.08);padding:.3rem 0;font-size:1.05rem}
+ .row3 .n{font-size:10px;color:var(--dim2)}
+ .row3 .w{color:var(--bright)}.row3 .b{color:var(--red)}
+ .row3.now{background:rgba(120,190,255,.07);outline:1px solid var(--c)}
+ .row3.undone{opacity:.32}.row3.undone .w,.row3.undone .b{text-decoration:line-through}
+ .bd{--sz:250px}
+ .side3{display:flex;flex-direction:column;gap:.8rem}
+ .scrub{display:flex;gap:2px;align-items:flex-end;height:40px;border:1px solid var(--dim2);padding:4px}
+ .scrub i{flex:1;background:var(--dim2);height:60%}
+ .scrub i.past{background:var(--c);opacity:.5}
+ .scrub i.here{background:var(--red);height:100%;box-shadow:0 0 12px rgba(255,59,47,.7)}
+ .scrub i.cut{background:rgba(255,59,47,.25);height:30%}
+ </style><div class="tl">
+  <div class="hd3"><span>ANGELDOM // GAME 01</span><span>THE RECORD IS THE BOARD</span><span>PLY 16 OF 24</span></div>
+  <div class="mid3">
+   <div class="rail">${MV.map(([n,w,b],i)=>
+    `<div class="row3 ${i===7?"now":""} ${i===6?"undone":""}"><span class="n">${n}</span>
+      <span class="w">${w}</span><span class="b">${b}</span></div>`).join("")}</div>
+   <div class="side3">${board({target:[2,5],sz:"250px"})}${herPanel()}</div></div>
+  <div class="scrub">${Array.from({length:24},(_,i)=>`<i class="${i===15?"here":i<15?"past":i<19?"cut":""}"></i>`).join("")}</div>
+ </div>`;}
+
+/* 4. INTERROGATION */
+function d4(){return `<style>${BCSS}${HER}
+ .ig{height:100%;display:grid;grid-template-columns:1fr auto 1fr;gap:2.2rem;align-items:center;position:relative;
+   background:radial-gradient(50% 60% at 50% 50%,rgba(255,59,47,.06),transparent 70%)}
+ .plate{border:1px solid var(--dim2);padding:1.2rem;text-align:center}
+ .plate.hers{border-color:var(--deep);background:linear-gradient(180deg,rgba(255,20,10,.08),transparent)}
+ .plate .g{font-family:"Major Mono Display";font-size:3.6rem;line-height:1;color:var(--bright)}
+ .plate.hers .g{color:#ffd9d5;text-shadow:0 0 26px rgba(255,59,47,.5)}
+ .plate .nm{font-size:1.5rem;color:var(--bright);margin-top:.4rem}
+ .plate .rk{font-size:9px;letter-spacing:.34em;color:var(--dim);margin-top:.25rem}
+ .plate .taken{font-size:1.5rem;margin-top:.7rem;letter-spacing:.2rem}
+ .plate .st{display:flex;justify-content:space-between;font-size:11px;color:var(--dim);margin-top:.7rem;
+   border-top:1px solid var(--dim2);padding-top:.45rem}
+ .bd{--sz:min(56vh,470px)}
+ .lamp{position:absolute;left:50%;top:0;width:340px;height:40%;transform:translateX(-50%);
+   background:linear-gradient(180deg,rgba(174,227,255,.10),transparent);pointer-events:none}
+ </style><div class="ig"><div class="lamp"></div>
+  <div class="plate hers"><div class="g">h</div><div class="nm">hermione</div>
+   <div class="rk">BLACK &middot; ARCHANGEL</div><div class="taken" style="color:var(--red)">♟♟♞</div>
+   <div class="st"><span>material</span><span>+3</span></div>
+   <div style="margin-top:.8rem;text-align:left">${herPanel()}</div></div>
+  <div>${board({target:[2,5]})}</div>
+  <div class="plate"><div class="g">s</div><div class="nm">seraph</div>
+   <div class="rk">WHITE &middot; TO MOVE</div><div class="taken" style="color:var(--bright)">♙♙</div>
+   <div class="st"><span>material</span><span>&minus;3</span></div>
+   <div class="st"><span>clock</span><span>&infin;</span></div>
+   <div class="st"><span>resign</span><span>available</span></div></div></div>`;}
+
+/* 5. MONITOR */
+function d5(){return `<style>${BCSS}${HER}
+ .mon{height:100%;display:grid;grid-template-columns:1fr 250px;gap:1.4rem}
+ .screen{border:2px solid var(--dim2);position:relative;display:grid;place-items:center;overflow:hidden;
+   background:repeating-linear-gradient(0deg,rgba(120,190,255,.03) 0 2px,transparent 2px 5px)}
+ .bd{--sz:min(64vh,540px);border-color:rgba(120,190,255,.25)}
+ .osd{position:absolute;font-size:9px;letter-spacing:.26em;color:var(--dim);z-index:5}
+ .osd.tl{top:.8rem;left:1rem}.osd.tr{top:.8rem;right:1rem;color:var(--red)}
+ .osd.bl{bottom:.8rem;left:1rem}.osd.br{bottom:.8rem;right:1rem}
+ .cor{position:absolute;width:20px;height:20px;border:2px solid rgba(174,227,255,.3)}
+ .cor.a{top:8px;left:8px;border-right:0;border-bottom:0}.cor.b{top:8px;right:8px;border-left:0;border-bottom:0}
+ .cor.c{bottom:8px;left:8px;border-right:0;border-top:0}.cor.d{bottom:8px;right:8px;border-left:0;border-top:0}
+ .rack{display:flex;flex-direction:column;gap:.7rem}
+ .pane{border:1px solid var(--dim2);padding:.7rem}
+ .pane h4{font-size:8px;letter-spacing:.3em;color:var(--dim);font-weight:400;margin-bottom:.4rem}
+ .kv5{display:flex;justify-content:space-between;font-size:11px;padding:.14rem 0;color:var(--dim)}
+ .kv5 b{color:var(--bright);font-weight:400}
+ .mv5{font-size:10px;line-height:1.8;color:var(--dim)}.mv5 b{color:var(--bright);font-weight:400}
+ </style><div class="mon">
+  <div class="screen">${board({target:[2,5]})}
+   <i class="cor a"></i><i class="cor b"></i><i class="cor c"></i><i class="cor d"></i>
+   <div class="osd tl">CAM 01 // BOARD</div><div class="osd tr">&#9679; REC</div>
+   <div class="osd bl">2026-07-29 22:14:31</div><div class="osd br">PLY 16</div></div>
+  <div class="rack">
+   <div class="pane"><h4>PLAYERS</h4>
+    <div class="kv5"><span>white</span><b>seraph</b></div>
+    <div class="kv5"><span>black</span><b>hermione</b></div>
+    <div class="kv5"><span>to move</span><b>white</b></div></div>
+   <div class="pane"><h4>MOVES</h4><div class="mv5">${MV.map(([n,w,b])=>`${n} <b>${w}</b> ${b}<br>`).join("")}</div></div>
+   ${herPanel()}</div></div>`;}
+
+/* 6. VOID */
+function d6(){return `<style>${BCSS}${HER}
+ .vd{height:100%;display:grid;place-items:center;position:relative}
+ .bd{--sz:min(72vh,600px);border:none}
+ .sq.l{background:rgba(120,190,255,.035)}.sq.d{background:transparent}
+ .whisper{position:absolute;bottom:2.4rem;left:0;right:0;text-align:center;
+   font-family:"Cormorant Garamond",serif;font-style:italic;font-size:1.2rem;color:var(--dim)}
+ .corner6{position:absolute;top:2rem;font-size:10px;letter-spacing:.36em;color:var(--dim2)}
+ .c6l{left:2rem}.c6r{right:2rem}
+ </style><div class="vd">
+  <div class="corner6 c6l">hermione &middot; black</div>
+  <div class="corner6 c6r">seraph &middot; white &middot; to move</div>
+  ${board({target:[2,5],ghost:[5,2]})}
+  <div class="whisper">&ldquo;take your time. i have all of it.&rdquo;</div>
+  <div style="position:absolute;left:2rem;bottom:2rem;opacity:.9">${herPanel("190px")}</div></div>`;}
+
+/* 7. LEDGER */
+function d7(){return `<style>${BCSS}${HER}
+ .lg{height:100%;display:grid;grid-template-columns:1fr 330px;gap:2rem}
+ .book{border:1px solid var(--c);padding:1.2rem 1.6rem;display:flex;flex-direction:column;min-height:0}
+ .book h3{font-family:"Major Mono Display";font-size:1.7rem;color:var(--bright);font-weight:400;
+   border-bottom:3px double var(--c);padding-bottom:.5rem;margin-bottom:.7rem}
+ table{width:100%;border-collapse:collapse}
+ th{font-size:8px;letter-spacing:.3em;color:var(--dim);text-align:left;font-weight:400;
+   border-bottom:1px solid var(--c);padding:.4rem .5rem}
+ td{padding:.3rem .5rem;font-size:13px;border-bottom:1px dotted var(--dim2)}
+ tr:nth-child(even) td{background:rgba(120,190,255,.04)}
+ td.n{color:var(--dim2);width:50px}td.w{color:var(--bright)}td.b{color:var(--red)}
+ td.note{color:var(--dim);font-size:10px;text-align:right}
+ .rside{display:flex;flex-direction:column;gap:.9rem}
+ </style><div class="lg">
+  <div class="book"><h3>game ledger &middot; seraph</h3>
+   <table><tr><th>ply</th><th>white</th><th>black</th><th style="text-align:right">annotation</th></tr>
+    ${MV.map(([n,w,b],i)=>`<tr><td class="n">${n}</td><td class="w">${w}</td><td class="b">${b}</td>
+      <td class="note">${i===7?"struck &middot; f6":i===5?"check":""}</td></tr>`).join("")}</table>
+   <div style="margin-top:auto;padding-top:1rem;border-top:1px solid var(--dim2);display:flex;
+     justify-content:space-between;font-size:10px;letter-spacing:.24em;color:var(--dim2)">
+     <span>ENTRIES ARE NEVER ERASED</span><span>REWINDS ARE RULED THROUGH</span></div></div>
+  <div class="rside">${board({target:[2,5],sz:"300px"})}${herPanel()}</div></div>`;}
+
+/* 8. THEATRE */
+function d8(){return `<style>${BCSS}${HER}
+ .th{height:100%;position:relative;display:grid;place-items:center;overflow:hidden}
+ .cone{position:absolute;top:-6%;left:50%;transform:translateX(-50%);width:56%;height:78%;
+   background:linear-gradient(180deg,rgba(174,227,255,.16),rgba(174,227,255,.03) 60%,transparent);
+   clip-path:polygon(42% 0,58% 0,100% 100%,0 100%);pointer-events:none}
+ .bd{--sz:min(58vh,480px);box-shadow:0 0 70px rgba(174,227,255,.14)}
+ .who8{position:absolute;left:2.4rem;top:50%;transform:translateY(-50%);font-size:10px;
+   letter-spacing:.3em;color:var(--dim);line-height:2.6}
+ .who8 b{display:block;font-size:1.4rem;color:var(--bright);letter-spacing:0;font-weight:400}
+ .foot8{position:absolute;bottom:1.6rem;left:0;right:0;text-align:center;font-size:9px;
+   letter-spacing:.34em;color:var(--dim2)}
+ </style><div class="th"><div class="cone"></div>
+  <div class="who8">BLACK<b>hermione</b>WHITE<b>seraph</b>PLY<b>16</b></div>
+  ${board({target:[2,5]})}
+  <div style="position:absolute;right:2.4rem;top:50%;transform:translateY(-50%)">${herPanel("200px")}</div>
+  <div class="foot8">THE TRAY IS NOT RENDERED FOR THE PATIENT</div></div>`;}
+
+/* 9. SPLIT FLAP */
+function d9(){
+ const flap=t=>`<span class="fl9">${String(t).padEnd(5," ").split("").map(c=>`<i>${c===" "?"&nbsp;":c}</i>`).join("")}</span>`;
+ return `<style>${BCSS}${HER}
+ .sf{height:100%;display:grid;grid-template-rows:auto 1fr;gap:1.2rem}
+ .hd9{display:flex;justify-content:space-between;font-size:10px;letter-spacing:.4em;color:var(--dim);
+   border-bottom:2px solid var(--c);padding-bottom:.5rem}
+ .body9{display:grid;grid-template-columns:1fr 310px;gap:2rem;min-height:0}
+ .flaps{display:flex;flex-direction:column;gap:.35rem;justify-content:center}
+ .frow{display:grid;grid-template-columns:52px 1fr 1fr 90px;gap:.7rem;align-items:center}
+ .frow .p{font-size:10px;color:var(--dim2);letter-spacing:.2em}
+ .fl9{display:flex;gap:2px}
+ .fl9 i{width:1.4em;height:1.9em;background:linear-gradient(180deg,#16202a,#0a1218);border:1px solid var(--dim2);
+   display:grid;place-items:center;font-size:1rem;color:var(--bright);font-style:normal;
+   box-shadow:inset 0 -1px 0 rgba(0,0,0,.8)}
+ .frow.her2 .fl9 i{color:#ffb0a8;border-color:rgba(193,18,8,.5)}
+ .frow .st{font-size:9px;letter-spacing:.2em;color:var(--dim)}
+ .frow.now .st{color:var(--bright)}
+ .frow.cut .fl9 i{opacity:.3}.frow.cut .st{color:var(--red)}
+ .r9{display:flex;flex-direction:column;gap:.9rem}
+ </style><div class="sf">
+  <div class="hd9"><span>ANGELDOM &middot; DEPARTURES</span><span>GAME 01</span><span>PLY 16</span></div>
+  <div class="body9">
+   <div class="flaps">${MV.map(([n,w,b],i)=>`
+    <div class="frow ${i===7?"now":""} ${i===6?"cut":""}"><span class="p">${n}</span>
+     ${flap(w)}<span class="her2">${flap(b)}</span>
+     <span class="st">${i===7?"ON TIME":i===6?"CANCELLED":"DEPARTED"}</span></div>`).join("")}</div>
+   <div class="r9">${board({target:[2,5],sz:"290px"})}${herPanel()}</div></div></div>`;}
+
+/* 10. SCHEMATIC */
+function d10(){return `<style>${BCSS}${HER}
+ .sh{height:100%;position:relative;border:1px solid var(--dim2);display:grid;place-items:center;
+   background:repeating-linear-gradient(90deg,rgba(120,190,255,.04) 0 1px,transparent 1px 30px),
+              repeating-linear-gradient(0deg,rgba(120,190,255,.04) 0 1px,transparent 1px 30px)}
+ .plan{position:relative}
+ .bd{--sz:min(58vh,480px);border:1px solid var(--c)}
+ .axis{position:absolute;font-size:9px;color:var(--dim2);letter-spacing:.2em}
+ .axis.f{bottom:-1.5rem;left:0;right:0;display:flex;justify-content:space-around}
+ .axis.r{top:0;bottom:0;left:-1.5rem;display:flex;flex-direction:column;justify-content:space-around;align-items:center}
+ .dimline{position:absolute;left:0;right:0;top:-1.6rem;border-top:1px solid var(--dim2);text-align:center;
+   font-size:9px;color:var(--dim);letter-spacing:.24em}
+ .dimline span{background:#000;padding:0 .5rem;position:relative;top:-.6rem}
+ .keyblk{position:absolute;left:2rem;bottom:2rem;border:1px solid var(--dim2);padding:.7rem .9rem;font-size:10px;
+   line-height:1.9;color:var(--dim)}
+ .keyblk b{color:var(--bright);font-weight:400}
+ .keyblk .sw{display:inline-block;width:10px;height:10px;margin-right:.4rem;vertical-align:-1px}
+ .titl{position:absolute;right:2rem;bottom:2rem;border:1px solid var(--c);padding:.7rem .9rem;min-width:230px}
+ .titl h4{font-family:"Major Mono Display";font-size:1.3rem;color:var(--bright);font-weight:400;margin-bottom:.3rem}
+ .titl .r{display:flex;justify-content:space-between;font-size:10px;color:var(--dim);padding:.1rem 0}
+ .titl .r b{color:var(--bright);font-weight:400}
+ </style><div class="sh">
+  <div class="plan"><div class="dimline"><span>8 &times; 8 &nbsp; FIELD OF PLAY</span></div>
+   ${board({target:[2,5]})}
+   <div class="axis f">${FILES.split("").map(f=>`<span>${f}</span>`).join("")}</div>
+   <div class="axis r">${[8,7,6,5,4,3,2,1].map(r=>`<span>${r}</span>`).join("")}</div></div>
+  <div class="keyblk"><b>KEY</b><br>
+   <span class="sw" style="background:var(--bright)"></span>white &middot; seraph<br>
+   <span class="sw" style="background:var(--red)"></span>black &middot; hermione<br>
+   <span class="sw" style="border:1px solid var(--red)"></span>marked for strike</div>
+  <div style="position:absolute;right:2rem;top:2rem">${herPanel("200px")}</div>
+  <div class="titl"><h4>game 01</h4>
+   <div class="r"><span>ply</span><b>16</b></div>
+   <div class="r"><span>to move</span><b>white</b></div>
+   <div class="r"><span>material</span><b>&minus;3</b></div></div></div>`;}
+
+const DS=[d1,d2,d3,d4,d5,d6,d7,d8,d9,d10];
+const NM=["1 · full bleed","2 · text board","3 · timeline first","4 · interrogation","5 · monitor",
+ "6 · void","7 · ledger","8 · theatre","9 · split flap","10 · schematic"];
+const n=Math.min(10,Math.max(1,parseInt(new URLSearchParams(location.search).get("d")||"1",10)));
+document.getElementById("stage").innerHTML=DS[n-1]();
+document.getElementById("tag").textContent=NM[n-1];
+</script></body></html>

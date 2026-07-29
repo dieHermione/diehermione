@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>dummy parse mockups</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Major+Mono+Display&family=Cormorant+Garamond:wght@300;400&display=swap" rel="stylesheet" />
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{--c:#aee3ff;--dim:#4f7ea0;--dim2:#2c4a5e;--bright:#eafaff;--accent:#8fd0ff;
+        --glow:rgba(120,190,255,.32);--red:#ff3b2f;--deep:#c11208;--gold:#ffd27a}
+  html,body{height:100%}
+  body{background:#000;color:var(--c);font-family:"IBM Plex Mono",monospace;font-size:14px;overflow:hidden}
+  .scan{position:fixed;inset:0;z-index:200;pointer-events:none;
+    background:repeating-linear-gradient(0deg,rgba(0,0,0,.28) 0 1px,transparent 1px 3px)}
+  .vig{position:fixed;inset:0;z-index:199;pointer-events:none;box-shadow:inset 0 0 24vh 8vh rgba(0,0,0,.7)}
+  .stage{position:absolute;inset:0;padding:2.4vh 2vw;overflow:hidden}
+  .tag{position:fixed;right:8px;bottom:6px;z-index:300;color:#444;font-size:10px;letter-spacing:.2em}
+  .hdr{display:flex;justify-content:space-between;font-size:10px;letter-spacing:.34em;color:var(--dim);margin-bottom:1rem}
+  .hdr b{color:var(--bright);font-weight:400}.hdr .live{color:var(--red)}
+</style></head>
+<body>
+<div class="stage" id="stage"></div><div class="vig"></div><div class="scan"></div><div class="tag" id="tag"></div>
+<script>
+const AB=[["1","Decree",0],["2","Timeturn",8],["3","Brand",62],["4","Judgement",0],["5","Melody",19],
+          ["Q","Temporal Mark",11],["E","Rewind",44],["R","Smite",0],["F","Vigil",26],["G","Lightspear",7]];
+const STATS=[["Critical Chance","+16.0%",20,.27],["Critical Damage","+24.7%",15,.18],["Haste","+12.9%",20,.23],
+             ["Focus","+40%",10,.18],["Intellect","+21.0%",20,.19],["Fracture Chance","+9.0%",15,.20],
+             ["DoT Damage","+0.0%",0,0]];
+const BRK=[["Divine Flame",10011,33],["Judgement",4717,16],["Lightspear",4626,15],["Brand",4378,15],
+           ["Smite",2359,8],["Vigil",2282,8],["Decree",1633,5]];
+const LOG=[["49.8","Vigil","181",""],["47.8","Vigil","181",""],["45.8","Vigil","181",""],
+           ["43.8","Vigil","462","cr"],["41.8","Vigil","462","cr"],["39.9","Rewind","reset Vigil",""],
+           ["38.9","Vigil","815","cr"],["36.3","casting","Vigil",""],["34.0","Divine Flame","faded",""],
+           ["32.0","Divine Flame","1,250","cr"],["30.0","Divine Flame","556",""],["27.9","Divine Flame","556",""]];
+const DPS="598", TOTAL="30,006", ELAPSED="50.2s";
+
+const bar=()=>`<div class="hdr"><span>ANGELDOM // DUMMY PARSE &nbsp;·&nbsp; <b>priest</b></span>
+  <span>in combat</span><span><span class="live">● IN COMBAT</span> &nbsp; 00:50</span></div>`;
+const abilityBar=(cls)=>`<div class="${cls}">${AB.map(([k,n,cd])=>
+  `<div class="ab ${cd===0?"ready":""}"><span class="k">${k}</span><span class="n">${n}</span>
+   ${cd>0?`<span class="cd">${cd}</span>`:""}</div>`).join("")}</div>`;
+const AB_CSS=`
+ .ab{position:relative;border:1px solid var(--dim2);padding:.4rem .3rem;text-align:center;
+   background:rgba(0,0,0,.6);overflow:hidden}
+ .ab .k{display:block;font-size:9px;letter-spacing:.14em;color:var(--dim)}
+ .ab .n{display:block;font-size:10px;color:var(--c);margin-top:.1rem;line-height:1.2}
+ .ab .cd{position:absolute;inset:0;background:rgba(0,0,0,.76);display:grid;place-items:center;
+   font-size:1.15rem;color:var(--bright)}
+ .ab.ready{border-color:var(--c);box-shadow:0 0 12px var(--glow)}
+ .ab.ready .n{color:var(--bright)}`;
+const statRows=()=>STATS.map(([n,v,p,f])=>`<div class="sr"><span>${n}</span><b>${v}</b><i>${p}</i>
+  <span class="cv"><u style="width:${f*100}%"></u></span></div>`).join("");
+const STAT_CSS=`
+ .sr{display:grid;grid-template-columns:1fr auto 2rem;gap:.4rem;align-items:center;font-size:11px;
+   padding:.18rem 0 .3rem;color:var(--c)}
+ .sr b{color:var(--bright);font-weight:400}.sr i{color:var(--dim);font-style:normal;text-align:right}
+ .cv{grid-column:1/-1;height:3px;background:var(--dim2);margin-top:.1rem}
+ .cv u{display:block;height:100%;background:var(--accent)}`;
+const brkRows=()=>BRK.map(([n,d,p])=>`<div class="br"><i style="width:${p*3}%"></i>
+  <span>${n}</span><b>${d.toLocaleString()} &nbsp; ${p}%</b></div>`).join("");
+const BRK_CSS=`
+ .br{position:relative;display:flex;justify-content:space-between;font-size:11px;padding:.18rem .3rem}
+ .br i{position:absolute;left:0;top:0;bottom:0;background:rgba(255,59,47,.16)}
+ .br span,.br b{position:relative}.br b{color:var(--bright);font-weight:400}`;
+const logRows=(n)=>LOG.slice(0,n||12).map(([t,a,v,c])=>
+  `<div><span class="t">${t}</span> ${a} <b class="${c}">${v}</b></div>`).join("");
+const LOG_CSS=`
+ .lg{font-size:10px;line-height:1.8;color:var(--dim)}
+ .lg .t{color:var(--dim2)}.lg b{color:var(--bright);font-weight:400}.lg b.cr{color:var(--gold)}`;
+const dummy=(size)=>`<div class="dm"><div class="fig" style="font-size:${size||"6rem"}">&#9760;</div>
+  <div class="nm">TARGET DUMMY</div><div class="tk">${TOTAL}</div>
+  <div class="chips"><span class="chip">DIVINE FLAME 10</span><span class="chip b">TEMPORAL MARK 15s</span></div></div>`;
+const DM_CSS=`
+ .dm{text-align:center}
+ .dm .fig{line-height:1;color:var(--dim);text-shadow:0 0 30px rgba(120,190,255,.25)}
+ .dm .nm{font-size:9px;letter-spacing:.34em;color:var(--dim);margin-top:.3rem}
+ .dm .tk{font-size:1.7rem;color:var(--bright);margin-top:.2rem}
+ .chips{display:flex;gap:.4rem;justify-content:center;margin-top:.5rem;flex-wrap:wrap}
+ .chip{border:1px solid var(--deep);color:#ffb0a8;font-size:8px;padding:.14rem .4rem;background:rgba(255,20,10,.09)}
+ .chip.b{border-color:var(--accent);color:var(--accent);background:rgba(120,190,255,.09)}
+ .flt{position:absolute;font-weight:700;color:var(--gold);font-size:1.8rem;text-shadow:0 0 14px rgba(0,0,0,.9)}`;
+const castbar=()=>`<div class="cb"><i style="width:62%"></i><span>Vigil &nbsp; 1.5s</span></div>
+  <div class="mn"><i style="width:78%"></i></div>`;
+const CB_CSS=`
+ .cb{height:19px;border:1px solid var(--c);position:relative;background:rgba(0,0,0,.7);overflow:hidden}
+ .cb i{display:block;height:100%;background:linear-gradient(90deg,rgba(143,208,255,.5),var(--accent))}
+ .cb span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+   font-size:10px;letter-spacing:.14em;color:var(--bright)}
+ .mn{height:7px;border:1px solid var(--dim2);margin-top:.3rem;background:rgba(0,0,0,.6)}
+ .mn i{display:block;height:100%;background:linear-gradient(90deg,#2a6fa8,var(--accent))}`;
+const dpsBig=(sz)=>`<div class="dps" style="font-size:${sz||"3rem"}">${DPS}</div>
+  <div class="dpsk">DAMAGE PER SECOND</div>`;
+const DPS_CSS=`.dps{color:var(--bright);line-height:1;text-shadow:0 0 22px var(--glow)}
+ .dpsk{font-size:9px;letter-spacing:.3em;color:var(--dim);margin-top:.2rem}`;
+const PANEL=`.pn{border:1px solid var(--dim2);padding:.7rem .8rem;overflow:hidden;display:flex;flex-direction:column;min-height:0}
+ .pn h4{font-size:9px;letter-spacing:.3em;color:var(--dim);font-weight:400;border-bottom:1px solid var(--dim2);
+   padding-bottom:.3rem;margin-bottom:.5rem;display:flex;justify-content:space-between}
+ .pn h4 b{color:var(--bright);font-weight:400}`;
+const BASE=AB_CSS+STAT_CSS+BRK_CSS+LOG_CSS+DM_CSS+CB_CSS+DPS_CSS+PANEL;
+
+/* 1. CLASSIC MMO */
+function d1(){return `<style>${BASE}
+ .g{height:calc(100% - 2.6rem);position:relative}
+ .frames{position:absolute;top:0;left:0;width:250px}
+ .fr{border:1px solid var(--dim2);padding:.5rem .6rem;margin-bottom:.5rem;background:rgba(0,0,0,.6)}
+ .fr .n{font-size:.95rem;color:var(--bright)}.fr .s{font-size:9px;letter-spacing:.2em;color:var(--dim)}
+ .fr .hp{height:6px;background:var(--dim2);margin-top:.3rem}.fr .hp i{display:block;height:100%;background:var(--red);width:100%}
+ .meter{position:absolute;top:0;right:0;width:300px}
+ .arena{position:absolute;inset:0;display:grid;place-items:center}
+ .bottom{position:absolute;left:50%;bottom:0;transform:translateX(-50%);width:min(760px,80%)}
+ .row{display:grid;grid-template-columns:repeat(10,1fr);gap:.4rem;margin-top:.5rem}
+ </style>${bar()}<div class="g">
+  <div class="arena">${dummy("7rem")}<div class="flt" style="left:54%;top:34%">1,250</div></div>
+  <div class="frames">
+   <div class="fr"><div class="s">YOU · PRIEST</div><div class="n">seraph</div><div class="hp"><i style="background:var(--accent)"></i></div></div>
+   <div class="fr"><div class="s">TARGET</div><div class="n">dummy</div><div class="hp"><i></i></div></div>
+  </div>
+  <div class="meter pn"><h4><span>METER</span><b>${ELAPSED}</b></h4>${dpsBig("2.2rem")}
+   <div style="margin-top:.5rem">${brkRows()}</div></div>
+  <div class="bottom">${castbar()}${abilityBar("row")}</div>
+ </div>`;}
+
+/* 2. THREE COLUMN (refined current) */
+function d2(){return `<style>${BASE}
+ .g{height:calc(100% - 2.6rem);display:grid;grid-template-columns:270px 1fr 300px;
+   grid-template-rows:1fr auto;gap:.9rem}
+ .arena{border:1px solid var(--dim2);display:grid;place-items:center;position:relative;
+   background:radial-gradient(60% 60% at 50% 45%,rgba(120,190,255,.05),transparent 70%)}
+ .cw{position:absolute;left:50%;bottom:1.4rem;transform:translateX(-50%);width:70%}
+ .row{grid-column:1/-1;display:grid;grid-template-columns:repeat(10,1fr);gap:.45rem}
+ </style>${bar()}<div class="g">
+  <div class="pn"><h4><span>STATS</span><b>0 unspent</b></h4>${statRows()}</div>
+  <div class="arena">${dummy("7rem")}<div class="flt" style="left:56%;top:30%">1,250</div>
+   <div class="cw">${castbar()}</div></div>
+  <div class="pn"><h4><span>METER</span><b>${ELAPSED}</b></h4>${dpsBig("2.4rem")}
+   <div style="margin:.6rem 0">${brkRows()}</div>
+   <div class="lg">${logRows(7)}</div></div>
+  ${abilityBar("row")}
+ </div>`;}
+
+/* 3. FULL BLEED ARENA, floating HUD */
+function d3(){return `<style>${BASE}
+ .g{height:calc(100% - 2.6rem);position:relative;display:grid;place-items:center;
+   background:radial-gradient(50% 50% at 50% 45%,rgba(255,59,47,.07),transparent 70%)}
+ .dm .fig{font-size:13rem}
+ .hud{position:absolute;font-size:10px;letter-spacing:.28em;color:var(--dim)}
+ .h1{top:0;left:0}.h2{top:0;right:0;text-align:right}.h3{bottom:5.4rem;left:0}
+ .hud b{display:block;color:var(--bright);font-size:2rem;letter-spacing:0;font-weight:400;margin-top:.2rem}
+ .row{position:absolute;left:50%;bottom:0;transform:translateX(-50%);display:flex;gap:.45rem}
+ .ab{width:74px}
+ .cw{position:absolute;left:50%;bottom:4.6rem;transform:translateX(-50%);width:min(420px,50%)}
+ </style>${bar()}<div class="g">
+  ${dummy("13rem")}
+  <div class="flt" style="left:58%;top:26%;font-size:2.6rem">1,250</div>
+  <div class="hud h1">DPS<b>${DPS}</b></div>
+  <div class="hud h2">DAMAGE<b>${TOTAL}</b></div>
+  <div class="hud h3">ELAPSED<b>${ELAPSED}</b></div>
+  <div class="cw">${castbar()}</div>
+  ${abilityBar("row")}
+ </div>`;}
+
+/* 4. DATA FIRST — the meter is the page */
+function d4(){return `<style>${BASE}
+ .g{height:calc(100% - 2.6rem);display:grid;grid-template-columns:1.5fr 1fr;gap:1.2rem}
+ .big{display:flex;flex-direction:column}
+ .huge{font-size:8rem;color:var(--bright);line-height:.9;text-shadow:0 0 40px var(--glow)}
+ .sub{font-size:10px;letter-spacing:.4em;color:var(--dim);margin:.3rem 0 1.2rem}
+ .brk2 .br{font-size:13px;padding:.35rem .4rem}
+ .rt{display:flex;flex-direction:column;gap:.9rem}
+ .mini{display:grid;grid-template-columns:repeat(5,1fr);gap:.4rem}
+ .ab{padding:.3rem .2rem}.ab .n{font-size:8px}
+ </style>${bar()}<div class="g">
+  <div class="big">
+   <div class="huge">${DPS}</div><div class="sub">DAMAGE PER SECOND &nbsp;·&nbsp; ${TOTAL} OVER ${ELAPSED}</div>
+   <div class="brk2">${brkRows()}</div>
+   <div style="margin-top:auto">${castbar()}</div>
+  </div>
+  <div class="rt">
+   <div class="pn" style="flex:none">${dummy("4.4rem")}</div>
+   <div class="pn"><h4>COMBAT LOG</h4><div class="lg">${logRows(10)}</div></div>
+   ${abilityBar("mini")}
+  </div>
+ </div>`;}
+
+/* 5. MINIMAL VOID */
+function d5(){return `<style>${BASE}
+ .g{height:calc(100% - 2.6rem);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2rem}
+ .dm .fig{font-size:9rem;color:var(--dim2)}
+ .dm .nm,.dm .tk{display:none}
+ .num{font-size:5rem;color:var(--bright);line-height:1;text-shadow:0 0 34px var(--glow)}
+ .lbl{font-size:9px;letter-spacing:.5em;color:var(--dim)}
+ .row{display:flex;gap:.4rem}
+ .ab{width:64px;border-color:transparent;background:none}
+ .ab.ready{border-color:var(--dim2);box-shadow:none}
+ .cw{width:min(400px,50%)}
+ </style>${bar()}<div class="g">
+  ${dummy("9rem")}
+  <div class="num">${DPS}</div><div class="lbl">DPS</div>
+  <div class="cw">${castbar()}</div>
+  ${abilityBar("row")}
+ </div>`;}
+
+/* 6. VERTICAL BAR RIGHT */
+function d6(){return `<style>${BASE}
+ .g{height:calc(100% - 2.6rem);display:grid;grid-template-columns:260px 1fr 92px;gap:.9rem}
+ .arena{border:1px solid var(--dim2);display:grid;place-items:center;position:relative}
+ .col{display:flex;flex-direction:column;gap:.35rem}
+ .ab{padding:.45rem .2rem}
+ .cw{position:absolute;left:50%;bottom:1.2rem;transform:translateX(-50%);width:70%}
+ .stackpanel{display:flex;flex-direction:column;gap:.8rem}
+ </style>${bar()}<div class="g">
+  <div class="stackpanel">
+   <div class="pn" style="flex:none"><h4><span>METER</span><b>${ELAPSED}</b></h4>${dpsBig("2rem")}</div>
+   <div class="pn"><h4>BREAKDOWN</h4>${brkRows()}</div>
+  </div>
+  <div class="arena">${dummy("7.5rem")}<div class="flt" style="left:56%;top:30%">1,250</div>
+   <div class="cw">${castbar()}</div></div>
+  ${abilityBar("col")}
+ </div>`;}
+
+/* 7. RADIAL — cooldowns ring the dummy */
+function d7(){return `<style>${BASE}
+ .g{height:calc(100% - 2.6rem);position:relative;display:grid;place-items:center}
+ .ring{position:relative;width:min(72vh,620px);height:min(72vh,620px)}
+ .node{position:absolute;width:74px;margin:-37px 0 0 -37px;text-align:center;
+   border:1px solid var(--dim2);background:rgba(0,0,0,.75);padding:.35rem .2rem}
+ .node.ready{border-color:var(--c);box-shadow:0 0 12px var(--glow)}
+ .node .k{font-size:9px;color:var(--dim)}.node .n{font-size:9px;color:var(--c);line-height:1.2}
+ .node .cd{font-size:1rem;color:var(--bright)}
+ .mid7{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);text-align:center}
+ .cw{position:absolute;left:50%;bottom:0;transform:translateX(-50%);width:min(420px,44%)}
+ </style>${bar()}<div class="g">
+  <div class="ring">
+   ${AB.map(([k,n,cd],i)=>{const a=(i/AB.length)*Math.PI*2-Math.PI/2;
+     return `<div class="node ${cd===0?"ready":""}" style="left:${50+44*Math.cos(a)}%;top:${50+44*Math.sin(a)}%">
+      <div class="k">${k}</div><div class="n">${n}</div>${cd?`<div class="cd">${cd}</div>`:""}</div>`;}).join("")}
+   <div class="mid7">${dummy("6.4rem")}<div style="margin-top:.6rem">${dpsBig("2.2rem")}</div></div>
+  </div>
+  <div class="cw">${castbar()}</div>
+ </div>`;}
+
+/* 8. LOG CENTRIC */
+function d8(){return `<style>${BASE}
+ .g{height:calc(100% - 2.6rem);display:grid;grid-template-columns:1fr 320px;gap:1.2rem}
+ .stream{border-left:2px solid var(--dim2);padding-left:1.2rem;display:flex;flex-direction:column;justify-content:flex-end;
+   overflow:hidden;font-size:14px;line-height:2.1}
+ .stream .t{color:var(--dim2);display:inline-block;width:3.6rem}
+ .stream b{color:var(--bright);font-weight:400}.stream b.cr{color:var(--gold);font-size:1.15em}
+ .stream .row{color:var(--dim)}
+ .rt{display:flex;flex-direction:column;gap:.9rem}
+ .mini{display:grid;grid-template-columns:repeat(5,1fr);gap:.4rem}
+ .ab{padding:.3rem .2rem}.ab .n{font-size:8px}
+ </style>${bar()}<div class="g">
+  <div class="stream">${LOG.slice().reverse().map(([t,a,v,c])=>
+    `<div class="row"><span class="t">${t}</span> ${a} &nbsp; <b class="${c}">${v}</b></div>`).join("")}</div>
+  <div class="rt">
+   <div class="pn" style="flex:none">${dpsBig("2.6rem")}<div style="margin-top:.5rem">${brkRows()}</div></div>
+   <div class="pn" style="flex:none">${dummy("3.6rem")}</div>
+   <div>${castbar()}</div>
+   ${abilityBar("mini")}
+  </div>
+ </div>`;}
+
+/* 9. GAUGE CLUSTER */
+function d9(){
+ const gauge=(lbl,v,frac)=>`<div class="gg"><svg viewBox="0 0 100 60">
+   <path d="M8 56 A42 42 0 0 1 92 56" fill="none" stroke="rgba(120,190,255,.18)" stroke-width="7"/>
+   <path d="M8 56 A42 42 0 0 1 92 56" fill="none" stroke="var(--accent)" stroke-width="7"
+     stroke-dasharray="132" stroke-dashoffset="${132-132*frac}"/>
+   <line x1="50" y1="56" x2="${50+38*Math.cos(Math.PI-frac*Math.PI)}" y2="${56-38*Math.sin(Math.PI-frac*Math.PI)}"
+     stroke="#ff3b2f" stroke-width="2"/></svg>
+   <div class="gv">${v}</div><div class="gl">${lbl}</div></div>`;
+ return `<style>${BASE}
+ .g{height:calc(100% - 2.6rem);display:grid;grid-template-rows:auto 1fr auto;gap:1rem}
+ .cluster{display:grid;grid-template-columns:repeat(5,1fr);gap:.9rem}
+ .gg{border:1px solid var(--dim2);padding:.6rem;text-align:center;background:rgba(0,0,0,.6)}
+ .gg svg{width:100%;height:auto}
+ .gv{font-size:1.5rem;color:var(--bright);margin-top:-.4rem}
+ .gl{font-size:8px;letter-spacing:.24em;color:var(--dim);margin-top:.2rem}
+ .mid9{display:grid;grid-template-columns:1fr 320px;gap:1rem;min-height:0}
+ .arena{border:1px solid var(--dim2);display:grid;place-items:center;position:relative}
+ .row{display:grid;grid-template-columns:repeat(10,1fr);gap:.45rem}
+ </style>${bar()}<div class="g">
+  <div class="cluster">${gauge("DPS",DPS,.6)}${gauge("CRIT","16%",.27)}${gauge("HASTE","13%",.23)}
+    ${gauge("MANA","78%",.78)}${gauge("FRACTURE","1/5",.2)}</div>
+  <div class="mid9">
+   <div class="arena">${dummy("6.6rem")}<div class="flt" style="left:56%;top:30%">1,250</div></div>
+   <div class="pn"><h4>BREAKDOWN</h4>${brkRows()}<div class="lg" style="margin-top:.5rem">${logRows(5)}</div></div>
+  </div>
+  <div>${castbar()}${abilityBar("row")}</div>
+ </div>`;}
+
+/* 10. BIG ABILITY CARDS */
+function d10(){return `<style>${BASE}
+ .g{height:calc(100% - 2.6rem);display:grid;grid-template-columns:1fr 300px;gap:1.2rem}
+ .lt{display:grid;grid-template-rows:1fr auto;gap:1rem;min-height:0}
+ .arena{border:1px solid var(--dim2);display:grid;place-items:center;position:relative}
+ .cards{display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(2,1fr);gap:.6rem;height:210px}
+ .card{border:1px solid var(--dim2);padding:.6rem;position:relative;display:flex;flex-direction:column;
+   justify-content:space-between;background:linear-gradient(180deg,rgba(120,190,255,.05),transparent 60%)}
+ .card .k{font-size:1.4rem;color:var(--dim);line-height:1}
+ .card .n{font-size:.95rem;color:var(--bright)}
+ .card .cd{position:absolute;inset:0;background:rgba(0,0,0,.74);display:grid;place-items:center;font-size:2rem;color:var(--bright)}
+ .card.ready{border-color:var(--c);box-shadow:0 0 16px var(--glow)}
+ </style>${bar()}<div class="g">
+  <div class="lt">
+   <div class="arena">${dummy("7rem")}<div class="flt" style="left:57%;top:30%">1,250</div>
+     <div style="position:absolute;left:50%;bottom:1.2rem;transform:translateX(-50%);width:66%">${castbar()}</div></div>
+   <div class="cards">${AB.map(([k,n,cd])=>`<div class="card ${cd===0?"ready":""}">
+     <div class="k">${k}</div><div class="n">${n}</div>${cd?`<div class="cd">${cd}</div>`:""}</div>`).join("")}</div>
+  </div>
+  <div class="pn"><h4><span>METER</span><b>${ELAPSED}</b></h4>${dpsBig("2.4rem")}
+   <div style="margin:.6rem 0">${brkRows()}</div><div class="lg">${logRows(6)}</div></div>
+ </div>`;}
+
+/* 11. ROTATION TIMELINE */
+function d11(){
+ const track=[["Brand",0,6],["Judgement",7,20],["Decree",21,29],["Lightspear",30,34],
+   ["Smite",35,41],["Melody",42,45],["Vigil",46,62],["Timeturn",63,95]];
+ return `<style>${BASE}
+ .g{height:calc(100% - 2.6rem);display:grid;grid-template-rows:auto 1fr auto;gap:1rem}
+ .tl{border:1px solid var(--dim2);padding:1rem;position:relative}
+ .lane{position:relative;height:34px;margin-bottom:.35rem;background:rgba(120,190,255,.03)}
+ .blk{position:absolute;top:3px;bottom:3px;border:1px solid var(--c);background:rgba(120,190,255,.12);
+   display:flex;align-items:center;padding-left:.5rem;font-size:11px;color:var(--bright);overflow:hidden}
+ .blk.gcd{border-color:var(--dim2);background:rgba(120,190,255,.05);color:var(--dim)}
+ .now{position:absolute;top:0;bottom:0;width:2px;background:var(--red);box-shadow:0 0 12px rgba(255,59,47,.8)}
+ .axis{display:flex;justify-content:space-between;font-size:9px;color:var(--dim2);margin-top:.4rem}
+ .mid{display:grid;grid-template-columns:1fr 300px;gap:1rem;min-height:0}
+ .arena{border:1px solid var(--dim2);display:grid;place-items:center}
+ .row{display:grid;grid-template-columns:repeat(10,1fr);gap:.45rem}
+ </style>${bar()}<div class="g">
+  <div class="tl">
+   <div style="font-size:9px;letter-spacing:.3em;color:var(--dim);margin-bottom:.5rem">PLANNED ROTATION &middot; GCD SHOWN BENEATH EACH CAST</div>
+   ${track.map(([n,a,b])=>`<div class="lane"><div class="blk" style="left:${a}%;width:${b-a}%">${n}</div></div>`).join("")}
+   <div class="now" style="left:47%"></div>
+   <div class="axis">${["0s","10s","20s","30s","40s","50s"].map(t=>`<span>${t}</span>`).join("")}</div>
+  </div>
+  <div class="mid">
+   <div class="arena">${dummy("6rem")}</div>
+   <div class="pn">${dpsBig("2.2rem")}<div style="margin-top:.6rem">${brkRows()}</div></div>
+  </div>
+  <div>${castbar()}${abilityBar("row")}</div>
+ </div>`;}
+
+/* 12. TRANSPARENT OVERLAY */
+function d12(){return `<style>${BASE}
+ .g{height:calc(100% - 2.6rem);position:relative;display:grid;place-items:center;
+   background:radial-gradient(60% 60% at 50% 50%,rgba(120,190,255,.06),transparent 70%)}
+ .dm .fig{font-size:12rem}
+ .pane{position:absolute;background:rgba(0,0,0,.42);border:1px solid rgba(120,190,255,.22);
+   padding:.6rem .8rem;backdrop-filter:blur(2px)}
+ .p1{top:0;left:0;width:250px}.p2{top:0;right:0;width:280px}.p3{bottom:5rem;left:0;width:250px}
+ .pane h4{font-size:8px;letter-spacing:.3em;color:var(--dim);margin-bottom:.4rem}
+ .row{position:absolute;left:50%;bottom:0;transform:translateX(-50%);display:flex;gap:.45rem}
+ .ab{width:72px;background:rgba(0,0,0,.45)}
+ .cw{position:absolute;left:50%;bottom:4.6rem;transform:translateX(-50%);width:min(420px,44%)}
+ </style>${bar()}<div class="g">
+  ${dummy("12rem")}<div class="flt" style="left:58%;top:26%;font-size:2.4rem">1,250</div>
+  <div class="pane p1"><h4>STATS</h4>${statRows()}</div>
+  <div class="pane p2"><h4>METER</h4>${dpsBig("2rem")}<div style="margin-top:.4rem">${brkRows()}</div></div>
+  <div class="pane p3"><h4>LOG</h4><div class="lg">${logRows(6)}</div></div>
+  <div class="cw">${castbar()}</div>${abilityBar("row")}
+ </div>`;}
+
+/* 13. TWO COLUMN STACK */
+function d13(){return `<style>${BASE}
+ .g{height:calc(100% - 2.6rem);display:grid;grid-template-columns:1.25fr 1fr;gap:1.2rem}
+ .arena{border:1px solid var(--dim2);display:grid;place-items:center;position:relative}
+ .stack{display:flex;flex-direction:column;gap:.8rem;min-height:0}
+ .row{display:grid;grid-template-columns:repeat(5,1fr);gap:.45rem}
+ .cw{position:absolute;left:50%;bottom:1.4rem;transform:translateX(-50%);width:72%}
+ </style>${bar()}<div class="g">
+  <div class="arena">${dummy("8rem")}<div class="flt" style="left:57%;top:28%">1,250</div>
+    <div class="cw">${castbar()}</div></div>
+  <div class="stack">
+   <div class="pn" style="flex:none"><h4><span>METER</span><b>${ELAPSED}</b></h4>${dpsBig("2.6rem")}
+     <div style="margin-top:.5rem">${brkRows()}</div></div>
+   <div class="pn"><h4>STATS</h4>${statRows()}</div>
+   ${abilityBar("row")}
+  </div>
+ </div>`;}
+
+/* 14. TILE DASHBOARD */
+function d14(){return `<style>${BASE}
+ .g{height:calc(100% - 2.6rem);display:grid;grid-template-columns:repeat(4,1fr);
+   grid-template-rows:auto 1fr auto;gap:.8rem}
+ .tile{border:1px solid var(--dim2);padding:.7rem .8rem;background:rgba(0,0,0,.6)}
+ .tile .v{font-size:1.9rem;color:var(--bright);line-height:1}
+ .tile .k{font-size:8px;letter-spacing:.26em;color:var(--dim);margin-top:.2rem}
+ .tile.hot{border-color:var(--red)}.tile.hot .v{color:var(--gold)}
+ .wide{grid-column:span 2}
+ .arena{grid-column:span 2;grid-row:2;border:1px solid var(--dim2);display:grid;place-items:center;position:relative}
+ .row{grid-column:1/-1;display:grid;grid-template-columns:repeat(10,1fr);gap:.45rem}
+ </style>${bar()}<div class="g">
+  <div class="tile hot"><div class="v">${DPS}</div><div class="k">DPS</div></div>
+  <div class="tile"><div class="v">${TOTAL}</div><div class="k">TOTAL DAMAGE</div></div>
+  <div class="tile"><div class="v">${ELAPSED}</div><div class="k">ELAPSED</div></div>
+  <div class="tile"><div class="v">1/5</div><div class="k">FRACTURE</div></div>
+  <div class="arena">${dummy("6.4rem")}<div class="flt" style="left:57%;top:28%">1,250</div>
+    <div style="position:absolute;left:50%;bottom:1rem;transform:translateX(-50%);width:74%">${castbar()}</div></div>
+  <div class="tile wide" style="grid-row:2;overflow:hidden"><div class="k" style="margin-bottom:.4rem">BREAKDOWN</div>${brkRows()}</div>
+  ${abilityBar("row")}
+ </div>`;}
+
+/* 15. NEON ARCADE */
+function d15(){return `<style>${BASE}
+ .g{height:calc(100% - 2.6rem);display:grid;grid-template-rows:auto 1fr auto;gap:1rem;
+   background:radial-gradient(70% 60% at 50% 40%,rgba(255,59,47,.08),transparent 70%)}
+ .title15{text-align:center;font-family:"Major Mono Display";font-size:2.6rem;color:#fff;
+   text-shadow:0 0 12px var(--red),0 0 34px var(--red),0 0 60px rgba(255,59,47,.6)}
+ .mid{display:grid;grid-template-columns:250px 1fr 250px;gap:1rem;align-items:center}
+ .neon{border:2px solid var(--red);box-shadow:0 0 20px rgba(255,59,47,.5),inset 0 0 26px rgba(255,59,47,.14);
+   padding:.8rem;background:rgba(0,0,0,.6)}
+ .neon .v{font-size:2.4rem;color:#fff;text-shadow:0 0 16px rgba(255,59,47,.8);line-height:1}
+ .neon .k{font-size:8px;letter-spacing:.3em;color:#ffb0a8;margin-top:.2rem}
+ .arena{display:grid;place-items:center;position:relative}
+ .dm .fig{color:#ffb0a8;text-shadow:0 0 40px rgba(255,59,47,.6)}
+ .row{display:grid;grid-template-columns:repeat(10,1fr);gap:.45rem}
+ .ab{border-color:rgba(255,59,47,.4)}
+ .ab.ready{border-color:var(--red);box-shadow:0 0 14px rgba(255,59,47,.6)}
+ </style>${bar()}<div class="g">
+  <div class="title15">dummy parse</div>
+  <div class="mid">
+   <div class="neon"><div class="v">${DPS}</div><div class="k">DPS</div></div>
+   <div class="arena">${dummy("8rem")}<div class="flt" style="left:58%;top:26%;font-size:2.4rem">1,250</div></div>
+   <div class="neon"><div class="v">${TOTAL}</div><div class="k">TOTAL</div></div>
+  </div>
+  <div>${castbar()}${abilityBar("row")}</div>
+ </div>`;}
+
+/* 16. BLUEPRINT */
+function d16(){return `<style>${BASE}
+ .g{height:calc(100% - 2.6rem);position:relative;border:1px solid var(--dim2);
+   background:repeating-linear-gradient(90deg,rgba(120,190,255,.045) 0 1px,transparent 1px 34px),
+              repeating-linear-gradient(0deg,rgba(120,190,255,.045) 0 1px,transparent 1px 34px);
+   display:grid;place-items:center}
+ .call{position:absolute;font-size:10px;color:var(--dim);white-space:nowrap}
+ .call b{display:block;color:var(--bright);font-size:1.2rem;font-weight:400}
+ .call::before{content:"";position:absolute;background:var(--dim2);height:1px;top:10px}
+ .call.l::before{right:-52px;width:50px}.call.r::before{left:-52px;width:50px}
+ .call.l{text-align:right}
+ .titleblk{position:absolute;right:1.2rem;bottom:1.2rem;border:1px solid var(--c);background:#000;padding:.7rem .9rem}
+ .titleblk .r{display:flex;justify-content:space-between;font-size:10px;color:var(--dim);gap:1.6rem;padding:.1rem 0}
+ .titleblk .r b{color:var(--bright);font-weight:400}
+ .row{position:absolute;left:50%;bottom:1.2rem;transform:translateX(-50%);display:flex;gap:.4rem}
+ .ab{width:70px;background:#000}
+ </style>${bar()}<div class="g">
+  ${dummy("7.4rem")}
+  ${[["dps",DPS,"l","16%","30%"],["total",TOTAL,"l","14%","44%"],["elapsed",ELAPSED,"l","18%","58%"],
+     ["crit","16.0%","r","72%","30%"],["haste","12.9%","r","72%","44%"],["fracture","1/5","r","72%","58%"]]
+    .map(([k,v,s,x,y])=>`<div class="call ${s}" style="left:${x};top:${y}">${k}<b>${v}</b></div>`).join("")}
+  <div class="titleblk">
+   <div class="r"><span>class</span><b>priest</b></div>
+   <div class="r"><span>target</span><b>dummy</b></div>
+   <div class="r"><span>sheet</span><b>1 OF 1</b></div></div>
+  ${abilityBar("row")}
+ </div>`;}
+
+/* 17. PARSE SHEET */
+function d17(){return `<style>${BASE}
+ .g{height:calc(100% - 2.6rem);display:grid;grid-template-columns:1fr 300px;gap:1.4rem}
+ .sheet{border:1px solid var(--c);padding:1.2rem 1.6rem;display:flex;flex-direction:column;min-height:0}
+ .sheet h3{font-family:"Major Mono Display";font-size:1.7rem;color:var(--bright);font-weight:400;
+   border-bottom:3px double var(--c);padding-bottom:.5rem;margin-bottom:.6rem}
+ table{width:100%;border-collapse:collapse}
+ th{font-size:8px;letter-spacing:.28em;color:var(--dim);text-align:left;font-weight:400;
+   border-bottom:1px solid var(--c);padding:.35rem .4rem}
+ td{padding:.28rem .4rem;font-size:12.5px;border-bottom:1px dotted var(--dim2)}
+ tr:nth-child(even) td{background:rgba(120,190,255,.04)}
+ td.v{text-align:right;color:var(--bright)}td.p{text-align:right;color:var(--dim)}
+ .tot{display:flex;justify-content:space-between;border-top:2px solid var(--c);margin-top:auto;padding-top:.6rem;
+   font-size:1.2rem;color:var(--bright)}
+ .rt{display:flex;flex-direction:column;gap:.9rem}
+ .mini{display:grid;grid-template-columns:repeat(5,1fr);gap:.4rem}
+ .ab{padding:.3rem .2rem}.ab .n{font-size:8px}
+ </style>${bar()}<div class="g">
+  <div class="sheet"><h3>parse &middot; seraph &middot; priest</h3>
+   <table><tr><th>ability</th><th style="text-align:right">damage</th><th style="text-align:right">share</th></tr>
+    ${BRK.map(([n,d,p])=>`<tr><td>${n}</td><td class="v">${d.toLocaleString()}</td><td class="p">${p}%</td></tr>`).join("")}
+   </table>
+   <div class="tot"><span>TOTAL / ${ELAPSED}</span><span>${TOTAL} &nbsp; ${DPS} dps</span></div></div>
+  <div class="rt">
+   <div class="pn" style="flex:none">${dummy("3.8rem")}</div>
+   <div class="pn"><h4>LOG</h4><div class="lg">${logRows(9)}</div></div>
+   <div>${castbar()}</div>${abilityBar("mini")}
+  </div>
+ </div>`;}
+
+/* 18. BROADCAST OVERLAY */
+function d18(){return `<style>${BASE}
+ .g{height:calc(100% - 2.6rem);position:relative;display:grid;place-items:center}
+ .dm .fig{font-size:11rem}
+ .lower{position:absolute;left:0;right:0;bottom:0;border-top:2px solid var(--red);
+   background:linear-gradient(0deg,rgba(0,0,0,.95),rgba(0,0,0,.6));padding:.8rem 1.2rem;
+   display:grid;grid-template-columns:auto 1fr auto;gap:1.6rem;align-items:center}
+ .who{display:flex;align-items:baseline;gap:.7rem}
+ .who .nm{font-size:1.8rem;color:var(--bright)}
+ .who .cl{font-size:9px;letter-spacing:.3em;color:var(--red)}
+ .bars{display:flex;gap:.4rem;align-items:flex-end;height:44px}
+ .bars i{flex:1;background:linear-gradient(180deg,var(--red),rgba(255,59,47,.2))}
+ .score{text-align:right}.score .v{font-size:2.2rem;color:var(--gold);line-height:1}
+ .score .k{font-size:8px;letter-spacing:.3em;color:var(--dim)}
+ .tickr{position:absolute;top:0;left:0;right:0;display:flex;gap:2.4rem;font-size:9px;
+   letter-spacing:.26em;color:var(--dim);border-bottom:1px solid var(--dim2);padding-bottom:.5rem}
+ .tickr b{color:var(--bright);font-weight:400}
+ .row{position:absolute;left:50%;bottom:6.4rem;transform:translateX(-50%);display:flex;gap:.4rem}
+ .ab{width:70px;background:rgba(0,0,0,.6)}
+ </style>${bar()}<div class="g">
+  <div class="tickr"><span>PARSE <b>#0042</b></span><span>CLASS <b>PRIEST</b></span>
+    <span>ELAPSED <b>${ELAPSED}</b></span><span>PEAK <b>1,250</b></span></div>
+  ${dummy("11rem")}<div class="flt" style="left:58%;top:24%;font-size:2.6rem">1,250</div>
+  ${abilityBar("row")}
+  <div class="lower">
+   <div class="who"><span class="nm">seraph</span><span class="cl">PRIEST</span></div>
+   <div class="bars">${Array.from({length:30},(_,i)=>`<i style="height:${20+Math.abs(Math.sin(i/2.4))*80}%"></i>`).join("")}</div>
+   <div class="score"><div class="v">${DPS}</div><div class="k">DPS</div></div>
+  </div>
+ </div>`;}
+
+/* 19. ALTAR */
+function d19(){return `<style>${BASE}
+ .g{height:calc(100% - 2.6rem);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.2rem;
+   background:radial-gradient(55% 50% at 50% 42%,rgba(255,59,47,.09),transparent 70%)}
+ .frame19{border:1px solid var(--deep);padding:1.8rem 3rem;position:relative;
+   box-shadow:0 0 46px rgba(193,18,8,.2),inset 0 0 50px rgba(0,0,0,.9);text-align:center}
+ .frame19::before{content:"";position:absolute;inset:7px;border:1px solid rgba(193,18,8,.3)}
+ .t19{font-family:"Cormorant Garamond",serif;font-size:2.2rem;color:#ffe9e6;
+   text-shadow:0 0 26px rgba(255,59,47,.5);margin-bottom:.4rem}
+ .dm .fig{color:#ffb0a8;text-shadow:0 0 40px rgba(255,59,47,.5)}
+ .verse{font-family:"Cormorant Garamond",serif;font-style:italic;font-size:1.15rem;
+   color:rgba(255,180,172,.8);margin-top:.8rem}
+ .three{display:flex;gap:3rem;margin-top:1rem}
+ .three .v{font-family:"Cormorant Garamond",serif;font-size:2.2rem;color:#ffe9e6;line-height:1}
+ .three .k{font-size:8px;letter-spacing:.3em;color:var(--red);margin-top:.2rem}
+ .row{display:flex;gap:.4rem}
+ .ab{width:72px;border-color:rgba(193,18,8,.45)}
+ .ab.ready{border-color:var(--red);box-shadow:0 0 14px rgba(255,59,47,.4)}
+ </style>${bar()}<div class="g">
+  <div class="frame19"><div class="t19">the offering</div>
+   ${dummy("6.6rem")}
+   <div class="verse">&ldquo;it does not fight back. it only counts.&rdquo;</div>
+   <div class="three"><div><div class="v">${DPS}</div><div class="k">PER SECOND</div></div>
+    <div><div class="v">${TOTAL}</div><div class="k">GIVEN</div></div>
+    <div><div class="v">${ELAPSED}</div><div class="k">ELAPSED</div></div></div></div>
+  <div style="width:min(420px,44%)">${castbar()}</div>
+  ${abilityBar("row")}
+ </div>`;}
+
+/* 20. DIPTYCH: build left, combat right */
+function d20(){return `<style>${BASE}
+ .g{height:calc(100% - 2.6rem);display:grid;grid-template-columns:1fr 1fr;gap:0}
+ .lt{border-right:3px solid var(--c);padding-right:2rem;display:flex;flex-direction:column;justify-content:center}
+ .lt h2{font-family:"Major Mono Display";font-size:2.4rem;color:var(--bright);font-weight:400;
+   line-height:1;margin-bottom:1rem}
+ .lt .note{font-size:10px;line-height:1.8;color:var(--dim2);margin-top:1rem}
+ .rt{padding-left:2rem;display:flex;flex-direction:column;justify-content:center;gap:1rem;position:relative}
+ .row{display:grid;grid-template-columns:repeat(5,1fr);gap:.45rem}
+ </style>${bar()}<div class="g">
+  <div class="lt"><h2>build</h2>${statRows()}
+   <div class="note">Every stat has diminishing returns: each point is worth less than the last,
+     so stacking one is never optimal.</div></div>
+  <div class="rt">
+   <div style="display:flex;align-items:center;gap:2rem">${dummy("5.4rem")}
+    <div>${dpsBig("2.8rem")}</div></div>
+   ${brkRows()}
+   ${castbar()}
+   ${abilityBar("row")}
+  </div>
+ </div>`;}
+
+const DS=[d1,d2,d3,d4,d5,d6,d7,d8,d9,d10,d11,d12,d13,d14,d15,d16,d17,d18,d19,d20];
+const NM=["1 · classic mmo","2 · three column","3 · full bleed","4 · data first","5 · minimal void",
+ "6 · vertical bar","7 · radial","8 · log centric","9 · gauge cluster","10 · ability cards",
+ "11 · rotation timeline","12 · transparent hud","13 · two column","14 · tiles","15 · neon arcade",
+ "16 · blueprint","17 · parse sheet","18 · broadcast","19 · altar","20 · diptych"];
+const n=Math.min(20,Math.max(1,parseInt(new URLSearchParams(location.search).get("d")||"1",10)));
+document.getElementById("stage").innerHTML=DS[n-1]();
+document.getElementById("tag").textContent=NM[n-1];
+</script></body></html>
