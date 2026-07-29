@@ -2,266 +2,414 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>slots mockups v2</title>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Major+Mono+Display&display=swap" rel="stylesheet" />
+<title>slots mockups v3</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cinzel:wght@400;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet" />
 <style>
+  /* Third attempt, terminal restriction lifted. Six machines rather than six
+     dark panels. Symbols are still placeholder glyphs; custom art comes later,
+     so each design also has to show what it will look like with art dropped in.
+     The currency is angelcoins throughout. */
   *{box-sizing:border-box;margin:0;padding:0}
-  :root{--c:#aee3ff;--dim:#4f7ea0;--dim2:#2c4a5e;--bright:#eafaff;--accent:#8fd0ff;
-        --glow:rgba(120,190,255,.32);--red:#ff3b2f;--gold:#ffd27a}
   html,body{height:100%}
-  body{background:#000;color:var(--c);font-family:"IBM Plex Mono",monospace;font-size:14px;overflow:hidden}
-  .scan{position:fixed;inset:0;z-index:200;pointer-events:none;
-    background:repeating-linear-gradient(0deg,rgba(0,0,0,.30) 0 1px,transparent 1px 3px)}
-  .vig{position:fixed;inset:0;z-index:199;pointer-events:none;box-shadow:inset 0 0 24vh 8vh rgba(0,0,0,.7)}
-  .stage{position:absolute;inset:0;padding:3vh 3vw;overflow:hidden}
-  .tag{position:fixed;right:8px;bottom:6px;z-index:300;color:#444;font-size:10px;letter-spacing:.2em}
-  .hdr{display:flex;justify-content:space-between;font-size:10px;letter-spacing:.35em;color:var(--dim);margin-bottom:1.4rem}
+  body{overflow:hidden;font-family:Inter,system-ui,sans-serif;font-size:14px}
+  .stage{position:absolute;inset:0;overflow:hidden}
+  .tag{position:fixed;right:8px;bottom:6px;z-index:300;color:#888;
+    font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.2em;mix-blend-mode:difference}
 </style></head>
 <body>
-<div class="stage" id="stage"></div><div class="vig"></div><div class="scan"></div><div class="tag" id="tag"></div>
+<div class="stage" id="stage"></div><div class="tag" id="tag"></div>
 <script>
-const SYM=["✦","☾","✚","♆","☠","❦"];
-const PAY=[["✦ ✦ ✦","×25"],["☾ ☾ ☾","×12"],["✚ ✚ ✚","×8"],["♆ ♆ ♆","×6"],["❦ ❦ ❦","×4"],
-           ["any two","×2"],["☠ anywhere","void"]];
-const BET=10, WON=250, VAULT=337;
-const HIST=[["✦✦✦","+250"],["☾✚♆","−10"],["❦❦♆","+20"],["☠✦✦","void"],["✚✚☾","+20"],["♆☾❦","−10"]];
+const SYM = ["✦","☾","✚","❖","♛","♣"];
+/* the reels as they landed: middle row is the payline, and it hit three moons */
+const REELS = [["✦","☾","❖"],["♛","☾","✚"],["✚","☾","♣"]];
+const REELS5 = [["✦","☾","❖"],["♛","☾","✚"],["✚","☾","♣"],["❖","☾","✦"],["♣","♛","☾"]];
+const PAY = [["✦ ✦ ✦","250"],["☾ ☾ ☾","120"],["✚ ✚ ✚","80"],["❖ ❖ ❖","60"],
+             ["♛ ♛ ♛","40"],["♣ ♣ ♣","25"],["any two","6"]];
+const BAL = "1,284", BET = "10", WIN = "120";
 
-/* 1. MECHANICAL — lever on the side, coin tray at the foot */
-function d1(){return `<style>
- .m{height:calc(100% - 3rem);display:flex;align-items:center;justify-content:center;gap:7rem}
- .cab{position:relative;width:520px;border:2px solid var(--c);padding:1.6rem 1.8rem 1.2rem;
-   background:linear-gradient(180deg,rgba(120,190,255,.07),transparent 45%);box-shadow:0 0 50px var(--glow)}
- .cab .crown{text-align:center;font-size:10px;letter-spacing:.5em;color:var(--dim);
-   border-bottom:1px solid var(--dim2);padding-bottom:.6rem;margin-bottom:1.2rem}
- .reelwin{display:flex;gap:.7rem;justify-content:center;padding:1rem;border:1px solid var(--dim2);
-   background:rgba(0,0,0,.6);position:relative}
- .reelwin::after{content:"";position:absolute;left:.6rem;right:.6rem;top:50%;height:2px;
-   background:var(--red);transform:translateY(-50%);box-shadow:0 0 14px rgba(255,59,47,.7)}
- .rl{width:104px;border:1px solid var(--dim2);display:flex;flex-direction:column;align-items:center;
-   justify-content:center;padding:.5rem 0;gap:.1rem;background:linear-gradient(180deg,rgba(120,190,255,.05),transparent 55%)}
- .rl .s{font-size:1.9rem;color:var(--dim2);line-height:1.15}
- .rl .s.main{font-size:3.2rem;color:var(--bright);text-shadow:0 0 22px var(--glow)}
- .rl.win2{border-color:var(--red);box-shadow:0 0 24px rgba(255,59,47,.4)}
- .rl.win2 .s.main{color:#fff;text-shadow:0 0 26px rgba(255,59,47,.8)}
- .tray{margin-top:1.2rem;border:1px solid var(--dim2);border-top:none;height:52px;
-   background:linear-gradient(180deg,rgba(0,0,0,.9),rgba(120,190,255,.05));
-   display:flex;align-items:center;justify-content:center;gap:.5rem;color:var(--gold);font-size:1.3rem}
- .traylbl{text-align:center;font-size:8px;letter-spacing:.3em;color:var(--dim2);margin-top:.3rem}
- /* the lever: a stalk and a ball, pulled down */
- .lever{position:absolute;right:-70px;top:32%;width:60px;height:180px}
- .lever .stalk{position:absolute;left:26px;top:44px;width:7px;height:120px;
-   background:linear-gradient(180deg,#7d8b96,#3a444c);border-radius:4px}
- .lever .ball{position:absolute;left:12px;top:14px;width:36px;height:36px;border-radius:50%;
-   background:radial-gradient(circle at 36% 30%,#ff8a80,var(--red) 55%,#7a1a13);
-   box-shadow:0 0 26px rgba(255,59,47,.6)}
- .lever .mount{position:absolute;left:18px;bottom:0;width:24px;height:16px;background:#2b333a;border:1px solid #47525a}
- .side{width:250px;font-size:11px}
- .side h4{font-size:9px;letter-spacing:.3em;color:var(--dim);border-bottom:1px solid var(--dim2);
-   padding-bottom:.35rem;margin-bottom:.5rem}
- .kv{display:flex;justify-content:space-between;padding:.16rem 0;color:var(--dim)}
- .kv b{color:var(--bright);font-weight:400}.kv.win b{color:var(--gold)}
+/* One reel bank, restyled per design. `o` sets the window colours, the symbol
+   colour, the size, and how many reels. */
+function reels(o){
+  const set = (o.count === 5 ? REELS5 : REELS);
+  return `<div class="rk" style="--w:${o.w||118}px;--h:${o.h||96}px;--face:${o.face};
+      --edge:${o.edge};--sym:${o.sym};--hit:${o.hit}">
+    ${set.map((col, i) => `<div class="reel">
+      ${col.map((s, r) => `<div class="cell${r === 1 ? " pay" : ""}">${s}</div>`).join("")}
+    </div>`).join("")}
+  </div>`;
+}
+const REEL_CSS = `
+ .rk{display:flex;gap:10px}
+ .reel{display:flex;flex-direction:column;background:var(--face);
+   box-shadow:inset 0 14px 22px -8px rgba(0,0,0,.55),inset 0 -14px 22px -8px rgba(0,0,0,.55)}
+ .cell{width:var(--w);height:var(--h);display:grid;place-items:center;
+   font-size:calc(var(--h) * .5);color:var(--sym);line-height:1;
+   border-bottom:1px solid var(--edge)}
+ .cell:last-child{border-bottom:none}
+ .cell.pay{color:var(--hit);text-shadow:0 0 18px currentColor}`;
+
+/* ============================================================
+   1. VEGAS CABINET. Chrome, cherry red, a marquee of bulbs and
+   a real lever down the right side.
+   ============================================================ */
+function d1(){return `<style>${REEL_CSS}
+ .g1{position:absolute;inset:0;display:grid;place-items:center;
+   background:radial-gradient(70% 70% at 50% 30%,#3a1016,#170609 60%,#080304)}
+ .cab{position:relative;width:min(760px,66vw);padding:0 0 22px;
+   background:linear-gradient(180deg,#c9161f,#8d0d16 40%,#5c070d);
+   border-radius:34px 34px 14px 14px;
+   box-shadow:0 40px 90px rgba(0,0,0,.9),inset 0 2px 0 rgba(255,180,180,.5),
+     inset 0 -8px 20px rgba(0,0,0,.6)}
+ .cab .marquee{position:relative;padding:1.4rem 2rem 1.1rem;text-align:center;
+   border-radius:34px 34px 0 0;background:linear-gradient(180deg,#ffd24a,#e0a015 60%,#b57a06)}
+ .cab .marquee h1{font-family:"Bebas Neue",sans-serif;font-size:3.2rem;letter-spacing:.14em;
+   color:#7c0a12;line-height:1;text-shadow:0 2px 0 rgba(255,255,255,.5)}
+ .cab .marquee .sub{font-size:9px;font-weight:700;letter-spacing:.44em;color:#8d6a08;
+   text-transform:uppercase;margin-top:.2rem}
+ /* a ring of bulbs around the marquee */
+ .bulbs{position:absolute;inset:8px;border-radius:28px 28px 0 0;pointer-events:none}
+ .bulbs i{position:absolute;width:11px;height:11px;border-radius:50%;
+   background:radial-gradient(circle at 35% 32%,#fffbe6,#ffd84a 55%,#c58f06);
+   box-shadow:0 0 12px rgba(255,220,90,.9)}
+ .cab .chrome{height:14px;margin:0 20px;border-radius:0 0 8px 8px;
+   background:linear-gradient(180deg,#f4f6f8,#aeb5bc 45%,#6f767d)}
+ /* the glass hugs the reels; a fixed margin left black dead space either side */
+ .cab .glass{width:fit-content;margin:20px auto 0;padding:18px;border-radius:10px;background:#0a0709;
+   box-shadow:inset 0 0 0 4px #d9a017,inset 0 0 34px rgba(0,0,0,.9)}
+ .cab .rowline{display:flex;justify-content:center}
+ .cab .meters{display:flex;justify-content:space-between;margin:18px 26px 0;gap:12px}
+ .meter{flex:1;padding:.6rem .8rem;border-radius:6px;background:#170608;
+   box-shadow:inset 0 0 0 2px #d9a017;text-align:center}
+ .meter .k{font-size:8px;font-weight:700;letter-spacing:.3em;color:#d9a017;text-transform:uppercase}
+ .meter .v{font-family:"Bebas Neue",sans-serif;font-size:2rem;letter-spacing:.06em;color:#ffe07a;line-height:1.1;
+   text-shadow:0 0 16px rgba(255,200,60,.7)}
+ .cab .spin{display:block;margin:16px auto 0;padding:.85rem 3.4rem;border:none;border-radius:999px;
+   font-family:"Bebas Neue",sans-serif;font-size:1.7rem;letter-spacing:.2em;cursor:pointer;
+   background:linear-gradient(180deg,#fff0a8,#e8b41c 45%,#a97a05);color:#5c070d;
+   box-shadow:0 6px 0 #6d4a03,0 12px 24px rgba(0,0,0,.7)}
+ /* the lever, hanging off the right cheek of the cabinet */
+ .lever{position:absolute;right:-46px;top:210px}
+ .lever .rod{width:11px;height:150px;margin:0 auto;border-radius:6px;
+   background:linear-gradient(90deg,#6f767d,#f4f6f8 40%,#8a9199)}
+ .lever .ball{width:44px;height:44px;border-radius:50%;margin:-6px auto 0;
+   background:radial-gradient(circle at 34% 30%,#ff9a9a,#d31824 50%,#6d060d);
+   box-shadow:0 8px 18px rgba(0,0,0,.8)}
+ .lever .mount{width:30px;height:22px;border-radius:6px;margin:-4px auto 0;
+   background:linear-gradient(180deg,#aeb5bc,#5c6268)}
  </style>
- <div class="hdr"><span>ANGELDOM // SLOTS</span><span>PAYS ANGELCOINS</span><span>VAULT ${VAULT} &#10022;</span></div>
- <div class="m">
-  <div class="cab">
-   <div class="crown">THE MACHINE</div>
-   <div class="reelwin">
-    ${[0,1,2].map(()=>`<div class="rl win2"><div class="s">♆</div><div class="s main">✦</div><div class="s">☾</div></div>`).join("")}
-   </div>
-   <div class="tray">&#10022; &#10022; &#10022; &#10022; &#10022;</div>
-   <div class="traylbl">PAYOUT TRAY</div>
-   <div class="lever"><div class="ball"></div><div class="stalk"></div><div class="mount"></div></div>
+ <div class="g1"><div class="cab">
+  <div class="marquee"><div class="bulbs">${Array.from({length:26},(_,i)=>{
+    const t=i/25; const x=t*100;
+    return `<i style="left:${x}%;top:${x<6||x>94?"50%":"-2px"}"></i>`;}).join("")}</div>
+   <h1>ANGELDOM</h1><div class="sub">three reels &middot; one payline</div></div>
+  <div class="chrome"></div>
+  <div class="glass"><div class="rowline">${reels({face:"#f6f1e4",edge:"#ccc2a8",sym:"#3a2d18",hit:"#c9161f",w:132,h:104})}</div></div>
+  <div class="meters">
+   <div class="meter"><div class="k">Angelcoins</div><div class="v">${BAL}</div></div>
+   <div class="meter"><div class="k">Bet</div><div class="v">${BET}</div></div>
+   <div class="meter"><div class="k">Win</div><div class="v">${WIN}</div></div>
+  </div>
+  <button class="spin">SPIN</button>
+  <div class="lever"><div class="ball"></div><div class="rod"></div><div class="mount"></div></div>
+ </div></div>`;}
+
+/* ============================================================
+   2. ANTIQUE FRUIT MACHINE. Cast iron and enamel on a wooden
+   counter, brass fittings, hand-painted paytable.
+   ============================================================ */
+function d2(){return `<style>${REEL_CSS}
+ .g2{position:absolute;inset:0;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;
+   gap:2.6rem;padding:4vh 5vw;color:#f2e6cd;font-family:"Playfair Display",serif;
+   background:radial-gradient(70% 70% at 50% 40%,#4a3520,#241708 60%,#100a04)}
+ .iron{position:relative;padding:22px 20px 26px;border-radius:80px 80px 10px 10px;
+   background:linear-gradient(170deg,#3d4348,#20252a 45%,#31373c);
+   box-shadow:0 40px 80px rgba(0,0,0,.9),inset 0 3px 0 rgba(190,205,215,.35),
+     inset 0 -8px 20px rgba(0,0,0,.7)}
+ .iron::before{content:"";position:absolute;inset:11px;border-radius:70px 70px 6px 6px;
+   border:2px solid rgba(200,165,90,.5)}
+ .iron .crest{text-align:center;font-family:Cinzel,serif;font-size:1.35rem;letter-spacing:.14em;
+   color:#e2c179;margin-bottom:.9rem;text-shadow:0 1px 0 #000}
+ .iron .window{position:relative;padding:12px;border-radius:6px;background:#1a1109;
+   box-shadow:inset 0 0 0 4px #a5822f,inset 0 0 30px rgba(0,0,0,.9)}
+ /* the payline crosses the middle row: 12px padding + one 92px cell + half of the next */
+ .iron .payline{position:absolute;left:6px;right:6px;top:150px;height:2px;background:#c9302c;opacity:.85}
+ .iron .coinslot{width:78px;height:9px;border-radius:5px;margin:16px auto 0;background:#0b0906;
+   box-shadow:inset 0 1px 3px #000,0 1px 0 rgba(200,165,90,.5)}
+ .iron .tray{margin:14px 14px 0;height:34px;border-radius:4px;
+   background:linear-gradient(180deg,#0d0b08,#241a0d);box-shadow:inset 0 5px 12px rgba(0,0,0,.9)}
+ .g2 .plate{padding:1.3rem 1.4rem;background:linear-gradient(170deg,#f5ead0,#d9c69c);
+   color:#3a2c14;box-shadow:0 14px 34px rgba(0,0,0,.6),inset 0 0 0 2px #a5822f}
+ .g2 .plate h3{font-family:Cinzel,serif;font-size:1rem;letter-spacing:.2em;text-align:center;
+   border-bottom:1px solid #a5822f;padding-bottom:.4rem;margin-bottom:.6rem}
+ .g2 .plate .r{display:flex;justify-content:space-between;font-size:1.05rem;padding:.18rem 0}
+ .g2 .plate .r b{font-weight:700}
+ .g2 .big{font-family:Cinzel,serif;font-size:2.4rem;color:#e2c179;line-height:1.1}
+ .g2 .lbl{font-family:Inter,sans-serif;font-size:9px;letter-spacing:.34em;text-transform:uppercase;
+   color:#a2917a;margin-top:1.2rem}
+ .g2 .pull{margin-top:1.4rem;padding:.75rem 2rem;border:2px solid #a5822f;background:transparent;
+   color:#f2e6cd;font-family:Cinzel,serif;font-size:1rem;letter-spacing:.24em;cursor:pointer}
+ .g2 .pull:hover{background:rgba(200,165,90,.16)}
+ </style>
+ <div class="g2">
+  <div>
+   <div class="lbl">Credit</div><div class="big">${BAL} angelcoins</div>
+   <div class="lbl">Stake</div><div class="big">${BET}</div>
+   <div class="lbl">Last pay</div><div class="big" style="color:#f0d9a0">${WIN}</div>
+   <button class="pull">PULL</button>
+  </div>
+  <div class="iron">
+   <div class="crest">FORTUNA MACHINA</div>
+   <div class="window">${reels({face:"#efe4c9",edge:"#c3b48d",sym:"#332512",hit:"#a5251f",w:112,h:92})}
+     <div class="payline"></div></div>
+   <div class="coinslot"></div><div class="tray"></div>
+  </div>
+  <div class="plate"><h3>AWARDS</h3>
+   ${PAY.map(([c,v])=>`<div class="r"><span>${c}</span><b>${v}</b></div>`).join("")}
+   <div class="r" style="border-top:1px solid #a5822f;margin-top:.4rem;padding-top:.4rem">
+     <span>per coin staked</span><b>&times;1</b></div></div>
+ </div>`;}
+
+/* ============================================================
+   3. PACHISLOT. Loud, bright, packed: LED trim, a jackpot
+   ladder, chunky rubber buttons under each reel.
+   ============================================================ */
+function d3(){return `<style>${REEL_CSS}
+ .g3{position:absolute;inset:0;padding:3vh 3vw;color:#fff;
+   display:grid;grid-template-columns:230px auto 230px;gap:1.4rem;align-items:center;
+   justify-content:center;
+   background:linear-gradient(180deg,#1b0736,#3d0a5e 45%,#7a0f6a)}
+ .g3::before{content:"";position:absolute;inset:0;pointer-events:none;
+   background:repeating-conic-gradient(from 0deg at 50% 44%,rgba(255,255,255,.05) 0 6deg,transparent 6deg 12deg)}
+ .g3 > *{position:relative;z-index:2}
+ .g3 .cabinet{padding:16px;border-radius:18px;
+   background:linear-gradient(180deg,#ffd93b,#ff8a1e 40%,#e5145f);
+   box-shadow:0 0 0 6px #12052a,0 0 60px rgba(255,120,200,.5),0 30px 60px rgba(0,0,0,.8)}
+ .g3 .topper{text-align:center;font-family:"Bebas Neue",sans-serif;font-size:2.6rem;letter-spacing:.1em;
+   color:#12052a;line-height:1;text-shadow:0 2px 0 rgba(255,255,255,.6)}
+ .g3 .toppersub{text-align:center;font-size:9px;font-weight:800;letter-spacing:.34em;
+   color:#5c1a06;text-transform:uppercase;margin:.1rem 0 .7rem}
+ .g3 .rk{justify-content:center}
+ .g3 .win{padding:12px;border-radius:10px;background:#0b0320;
+   box-shadow:inset 0 0 0 3px #ffd93b,inset 0 0 30px rgba(0,0,0,.9)}
+ .g3 .btns{display:flex;gap:10px;margin-top:12px}
+ .g3 .btns button{flex:1;height:44px;border:none;border-radius:8px;cursor:pointer;
+   font-family:"Bebas Neue",sans-serif;font-size:1.3rem;letter-spacing:.14em;color:#12052a;
+   background:linear-gradient(180deg,#8ef7ff,#22b7d6);box-shadow:0 5px 0 #10627a}
+ .g3 .btns button:nth-child(2){background:linear-gradient(180deg,#ffe98e,#f0b41c);box-shadow:0 5px 0 #8a6205}
+ .g3 .btns button:nth-child(3){background:linear-gradient(180deg,#ffb0d8,#e5145f);box-shadow:0 5px 0 #7a082f;color:#fff}
+ .g3 .side{padding:1rem;border-radius:14px;background:rgba(10,2,28,.72);
+   box-shadow:inset 0 0 0 2px rgba(255,217,59,.55)}
+ .g3 .side h3{font-family:"Bebas Neue",sans-serif;font-size:1.4rem;letter-spacing:.12em;
+   color:#ffd93b;text-align:center;margin-bottom:.5rem}
+ .g3 .r{display:flex;justify-content:space-between;font-size:12px;font-weight:600;padding:.24rem 0;
+   border-bottom:1px dashed rgba(255,217,59,.3)}
+ .g3 .r b{color:#8ef7ff}
+ .g3 .ladder{display:flex;flex-direction:column-reverse;gap:5px;margin-top:.6rem}
+ .g3 .rung{padding:.3rem .5rem;border-radius:5px;font-size:11px;font-weight:800;
+   background:rgba(255,255,255,.09);display:flex;justify-content:space-between}
+ .g3 .rung.on{background:linear-gradient(90deg,#ffd93b,#ff6b9d);color:#12052a;
+   box-shadow:0 0 18px rgba(255,180,80,.75)}
+ .g3 .huge{font-family:"Bebas Neue",sans-serif;font-size:3.4rem;line-height:1;color:#ffd93b;
+   text-align:center;text-shadow:0 0 22px rgba(255,200,60,.9)}
+ .g3 .hk{font-size:9px;font-weight:800;letter-spacing:.3em;text-transform:uppercase;
+   text-align:center;color:#ffb0d8}
+ </style>
+ <div class="g3">
+  <div class="side"><h3>PAYS</h3>
+   ${PAY.map(([c,v])=>`<div class="r"><span>${c}</span><b>${v}</b></div>`).join("")}</div>
+  <div class="cabinet">
+   <div class="topper">FORTUNE ANGEL</div><div class="toppersub">777 &middot; big bonus rush</div>
+   <div class="win">${reels({face:"#fffdf2",edge:"#d8cfae",sym:"#2b0b3f",hit:"#e5145f",w:124,h:100})}</div>
+   <div class="btns"><button>STOP 1</button><button>STOP 2</button><button>STOP 3</button></div>
   </div>
   <div class="side">
-   <h4>PAY TABLE</h4>
-   ${PAY.map(([a,b])=>`<div class="kv ${b==="×25"?"win":""}"><span>${a}</span><b>${b}</b></div>`).join("")}
-   <h4 style="margin-top:.8rem">THIS PULL</h4>
-   <div class="kv"><span>bet</span><b>${BET} &#10022;</b></div>
-   <div class="kv win"><span>paid</span><b>+${WON} &#10022;</b></div>
-  </div>
- </div>`;}
-
-/* 2. VERTICAL COLUMN — reels stacked, read top to bottom */
-function d2(){return `<style>
- .v{height:calc(100% - 3rem);display:flex;align-items:center;justify-content:center;gap:3.4rem}
- .col{width:210px;border:2px solid var(--c);box-shadow:0 0 40px var(--glow);background:rgba(0,0,0,.7)}
- .cell{height:118px;display:flex;align-items:center;justify-content:center;gap:1.4rem;
-   border-bottom:1px solid var(--dim2);position:relative}
- .cell:last-child{border-bottom:none}
- .cell .s{font-size:3.4rem;color:var(--bright);text-shadow:0 0 24px var(--glow);line-height:1}
- .cell.hit{background:rgba(255,59,47,.1)}
- .cell.hit .s{color:#fff;text-shadow:0 0 26px rgba(255,59,47,.8)}
- .cell .idx{position:absolute;left:.6rem;top:.5rem;font-size:8px;letter-spacing:.24em;color:var(--dim2)}
- .cell .gh{font-size:1.4rem;color:var(--dim2);opacity:.5}
- .payline{position:absolute;left:-14px;right:-14px;top:50%;height:2px;background:var(--red);
-   transform:translateY(-50%);box-shadow:0 0 14px rgba(255,59,47,.7)}
- .side2{width:280px}
- .side2 .big{font-size:3rem;color:var(--gold);line-height:1;text-shadow:0 0 26px rgba(255,210,122,.5)}
- .side2 .k{font-size:9px;letter-spacing:.34em;color:var(--dim);margin-top:.3rem}
- .side2 h4{font-size:9px;letter-spacing:.3em;color:var(--dim);border-bottom:1px solid var(--dim2);
-   padding-bottom:.35rem;margin:1.2rem 0 .5rem}
- .kv{display:flex;justify-content:space-between;font-size:11px;padding:.16rem 0;color:var(--dim)}
- .kv b{color:var(--bright);font-weight:400}
- .pull{border:1.5px solid var(--c);text-align:center;padding:.8rem;letter-spacing:.34em;
-   text-transform:uppercase;color:var(--bright);margin-top:1.2rem;box-shadow:0 0 20px var(--glow)}
- </style>
- <div class="hdr"><span>ANGELDOM // SLOTS &mdash; COLUMN</span><span>PAYS ANGELCOINS</span><span>VAULT ${VAULT} &#10022;</span></div>
- <div class="v">
-  <div class="col" style="position:relative">
-   ${[0,1,2].map(i=>`<div class="cell hit"><span class="idx">REEL ${i+1}</span>
-     <span class="gh">♆</span><span class="s">✦</span><span class="gh">☾</span></div>`).join("")}
-   <div class="payline" style="top:50%"></div>
-  </div>
-  <div class="side2">
-   <div class="big">+${WON} &#10022;</div><div class="k">THREE OF A KIND</div>
-   <h4>PAY TABLE</h4>
-   ${PAY.map(([a,b])=>`<div class="kv"><span>${a}</span><b>${b}</b></div>`).join("")}
-   <div class="pull">pull &middot; ${BET} &#10022;</div>
-  </div>
- </div>`;}
-
-/* 3. SPLIT FLAP — reels as flip-board characters */
-function d3(){
- const flap=(ch,hit)=>`<span class="fl ${hit?"hit":""}"><i>${ch}</i></span>`;
- return `<style>
- .sf{height:calc(100% - 3rem);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.8rem}
- .rack{display:flex;gap:1rem;padding:1.4rem 1.8rem;border:1px solid var(--dim2);background:rgba(0,0,0,.6)}
- .fl{display:block}
- .fl i{display:grid;place-items:center;width:120px;height:150px;font-style:normal;font-size:4.4rem;
-   background:linear-gradient(180deg,#16202a 0 49%,#0c141b 49% 100%);border:1px solid var(--dim2);
-   color:var(--bright);position:relative;box-shadow:inset 0 -1px 0 rgba(0,0,0,.9)}
- .fl i::after{content:"";position:absolute;left:0;right:0;top:50%;height:1px;background:rgba(0,0,0,.85)}
- .fl.hit i{border-color:var(--red);color:#fff;box-shadow:0 0 26px rgba(255,59,47,.4),inset 0 -1px 0 rgba(0,0,0,.9)}
- .lbls{display:flex;gap:1rem;font-size:8px;letter-spacing:.26em;color:var(--dim2)}
- .lbls span{width:120px;text-align:center}
- .row3{display:flex;gap:3rem;align-items:center}
- .pay{text-align:center}.pay .n{font-size:2.8rem;color:var(--gold);line-height:1}
- .pay .k{font-size:9px;letter-spacing:.34em;color:var(--dim);margin-top:.3rem}
- .tbl{display:flex;gap:1.4rem;font-size:10px;color:var(--dim);letter-spacing:.1em}
- .tbl b{color:var(--bright);font-weight:400}
- .go{border:1.5px solid var(--c);padding:.7rem 2.4rem;letter-spacing:.34em;text-transform:uppercase;color:var(--bright)}
- </style>
- <div class="hdr"><span>ANGELDOM // SLOTS &mdash; SPLIT FLAP</span><span>PAYS ANGELCOINS</span><span>VAULT ${VAULT} &#10022;</span></div>
- <div class="sf">
-  <div class="rack">${[0,1,2].map(()=>flap("✦",true)).join("")}</div>
-  <div class="lbls"><span>REEL 1</span><span>REEL 2</span><span>REEL 3</span></div>
-  <div class="tbl">${PAY.slice(0,5).map(([a,b])=>`<span>${a} <b>${b}</b></span>`).join("")}</div>
-  <div class="row3">
-   <div class="pay"><div class="n">${BET} &#10022;</div><div class="k">STAKED</div></div>
-   <div class="go">pull</div>
-   <div class="pay"><div class="n">+${WON} &#10022;</div><div class="k">RETURNED</div></div>
-  </div>
- </div>`;}
-
-/* 4. STRIP — horizontal, in the same language as the chosen wheel */
-function d4(){
- const strip=(c)=>{const o=[];for(let i=0;i<9;i++)o.push(SYM[(c+i-4+SYM.length*3)%SYM.length]);return o;};
- return `<style>
- .st{height:calc(100% - 3rem);display:flex;flex-direction:column;justify-content:center;gap:1.4rem}
- .lane{position:relative;border-top:1px solid var(--dim2);border-bottom:1px solid var(--dim2);
-   padding:.9rem 0;overflow:hidden}
- .lane .lbl{position:absolute;left:0;top:50%;transform:translateY(-50%);font-size:8px;
-   letter-spacing:.26em;color:var(--dim2);background:#000;padding-right:.8rem;z-index:4}
- .cells{display:flex;align-items:center;justify-content:center;gap:0}
- .cell4{min-width:118px;text-align:center;font-size:2.6rem;color:var(--dim2);
-   border-right:1px solid rgba(120,190,255,.1);padding:.3rem 0}
- .cell4.b1{filter:blur(2px);opacity:.5}.cell4.b2{filter:blur(4.5px);opacity:.3}
- .cell4.hit{color:var(--bright);font-size:3.6rem;text-shadow:0 0 28px var(--glow)}
- .marker{position:absolute;left:50%;top:0;bottom:0;width:120px;transform:translateX(-50%);
-   border-left:2px solid var(--red);border-right:2px solid var(--red);
-   box-shadow:0 0 26px rgba(255,59,47,.3);pointer-events:none}
- .fade{position:absolute;top:0;bottom:0;width:20%;z-index:3}
- .fade.l{left:0;background:linear-gradient(90deg,#000,transparent)}
- .fade.r{right:0;background:linear-gradient(270deg,#000,transparent)}
- .foot{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:2rem;margin-top:.6rem}
- .odds{font-size:10px;line-height:1.9;color:var(--dim)}.odds b{color:var(--bright);font-weight:400}
- .pay{text-align:center}.pay .n{font-size:3rem;color:var(--gold);line-height:1;text-shadow:0 0 24px rgba(255,210,122,.4)}
- .pay .k{font-size:9px;letter-spacing:.36em;color:var(--dim);margin-top:.3rem}
- .go{border:1.5px solid var(--c);text-align:center;padding:.8rem;letter-spacing:.34em;
-   text-transform:uppercase;color:var(--bright);box-shadow:0 0 20px var(--glow)}
- </style>
- <div class="hdr"><span>ANGELDOM // SLOTS &mdash; STRIP</span><span>PAYS ANGELCOINS</span><span>VAULT ${VAULT} &#10022;</span></div>
- <div class="st">
-  ${[0,1,2].map(r=>`<div class="lane"><span class="lbl">R${r+1}</span>
-    <div class="cells">${strip(0).map((s,i)=>{const d=Math.abs(i-4);
-      return `<span class="cell4 ${d===0?"hit":d<2?"":d<3?"b1":"b2"}">${s}</span>`;}).join("")}</div>
-    <div class="fade l"></div><div class="fade r"></div><div class="marker"></div></div>`).join("")}
-  <div class="foot">
-   <div class="odds">${PAY.slice(0,4).map(([a,b])=>`${a} <b>${b}</b>`).join("<br>")}</div>
-   <div class="pay"><div class="n">+${WON} &#10022;</div><div class="k">THREE OF A KIND</div></div>
-   <div class="go">pull &middot; ${BET} &#10022;</div>
-  </div>
- </div>`;}
-
-/* 5. DRUMS — mechanical barrels with a paper readout */
-function d5(){return `<style>
- .dr{height:calc(100% - 3rem);display:grid;grid-template-columns:1fr 300px;gap:2.4rem;align-items:center}
- .frame{border:2px solid var(--dim2);padding:1.6rem;background:rgba(0,0,0,.6)}
- .barrels{display:flex;gap:1.2rem;justify-content:center;perspective:700px}
- .barrel{width:130px;height:190px;position:relative;transform-style:preserve-3d}
- .barrel .face{position:absolute;inset:0;border:1px solid var(--dim2);
-   background:linear-gradient(180deg,#0a1219 0%,#16222d 22%,#1d2c39 50%,#16222d 78%,#0a1219 100%);
-   display:grid;place-items:center;font-size:3.4rem;color:var(--bright);text-shadow:0 0 22px var(--glow)}
- .barrel.hit .face{border-color:var(--red);color:#fff;box-shadow:0 0 26px rgba(255,59,47,.35)}
- .barrel .ring{position:absolute;left:-4px;right:-4px;height:6px;background:#2a333c;border:1px solid #3d4954}
- .barrel .ring.t{top:-3px}.barrel .ring.b{bottom:-3px}
- .shaft{height:8px;background:linear-gradient(180deg,#39434c,#161c22);margin:1.2rem 2rem 0;border-radius:4px}
- .readout{border:1px solid var(--dim2);padding:1rem;background:rgba(120,190,255,.03);font-size:11px;line-height:2}
- .readout .l{display:flex;justify-content:space-between;color:var(--dim);border-bottom:1px dotted var(--dim2)}
- .readout .l b{color:var(--bright);font-weight:400}
- .readout .l.win b{color:var(--gold)}
- .readout h4{font-size:9px;letter-spacing:.3em;color:var(--dim);margin-bottom:.4rem}
- .lvr{border:1.5px solid var(--c);text-align:center;padding:.8rem;letter-spacing:.34em;
-   text-transform:uppercase;color:var(--bright);margin-top:1rem}
- </style>
- <div class="hdr"><span>ANGELDOM // SLOTS &mdash; DRUMS</span><span>PAYS ANGELCOINS</span><span>VAULT ${VAULT} &#10022;</span></div>
- <div class="dr">
-  <div class="frame">
-   <div class="barrels">${[0,1,2].map(()=>`<div class="barrel hit">
-     <div class="ring t"></div><div class="face">✦</div><div class="ring b"></div></div>`).join("")}</div>
-   <div class="shaft"></div>
-  </div>
-  <div>
-   <div class="readout">
-    <h4>READOUT</h4>
-    <div class="l"><span>stake</span><b>${BET} &#10022;</b></div>
-    <div class="l"><span>result</span><b>✦ ✦ ✦</b></div>
-    <div class="l"><span>multiplier</span><b>×25</b></div>
-    <div class="l win"><span>paid</span><b>+${WON} &#10022;</b></div>
-    <div class="l"><span>vault</span><b>${VAULT} &#10022;</b></div>
-    <h4 style="margin-top:.8rem">LAST SIX</h4>
-    ${HIST.map(([a,b])=>`<div class="l"><span>${a}</span><b>${b}</b></div>`).join("")}
+   <div class="hk">Angelcoins</div><div class="huge">${BAL}</div>
+   <div class="hk" style="margin-top:.6rem">Bet ${BET} &middot; Won ${WIN}</div>
+   <h3 style="margin-top:.8rem">BONUS</h3>
+   <div class="ladder">
+    <div class="rung"><span>GRAND</span><span>5000</span></div>
+    <div class="rung"><span>MAJOR</span><span>1500</span></div>
+    <div class="rung on"><span>MINOR</span><span>400</span></div>
+    <div class="rung"><span>MINI</span><span>120</span></div>
    </div>
-   <div class="lvr">pull</div>
   </div>
  </div>`;}
 
-/* 6. VOID — three glyphs, almost no chrome */
-function d6(){return `<style>
- .vd{height:calc(100% - 3rem);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2.6rem;
-   background:radial-gradient(45% 45% at 50% 45%,rgba(255,210,122,.06),transparent 70%)}
- .three{display:flex;gap:5rem;align-items:center}
- .three .s{font-size:8rem;line-height:1;color:var(--bright);text-shadow:0 0 50px var(--glow)}
- .three .s.hit{color:var(--gold);text-shadow:0 0 60px rgba(255,210,122,.7)}
- .rule{width:min(620px,70%);height:1px;background:linear-gradient(90deg,transparent,var(--dim2),transparent)}
- .won{font-size:2.4rem;color:var(--gold);text-shadow:0 0 26px rgba(255,210,122,.5)}
- .meta{display:flex;gap:3rem;font-size:9px;letter-spacing:.34em;color:var(--dim)}
- .meta b{color:var(--bright);font-weight:400}
- .go6{font-size:10px;letter-spacing:.4em;color:var(--dim);border-bottom:1px solid var(--dim2);padding-bottom:.3rem}
+/* ============================================================
+   4. CIRRUS. The site's own sky theme: glass, clouds, Quicksand.
+   A slot machine that looks like weather.
+   ============================================================ */
+function d4(){return `<style>${REEL_CSS}
+ .g4{position:absolute;inset:0;padding:4vh 4vw;font-family:Quicksand,sans-serif;color:#0d4a63;
+   display:grid;place-items:center;background:linear-gradient(180deg,#8fd8f2,#63bde3 62%,#52aed8)}
+ .cl{position:absolute;border-radius:50%;filter:blur(6px);pointer-events:none;
+   background:radial-gradient(closest-side,rgba(255,255,255,.92),rgba(255,255,255,0) 72%)}
+ .g4 .card{position:relative;z-index:2;width:min(880px,80vw);padding:2rem 2.2rem 1.8rem;
+   border-radius:28px;background:rgba(255,255,255,.84);
+   box-shadow:0 24px 70px rgba(10,70,100,.35)}
+ .g4 h1{font-size:2.4rem;font-weight:700;text-align:center;line-height:1}
+ .g4 .sub{text-align:center;font-size:.85rem;font-weight:600;color:#3f8fb0;margin-bottom:1.3rem}
+ /* the well hugs the reels, or the empty side reads as a missing reel */
+ .g4 .win{width:fit-content;margin:0 auto;display:flex;padding:14px;border-radius:20px;
+   background:linear-gradient(180deg,#eaf8ff,#cdeafa);
+   box-shadow:inset 0 3px 10px rgba(20,90,120,.2)}
+ .g4 .rk{gap:12px}
+ .g4 .reel{border-radius:16px;overflow:hidden}
+ .g4 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:1.2rem}
+ .g4 .st{border-radius:16px;padding:.8rem;text-align:center;background:rgba(53,182,230,.14)}
+ .g4 .st .k{font-size:.7rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#3f8fb0}
+ .g4 .st .v{font-size:1.9rem;font-weight:700;line-height:1.1;color:#0d4a63}
+ .g4 .row{display:flex;gap:12px;align-items:center;margin-top:1.2rem}
+ .g4 .spin{flex:1;padding:.95rem;border:none;border-radius:999px;cursor:pointer;
+   font-family:inherit;font-size:1.1rem;font-weight:700;color:#fff;background:#35b6e6;
+   box-shadow:0 8px 18px rgba(20,120,170,.4)}
+ .g4 .bet{padding:.95rem 1.4rem;border:2px solid #35b6e6;border-radius:999px;background:transparent;
+   font-family:inherit;font-size:1rem;font-weight:700;color:#1a7ba3;cursor:pointer}
+ .g4 .pay{display:flex;flex-wrap:wrap;gap:.4rem;justify-content:center;margin-top:1.1rem}
+ .g4 .pay span{font-size:.78rem;font-weight:600;color:#3f7f9c;background:rgba(53,182,230,.12);
+   border-radius:999px;padding:.24rem .7rem}
+ .g4 .pay b{color:#0d4a63}
  </style>
- <div class="hdr"><span>ANGELDOM // SLOTS</span><span></span><span>VAULT ${VAULT} &#10022;</span></div>
- <div class="vd">
-  <div class="three"><span class="s hit">✦</span><span class="s hit">✦</span><span class="s hit">✦</span></div>
-  <div class="rule"></div>
-  <div class="won">+${WON} &#10022;</div>
-  <div class="meta"><span>STAKE <b>${BET} &#10022;</b></span><span>MULTIPLIER <b>×25</b></span>
-    <span>VAULT <b>${VAULT + WON} &#10022;</b></span></div>
-  <div class="go6">PULL</div>
+ <div class="g4">
+  <div class="cl" style="top:9%;left:5%;width:340px;height:106px"></div>
+  <div class="cl" style="top:70%;left:64%;width:280px;height:92px"></div>
+  <div class="cl" style="top:24%;left:78%;width:210px;height:70px"></div>
+  <div class="card">
+   <h1>Fortune</h1><div class="sub">three reels, one line, angelcoins only</div>
+   <div class="win">${reels({face:"#ffffff",edge:"#d9eef8",sym:"#2a7ea3",hit:"#ff7fb5",w:140,h:108})}</div>
+   <div class="stats">
+    <div class="st"><div class="k">Angelcoins</div><div class="v">${BAL}</div></div>
+    <div class="st"><div class="k">Bet</div><div class="v">${BET}</div></div>
+    <div class="st"><div class="k">Last win</div><div class="v">${WIN}</div></div>
+   </div>
+   <div class="row"><button class="bet">Bet &minus;</button>
+     <button class="spin">Spin</button><button class="bet">Bet +</button></div>
+   <div class="pay">${PAY.map(([c,v])=>`<span>${c} <b>${v}</b></span>`).join("")}</div>
+  </div>
+ </div>`;}
+
+/* ============================================================
+   5. RELIQUARY. Five reels behind an altarpiece: gold leaf,
+   arches, candles, the payline read as scripture.
+   ============================================================ */
+function d5(){return `<style>${REEL_CSS}
+ .g5{position:absolute;inset:0;padding:3vh 4vw;color:#f0e2bd;font-family:Cinzel,serif;
+   display:grid;place-items:center;background:#0a0806;
+   background-image:radial-gradient(60% 60% at 50% 34%,rgba(220,170,70,.24),transparent 68%),
+     radial-gradient(40% 40% at 12% 84%,rgba(190,60,40,.16),transparent 70%)}
+ .altar{position:relative;width:min(1040px,88vw);padding:1.6rem 1.8rem 1.5rem;
+   background:linear-gradient(170deg,#2a2018,#150f0a 55%,#241a11);
+   border-radius:180px 180px 8px 8px;
+   box-shadow:0 40px 90px rgba(0,0,0,.95),inset 0 0 0 3px rgba(212,168,80,.6),
+     inset 0 0 70px rgba(220,170,70,.14)}
+ .altar::before{content:"";position:absolute;left:50%;transform:translateX(-50%);top:14px;
+   width:64%;height:120px;border-radius:170px 170px 0 0;
+   border:2px solid rgba(212,168,80,.4);border-bottom:none}
+ .altar h1{text-align:center;font-size:1.6rem;letter-spacing:.3em;color:#e9cd85;
+   margin:2.4rem 0 .3rem;text-shadow:0 0 22px rgba(220,170,70,.6)}
+ .altar .verse{text-align:center;font-family:"Cormorant Garamond",serif;font-style:italic;
+   font-size:1.05rem;color:#9d8a63;margin-bottom:1.1rem}
+ .altar .niches{display:flex;justify-content:center;padding:14px;
+   background:#0b0805;box-shadow:inset 0 0 0 3px rgba(212,168,80,.55),inset 0 0 40px rgba(0,0,0,.95)}
+ .altar .rk{gap:8px}
+ .altar .reel{border-radius:40px 40px 4px 4px;overflow:hidden}
+ .altar .foot{display:flex;justify-content:space-between;align-items:center;margin-top:1.2rem}
+ .altar .kv{text-align:center}
+ .altar .kv .k{font-family:Inter,sans-serif;font-size:8px;letter-spacing:.34em;
+   text-transform:uppercase;color:#8e7b56}
+ .altar .kv .v{font-size:1.8rem;color:#ffe9b0;line-height:1.2}
+ .altar .offer{padding:.7rem 2.4rem;border:1px solid #d4a850;cursor:pointer;
+   font-family:Cinzel,serif;font-size:1rem;letter-spacing:.24em;color:#2a1c04;
+   background:linear-gradient(180deg,#ffe7ab,#cfa243)}
+ /* candles either side of the altar */
+ .candle{position:absolute;bottom:0;width:16px}
+ .candle.l{left:-52px}.candle.r{right:-52px}
+ .candle .stick{height:130px;border-radius:4px;background:linear-gradient(90deg,#8e7b56,#f2e2bd 45%,#7d6b48)}
+ .candle .flame{width:14px;height:26px;margin:0 auto -4px;border-radius:50% 50% 46% 46%;
+   background:radial-gradient(circle at 50% 70%,#fff6cf,#ffb43c 55%,rgba(255,120,20,0) 78%);
+   box-shadow:0 0 34px rgba(255,180,60,.9)}
+ </style>
+ <div class="g5"><div class="altar">
+  <div class="candle l"><div class="flame"></div><div class="stick"></div></div>
+  <div class="candle r"><div class="flame"></div><div class="stick"></div></div>
+  <h1>RELIQUARY</h1>
+  <div class="verse">five niches, and what is set in them is not yours to choose</div>
+  <div class="niches">${reels({count:5,face:"#f4e8c8",edge:"#c9b587",sym:"#3a2a10",hit:"#a5251f",w:118,h:96})}</div>
+  <div class="foot">
+   <div class="kv"><div class="k">Angelcoins</div><div class="v">${BAL}</div></div>
+   <div class="kv"><div class="k">Offering</div><div class="v">${BET}</div></div>
+   <button class="offer">MAKE THE OFFERING</button>
+   <div class="kv"><div class="k">Granted</div><div class="v">${WIN}</div></div>
+   <div class="kv"><div class="k">Line</div><div class="v">☾☾☾</div></div>
+  </div>
+ </div></div>`;}
+
+/* ============================================================
+   6. GACHA CAPSULE. A toy machine: acrylic dome, primary
+   plastic, a chunky twist dial and a capsule in the chute.
+   ============================================================ */
+function d6(){return `<style>${REEL_CSS}
+ .g6{position:absolute;inset:0;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;
+   gap:2.4rem;padding:4vh 5vw;color:#20303f;
+   background:linear-gradient(170deg,#ffe9a8,#ffc06c 45%,#ff8f9c)}
+ .g6::before{content:"";position:absolute;inset:0;pointer-events:none;
+   background:radial-gradient(circle at 22% 18%,rgba(255,255,255,.6),transparent 44%)}
+ .g6 > *{position:relative;z-index:2}
+ .toy{width:min(560px,46vw);border-radius:26px 26px 18px 18px;padding:18px 18px 20px;
+   background:linear-gradient(180deg,#3fc4e0,#1c93b4 55%,#12718c);
+   box-shadow:0 30px 60px rgba(60,40,30,.5),inset 0 3px 0 rgba(255,255,255,.6),
+     inset 0 -8px 18px rgba(0,0,0,.28)}
+ /* the acrylic dome over the reels */
+ .toy .dome{position:relative;border-radius:150px 150px 12px 12px;padding:26px 16px 16px;
+   background:linear-gradient(180deg,rgba(255,255,255,.55),rgba(255,255,255,.18));
+   box-shadow:inset 0 3px 0 rgba(255,255,255,.9),inset 0 -6px 18px rgba(0,60,80,.28)}
+ .toy .dome::after{content:"";position:absolute;left:12%;top:8%;width:26%;height:38%;
+   border-radius:50%;background:linear-gradient(180deg,rgba(255,255,255,.8),transparent);
+   filter:blur(3px);pointer-events:none}
+ .toy .rk{gap:9px;justify-content:center}
+ .toy .reel{border-radius:14px;overflow:hidden}
+ .toy .panel{margin-top:16px;padding:12px 14px;border-radius:14px;background:#ffe15c;
+   box-shadow:inset 0 -4px 0 rgba(180,130,10,.4)}
+ .toy .panel .row{display:flex;justify-content:space-between;font-weight:800;font-size:.9rem}
+ .toy .knobrow{display:flex;align-items:center;gap:16px;margin-top:14px}
+ .toy .knob{width:74px;height:74px;border-radius:50%;flex-shrink:0;
+   background:conic-gradient(from 40deg,#ff5d73,#ffd35c,#ff5d73,#ffd35c,#ff5d73);
+   box-shadow:0 6px 0 rgba(120,30,45,.5),inset 0 0 0 8px #fff5d6;display:grid;place-items:center}
+ .toy .knob i{width:8px;height:30px;border-radius:4px;background:#20303f;transform:rotate(28deg)}
+ .toy .chute{flex:1;height:74px;border-radius:12px;background:rgba(10,50,66,.5);
+   box-shadow:inset 0 4px 12px rgba(0,0,0,.5);display:grid;place-items:center}
+ .toy .capsule{width:52px;height:52px;border-radius:50%;
+   background:linear-gradient(180deg,#fff6a8 0 50%,#ff5d73 50% 100%);
+   box-shadow:0 4px 8px rgba(0,0,0,.4),inset 0 -4px 8px rgba(0,0,0,.2)}
+ .g6 .card{padding:1.2rem 1.3rem;border-radius:20px;background:rgba(255,255,255,.8);
+   box-shadow:0 14px 34px rgba(120,70,40,.28)}
+ .g6 .card h3{font-size:.85rem;font-weight:900;letter-spacing:.2em;text-transform:uppercase;
+   margin-bottom:.5rem;color:#12718c}
+ .g6 .card .r{display:flex;justify-content:space-between;font-size:.92rem;font-weight:600;padding:.2rem 0}
+ .g6 .card .r b{font-weight:900}
+ .g6 .big{font-size:3.2rem;font-weight:900;line-height:1;letter-spacing:-.02em}
+ .g6 .k{font-size:.7rem;font-weight:800;letter-spacing:.24em;text-transform:uppercase;color:#8a6a3a}
+ </style>
+ <div class="g6">
+  <div>
+   <div class="k">Angelcoins</div><div class="big">${BAL}</div>
+   <div class="k" style="margin-top:.9rem">Bet</div><div class="big">${BET}</div>
+   <div class="k" style="margin-top:.9rem">Last win</div><div class="big" style="color:#d1355c">${WIN}</div>
+  </div>
+  <div class="toy">
+   <div class="dome">${reels({face:"#fffdf4",edge:"#e2d7bb",sym:"#20303f",hit:"#e0245e",w:120,h:98})}</div>
+   <div class="panel"><div class="row"><span>ONE TURN</span><span>${BET} COINS</span></div></div>
+   <div class="knobrow"><div class="knob"><i></i></div>
+     <div class="chute"><div class="capsule"></div></div></div>
+  </div>
+  <div class="card"><h3>Prizes</h3>
+   ${PAY.map(([c,v])=>`<div class="r"><span>${c}</span><b>${v}</b></div>`).join("")}</div>
  </div>`;}
 
 const DS=[d1,d2,d3,d4,d5,d6];
-const NM=["1 · mechanical + lever","2 · vertical column","3 · split flap","4 · strip","5 · drums","6 · void"];
-const n=Math.min(6,Math.max(1,parseInt(new URLSearchParams(location.search).get("d")||"1",10)));
+const NM=["1 · vegas cabinet","2 · antique fruit machine","3 · pachislot",
+  "4 · cirrus (the site's sky theme)","5 · reliquary (five reels)","6 · gacha capsule"];
+const n=Math.min(DS.length,Math.max(1,parseInt(new URLSearchParams(location.search).get("d")||"1",10)));
 document.getElementById("stage").innerHTML=DS[n-1]();
 document.getElementById("tag").textContent=NM[n-1];
 </script></body></html>
