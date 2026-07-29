@@ -343,7 +343,104 @@ deleted from the repo. Reuse that pattern for design options.
 
 ## Pending / roadmap (current)
 
-### Landed this session
+### The big pass (user's list, 2026-07-28). Ordering note
+The user handed over a ~40 item list in one go. Item 1 below is done and pushed
+(`f495de5`); everything under "Still queued" is untouched. The list mixes small
+copy fixes, eight separate mockup batches, and several substantial features, so
+it is split by size rather than by the order it was dictated in.
+
+**Standing instruction for every mockup from here on:** the terminal aesthetic
+stays, but do **not** read it as minimalism. Maximalist and overdesigned is
+wanted. (Locked-in choices recorded further down predate this instruction and
+should be re-read in that light.)
+
+### Landed 2026-07-28 (commit f495de5)
+Dashboard: tithe button removed (deprecating the idea; `/api/tithe` still exists
+server-side, unused), "vessel" balance heading removed, "Hermione's profile" ->
+"Hermione", log-out button added, per-game hover text added, "Resets at noon
+Eastern." line removed (clock card covers it, and it is 6am now), card-nav demo
+dropped from Documentation, admin panel heading collapses the panel.
+Dailies: "Snake earnings" -> "Snake"; Devotion daily reads "Complete 50 lines in
+Devotion" with no trailing x/y. A daily carrying its own `detail` now keeps it;
+the x/y readout is only the fallback for dailies with no wording (Snake still
+shows "0/20 until complete").
+Snake: pure black, more saturated/darker red, bolder text, ~2.9x arena (cell
+36px -> 21px at 1280x720), smaller snake/food, tick 120ms -> 80ms, "Serpent"
+title and "feed the serpent" gone.
+Penance: red `#cf3730` -> `#c11208` (more vibrant, darker), chromatic-split
+glitch lost its blue ghost (now deep red `#8a0f07`), corruption static roughly
+halved (base 0.045 -> 0.022, ramp 0.11 -> 0.05). Devotion still pinned blue.
+Elysium: fertilize button shows hours left on cooldown.
+Also: deathroll pure black; back button lost its white plate and now inherits
+the page colour (`nav.js`; Elysium has its own `.backbtn`, untouched);
+notification sound is a synthesised low bell, not a meow; login decrypt
+animation 2200ms -> 5200ms (hold 420 -> 750); subliminals use IBM Plex Mono
+(dashboard now loads weight 700); registration says "virtual angel".
+
+**Bug fixed in passing:** `elysium-engine.js` read the fertilize cooldown stamp
+as `state.actions.fertilize || -999`, so tick `0` counted as "never fed" and a
+fresh tree could be fertilized every tick. Now `??` via a shared
+`fertilizeLeft(state)` helper used by the action and both view fields.
+
+### Still queued from the big pass
+
+**Mockups only (nothing wired). Eight batches:**
+1. **Profile reskin**, 5 mockups, dark terminal theme.
+2. **Wheel reskin**, 5 mockups, terminal. Previous wheel mockups are discarded.
+   Try a **horizontal scroll** animation instead of a wheel.
+3. **Game selection**, re-mockup. Keep the poster-board idea but theme it far
+   harder around the terminal aesthetic.
+4. **Chess**, with Hermione-only controls designed in but not exposed to the
+   other player: delete an opponent's piece (her turn only, with an animation)
+   and rewind the game state (with an animation). More controls may be added.
+5. **T9 flip phone typing game.** Skeuomorphic flip phone. Keys 1-9 on both the
+   number row and numpad; press a key one/two/three times to pick its letter,
+   0 for space, Back to delete.
+6. **Dead by Daylight skill check.** Indicator travels a circle, player hits the
+   key while it is in the good zone; early, late, or missed all fail. N reps.
+   Size and position of each check random, sound on spawn, random gap between
+   checks so the player cannot relax, and the required key is random and shown
+   on the rotating element (Space, 1 2 3 4 5, q e r g f).
+7. **Summary game.** Pick a random topic (historical event, real-world object,
+   fictional character), pull source text from somewhere public like Wikipedia,
+   show it, player summarises in a set number of words.
+8. **Slots.** Generic for now; custom symbol art comes later. Uses angelcoins.
+
+**Features:**
+- **Subliminals system.** Keep only test types **1, 3, 5, 7**; effect chosen at
+  random. Admin-editable message list (build it like the Devotion presets box).
+  **Halve current durations.** Random trigger every **5 to 30 minutes**, kept
+  uncommon. Move the test dropdown out of the control card into the admin panel
+  so ordinary users never see it. Then a **photosensitivity question in
+  registration**, and subliminals must be **disabled** for flagged accounts.
+  (Note: the test dropdown is still on the control card and visible to every
+  user until this lands.)
+- **Subtle occasional glitch on the dashboard**, plus a test button in the admin
+  panel.
+- **Guest accounts**: allow several at once (`guest1`, `guest2`), make them
+  eligible for multiplayer (Chess, Deathroll), and give them a guest dashboard
+  linking those games. Still no points, dailies, or persistence.
+- **"Update available" notice** for logged-in users to reload after a redeploy.
+- **Snake, circular movement.** Drop the 4-direction grid for a full circular
+  range of motion, keep growth on eating, **remove self-collision**, and replace
+  the square body segments with one shape that twists as it moves.
+- **Wheel economy**: convert from points to **angelcoins**, 3x the number of
+  outcomes, payouts 1 to 200 angelcoins biased toward the low end.
+- **Snake subliminals**: a lighter variant, text like "keep trying" when the
+  food escapes.
+- **Dashboard console**: in-theme, slides out on `~` while the window has focus,
+  used to enter secret codes.
+- **Atmosphere for dashboard + login**: port the Penance typing sounds, make the
+  blue elements periodically glitch red, and add ambience (fluorescent-light hum
+  or similar).
+- **Docs**: reskin `/tech` and `/guide`, then rewrite both to current truth.
+  (The user said "wait on the doc pass" early in the same message and then asked
+  for this explicitly. Read as: the reskin plus rewrite is wanted; confirm if it
+  comes up again.)
+
+### Older entries below
+
+### Landed in an earlier session
 - **Penance dark-red reskin.** Penance rests on a dark-red terminal palette and
   corrupts toward hotter red; Devotion is pinned blue (`corruption()` returns 0)
   and never leaves it. Mode set pre-paint via `data-mode` on `<html>` (no flash).
