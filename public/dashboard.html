@@ -9,6 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
   <script src="/me.js"></script>
   <script src="/glitch.js"></script>
+  <script src="/dashglitch.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Major+Mono+Display&display=swap" rel="stylesheet" />
   <style>
     /* Big-Type terminal dashboard (black / baby-blue). Self-contained; overrides
@@ -73,10 +74,6 @@
     .ctl-menu a::before { content: "· "; color: var(--dim2); }
     .ctl-menu a:hover { color: var(--bright); }
     .ctl-btn.ghost { color: var(--dim); }
-    .sub-test { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-top: 1rem; padding-top: 0.8rem; border-top: 1px solid var(--dim2); }
-    .sub-test .lbl { width: 100%; font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--dim); }
-    .sub-test select { flex: 1; min-width: 8rem; background: rgba(120,190,255,0.06); border: 1px solid var(--dim2); color: var(--c); font-family: inherit; padding: 0.35rem 0.5rem; }
-    .sub-test select option { background: #0a1420; }
 
     /* ---- vessel (balance) ---- */
     .balance-card { grid-area: vessel; align-self: end; }
@@ -147,6 +144,8 @@
     .adm-preset input, .adm-preset textarea { width: 100%; background: rgba(120,190,255,0.06); border: 1px solid var(--dim2); color: var(--bright); font-family: inherit; font-size: 0.85rem; padding: 0.4rem 0.5rem; }
     .adm-preset input { flex: 1; } .adm-preset textarea { resize: vertical; line-height: 1.55; }
     .adm-preset-bar { display: flex; gap: 0.5rem; margin-top: 0.6rem; }
+    .adm-select { background: rgba(120,190,255,0.06); border: 1px solid var(--dim2); color: var(--c); font-family: inherit; font-size: 0.76rem; padding: 0.24rem 0.4rem; }
+    .adm-select option { background: #0a1420; }
 
     /* notifications bell (injected into #notif-slot) */
     #notif-slot .notif-btn { background: transparent; border: 1px solid var(--dim2); color: var(--c); border-radius: 4px !important; }
@@ -198,11 +197,6 @@
         <a href="/elysium" title="A simple game about caring for a tree.">Elysium</a>
         <a id="hermione-link" class="ctl-btn" href="/profile?user=hermione" hidden>Hermione</a>
         <button id="logout" class="ctl-btn" type="button">Log out</button>
-      </div>
-      <div class="sub-test">
-        <span class="lbl">Subliminal test</span>
-        <select id="sub-select" aria-label="Subliminal message"></select>
-        <button class="ctl-btn ghost" id="sub-flash" type="button">Flash ›</button>
       </div>
     </section>
 
@@ -277,6 +271,21 @@
           notice.textContent = "Daily check-in: +" + d.checkIn.amount + " points. You now have " + d.checkIn.points + ".";
           notice.hidden = false;
         }
+        // Flashing effects are off entirely for anyone who declared
+        // photosensitivity at registration.
+        const flashOK = !d.photosensitive;
+        // cached so the login page, which runs before we know who you are, can
+        // still honour the flag on every visit after the first
+        try { localStorage.setItem("photosensitive", d.photosensitive ? "1" : "0"); } catch (e) {}
+        if (window.Subliminal) {
+          window.Subliminal.setEnabled(flashOK);
+          if (flashOK) window.Subliminal.loadMessages().then(() => window.Subliminal.startRandom());
+        }
+        if (window.DashGlitch) {
+          window.DashGlitch.setEnabled(flashOK);
+          if (flashOK) window.DashGlitch.startRandom();
+        }
+
         const isHermione = Boolean(d.isAdmin ?? (d.username && d.username.toLowerCase() === "hermione"));
         const noEcon = Boolean(d.noEconomy) || isHermione;
         myRank = d.rank || "—";
@@ -589,6 +598,48 @@
       });
       preBar.append(preSave); preSec.append(preBar); wrap.append(preSec);
 
+      // subliminals: message pool + a test flash (admin-only so players never
+      // see the trigger). The live overlay picks one of these at random.
+      const subSec = document.createElement("div"); subSec.className = "adm-sec";
+      subSec.append(mk("h3", "Subliminals"));
+      const subHint = mk("p", "One message per row. These flash at random every 5 to 30 minutes for anyone not marked photosensitive.");
+      subHint.className = "adm-empty"; subSec.append(subHint);
+      const subTa = document.createElement("textarea"); subTa.rows = 6;
+      subTa.value = (window.Subliminal ? window.Subliminal.messages : []).join("\n");
+      const subBox = document.createElement("div"); subBox.className = "adm-preset";
+      subBox.append(subTa); subSec.append(subBox);
+      const subBar = document.createElement("div"); subBar.className = "adm-preset-bar";
+      const subSel = document.createElement("select"); subSel.className = "adm-select";
+      (window.Subliminal ? window.Subliminal.effects : []).forEach((name, i) => {
+        const o = document.createElement("option"); o.value = i; o.textContent = (i + 1) + ". " + name; subSel.append(o);
+      });
+      subBar.append(subSel);
+      subBar.append(mkChip("Flash", "ghost", () => {
+        if (window.Subliminal) window.Subliminal.flash(Number(subSel.value));
+      }));
+      const subSave = mkChip("Save messages", "", async () => {
+        const messages = subTa.value.split("\n").map((s) => s.trim()).filter(Boolean);
+        subSave.textContent = "Saving...";
+        const r = await fetch("/api/subliminal", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ messages }),
+        });
+        subSave.textContent = r.ok ? "Saved" : "Error";
+        if (r.ok && window.Subliminal) window.Subliminal.setMessages(messages);
+        setTimeout(() => { subSave.textContent = "Save messages"; }, 1500);
+      });
+      subBar.append(subSave); subSec.append(subBar); wrap.append(subSec);
+
+      // screen glitch: fires on its own every 40 to 180 seconds, testable here
+      const glSec = document.createElement("div"); glSec.className = "adm-sec";
+      glSec.append(mk("h3", "Screen glitch"));
+      const glHint = mk("p", "Runs by itself every 40 to 180 seconds. Tear bands, and the blue palette stuttering to red.");
+      glHint.className = "adm-empty"; glSec.append(glHint);
+      const glBar = document.createElement("div"); glBar.className = "adm-preset-bar";
+      glBar.append(mkChip("Tear bands", "ghost", () => window.DashGlitch && window.DashGlitch.burst()));
+      glBar.append(mkChip("Red shift", "ghost", () => window.DashGlitch && window.DashGlitch.redShift()));
+      glSec.append(glBar); wrap.append(glSec);
+
       // documentation
       const docSec = document.createElement("div"); docSec.className = "adm-sec";
       docSec.append(mk("h3", "Documentation"));
@@ -690,18 +741,6 @@
     tickClock();
     setInterval(tickClock, 1000);
 
-    // --- subliminal test control (temporary; no random trigger yet) ---
-    (function () {
-      const sel = document.getElementById("sub-select");
-      (window.Subliminal ? window.Subliminal.effects : []).forEach((name, i) => {
-        const o = document.createElement("option");
-        o.value = i; o.textContent = (i + 1) + ". " + name;
-        sel.append(o);
-      });
-      document.getElementById("sub-flash").addEventListener("click", () => {
-        if (window.Subliminal) window.Subliminal.flash(Number(sel.value));
-      });
-    })();
     // Shrink the whole dashboard to fit the viewport height instead of scrolling.
     // Content height varies (admin panel, dailies), so re-fit whenever it changes.
     const _dash = document.querySelector(".dash");

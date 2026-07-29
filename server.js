@@ -16,6 +16,7 @@ const DEATHROLL_FILE = path.join(process.env.DATA_DIR || __dirname, "deathroll.j
 const SITE_FILE = path.join(process.env.DATA_DIR || __dirname, "site.json");
 const ELYSIUM_FILE = path.join(process.env.DATA_DIR || __dirname, "elysium.json");
 const DEVOTION_FILE = path.join(process.env.DATA_DIR || __dirname, "devotion.json");
+const SUBLIMINAL_FILE = path.join(process.env.DATA_DIR || __dirname, "subliminal.json");
 
 // --- simple JSON-file user store (fine for testing; swap for a DB later) ---
 function loadUsers() {
@@ -115,6 +116,12 @@ app.post("/api/register", async (req, res) => {
   // "Sub" is only the registration label; a sub account starts at the lowest
   // ladder rank, Servant, and Hermione promotes from there.
   const rank = signupChoice === "Sub" ? "Servant" : signupChoice;
+  // Photosensitivity gates the flashing effects, so it needs a deliberate
+  // answer rather than an unchecked box that quietly means "no".
+  if (req.body.photosensitive !== true && req.body.photosensitive !== false) {
+    return res.status(400).json({ error: "Answer the photosensitivity question." });
+  }
+  const photosensitive = req.body.photosensitive === true;
   const intro = String(req.body.intro || "").trim();
   if (!intro) {
     return res.status(400).json({ error: "Tell Hermione who you are." });
@@ -134,6 +141,7 @@ app.post("/api/register", async (req, res) => {
     pronouns,
     rank,
     points: 0,
+    photosensitive,
     // Registration does not sign you in. The account waits here until hermione
     // approves it from the admin panel; login is refused until then.
     status: "pending",
@@ -283,6 +291,8 @@ app.get("/api/me", (req, res) => {
     angelcoins: users[key].angelcoins || 0,
     createdAt: users[key].createdAt || null,
     tithedToday: users[key].tithedOn === todayKey(),
+    // accounts predating the question have no flag; treat that as not flagged
+    photosensitive: users[key].photosensitive === true,
     checkIn,
   });
 });
@@ -1417,6 +1427,42 @@ app.post("/api/devotion/presets", (req, res) => {
   const data = { presets };
   saveDevotion(data);
   res.json({ ok: true, presets });
+});
+
+// --- subliminal messages (Hermione-editable, flashed by public/glitch.js) ---
+const SUBLIMINAL_DEFAULTS = {
+  messages: [
+    "OBEY", "KNEEL", "SURRENDER", "SHE IS WATCHING", "YOU BELONG TO HER",
+    "GIVE IN", "GOOD SERVANT", "DO NOT RESIST", "DEVOTE YOURSELF", "SHE SEES ALL",
+  ],
+};
+function loadSubliminal() {
+  try {
+    const data = JSON.parse(fs.readFileSync(SUBLIMINAL_FILE, "utf8"));
+    if (data && Array.isArray(data.messages) && data.messages.length) return data;
+  } catch {}
+  return JSON.parse(JSON.stringify(SUBLIMINAL_DEFAULTS));
+}
+function saveSubliminal(data) {
+  fs.writeFileSync(SUBLIMINAL_FILE, JSON.stringify(data, null, 2));
+}
+
+// Any player may read them; the overlay needs them to say anything.
+app.get("/api/subliminal", (req, res) => {
+  if (!req.session.username && !req.session.guest) return res.status(401).json({ error: "Not logged in." });
+  res.json({ messages: loadSubliminal().messages });
+});
+
+// Only Hermione may rewrite them.
+app.post("/api/subliminal", (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });
+  const incoming = Array.isArray(req.body.messages) ? req.body.messages : null;
+  if (!incoming) return res.status(400).json({ error: "messages must be an array." });
+  const messages = incoming.map((m) => String(m).trim().slice(0, 80)).filter(Boolean).slice(0, 100);
+  if (!messages.length) return res.status(400).json({ error: "Add at least one message." });
+  saveSubliminal({ messages });
+  res.json({ ok: true, messages });
 });
 
 // --- notifications ---

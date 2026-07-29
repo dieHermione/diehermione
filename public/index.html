@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <script src="/glitch.js"></script>
+  <script src="/dashglitch.js"></script>
   <script src="/boot.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -101,6 +102,12 @@
               <button type="button" class="role" data-role="Guest" data-tip="An ephemeral session for testing.">guest</button>
             </div>
           </div>
+          <div class="fl"><span class="lab">photosensitive?</span>
+            <div class="roles" id="photo">
+              <button type="button" class="role" data-photo="no" data-tip="This site flashes text and glitches the screen. Leave these on.">no</button>
+              <button type="button" class="role" data-photo="yes" data-tip="Turns off every flashing and strobing effect on your account.">yes</button>
+            </div>
+          </div>
           <div class="fl"><span class="lab">who are you?</span><textarea id="intro" maxlength="500" rows="3" placeholder="tell Hermione who you are"></textarea></div>
           <div class="row dim2" style="font-size:0.82rem; margin-top:0.2rem">// disciple accounts are invite only.</div>
         </div>
@@ -125,7 +132,7 @@
 
   <script>
     const $ = (id) => document.getElementById(id);
-    let mode = "login", selectedRole = "";
+    let mode = "login", selectedRole = "", photosensitive = null;
     const errorBox = $("error");
     function err(msg) { errorBox.textContent = msg ? "! " + msg : ""; }
 
@@ -148,12 +155,17 @@
     function applyRoleState() {
       const guest = mode === "register" && selectedRole === "Guest";
       ["username", "password", "pronouns", "intro"].forEach((id) => { const el = $(id); if (el) el.disabled = guest; });
+      document.querySelectorAll("#photo .role").forEach((b) => { b.disabled = guest; });
       $("submit").textContent = mode === "login" ? "enter" : guest ? "continue as guest" : "register";
     }
-    document.querySelectorAll(".role").forEach((btn) => btn.addEventListener("click", () => {
+    document.querySelectorAll("#roles .role").forEach((btn) => btn.addEventListener("click", () => {
       selectedRole = btn.dataset.role;
-      document.querySelectorAll(".role").forEach((b) => b.classList.toggle("sel", b === btn));
+      document.querySelectorAll("#roles .role").forEach((b) => b.classList.toggle("sel", b === btn));
       applyRoleState();
+    }));
+    document.querySelectorAll("#photo .role").forEach((btn) => btn.addEventListener("click", () => {
+      photosensitive = btn.dataset.photo === "yes";
+      document.querySelectorAll("#photo .role").forEach((b) => b.classList.toggle("sel", b === btn));
     }));
     $("to-register").addEventListener("click", () => setMode("register"));
     $("back-signin").addEventListener("click", () => window.location.reload());
@@ -169,7 +181,11 @@
       e.preventDefault(); err("");
       if (mode === "register" && selectedRole === "Guest") { startGuest("/writing"); return; }
       const payload = { username: $("username").value.trim(), password: $("password").value };
-      if (mode === "register") { payload.pronouns = $("pronouns").value; payload.rank = selectedRole; payload.intro = $("intro").value.trim(); }
+      if (mode === "register") {
+        if (photosensitive === null) { err("answer the photosensitivity question."); return; }
+        payload.pronouns = $("pronouns").value; payload.rank = selectedRole;
+        payload.intro = $("intro").value.trim(); payload.photosensitive = photosensitive;
+      }
       let res, data;
       try {
         res = await fetch("/api/" + mode, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
@@ -184,6 +200,16 @@
     });
 
     setMode("login");
+
+    // Ambient glitch. We cannot ask the server who this is yet, so we trust the
+    // flag cached by the dashboard on the last signed-in visit. A photosensitive
+    // account is unprotected only on the very first visit from a given browser.
+    (function () {
+      let ok = true;
+      try { ok = localStorage.getItem("photosensitive") !== "1"; } catch (e) {}
+      if (window.DashGlitch) { window.DashGlitch.setEnabled(ok); if (ok) window.DashGlitch.startRandom(); }
+      if (window.Subliminal) window.Subliminal.setEnabled(ok);
+    })();
   </script>
 </body>
 </html>
