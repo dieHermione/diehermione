@@ -48,7 +48,7 @@
 
   <div class="title"><p class="status" id="status">an offering to the Princess</p></div>
   <div class="hud tl"><div class="k">score</div><div class="v" id="hud-score">0</div></div>
-  <div class="hud tr"><div class="k">length</div><div class="v" id="hud-length">3</div></div>
+  <div class="hud tr"><div class="k">length</div><div class="v" id="hud-length">0</div></div>
   <div class="hud bl"><div class="k">points earned</div><div class="v" id="hud-earned">0</div></div>
 
   <div class="nav">
@@ -61,63 +61,69 @@
     const ctx = canvas.getContext("2d");
     const statusEl = document.getElementById("status");
 
-    // full-window grid: fixed cell size, columns/rows derived from the viewport,
-    // centred with a small offset so it fills the screen edge to edge.
-    let CELL, COLS, ROWS, OFFX, OFFY;
-    function sizeGrid() {
-      const dpr = 1;
-      canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-      // smaller cells => a denser grid, so the arena reads bigger and the
-      // snake/food read smaller against it
-      CELL = Math.max(12, Math.min(26, Math.floor(Math.min(canvas.width, canvas.height) / 34)));
-      COLS = Math.floor(canvas.width / CELL);
-      ROWS = Math.floor(canvas.height / CELL);
-      OFFX = Math.floor((canvas.width - COLS * CELL) / 2);
-      OFFY = Math.floor((canvas.height - ROWS * CELL) / 2);
+    /* Free-swimming snake: no grid. The head carries a heading angle and moves
+       at a constant speed; steering turns that angle rather than snapping to
+       one of four directions. The body is the trail the head has just walked,
+       drawn as one tapered outline, so it bends and twists with the turns.
+       There is no self-collision, so the body is purely cosmetic. */
+
+    const SPEED = 190;          // px per second
+    const TURN = 3.4;           // radians per second at full lock
+    // The trail is the body, so its length in px is also how much of a turn
+    // stays visible: at SPEED this is a little over a second of history.
+    const START_LEN = 260;
+    const GROW_PER_FOOD = 42;
+    const HEAD_R = 9;           // head radius; the body tapers away from this
+    const FOOD_R = 9;
+    const FLEE_R = 46;          // the food bolts if the head gets this close
+
+    let W = 0, H = 0;
+    function sizeCanvas() {
+      canvas.width = W = window.innerWidth;
+      canvas.height = H = window.innerHeight;
     }
-    sizeGrid();
-    window.addEventListener("resize", () => { sizeGrid(); if (snake) draw(); });
+    sizeCanvas();
+    window.addEventListener("resize", () => { sizeCanvas(); if (path.length) draw(); });
 
     const heartColor = () => getComputedStyle(document.body).getPropertyValue("--heart-color").trim() || "#ffffff";
-    let teleportChance = 0.9;
-    const TELEPORT_MIN_DISTANCE = 8, SPAWN_MIN_DISTANCE = 4;
-
-    function headColor() { return getComputedStyle(document.body).getPropertyValue("--button-bg").trim() || "#ff3b2f"; }
+    function headColor() { return getComputedStyle(document.body).getPropertyValue("--button-bg").trim() || "#ff2010"; }
     function hexToRgb(hex) { const h = hex.replace("#", ""); const full = h.length === 3 ? h.split("").map((c) => c + c).join("") : h; return [0, 2, 4].map((i) => parseInt(full.slice(i, i + 2), 16)); }
-    function segmentColor(base, index) {
+    function shade(base, t) {                       // t 0 head .. 1 tail
       const [r, g, b] = hexToRgb(base);
-      const fade = Math.min(0.72, index * 0.05);
-      const mix = (c) => Math.round(c + (255 - c) * fade);
-      return "rgb(" + mix(r) + ", " + mix(g) + ", " + mix(b) + ")";
+      const k = 1 - Math.min(0.62, t * 0.62);
+      return "rgb(" + Math.round(r * k) + "," + Math.round(g * k) + "," + Math.round(b * k) + ")";
     }
 
-    let snake, dir, nextDir, food, score, timer = null, alive = false, earned = 0;
+    let teleportChance = 0.9;
+    let path = [];              // [{x,y}], newest first; the body is this trail
+    let angle = 0, turnInput = 0, targetLen = START_LEN;
+    let food = null, score = 0, earned = 0, alive = false, raf = null, last = 0;
 
-    function reset() {
-      const cy = Math.floor(ROWS / 2), cx = Math.floor(COLS / 2);
-      snake = [{ x: cx, y: cy }, { x: cx - 1, y: cy }, { x: cx - 2, y: cy }];
-      dir = { x: 1, y: 0 }; nextDir = dir; score = 0; alive = true; placeFood();
+    // wrap coordinates onto the torus the old grid used
+    function wrap(p) {
+      if (p.x < 0) p.x += W; else if (p.x >= W) p.x -= W;
+      if (p.y < 0) p.y += H; else if (p.y >= H) p.y -= H;
+      return p;
     }
-    function freeSquares() {
-      const taken = new Set(snake.map((s) => s.x + "," + s.y));
-      const open = [];
-      for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) if (!taken.has(x + "," + y)) open.push({ x, y });
-      return open;
+    // shortest distance on a torus, so "near the food" works across the seam
+    function dist(a, b) {
+      let dx = Math.abs(a.x - b.x), dy = Math.abs(a.y - b.y);
+      if (dx > W / 2) dx = W - dx;
+      if (dy > H / 2) dy = H - dy;
+      return Math.hypot(dx, dy);
     }
-    function pickSquare(head, minDist) {
-      const open = freeSquares();
-      if (!open.length) return food;
-      let pool = open.filter((sq) => distance(sq, head) >= minDist);
-      if (!pool.length) pool = open.filter((sq) => distance(sq, head) > 1);
-      if (!pool.length) pool = open;
-      return pool[Math.floor(Math.random() * pool.length)];
+    function placeFood(minDist) {
+      const head = path[0] || { x: W / 2, y: H / 2 };
+      let best = null, bestD = -1;
+      for (let i = 0; i < 40; i++) {                 // rejection sample, keep the furthest
+        const c = { x: 40 + Math.random() * (W - 80), y: 40 + Math.random() * (H - 80) };
+        const d = dist(c, head);
+        if (d >= minDist) return c;
+        if (d > bestD) { bestD = d; best = c; }
+      }
+      return best;
     }
-    function placeFood() { food = pickSquare(snake[0], SPAWN_MIN_DISTANCE); }
-    function distance(a, b) {
-      const dx = Math.min(Math.abs(a.x - b.x), COLS - Math.abs(a.x - b.x));
-      const dy = Math.min(Math.abs(a.y - b.y), ROWS - Math.abs(a.y - b.y));
-      return Math.max(dx, dy);
-    }
+
     // The food escaping is the game's whole tease, so it gets a subliminal of
     // its own: a single brief blip, not the dashboard's full strobe, and rate
     // limited because escapes come thick and fast.
@@ -130,9 +136,91 @@
       lastTaunt = now;
       if (window.Subliminal) window.Subliminal.blip(TAUNTS[Math.floor(Math.random() * TAUNTS.length)]);
     }
-    function fleeFrom(head) { food = pickSquare(head, TELEPORT_MIN_DISTANCE); taunt(); }
 
-    function drawBoard() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
+    function reset() {
+      path = [];
+      const start = { x: W / 2, y: H / 2 };
+      for (let i = 0; i < 24; i++) path.push({ x: start.x - i * 4, y: start.y });
+      angle = 0; turnInput = 0; targetLen = START_LEN;
+      score = 0; alive = true;
+      food = placeFood(220);
+    }
+
+    // total length of the trail in px, used to trim it to targetLen
+    function trimPath() {
+      let acc = 0;
+      for (let i = 1; i < path.length; i++) {
+        const seg = Math.hypot(path[i].x - path[i - 1].x, path[i].y - path[i - 1].y);
+        // a wrap jump is not real distance travelled; stop measuring across it
+        acc += seg > Math.min(W, H) / 2 ? 0 : seg;
+        if (acc > targetLen) { path.length = i + 1; return; }
+      }
+    }
+
+    function step(dt) {
+      angle += turnInput * TURN * dt;
+      const head = path[0];
+      const next = wrap({ x: head.x + Math.cos(angle) * SPEED * dt, y: head.y + Math.sin(angle) * SPEED * dt });
+      path.unshift(next);
+      trimPath();
+
+      if (food) {
+        const d = dist(next, food);
+        if (d < HEAD_R + FOOD_R) {
+          score++; targetLen += GROW_PER_FOOD; awardFood(); showScore();
+          food = placeFood(220);
+        } else if (d < FLEE_R && Math.random() < teleportChance * dt * 6) {
+          food = placeFood(320); taunt();
+        }
+      }
+    }
+
+    /* ---- drawing: one tapered outline built from the trail ---- */
+    // t 0 head .. 1 tail. A linear taper reads as a dart, so hold most of the
+    // width through the body and lose it late, which looks like an animal.
+    function widthAt(t) { return HEAD_R * Math.pow(1 - t, 0.45) + 1.2; }
+
+    // split the trail wherever it jumps across a screen edge, so a wrapped
+    // body draws as two pieces instead of one line straight across the arena
+    function runs() {
+      const out = []; let cur = [path[0]];
+      for (let i = 1; i < path.length; i++) {
+        const a = path[i - 1], b = path[i];
+        if (Math.hypot(b.x - a.x, b.y - a.y) > Math.min(W, H) / 2) { out.push(cur); cur = [b]; }
+        else cur.push(b);
+      }
+      out.push(cur);
+      return out.filter((r) => r.length > 1);
+    }
+
+    function drawBody(base) {
+      const total = path.length;
+      let consumed = 0;
+      for (const run of runs()) {
+        const left = [], right = [];
+        for (let i = 0; i < run.length; i++) {
+          const p = run[i];
+          const prev = run[Math.max(0, i - 1)], nextP = run[Math.min(run.length - 1, i + 1)];
+          let tx = nextP.x - prev.x, ty = nextP.y - prev.y;
+          const m = Math.hypot(tx, ty) || 1;
+          tx /= m; ty /= m;
+          const w = widthAt(Math.min(1, (consumed + i) / total));
+          left.push({ x: p.x - ty * w, y: p.y + tx * w });
+          right.push({ x: p.x + ty * w, y: p.y - tx * w });
+        }
+        consumed += run.length;
+        ctx.beginPath();
+        ctx.moveTo(left[0].x, left[0].y);
+        for (let i = 1; i < left.length; i++) ctx.lineTo(left[i].x, left[i].y);
+        for (let i = right.length - 1; i >= 0; i--) ctx.lineTo(right[i].x, right[i].y);
+        ctx.closePath();
+        const g = ctx.createLinearGradient(run[0].x, run[0].y, run[run.length - 1].x, run[run.length - 1].y);
+        g.addColorStop(0, shade(base, 0)); g.addColorStop(1, shade(base, 1));
+        ctx.fillStyle = g;
+        ctx.fill();
+      }
+    }
+
     function drawHeart(cx, cy, size) {
       ctx.save();
       ctx.shadowColor = "rgba(255,60,48,0.9)"; ctx.shadowBlur = size * 0.7;
@@ -145,28 +233,32 @@
       ctx.fill();
       ctx.restore();
     }
+
     function draw() {
-      drawBoard();
-      drawHeart(OFFX + food.x * CELL + CELL / 2, OFFY + food.y * CELL + CELL / 2, CELL * 0.7);
+      ctx.clearRect(0, 0, W, H);
+      if (food) drawHeart(food.x, food.y, FOOD_R * 2);
+      if (!path.length) return;
       const base = headColor();
-      snake.forEach((seg, i) => {
-        ctx.fillStyle = segmentColor(base, i);
-        if (i === 0) { ctx.save(); ctx.shadowColor = base; ctx.shadowBlur = CELL * 0.6; }
-        const pad = CELL * 0.2, r = Math.max(2, CELL * 0.22);
-        const x = OFFX + seg.x * CELL + pad, y = OFFY + seg.y * CELL + pad, w = CELL - pad * 2;
-        ctx.beginPath(); ctx.roundRect(x, y, w, w, r); ctx.fill();
-        if (i === 0) ctx.restore();
-      });
+      drawBody(base);
+      // head, with the glow the old square head carried
+      const h = path[0];
+      ctx.save();
+      ctx.shadowColor = base; ctx.shadowBlur = HEAD_R * 1.6;
+      ctx.fillStyle = base;
+      ctx.beginPath(); ctx.arc(h.x, h.y, HEAD_R, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
     }
-    function tick() {
-      dir = nextDir;
-      const head = { x: (snake[0].x + dir.x + COLS) % COLS, y: (snake[0].y + dir.y + ROWS) % ROWS };
-      if (snake.some((s) => s.x === head.x && s.y === head.y)) { gameOver(); return; }
-      snake.unshift(head);
-      if (head.x === food.x && head.y === food.y) { score++; awardFood(); showScore(); placeFood(); }
-      else { snake.pop(); if (distance(head, food) <= 1 && Math.random() < teleportChance) fleeFrom(head); }
+
+    function frame(now) {
+      raf = requestAnimationFrame(frame);
+      if (!alive) return;
+      const dt = Math.min(0.05, (now - last) / 1000 || 0);   // clamp after a tab stall
+      last = now;
+      step(dt);
       draw();
+      showScore();
     }
+
     async function awardFood() {
       try {
         const res = await fetch("/api/snake/food", { method: "POST" });
@@ -178,33 +270,37 @@
     }
     function showScore() {
       document.getElementById("hud-score").textContent = score;
-      document.getElementById("hud-length").textContent = snake ? snake.length : 0;
+      document.getElementById("hud-length").textContent = Math.round(targetLen);
       document.getElementById("hud-earned").textContent = earned;
     }
-    function gameOver() {
-      alive = false; clearInterval(timer); timer = null;
-      statusEl.textContent = "fallen · score " + score + (earned ? " · earned " + earned + " points" : "") + " · press start to begin again";
-      document.getElementById("start").textContent = "Start";
-    }
     function start() {
-      if (timer) clearInterval(timer);
-      sizeGrid(); reset(); earned = 0; showScore();
+      sizeCanvas(); reset(); earned = 0; showScore();
       statusEl.textContent = "";
       document.getElementById("start").textContent = "Restart";
-      draw(); timer = setInterval(tick, 80);
+      last = performance.now();
+      if (!raf) raf = requestAnimationFrame(frame);
     }
 
-    const UP = { x: 0, y: -1 }, DOWN = { x: 0, y: 1 }, LEFT = { x: -1, y: 0 }, RIGHT = { x: 1, y: 0 };
-    const KEYS = { ArrowUp: UP, ArrowDown: DOWN, ArrowLeft: LEFT, ArrowRight: RIGHT, Up: UP, Down: DOWN, Left: LEFT, Right: RIGHT, KeyW: UP, KeyS: DOWN, KeyA: LEFT, KeyD: RIGHT, w: UP, s: DOWN, a: LEFT, d: RIGHT };
+    // steering: hold to turn. There is no reverse and no braking.
+    const LEFT_KEYS = { ArrowLeft: 1, Left: 1, KeyA: 1, a: 1 };
+    const RIGHT_KEYS = { ArrowRight: 1, Right: 1, KeyD: 1, d: 1 };
+    function keyDir(e) {
+      const k = e.key && e.key.length === 1 ? e.key.toLowerCase() : e.key;
+      if (LEFT_KEYS[k] || LEFT_KEYS[e.code]) return -1;
+      if (RIGHT_KEYS[k] || RIGHT_KEYS[e.code]) return 1;
+      return 0;
+    }
     document.addEventListener("keydown", (e) => {
-      const key = e.key && e.key.length === 1 ? e.key.toLowerCase() : e.key;
-      const d = KEYS[key] || KEYS[e.code];
+      const d = keyDir(e);
       if (!d) return;
       e.preventDefault();
-      if (!alive) return;
-      if (d.x === -dir.x && d.y === -dir.y) return;
-      nextDir = d;
+      turnInput = d;
     });
+    document.addEventListener("keyup", (e) => {
+      const d = keyDir(e);
+      if (d && Math.sign(turnInput) === d) turnInput = 0;
+    });
+
     document.getElementById("start").addEventListener("click", start);
     document.getElementById("back").addEventListener("click", () => { window.location.href = "/dashboard"; });
 
@@ -213,7 +309,8 @@
       // same photosensitivity gate as the dashboard
       if (window.Subliminal) window.Subliminal.setEnabled(!d.photosensitive);
     }).catch(() => (window.location.href = "/"));
-    drawBoard();
+
+    ctx.clearRect(0, 0, W, H);
   </script>
   <script src="/nav.js" defer></script>
   <script src="/notifications.js" defer></script>
