@@ -208,6 +208,8 @@
     (function () {
       let ok = true;
       try { ok = localStorage.getItem("photosensitive") !== "1"; } catch (e) {}
+      // the site-wide subliminals switch applies here too
+      if (window.AudioBus && !window.AudioBus.subliminals) ok = false;
       if (window.DashGlitch) { window.DashGlitch.setEnabled(ok); if (ok) window.DashGlitch.startRandom(); }
       if (window.Subliminal) window.Subliminal.setEnabled(ok);
     })();

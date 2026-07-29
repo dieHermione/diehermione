@@ -38,6 +38,66 @@
     "Hermione knows best.",
   ];
 
+  /* Sound for the decrypt sequence, on the AudioBus "typing" channel with the
+     rest of the interface noise. A drone climbs while the text resolves, each
+     newly settled glyph ticks, and a low pair of tones lands when it finishes.
+     All of it degrades to silence if the bus is missing or audio is blocked. */
+  function bootAudio() {
+    var bus = window.AudioBus;
+    if (!bus) return null;
+    var a = bus.ctx();
+    var out = bus.channel("typing");
+    if (!a || !out) return null;
+
+    var drone = null, droneGain = null, sub = null;
+    return {
+      start: function (seconds) {
+        var now = a.currentTime;
+        droneGain = a.createGain();
+        droneGain.gain.setValueAtTime(0.0001, now);
+        droneGain.gain.exponentialRampToValueAtTime(0.05, now + 0.6);
+        droneGain.connect(out);
+        drone = a.createOscillator();
+        drone.type = "sawtooth";
+        drone.frequency.setValueAtTime(52, now);
+        drone.frequency.linearRampToValueAtTime(96, now + seconds);
+        var lp = a.createBiquadFilter();
+        lp.type = "lowpass";
+        lp.frequency.setValueAtTime(240, now);
+        lp.frequency.linearRampToValueAtTime(1400, now + seconds);
+        drone.connect(lp).connect(droneGain);
+        drone.start(now);
+        sub = a.createOscillator();
+        sub.type = "sine"; sub.frequency.value = 41;
+        var sg = a.createGain(); sg.gain.value = 0.03;
+        sub.connect(sg).connect(out); sub.start(now);
+      },
+      tick: function () {
+        var now = a.currentTime;
+        var len = Math.floor(a.sampleRate * 0.012);
+        var buf = a.createBuffer(1, len, a.sampleRate), d = buf.getChannelData(0);
+        for (var i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2);
+        var n = a.createBufferSource(); n.buffer = buf;
+        var f = a.createBiquadFilter(); f.type = "bandpass"; f.frequency.value = 3200; f.Q.value = 1.4;
+        var g = a.createGain(); g.gain.value = 0.06;
+        n.connect(f).connect(g).connect(out); n.start(now); n.stop(now + 0.015);
+      },
+      resolve: function () {
+        var now = a.currentTime;
+        if (droneGain) droneGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.35);
+        try { if (drone) drone.stop(now + 0.4); if (sub) sub.stop(now + 0.4); } catch (e) {}
+        [220, 330].forEach(function (hz, i) {
+          var o = a.createOscillator(); o.type = "sine"; o.frequency.value = hz;
+          var g = a.createGain();
+          g.gain.setValueAtTime(0.0001, now + i * 0.06);
+          g.gain.exponentialRampToValueAtTime(0.10, now + i * 0.06 + 0.02);
+          g.gain.exponentialRampToValueAtTime(0.0001, now + i * 0.06 + 0.9);
+          o.connect(g).connect(out); o.start(now + i * 0.06); o.stop(now + i * 0.06 + 0.95);
+        });
+      },
+    };
+  }
+
   function play(opts) {
     opts = opts || {};
     var text = opts.text || DEVOTIONALS[(Math.random() * DEVOTIONALS.length) | 0];
@@ -56,9 +116,14 @@
     var pEl = document.getElementById("boot-pct");
     var start = performance.now();
 
+    var sfx = bootAudio();
+    if (sfx) sfx.start(duration / 1000);
+    var lastRevealed = 0;
+
     function frame(now) {
       var t = Math.min(1, (now - start) / duration);
       var revealed = Math.floor(t * chars.length);
+      if (sfx && revealed > lastRevealed) { sfx.tick(); lastRevealed = revealed; }
       var html = "";
       for (var i = 0; i < chars.length; i++) {
         var ch = chars[i];
@@ -70,6 +135,7 @@
       pEl.innerHTML = "resolving &middot; " + Math.floor(t * 100) + "%" + (t < 1 ? '<span class="cur"></span>' : "");
       if (t < 1) { requestAnimationFrame(frame); return; }
       // fully resolved: hold briefly, then navigate
+      if (sfx) sfx.resolve();
       gEl.innerHTML = chars.map(function (c) { return c === " " ? " " : '<span class="r">' + c + "</span>"; }).join("");
       setTimeout(function () {
         if (opts.navigateTo) window.location.href = opts.navigateTo;

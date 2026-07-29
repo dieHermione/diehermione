@@ -445,6 +445,65 @@ measurement inside a single `javascript_tool` call, because it can go hidden
 again between calls. For durations, wrap `setTimeout` and record the delays
 asked for rather than timing them.
 
+### Landed 2026-07-29 (audio, settings, console, mockups)
+
+**Audio is now one bus** (`public/audio.js`). One AudioContext, one gain node per
+channel (`music` / `ambience` / `typing`), settings in a single localStorage key
+(`angeldom-audio`) so every page and tab agrees, kept in sync by a `storage`
+event. **All channels default to 0.5**, half the old level; per-sound gains were
+left alone and the channel gain scales them. Mute writes `gain.value` directly
+with **no ramp**.
+
+**Duplicate audio across tabs** (Zen split view): continuous sound takes a lock
+over `BroadcastChannel("angeldom-audio-lock")`; only the holder plays it.
+Verified with two tabs both reporting visible: exactly one held the lock.
+
+**Ambience** rebuilt on the bus. Hum runs only in the lock-holding tab. Key
+clicks now fire on **every** keystroke, not only in text fields. A hover blip
+plays when the pointer first enters an interactive element (rides the *typing*
+channel, since the settings panel only has three audio categories).
+
+**Settings panel** on the dashboard between the games and Log out: subliminals
+toggle + volume/mute for music, ambience, typing. Flashing needs **both** a
+non-photosensitive account **and** the toggle on.
+
+**Elysium honours it without being owned by it.** `seedFromSite()` copies the
+bus state into Elysium's own state on load **and calls `save()`** - that write
+is load-bearing, because the `focus`/`visibilitychange`/`storage` re-sync
+reloads `elysium.audio` and would otherwise put the old local values straight
+back over the seed. Elysium's own controls change that visit only and never
+write back to the bus. Verified: site music muted -> Elysium opens muted ->
+local unmute works -> bus still muted.
+
+**Boot/decrypt SFX** (`boot.js`): a drone climbing under the sequence, a tick
+per resolved glyph, two low tones on resolve. On the *typing* channel.
+
+**Collapse**: admin panel and leaderboard fold to the **right** (card shrinks to
+a spine, its grid column gives the space back); admin sub-sections fold upwards
+independently.
+
+**Console**: header is `angelOS // console`. `wing add_points <user> <n>` works,
+admin-gated. **"Rejected." is reserved for a real command the caller may not
+run**; anything unknown is "Command not recognized."
+
+**Devotion presets**: Remove now writes through immediately. The old behaviour
+(drop the row, wait for a separate Save) is what made removal look broken.
+Removing the last preset is refused and rolled back.
+
+**Snake**: pause button (also P / Space), speed doubled to 380px/s, taunt on
+every food escape. Pausing does not bank time, so unpausing cannot jump it.
+
+**Screen glitch**: everything except tear bands was scrapped and retried. The
+new five punch out or over-drive the page in place rather than shifting or
+recolouring it: dropout, bloom, contrast crush, comb, edge burn.
+
+### Mockups: all eight batches exist, none chosen
+Untracked parameterised files in `public/` (gitignored, never deploy):
+`_profile.html?d=1-5`, `_wheel.html?d=1-5`, `_select.html?d=1-4`,
+`_chess.html?d=1-4`, `_games.html?g=t9|skill|summary|slots&d=1-3`.
+Capture with headless Chrome at 1500x900. **Nothing is wired; no direction has
+been picked.** Delete these once choices are locked.
+
 ### Still queued from the big pass
 
 **Mockups only (nothing wired). Eight batches:**

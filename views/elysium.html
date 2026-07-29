@@ -397,6 +397,25 @@ const AudioCtl = (function () {
   function load() { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch { return {}; } }
   function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} }
 
+  // The site-wide settings panel decides how this page OPENS: with music off
+  // everywhere, Elysium opens muted. The controls in the corner still work and
+  // override it for this visit, but they never write back to the site setting,
+  // so turning music on here leaves every other page alone.
+  (function seedFromSite() {
+    const bus = window.AudioBus;
+    if (!bus) return;
+    const m = bus.get("music"), a = bus.get("ambience");
+    state.musicMuted = m.muted || m.volume === 0;
+    state.ambMuted = a.muted || a.volume === 0;
+    state.musicVol = Math.round(m.volume * 100);
+    state.ambVol = Math.round(a.volume * 100);
+    // Write it through: the focus / visibilitychange / storage re-sync below
+    // reloads this key, and would otherwise put the old local values straight
+    // back over the seed. The stored copy is a per-visit working state that
+    // starts from the site setting each time the page opens.
+    save();
+  })();
+
   function startRain() {
     if (rainStarted) { if (audioCtx) audioCtx.resume(); return; }
     const Ctx = window.AudioContext || window.webkitAudioContext;
