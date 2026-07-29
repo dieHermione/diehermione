@@ -11,8 +11,13 @@
 <script src="/audio.js"></script>
 <style>
   /* Dummy Parse: a damage sim against a target that does not fight back.
-     Dark terminal, blue chrome, everything the player did in red. */
+     Layout is mockup 10, "big ability cards": arena and a 5x2 card deck on the
+     left, the meter down the right. Stats and the rotation timeline live in
+     their own tabs so the arena keeps its room. */
   *{box-sizing:border-box;margin:0;padding:0}
+  /* `hidden` loses to an explicit `display`, and several things here are hidden
+     while carrying one (the cast bar, the cooldown overlay). */
+  [hidden]{display:none !important}
   :root{--c:#aee3ff;--dim:#4f7ea0;--dim2:#2c4a5e;--bright:#eafaff;--accent:#8fd0ff;
         --glow:rgba(120,190,255,.32);--red:#ff3b2f;--deep:#c11208;--gold:#ffd27a;--ok:#7dffb0}
   html,body{height:100%;margin:0;overflow:hidden}
@@ -21,12 +26,22 @@
     background:repeating-linear-gradient(0deg,rgba(0,0,0,.28) 0 1px,transparent 1px 3px)}
   .vig{position:fixed;inset:0;z-index:89;pointer-events:none;box-shadow:inset 0 0 24vh 8vh rgba(0,0,0,.7)}
 
-  .wrap{position:absolute;inset:0;display:grid;grid-template-columns:290px 1fr 320px;
-    grid-template-rows:auto 1fr auto;gap:1rem;padding:2.4rem 2vw 1.4rem}
-  .bar{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;
-    font-size:10px;letter-spacing:.34em;color:var(--dim)}
+  .wrap{position:absolute;inset:0;display:flex;flex-direction:column;gap:.9rem;padding:2.4rem 2vw 1.4rem}
+  .bar{display:flex;justify-content:space-between;align-items:center;
+    font-size:10px;letter-spacing:.34em;color:var(--dim);flex-shrink:0}
   .bar b{color:var(--bright);font-weight:400}
   .bar .live{color:var(--red)}
+  /* leave room for the back chevron nav.js parks in the top-left corner */
+  .bar > span:first-child{padding-left:2.8rem}
+
+  /* ---- tabs ---- */
+  .tabs{display:flex;gap:.4rem}
+  .tab{border:1px solid var(--dim2);background:transparent;color:var(--dim);font-family:inherit;
+    font-size:9px;letter-spacing:.28em;text-transform:uppercase;padding:.32rem 1rem;cursor:pointer}
+  .tab:hover{color:var(--c);border-color:var(--dim)}
+  .tab.on{border-color:var(--c);color:var(--bright);box-shadow:0 0 14px var(--glow)}
+  .view{flex:1;min-height:0;display:none}
+  .view.on{display:block}
 
   /* ---- panels ---- */
   .panel{border:1px solid var(--dim2);padding:.8rem .9rem;overflow:hidden;display:flex;flex-direction:column;min-height:0}
@@ -34,33 +49,20 @@
     border-bottom:1px solid var(--dim2);padding-bottom:.35rem;margin-bottom:.6rem;
     display:flex;justify-content:space-between}
   .panel h3 b{color:var(--bright);font-weight:400}
+  .lbl{font-size:9px;letter-spacing:.3em;color:var(--dim);margin:.7rem 0 .4rem}
 
-  /* ---- stats ---- */
-  .srow{display:grid;grid-template-columns:1fr auto auto auto auto;gap:.35rem;align-items:center;
-    padding:.22rem 0 .34rem;font-size:11.5px}
-  .srow .k{color:var(--c)}
-  .srow .v{color:var(--bright);min-width:3.4rem;text-align:right}
-  .srow .p{color:var(--dim);min-width:1.8rem;text-align:right}
-  .srow button{width:1.35rem;height:1.35rem;background:transparent;border:1px solid var(--dim2);
-    color:var(--c);font-family:inherit;cursor:pointer;line-height:1;font-size:12px}
-  .srow button:hover:not(:disabled){border-color:var(--c);color:var(--bright)}
-  .srow button:disabled{opacity:.3;cursor:not-allowed}
-  .curve{height:3px;background:var(--dim2);margin-top:.1rem;grid-column:1/-1}
-  .curve i{display:block;height:100%;background:var(--accent)}
-  .pool{display:flex;justify-content:space-between;font-size:11px;color:var(--dim);
-    border-top:1px solid var(--dim2);margin-top:.5rem;padding-top:.5rem}
-  .pool b{color:var(--gold)}
-  .mini{font-size:9px;color:var(--dim2);line-height:1.6;margin-top:.4rem}
+  /* ---- parse view: arena + cards, meter right ---- */
+  .g{height:100%;display:grid;grid-template-columns:1fr 320px;gap:1.1rem}
+  .lt{display:grid;grid-template-rows:1fr auto;gap:.9rem;min-height:0}
 
-  /* ---- arena ---- */
-  .arena{position:relative;border:1px solid var(--dim2);overflow:hidden;
+  .arena{position:relative;border:1px solid var(--dim2);overflow:hidden;min-height:0;
     background:radial-gradient(60% 60% at 50% 45%,rgba(120,190,255,.05),transparent 70%)}
-  .dummy{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);text-align:center}
+  .dummy{position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);text-align:center}
   .dummy .fig{font-size:7rem;line-height:1;color:var(--dim);text-shadow:0 0 30px rgba(120,190,255,.25);
     transition:transform .08s,color .08s}
   .dummy.hit .fig{transform:scale(1.06);color:var(--bright)}
   .dummy .nm{font-size:10px;letter-spacing:.34em;color:var(--dim);margin-top:.4rem}
-  .dummy .dmgtaken{font-size:1.5rem;color:var(--bright);margin-top:.2rem}
+  .dummy .dmgtaken{font-size:1.7rem;color:var(--bright);margin-top:.2rem}
   .stacks{display:flex;gap:.4rem;justify-content:center;margin-top:.7rem;flex-wrap:wrap}
   .stk{border:1px solid var(--deep);color:#ffb0a8;font-size:9px;letter-spacing:.12em;padding:.16rem .45rem;
     background:rgba(255,20,10,.09)}
@@ -79,13 +81,13 @@
   .bolt{position:absolute;width:14px;height:14px;border-radius:50%;pointer-events:none;z-index:4;
     background:radial-gradient(circle,#fff,rgba(255,60,48,.8) 45%,transparent 70%);
     box-shadow:0 0 18px rgba(255,60,48,.9)}
-  .flash{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);width:150px;height:150px;
+  .flash{position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);width:150px;height:150px;
     border-radius:50%;pointer-events:none;z-index:3;background:radial-gradient(circle,rgba(255,255,255,.5),transparent 65%);
     animation:pop .28s ease-out forwards}
   @keyframes pop{from{opacity:1;transform:translate(-50%,-50%) scale(.4)}to{opacity:0;transform:translate(-50%,-50%) scale(1.5)}}
 
-  /* ---- cast bar + resources ---- */
-  .castwrap{position:absolute;left:50%;bottom:5.6rem;transform:translateX(-50%);width:min(420px,70%);text-align:center}
+  /* ---- cast bar + resources, floated at the foot of the arena ---- */
+  .castwrap{position:absolute;left:50%;bottom:1.1rem;transform:translateX(-50%);width:min(460px,74%);text-align:center}
   .castbar{height:20px;border:1px solid var(--c);position:relative;background:rgba(0,0,0,.7);overflow:hidden}
   .castbar i{display:block;height:100%;background:linear-gradient(90deg,rgba(143,208,255,.5),var(--accent));width:0}
   .castbar span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
@@ -94,96 +96,196 @@
   .mana{height:8px;border:1px solid var(--dim2);margin-top:.4rem;background:rgba(0,0,0,.6)}
   .mana i{display:block;height:100%;background:linear-gradient(90deg,#2a6fa8,var(--accent));width:100%}
   .manatxt{font-size:9px;letter-spacing:.2em;color:var(--dim);margin-top:.2rem}
+  .buffs{display:flex;flex-wrap:wrap;gap:.3rem;margin-top:.45rem;justify-content:center}
+  .bf{border:1px solid var(--accent);color:var(--accent);font-size:9px;padding:.14rem .4rem;
+    background:rgba(120,190,255,.09);letter-spacing:.1em}
+  .bf.gold{border-color:var(--gold);color:var(--gold);background:rgba(255,210,122,.1)}
 
-  /* ---- action bar ---- */
-  .actions{grid-column:1/-1;display:flex;gap:.5rem;justify-content:center}
-  .ab{width:76px;border:1px solid var(--dim2);padding:.4rem .3rem;text-align:center;position:relative;
-    overflow:hidden;background:rgba(0,0,0,.6);cursor:pointer}
-  .ab .key{font-size:9px;letter-spacing:.16em;color:var(--dim)}
-  .ab .nm{font-size:10px;color:var(--c);margin-top:.15rem;line-height:1.25;min-height:2.1em}
-  .ab .cd{position:absolute;left:0;right:0;bottom:0;background:rgba(0,0,0,.78);
-    display:flex;align-items:center;justify-content:center;font-size:1.05rem;color:var(--bright)}
-  .ab.ready{border-color:var(--c);box-shadow:0 0 14px var(--glow)}
-  .ab.ready .nm{color:var(--bright)}
-  .ab.nomana{border-color:var(--deep)}
-  .ab.active{border-color:var(--gold);box-shadow:0 0 18px rgba(255,210,122,.5)}
+  /* ---- the card deck ---- */
+  .cards{display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(2,1fr);
+    gap:.6rem;height:214px;flex-shrink:0}
+  .card{border:1px solid var(--dim2);padding:.5rem .6rem;position:relative;overflow:hidden;cursor:pointer;
+    display:flex;flex-direction:column;justify-content:space-between;
+    background:linear-gradient(180deg,rgba(120,190,255,.05),transparent 60%)}
+  .card .k{font-size:1.4rem;color:var(--dim);line-height:1}
+  .card .n{font-size:.95rem;color:var(--bright);line-height:1.15}
+  .card .tx{font-size:8.5px;line-height:1.5;color:var(--dim);margin-top:.2rem;
+    display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+  .card .cost{position:absolute;top:.5rem;right:.6rem;font-size:8.5px;letter-spacing:.1em;color:var(--dim2)}
+  .card .cd{position:absolute;inset:0;background:rgba(0,0,0,.74);display:grid;place-items:center;
+    font-size:2rem;color:var(--bright)}
+  .card .cd i{position:absolute;left:0;bottom:0;height:2px;background:var(--accent);width:0}
+  .card.ready{border-color:var(--c);box-shadow:0 0 16px var(--glow)}
+  .card.ready .k{color:var(--c)}
+  .card.nomana{border-color:var(--deep)}
+  .card.active{border-color:var(--gold);box-shadow:0 0 20px rgba(255,210,122,.5)}
 
-  /* ---- meter + log ---- */
+  /* ---- meter ---- */
   .mrow{display:grid;grid-template-columns:1fr auto;gap:.4rem;font-size:11px;padding:.16rem 0;position:relative}
   .mrow .fill{position:absolute;left:0;top:0;bottom:0;background:rgba(255,59,47,.16);z-index:0}
   .mrow span{position:relative;z-index:1}
   .mrow .n{color:var(--c)}.mrow .d{color:var(--bright)}
-  .bigdps{font-size:2.6rem;color:var(--bright);line-height:1;text-shadow:0 0 22px var(--glow)}
+  .bigdps{font-size:2.4rem;color:var(--bright);line-height:1;text-shadow:0 0 22px var(--glow)}
   .bigk{font-size:9px;letter-spacing:.3em;color:var(--dim);margin-top:.2rem}
-  .logl{font-size:10px;line-height:1.75;color:var(--dim);overflow:hidden;flex:1}
+  .logl{font-size:10px;line-height:1.75;color:var(--dim);overflow:hidden;flex:1;min-height:3rem}
   .logl b{color:var(--bright);font-weight:400}
   .logl .cr{color:var(--gold)}
-  .logl .dt{color:#ff9a90}
+  .buildline{font-size:9.5px;line-height:1.7;color:var(--dim);border-top:1px solid var(--dim2);
+    padding-top:.5rem;margin-top:.5rem}
+  .buildline b{color:var(--c);font-weight:400}
 
-  .ctrls{display:flex;gap:.5rem;margin-top:.5rem}
+  .ctrls{display:flex;gap:.5rem;margin-top:.6rem}
   .btn{flex:1;border:1px solid var(--c);background:transparent;color:var(--bright);font-family:inherit;
     font-size:.78rem;letter-spacing:.18em;text-transform:uppercase;padding:.45rem;cursor:pointer}
   .btn:hover{background:rgba(120,190,255,.12)}
   .btn.stop{border-color:var(--red);color:#ffb0a8}
   .btn:disabled{opacity:.35;cursor:not-allowed}
-  .buffs{display:flex;flex-wrap:wrap;gap:.3rem;margin-top:.5rem}
-  .bf{border:1px solid var(--accent);color:var(--accent);font-size:9px;padding:.14rem .4rem;
-    background:rgba(120,190,255,.09);letter-spacing:.1em}
-  .bf.gold{border-color:var(--gold);color:var(--gold);background:rgba(255,210,122,.1)}
+
+  /* ---- build view ---- */
+  .buildgrid{height:100%;display:grid;grid-template-columns:1fr 320px;gap:1.1rem}
+  .statcols{display:grid;grid-template-columns:1fr 1fr;gap:0 1.6rem;align-content:start}
+  .srow{display:grid;grid-template-columns:1fr auto auto auto auto;gap:.4rem;align-items:center;
+    padding:.4rem 0 .5rem;font-size:12.5px;border-bottom:1px solid rgba(44,74,94,.45)}
+  .srow .k{color:var(--c)}
+  .srow .v{color:var(--bright);min-width:3.6rem;text-align:right}
+  .srow .p{color:var(--dim);min-width:1.8rem;text-align:right}
+  .srow button{width:1.5rem;height:1.5rem;background:transparent;border:1px solid var(--dim2);
+    color:var(--c);font-family:inherit;cursor:pointer;line-height:1;font-size:12px}
+  .srow button:hover:not(:disabled){border-color:var(--c);color:var(--bright)}
+  .srow button:disabled{opacity:.3;cursor:not-allowed}
+  .srow .desc{grid-column:1/-1;font-size:9px;color:var(--dim2);letter-spacing:.06em}
+  .curve{height:3px;background:var(--dim2);margin-top:.25rem;grid-column:1/-1}
+  .curve i{display:block;height:100%;background:var(--accent)}
+  .pool{display:flex;justify-content:space-between;font-size:12px;color:var(--dim);
+    border-top:1px solid var(--dim2);margin-top:.7rem;padding-top:.6rem}
+  .pool b{color:var(--gold)}
+  .mini{font-size:10px;color:var(--dim2);line-height:1.75;margin-top:.5rem}
+  .bignum{font-size:3.4rem;color:var(--bright);line-height:1;text-shadow:0 0 22px var(--glow)}
+
+  /* ---- rotation timeline ---- */
+  .tlpanel{height:100%;display:flex;flex-direction:column;border:1px solid var(--dim2);padding:.9rem 1rem;
+    min-height:0;--gut:9.2rem}
+  .tlhead{display:flex;justify-content:space-between;align-items:center;font-size:9px;
+    letter-spacing:.3em;color:var(--dim);margin-bottom:.7rem;flex-shrink:0}
+  .tlhead .btn{flex:0 0 auto;padding:.28rem .9rem;font-size:.66rem}
+  .tlbody{flex:1;min-height:0;overflow-y:auto}
+  .tllanes{position:relative;display:flex;flex-direction:column;gap:.28rem;height:100%;min-height:18rem}
+  .tlrow{display:grid;grid-template-columns:var(--gut) 1fr;align-items:stretch;gap:0;
+    flex:1 1 0;min-height:22px;max-height:54px}
+  .tlrow.gcdrow{flex:0 0 16px}
+  .tlname{font-size:9.5px;letter-spacing:.1em;color:var(--dim);text-align:right;padding-right:.7rem;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;
+    justify-content:flex-end}
+  .tlrow.gcdrow .tlname{color:var(--dim2)}
+  .lane{position:relative;height:100%;background:rgba(120,190,255,.03);border:1px solid rgba(44,74,94,.5)}
+  .cdbar{position:absolute;top:0;bottom:0;border-bottom:3px solid rgba(79,126,160,.85);
+    background:repeating-linear-gradient(45deg,rgba(120,190,255,.13) 0 4px,transparent 4px 9px)}
+  .blk{position:absolute;top:2px;bottom:2px;border:1px solid var(--c);background:rgba(120,190,255,.14);
+    display:flex;align-items:center;padding:0 .3rem;font-size:9.5px;color:var(--bright);
+    overflow:hidden;white-space:nowrap;min-width:3px}
+  .blk.chan{border-color:var(--gold);background:rgba(255,210,122,.14);color:var(--gold)}
+  .blk.inst{background:var(--c);color:#04070a;min-width:8px}
+  .gblk{position:absolute;top:2px;bottom:2px;background:rgba(120,190,255,.10);
+    border-left:1px solid rgba(120,190,255,.35)}
+  .now{position:absolute;top:0;bottom:0;width:2px;background:var(--red);
+    box-shadow:0 0 12px rgba(255,59,47,.8);z-index:6;pointer-events:none}
+  .axis{display:grid;grid-template-columns:var(--gut) 1fr;font-size:9px;color:var(--dim2);
+    margin-top:.3rem;flex-shrink:0}
+  .axis .ticks{display:flex;justify-content:space-between}
+  .tlnote{font-size:9.5px;color:var(--dim2);line-height:1.7;margin-top:.6rem;flex-shrink:0}
 </style>
 </head>
 <body class="has-top-nav">
 <div class="wrap">
   <div class="bar">
     <span>ANGELDOM // DUMMY PARSE &nbsp;·&nbsp; <b id="cls">priest</b></span>
+    <div class="tabs">
+      <button class="tab on" type="button" data-view="parse">parse</button>
+      <button class="tab" type="button" data-view="build">build</button>
+      <button class="tab" type="button" data-view="rotation">rotation</button>
+    </div>
     <span id="statusline">allocate your stats, then pull</span>
     <span><span class="live" id="livedot" hidden>● IN COMBAT</span> <span id="clock">00:00</span></span>
   </div>
 
-  <!-- stats -->
-  <section class="panel">
-    <h3><span>STATS</span><b id="poolhdr">100 unspent</b></h3>
-    <div id="statlist"></div>
-    <div class="pool"><span>total spent</span><b id="spent">0</b></div>
-    <div class="mini">Every stat has diminishing returns: each point is worth less than
-      the last, so stacking one is never optimal. The bar shows how far along its
-      curve you are.</div>
-    <div class="ctrls"><button class="btn" id="reset-stats" type="button">reset</button></div>
-  </section>
+  <!-- ======================= parse ======================= -->
+  <div class="view on" id="view-parse">
+    <div class="g">
+      <div class="lt">
+        <section class="arena" id="arena">
+          <div class="dummy" id="dummy">
+            <div class="fig">&#9760;</div>
+            <div class="nm">TARGET DUMMY</div>
+            <div class="dmgtaken" id="taken">0</div>
+            <div class="stacks" id="debuffs"></div>
+          </div>
+          <div class="castwrap">
+            <div class="castbar" id="castbar" hidden><i id="castfill"></i><span id="casttext"></span></div>
+            <div class="mana"><i id="manafill"></i></div>
+            <div class="manatxt"><span id="manatxt">10000 / 10000</span> &nbsp;·&nbsp; <span id="buffline"></span></div>
+            <div class="buffs" id="buffs"></div>
+          </div>
+        </section>
+        <div class="cards" id="actionbar"></div>
+      </div>
 
-  <!-- arena -->
-  <section class="arena" id="arena">
-    <div class="dummy" id="dummy">
-      <div class="fig">&#9760;</div>
-      <div class="nm">TARGET DUMMY</div>
-      <div class="dmgtaken" id="taken">0</div>
-      <div class="stacks" id="debuffs"></div>
+      <section class="panel">
+        <h3><span>METER</span><b id="parsetime">0.0s</b></h3>
+        <div class="bigdps" id="dps">0</div>
+        <div class="bigk">DAMAGE PER SECOND</div>
+        <div class="lbl">BREAKDOWN</div>
+        <div id="breakdown"></div>
+        <div class="lbl">COMBAT LOG</div>
+        <div class="logl" id="log"></div>
+        <div class="buildline" id="buildline"></div>
+        <div class="ctrls">
+          <button class="btn" id="pull" type="button">pull</button>
+          <button class="btn stop" id="stop" type="button" disabled>end</button>
+        </div>
+      </section>
     </div>
-    <div class="castwrap">
-      <div class="castbar" id="castbar" hidden><i id="castfill"></i><span id="casttext"></span></div>
-      <div class="mana"><i id="manafill"></i></div>
-      <div class="manatxt"><span id="manatxt">10000 / 10000</span> &nbsp;·&nbsp; <span id="buffline"></span></div>
-      <div class="buffs" id="buffs"></div>
-    </div>
-  </section>
+  </div>
 
-  <!-- meter -->
-  <section class="panel">
-    <h3><span>METER</span><b id="parsetime">0.0s</b></h3>
-    <div class="bigdps" id="dps">0</div>
-    <div class="bigk">DAMAGE PER SECOND</div>
-    <div style="margin:.7rem 0 .4rem;font-size:9px;letter-spacing:.3em;color:var(--dim)">BREAKDOWN</div>
-    <div id="breakdown"></div>
-    <div style="margin:.7rem 0 .4rem;font-size:9px;letter-spacing:.3em;color:var(--dim)">COMBAT LOG</div>
-    <div class="logl" id="log"></div>
-    <div class="ctrls">
-      <button class="btn" id="pull" type="button">pull</button>
-      <button class="btn stop" id="stop" type="button" disabled>end</button>
+  <!-- ======================= build ======================= -->
+  <div class="view" id="view-build">
+    <div class="buildgrid">
+      <section class="panel">
+        <h3><span>STAT ALLOCATION</span><b id="poolhdr">100 unspent</b></h3>
+        <div class="statcols" id="statlist"></div>
+        <div class="pool"><span>total spent</span><b id="spent">0 / 100</b></div>
+        <div class="mini">Every stat runs through the same curve, so each point is worth
+          less than the last and no stat ever reaches its cap. Stacking one is always
+          worse than spreading. The bar under each row shows how far along its curve
+          you are. Points are locked once you pull.</div>
+        <div class="ctrls"><button class="btn" id="reset-stats" type="button">reset</button></div>
+      </section>
+      <section class="panel">
+        <h3><span>UNSPENT</span></h3>
+        <div class="bignum" id="unspent-big">100</div>
+        <div class="bigk">POINTS LEFT</div>
+        <div class="lbl">RESULTING NUMBERS</div>
+        <div id="derived" style="font-size:11.5px;line-height:2"></div>
+      </section>
     </div>
-  </section>
+  </div>
 
-  <!-- action bar -->
-  <div class="actions" id="actionbar"></div>
+  <!-- ===================== rotation ====================== -->
+  <div class="view" id="view-rotation">
+    <div class="tlpanel">
+      <div class="tlhead">
+        <span>ROTATION &middot; ONE LANE PER ABILITY, CASTS OVER THEIR OWN COOLDOWN</span>
+        <span><span id="tlwindow">last 30s</span>
+          <button class="btn" id="tlmode" type="button" style="margin-left:.8rem">fit whole parse</button></span>
+      </div>
+      <div class="tlbody" id="tlbody"></div>
+      <div class="axis"><span></span><div class="ticks" id="tlticks"></div></div>
+      <div class="tlnote">This is the rotation you actually cast, drawn live. A bordered block is a
+        cast (channels in gold, instants filled solid). The hatching behind it is that
+        ability's cooldown, and it visibly shortens when Timeturn, Temporal Mark or
+        Rewind act on it. The thin top lane is the global cooldown: gaps in it are
+        time you spent doing nothing.</div>
+    </div>
+  </div>
 </div>
 <div class="vig"></div><div class="scan"></div>
 
@@ -206,13 +308,13 @@
    Because no stat can be driven to its cap, dumping everything into one is
    always worse than spreading, which is the property the design asks for. */
 const STATS = {
-  crit:      { name:"Critical Chance",  K:55, max:0.60, kind:"pct",  desc:"chance to crit" },
-  critDmg:   { name:"Critical Damage",  K:70, max:1.40, kind:"pct",  desc:"added to the 2x crit multiplier" },
-  haste:     { name:"Haste",            K:65, max:0.55, kind:"pct",  desc:"faster casts and a shorter GCD" },
-  focus:     { name:"Focus",            K:45, max:2.20, kind:"x",    desc:"mana regeneration" },
-  intellect: { name:"Intellect",        K:85, max:1.10, kind:"pct",  desc:"damage of everything" },
-  fracture:  { name:"Fracture Chance",  K:60, max:0.45, kind:"pct",  desc:"chance to apply Fracture" },
-  dot:       { name:"DoT Damage",       K:70, max:0.75, kind:"pct",  desc:"damage of damage-over-time" },
+  crit:      { name:"Critical Chance",  short:"crit",     K:55, max:0.60, kind:"pct", desc:"chance to crit" },
+  critDmg:   { name:"Critical Damage",  short:"critdmg",  K:70, max:1.40, kind:"pct", desc:"added to the 2x crit multiplier" },
+  haste:     { name:"Haste",            short:"haste",    K:65, max:0.55, kind:"pct", desc:"faster casts and a shorter GCD" },
+  focus:     { name:"Focus",            short:"focus",    K:45, max:2.20, kind:"x",   desc:"mana regeneration" },
+  intellect: { name:"Intellect",        short:"intellect",K:85, max:1.10, kind:"pct", desc:"damage of everything" },
+  fracture:  { name:"Fracture Chance",  short:"fracture", K:60, max:0.45, kind:"pct", desc:"chance to apply Fracture" },
+  dot:       { name:"DoT Damage",       short:"dot",      K:70, max:0.75, kind:"pct", desc:"damage of damage-over-time" },
 };
 const STAT_POOL = 100;
 const points = {}; Object.keys(STATS).forEach(k => points[k] = 0);
@@ -274,6 +376,9 @@ function freshState() {
     brandUntil:0, brandBank:0,
     total:0, byAbility:{}, events:[], log:[],
     projectiles:[],
+    // rotation timeline: what was cast, when the GCD ran, and how long each
+    // cooldown actually lasted after Timeturn/Mark/Rewind got at it
+    casts:[], gcds:[], cdlog:[],
   };
 }
 
@@ -346,6 +451,9 @@ function tryCast(a) {
   S.cd[a.id] = S.t + a.cd;
   S.lastAbility = a.id;
   const len = castLen(a);
+  S.gcds.push({ start:S.t, end:S.gcdUntil });
+  S.cdlog.push({ id:a.id, start:S.t, end:S.cd[a.id], open:true });
+  S.casts.push({ id:a.id, name:a.name, start:S.t, end:S.t + len, channel:!!a.channel, instant:len <= 0 });
   if (len <= 0) { finishCast(a); return; }
   S.cast = { a, start:S.t, end:S.t + len, nextTick: a.channel ? S.t + (a.tick / (1 + haste())) : 0 };
   pushLog(`casting <b>${a.name}</b>`);
@@ -362,7 +470,6 @@ function launch(a) {
   const el = document.createElement("div");
   el.className = "bolt";
   const arena = document.getElementById("arena");
-  const r = arena.getBoundingClientRect();
   el.style.left = "12%"; el.style.top = "78%";
   arena.appendChild(el);
   S.projectiles.push({ a, el, born:S.t, hits:S.t + a.travel });
@@ -423,6 +530,19 @@ function addFlame(n) {
   S.flameUntil = S.t + 24;
   if (S.flameNext <= S.t) S.flameNext = S.t + FLAME_TICK;
   pushLog(`Divine Flame <b>${before}</b> &rarr; <b>${S.flame}</b>`);
+}
+
+// Cooldown bars are drawn from a log rather than from S.cd, because S.cd only
+// remembers the current end. A bar stays open while its cooldown runs so that
+// Timeturn, Temporal Mark and Rewind visibly shorten it, and closes at the end
+// it actually reached.
+function syncCooldownBars() {
+  for (const rec of S.cdlog) {
+    if (!rec.open) continue;
+    const end = S.cd[rec.id] || 0;
+    if (end > S.t) rec.end = end;
+    else { rec.end = Math.min(rec.end, S.t); rec.open = false; }
+  }
 }
 
 /* ---------- the loop ---------- */
@@ -490,6 +610,7 @@ function frame(now) {
   // expire buffs
   Object.keys(S.buffs).forEach(k => { if (S.t >= S.buffs[k].until) delete S.buffs[k]; });
 
+  syncCooldownBars();
   render();
 }
 
@@ -498,9 +619,9 @@ function floatText(n, cls) {
   const arena = document.getElementById("arena");
   const el = document.createElement("div");
   el.className = "float " + cls;
-  el.textContent = (cls === "crit" ? "" : "") + n.toLocaleString();
+  el.textContent = n.toLocaleString();
   el.style.left = (50 + (Math.random() * 16 - 8)) + "%";
-  el.style.top = (36 + Math.random() * 8) + "%";
+  el.style.top = (34 + Math.random() * 8) + "%";
   arena.appendChild(el);
   setTimeout(() => el.remove(), 1200);
 }
@@ -519,6 +640,100 @@ function pushLog(html) {
   if (S.log.length > 40) S.log.pop();
 }
 
+/* ---------- tabs ---------- */
+let view = "parse";
+document.querySelectorAll(".tab").forEach(btn => {
+  btn.addEventListener("click", () => {
+    view = btn.dataset.view;
+    document.querySelectorAll(".tab").forEach(b => b.classList.toggle("on", b === btn));
+    document.querySelectorAll(".view").forEach(v => v.classList.toggle("on", v.id === "view-" + view));
+    if (view === "rotation") renderTimeline();
+    if (view === "build") renderStats();
+  });
+});
+
+/* ---------- rotation timeline ----------
+   Design 11 showed a *planned* rotation. There is no planner, so this draws the
+   rotation actually cast: one lane per ability, casts above their own cooldown
+   bar, with the global cooldown on a thin lane of its own. */
+const TL_WINDOW = 30;                 // seconds visible while following
+let tlFit = false;                    // false = follow the last 30s
+function tlRange() {
+  const t = S ? S.t : 0;
+  if (tlFit) return [0, Math.max(10, t)];
+  if (t <= TL_WINDOW) return [0, TL_WINDOW];
+  return [t - TL_WINDOW, t];
+}
+function renderTimeline() {
+  if (view !== "rotation") return;
+  const [w0, w1] = tlRange();
+  const span = Math.max(0.001, w1 - w0);
+  const pct = (x) => ((x - w0) / span) * 100;
+  // a block that runs off either edge is clipped, not dropped
+  const clip = (a, b) => {
+    const lo = Math.max(a, w0), hi = Math.min(b, w1);
+    return hi <= lo ? null : [pct(lo), pct(hi) - pct(lo)];
+  };
+
+  let html = "";
+  // the global cooldown, on its own thin lane
+  let gcdBlocks = "";
+  for (const g of S.gcds) {
+    const c = clip(g.start, g.end);
+    if (c) gcdBlocks += `<i class="gblk" style="left:${c[0]}%;width:${c[1]}%"></i>`;
+  }
+  html += `<div class="tlrow gcdrow"><span class="tlname">gcd</span><div class="lane">${gcdBlocks}</div></div>`;
+
+  for (const a of ABILITIES) {
+    let lane = "";
+    for (const rec of S.cdlog) {
+      if (rec.id !== a.id) continue;
+      const c = clip(rec.start, rec.end);
+      if (c) lane += `<i class="cdbar" style="left:${c[0]}%;width:${c[1]}%"></i>`;
+    }
+    for (const cst of S.casts) {
+      if (cst.id !== a.id) continue;
+      // an instant has no duration, so give it a hairline of its own
+      const end = cst.instant ? cst.start + span * 0.004 : cst.end;
+      const c = clip(cst.start, end);
+      if (!c) continue;
+      const cls = cst.channel ? "blk chan" : cst.instant ? "blk inst" : "blk";
+      const label = c[1] > 6 ? cst.name : "";
+      lane += `<span class="${cls}" style="left:${c[0]}%;width:${c[1]}%">${label}</span>`;
+    }
+    html += `<div class="tlrow"><span class="tlname">${a.name.toLowerCase()}</span>
+      <div class="lane">${lane}</div></div>`;
+  }
+
+  // the marker belongs to the lane stack, so it stops at the last lane rather
+  // than running down the empty space beneath it
+  const body = document.getElementById("tlbody");
+  body.innerHTML = `<div class="tllanes">${html}</div>`;
+  if (S && S.t >= w0 && S.t <= w1) {
+    const marker = document.createElement("div");
+    marker.className = "now";
+    marker.style.left = `calc(var(--gut) + (100% - var(--gut)) * ${(pct(S.t) / 100).toFixed(4)})`;
+    body.firstChild.appendChild(marker);
+  }
+
+  const ticks = document.getElementById("tlticks");
+  const step = span / 5;
+  ticks.replaceChildren();
+  for (let i = 0; i <= 5; i++) {
+    const s = document.createElement("span");
+    s.textContent = (w0 + step * i).toFixed(0) + "s";
+    ticks.append(s);
+  }
+  document.getElementById("tlwindow").textContent =
+    tlFit ? "whole parse" : "last " + TL_WINDOW + "s";
+}
+document.getElementById("tlmode").addEventListener("click", () => {
+  tlFit = !tlFit;
+  document.getElementById("tlmode").textContent = tlFit ? "follow last 30s" : "fit whole parse";
+  renderTimeline();
+});
+
+/* ---------- render ---------- */
 function render() {
   const t = S.t || 0.001;
   document.getElementById("clock").textContent =
@@ -545,12 +760,11 @@ function render() {
   } else cb.hidden = true;
 
   // debuffs on the dummy
-  const db = document.getElementById("debuffs");
   const chips = [];
   if (S.flame > 0) chips.push(`<span class="stk">DIVINE FLAME ${S.flame}</span>`);
   if (S.t < S.mark) chips.push(`<span class="stk blue">TEMPORAL MARK ${(S.mark-S.t).toFixed(0)}s</span>`);
   if (S.t < S.vigilUntil) chips.push(`<span class="stk">VIGIL ${(S.vigilUntil-S.t).toFixed(0)}s</span>`);
-  db.innerHTML = chips.join("");
+  document.getElementById("debuffs").innerHTML = chips.join("");
 
   // player buffs
   document.getElementById("buffs").innerHTML = Object.values(S.buffs)
@@ -558,7 +772,7 @@ function render() {
   document.getElementById("buffline").textContent =
     "fracture " + S.fracture + "/" + FRACTURE_MAX;
 
-  // action bar
+  // the card deck
   ABILITIES.forEach(a => {
     const el = document.getElementById("ab-" + a.id);
     const left = (S.cd[a.id] || 0) - S.t;
@@ -567,8 +781,9 @@ function render() {
     const show = Math.max(left, S.cast ? 0 : gcdLeft);
     if (show > 0.05) {
       cdEl.hidden = false;
-      cdEl.style.height = Math.min(100, (left > 0 ? left / a.cd : gcdLeft / gcdLen()) * 100) + "%";
-      cdEl.textContent = show > 0.1 ? show.toFixed(show < 3 ? 1 : 0) : "";
+      cdEl.firstChild.textContent = show > 0.1 ? show.toFixed(show < 3 ? 1 : 0) : "";
+      const frac = left > 0 ? 1 - left / a.cd : 1 - gcdLeft / gcdLen();
+      cdEl.querySelector("i").style.width = Math.max(0, Math.min(1, frac)) * 100 + "%";
     } else cdEl.hidden = true;
     el.classList.toggle("ready", ready(a));
     el.classList.toggle("nomana", S.mana < a.mana);
@@ -583,6 +798,7 @@ function render() {
      <span class="n">${n}</span><span class="d">${d.toLocaleString()} &nbsp; ${Math.round(d/S.total*100)}%</span></div>`).join("");
 
   document.getElementById("log").innerHTML = S.log.join("<br>");
+  renderTimeline();
 }
 
 /* ---------- stat UI ---------- */
@@ -593,28 +809,48 @@ function fmtStat(k) {
 }
 function renderStats() {
   const list = document.getElementById("statlist");
+  const locked = !!(S && S.running);
   list.innerHTML = Object.keys(STATS).map(k => {
     const s = STATS[k], frac = curve(k) / s.max;
-    return `<div class="srow" title="${s.desc}">
+    return `<div class="srow">
       <span class="k">${s.name}</span>
       <span class="v">${fmtStat(k)}</span>
       <span class="p">${points[k]}</span>
-      <button data-minus="${k}" ${points[k]<=0?"disabled":""}>&minus;</button>
-      <button data-plus="${k}" ${unspent()<=0?"disabled":""}>+</button>
+      <button data-minus="${k}" ${locked||points[k]<=0?"disabled":""}>&minus;</button>
+      <button data-plus="${k}" ${locked||unspent()<=0?"disabled":""}>+</button>
       <span class="curve"><i style="width:${frac*100}%"></i></span>
+      <span class="desc">${s.desc}</span>
     </div>`;
   }).join("");
   document.getElementById("poolhdr").textContent = unspent() + " unspent";
   document.getElementById("spent").textContent = spent() + " / " + STAT_POOL;
+  document.getElementById("unspent-big").textContent = unspent();
+  document.getElementById("derived").innerHTML = [
+    ["crit chance", (critChance()*100).toFixed(1) + "%"],
+    ["crit multiplier", (2 + curve("critDmg")).toFixed(2) + "x"],
+    ["global cooldown", (BASE_GCD / (1 + curve("haste"))).toFixed(2) + "s"],
+    ["mana per second", Math.round(MANA_REGEN * (1 + curve("focus")))],
+    ["damage multiplier", (1 + curve("intellect")).toFixed(2) + "x"],
+    ["fracture chance", (curve("fracture")*100).toFixed(1) + "%"],
+    ["dot multiplier", (1 + curve("dot")).toFixed(2) + "x"],
+  ].map(([k,v]) => `<div style="display:flex;justify-content:space-between">
+      <span style="color:var(--dim)">${k}</span><span style="color:var(--bright)">${v}</span></div>`).join("");
+  // the parse view keeps a one-line copy so a build is readable mid-fight
+  const taken = Object.keys(STATS).filter(k => points[k] > 0);
+  document.getElementById("buildline").innerHTML = "build &nbsp; " + (taken.length
+    ? taken.map(k => `<b>${STATS[k].short}</b> ${points[k]}`).join(" &nbsp; ")
+    : "nothing spent");
   saveBuild();
 }
 document.getElementById("statlist").addEventListener("click", (e) => {
+  if (S && S.running) return;                 // points are locked in combat
   const p = e.target.dataset && e.target.dataset.plus, m = e.target.dataset && e.target.dataset.minus;
   if (p && unspent() > 0) points[p]++;
   if (m && points[m] > 0) points[m]--;
   if (p || m) renderStats();
 });
 document.getElementById("reset-stats").addEventListener("click", () => {
+  if (S && S.running) return;
   Object.keys(points).forEach(k => points[k] = 0); renderStats();
 });
 function saveBuild(){ try { localStorage.setItem("dummyparse.build", JSON.stringify(points)); } catch(e){} }
@@ -625,15 +861,21 @@ function loadBuild(){
   } catch(e){}
 }
 
-/* ---------- action bar UI ---------- */
+/* ---------- the card deck ---------- */
 document.getElementById("actionbar").innerHTML = ABILITIES.map(a =>
-  `<div class="ab" id="ab-${a.id}" data-id="${a.id}" title="${a.name}: ${a.text}">
-     <div class="key">${a.key.toUpperCase()}</div>
-     <div class="nm">${a.name}</div>
-     <div class="cd" hidden></div>
+  `<div class="card" id="ab-${a.id}" data-id="${a.id}">
+     <div>
+       <div class="k">${a.key.toUpperCase()}</div>
+       <span class="cost">${a.cd}s &nbsp; ${a.mana}</span>
+     </div>
+     <div>
+       <div class="n">${a.name}</div>
+       <div class="tx">${a.text}</div>
+     </div>
+     <div class="cd" hidden><span></span><i></i></div>
    </div>`).join("");
 document.getElementById("actionbar").addEventListener("click", (e) => {
-  const box = e.target.closest(".ab"); if (!box) return;
+  const box = e.target.closest(".card"); if (!box) return;
   if (S && S.running) tryCast(BY_ID[box.dataset.id]);
 });
 document.addEventListener("keydown", (e) => {
@@ -656,12 +898,13 @@ function pull() {
   document.getElementById("stop").disabled = false;
   document.getElementById("livedot").hidden = false;
   document.getElementById("statusline").textContent = "in combat";
-  document.querySelectorAll("#statlist button").forEach(b => b.disabled = true);
+  renderStats();                               // greys the +/- out
   if (!raf) raf = requestAnimationFrame(frame);
 }
 async function end() {
   if (!S || !S.running) return;
   S.running = false;
+  syncCooldownBars();
   document.getElementById("pull").disabled = false;
   document.getElementById("stop").disabled = true;
   document.getElementById("livedot").hidden = true;
@@ -689,8 +932,8 @@ document.getElementById("stop").addEventListener("click", end);
 
 /* ---------- boot ---------- */
 loadBuild();
-renderStats();
 S = freshState();
+renderStats();
 render();
 window.siteMe().catch(() => (window.location.href = "/"));
 </script>
