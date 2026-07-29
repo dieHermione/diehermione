@@ -37,24 +37,24 @@ That writes `mockups/out/<batch>-<NN>.png` at 1500x900. One batch only:
 | T9 phone | `t9.html` | 6 | **awaiting a pick** (second attempt) |
 | Slots | `slots.html` | 6 | **awaiting a pick** (second attempt) |
 | Dummy Parse | `dummyparse.html` | 20 | **awaiting a pick** |
-| Skill check | *(not kept)* | — | **CHOSEN: 1** (pure dial) |
-| Summary | *(not kept)* | — | **CHOSEN: 1** (source + entry) |
+| Skill check | *(not kept)* | n/a | **CHOSEN: 1** (pure dial) |
+| Summary | *(not kept)* | n/a | **CHOSEN: 1** (source + entry) |
 
 Skill check and Summary were picked from a batch that also held T9 and Slots in
 one file. That file is deleted: **the four minigames must not share a page in
 any real implementation.** Rebuild the two chosen ones from the descriptions
 below if the visuals are needed again.
 
-- **Skill check 1, "pure dial"** — one large ring centred on black, red good-zone
+- **Skill check 1, "pure dial"** - one large ring centred on black, red good-zone
   arc, white needle, required key drawn in the middle of the dial, four corner
   readouts (repetition, streak, failed, next-in), a row of hit/miss pips.
-- **Summary 1, "source + entry"** — two columns: source text panel left with
+- **Summary 1, "source + entry"** - two columns: source text panel left with
   topic and kind, your answer box right with a live word counter, limit meter
   and rules beneath.
 
 ## What the design brief actually asks for
 
-Terminal aesthetic throughout, but **explicitly not minimalism** — the standing
+Terminal aesthetic throughout, but **explicitly not minimalism** - the standing
 instruction is "as overdesigned and maximalist as possible". The first profile
 and chess attempts were rejected for being too samey, not too busy: the profile
 five were all "an institutional record about you", and the chess four were all

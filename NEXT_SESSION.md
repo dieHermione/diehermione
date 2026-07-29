@@ -4,7 +4,7 @@ Copy the block below into a fresh session.
 
 ---
 
-Hi Claude :3 New context window — this is the angeldom.me project (Railway
+Hi Claude :3 New context window - this is the angeldom.me project (Railway
 auto-deploys on push to main; single Express `server.js`, JSON files on disk, no
 build step; admin identity is `hermione`).
 
@@ -19,7 +19,7 @@ as seven parameterised single-file pages (one design per `?d=N`). They render of
 screenshot with `./mockups/capture.sh` (writes to the gitignored `mockups/out/`).
 
 Before coding: the test sandbox is wiped between sessions. Reseed it and run on
-:57999 — write a seed script that hashes with the repo's `node_modules/bcryptjs`,
+:57999 - write a seed script that hashes with the repo's `node_modules/bcryptjs`,
 seed `hermione` (Princess, `sandboxpass123`) plus a couple of approved subs, a
 Visitor and one `status:"pending"` user, all needing `passwordHash`, `status`,
 `pronouns` and `createdAt`, then:
@@ -28,7 +28,7 @@ Visitor and one `status:"pending"` user, all needing `passwordHash`, `status`,
 DATA_DIR=<scratch>/sandbox PORT=57999 SESSION_SECRET=sandbox node server.js
 ```
 
-**Check for leftover servers before you trust any curl** — processes from earlier
+**Check for leftover servers before you trust any curl** - processes from earlier
 sessions keep running and hold :57999, so a new server dies with EADDRINUSE while
 curl still answers from stale data. Run
 `lsof -nP -iTCP:57999 -sTCP:LISTEN` and confirm the listener's `DATA_DIR` with
@@ -36,7 +36,7 @@ curl still answers from stale data. Run
 
 Two more testing notes that cost real time before: the Browser pane usually runs
 as a **hidden tab**, where `requestAnimationFrame` never fires and `setTimeout`
-is clamped to ~1s — canvas games look broken and every timing measurement lies.
+is clamped to ~1s - canvas games look broken and every timing measurement lies.
 Call `tabs_select` to front it, check `document.hidden` inside the test, and do
 the whole measurement in one `javascript_tool` call. Prefer curl / DOM+JSON
 checks over screenshots; render mockups with headless Chrome. `/writing`
@@ -48,12 +48,12 @@ before pushing. **No em dashes anywhere.**
 
 Pick a design per batch and I will build them. Awaiting a decision:
 
-- **Profile** — 10 options (second attempt)
-- **Chess** — 10 options (second attempt), all keeping Hermione's strike/rewind
+- **Profile** - 10 options (second attempt)
+- **Chess** - 10 options (second attempt), all keeping Hermione's strike/rewind
   controls hidden from the opponent
-- **T9 phone** — 6 real-world phone forms (second attempt)
-- **Slots** — 6 options (second attempt)
-- **Dummy Parse** — 20 options
+- **T9 phone** - 6 real-world phone forms (second attempt)
+- **Slots** - 6 options (second attempt)
+- **Dummy Parse** - 20 options
 
 Already chosen: **Wheel 5** (unrolled cylinder), **Game select 2** (paste-up),
 **Skill check 1** (pure dial), **Summary 1** (source + entry). The last two came
