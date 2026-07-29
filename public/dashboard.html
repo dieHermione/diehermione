@@ -171,25 +171,6 @@
     #notif-slot .notif-btn { background: transparent; border: 1px solid var(--dim2); color: var(--c); border-radius: 4px !important; }
     #notif-slot .notif-btn:hover { border-color: var(--accent); color: var(--bright); }
 
-    /* secret console: slides down on ~ */
-    #console { position: fixed; left: 0; right: 0; top: 0; z-index: 500; background: rgba(0,0,0,0.94);
-      border-bottom: 1px solid var(--c); box-shadow: 0 0 40px var(--glow); font-family: "IBM Plex Mono", monospace;
-      transform: translateY(-100%); transition: transform 0.22s ease; padding: 0.9rem 1.2rem 0.7rem; }
-    #console.open { transform: translateY(0); }
-    #console::after { content: ""; position: absolute; inset: 0; pointer-events: none;
-      background: repeating-linear-gradient(0deg, rgba(0,0,0,0.3) 0 1px, transparent 1px 3px); }
-    #console .con-log { max-height: 30vh; overflow-y: auto; font-size: 0.82rem; line-height: 1.7;
-      scrollbar-width: thin; scrollbar-color: rgba(120,190,255,0.45) transparent; }
-    #console .con-log div { white-space: pre-wrap; }
-    #console .con-log .in { color: var(--dim); }
-    #console .con-log .ok { color: var(--bright); }
-    #console .con-log .no { color: var(--err); }
-    #console .con-line { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem; }
-    #console .con-line span { color: var(--accent); }
-    #console input { flex: 1; background: transparent; border: none; outline: none; color: var(--bright);
-      font-family: inherit; font-size: 0.92rem; letter-spacing: 0.04em; }
-    #console .con-hint { color: var(--dim2); font-size: 0.64rem; letter-spacing: 0.18em; text-transform: uppercase; margin-top: 0.4rem; }
-
     /* lines-completed modal (pmodal) */
     #pmodal { position: fixed; inset: 0; z-index: 200; background: rgba(2,4,8,0.8); display: none; align-items: center; justify-content: center; }
     #pmodal.open { display: flex; }
@@ -259,12 +240,6 @@
         <tbody id="board"></tbody>
       </table>
     </section>
-  </div>
-
-  <div id="console" aria-hidden="true">
-    <div class="con-log" id="con-log"></div>
-    <div class="con-line"><span>&gt;</span><input id="con-input" type="text" autocomplete="off" spellcheck="false" aria-label="Console" /></div>
-    <div class="con-hint">~ to close</div>
   </div>
 
   <div id="pmodal"><div class="term">
@@ -678,11 +653,16 @@
       // screen glitch: fires on its own every 40 to 180 seconds, testable here
       const glSec = document.createElement("div"); glSec.className = "adm-sec";
       glSec.append(mk("h3", "Screen glitch"));
-      const glHint = mk("p", "Runs by itself every 40 to 180 seconds. Tear bands, and the blue palette stuttering to red.");
+      const glHint = mk("p", "One is picked at random every 40 to 180 seconds.");
       glHint.className = "adm-empty"; glSec.append(glHint);
       const glBar = document.createElement("div"); glBar.className = "adm-preset-bar";
-      glBar.append(mkChip("Tear bands", "ghost", () => window.DashGlitch && window.DashGlitch.burst()));
-      glBar.append(mkChip("Red shift", "ghost", () => window.DashGlitch && window.DashGlitch.redShift()));
+      const glSel = document.createElement("select"); glSel.className = "adm-select";
+      (window.DashGlitch ? window.DashGlitch.effects : []).forEach((name, i) => {
+        const o = document.createElement("option"); o.value = i; o.textContent = (i + 1) + ". " + name; glSel.append(o);
+      });
+      glBar.append(glSel);
+      glBar.append(mkChip("Play", "ghost", () => window.DashGlitch && window.DashGlitch.play(Number(glSel.value))));
+      glBar.append(mkChip("Random", "ghost", () => window.DashGlitch && window.DashGlitch.glitch()));
       glSec.append(glBar); wrap.append(glSec);
 
       // documentation
@@ -752,77 +732,6 @@
       window.location.href = "/";
     });
 
-    // --- secret console: ~ slides it down, codes go in, things happen ---
-    (function () {
-      const box = document.getElementById("console");
-      const input = document.getElementById("con-input");
-      const log = document.getElementById("con-log");
-
-      function say(text, cls) {
-        const row = document.createElement("div");
-        if (cls) row.className = cls;
-        row.textContent = text;
-        log.append(row);
-        log.scrollTop = log.scrollHeight;
-      }
-
-      // The code table. Values are functions so a code can do anything; add
-      // entries here as new ones are invented.
-      const CODES = {
-        "her eyes": () => { window.Subliminal && window.Subliminal.flashRandom("SHE SEES ALL"); return "she is looking."; },
-        "static": () => { window.DashGlitch && window.DashGlitch.burst(); return "signal disturbed."; },
-        "bleed": () => { window.DashGlitch && window.DashGlitch.redShift(); return "it runs red."; },
-        "quiet": () => { window.Ambience && window.Ambience.setMuted(true); return "the room falls silent."; },
-        "listen": () => { window.Ambience && window.Ambience.setMuted(false); return "the lights start humming."; },
-      };
-
-      function submit(raw) {
-        const code = String(raw || "").trim().toLowerCase();
-        if (!code) return;
-        say("> " + code, "in");
-        const fn = CODES[code];
-        if (!fn) { say("rejected.", "no"); return; }
-        let out;
-        try { out = fn(); } catch (e) { out = "something broke."; }
-        say(out || "accepted.", "ok");
-      }
-
-      function open() {
-        box.classList.add("open");
-        box.setAttribute("aria-hidden", "false");
-        if (!log.childElementCount) say("angelOS // restricted input", "ok");
-        setTimeout(() => input.focus(), 60);
-      }
-      function close() {
-        box.classList.remove("open");
-        box.setAttribute("aria-hidden", "true");
-        input.blur();
-      }
-      function toggle() { box.classList.contains("open") ? close() : open(); }
-
-      document.addEventListener("keydown", (e) => {
-        // ~ (and its unshifted backtick) opens; while open it also closes, even
-        // though focus is in the console's own input
-        if (e.key === "~" || e.key === "`") {
-          const t = e.target;
-          const tag = (t && t.tagName || "").toLowerCase();
-          const typingElsewhere = (tag === "input" || tag === "textarea" || (t && t.isContentEditable)) && t !== input;
-          if (typingElsewhere) return;
-          e.preventDefault();
-          toggle();
-          return;
-        }
-        if (e.key === "Escape" && box.classList.contains("open")) { e.preventDefault(); close(); }
-      });
-
-      input.addEventListener("keydown", (e) => {
-        if (e.key !== "Enter") return;
-        e.preventDefault();
-        submit(input.value);
-        input.value = "";
-      });
-    })();
-
     // --- Eastern-time clock (EST/EDT via Intl; daily reset is 6am Eastern) ---
     const RESET_HOUR = 6;
     function easternParts(now) {
@@ -879,5 +788,6 @@
   </script>
   <script src="/notifications.js" defer></script>
   <script src="/updatecheck.js" defer></script>
+  <script src="/console.js" defer></script>
 </body>
 </html>
