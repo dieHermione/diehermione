@@ -1,6 +1,7 @@
 /* Ambient screen glitch for the dashboard and the login page.
  *
- * Eight effects, all built out of overlays, CSS variables and a body offset.
+ * Six effects, all built out of overlays. The first is the original tear
+ * bands; the rest are a second attempt after the earlier set was scrapped.
  * Nothing here puts a `filter` on the page content, and nothing transforms
  * .dash. Both rules matter:
  *   - `filter` on an ancestor makes position:fixed descendants position against
@@ -19,7 +20,7 @@
  *   DashGlitch.glitch()           run a random one
  *   DashGlitch.startRandom() / stopRandom()
  *   DashGlitch.setEnabled(bool)   false for photosensitive accounts
- *   DashGlitch.burst() / redShift()   kept as names for the console codes
+ *   DashGlitch.burst()              kept as a name for the console codes
  */
 window.DashGlitch = (function () {
   "use strict";
@@ -40,22 +41,12 @@ window.DashGlitch = (function () {
       ".dg-el{position:absolute;opacity:0;}",
       // bright horizontal tear
       ".dg-tear{left:0;right:0;backdrop-filter:brightness(2.2) saturate(0.2);-webkit-backdrop-filter:brightness(2.2) saturate(0.2);}",
-      // inverted block
-      ".dg-block{backdrop-filter:invert(1) hue-rotate(20deg);-webkit-backdrop-filter:invert(1) hue-rotate(20deg);}",
-      // sweeping CRT bar
-      ".dg-roll{left:0;right:0;height:14vh;backdrop-filter:brightness(1.9) contrast(1.3);-webkit-backdrop-filter:brightness(1.9) contrast(1.3);" +
-        "box-shadow:0 0 40px rgba(255,255,255,0.16);}",
-      // chroma bleed, offset left and right
-      ".dg-chroma{top:0;bottom:0;width:100%;mix-blend-mode:screen;}",
-      ".dg-chroma.a{backdrop-filter:sepia(1) saturate(6) hue-rotate(-25deg);-webkit-backdrop-filter:sepia(1) saturate(6) hue-rotate(-25deg);}",
-      ".dg-chroma.b{backdrop-filter:brightness(1.4) grayscale(1);-webkit-backdrop-filter:brightness(1.4) grayscale(1);}",
-      // full-screen wash and noise
-      ".dg-wash{inset:0;background:#ff2a1a;mix-blend-mode:screen;}",
-      ".dg-invert{inset:0;backdrop-filter:invert(1);-webkit-backdrop-filter:invert(1);}",
-      ".dg-noise{inset:0;image-rendering:pixelated;background-size:180px 180px;mix-blend-mode:screen;}",
-      // signal collapse
-      ".dg-collapse{left:0;right:0;top:0;bottom:0;background:#000;transform-origin:center;}",
-      ".dg-line{left:0;right:0;top:50%;height:2px;background:#fff;box-shadow:0 0 30px 6px rgba(255,255,255,0.7);}",
+      // retry set
+      ".dg-drop{background:#000;}",
+      ".dg-bloom{inset:0;backdrop-filter:brightness(2.6) saturate(0.4);-webkit-backdrop-filter:brightness(2.6) saturate(0.4);}",
+      ".dg-crush{inset:0;backdrop-filter:contrast(3.4) brightness(0.8);-webkit-backdrop-filter:contrast(3.4) brightness(0.8);}",
+      ".dg-comb{inset:0;background:repeating-linear-gradient(0deg,rgba(0,0,0,0.85) 0 2px,transparent 2px 4px);}",
+      ".dg-edge{inset:0;box-shadow:inset 0 0 22vh 10vh rgba(0,0,0,0.92),inset 0 0 8vh 2vh rgba(255,42,26,0.55);}",
     ].join("");
     var s = document.createElement("style"); s.id = "dashglitch-style"; s.textContent = css;
     document.head.appendChild(s);
@@ -131,7 +122,7 @@ window.DashGlitch = (function () {
     return noiseUrl;
   }
 
-  /* ---------------- the eight ---------------- */
+  /* ---------------- the effects ---------------- */
 
   // 1. bright horizontal tears at random heights
   function tearBands() {
@@ -145,130 +136,83 @@ window.DashGlitch = (function () {
     return t + 320;
   }
 
-  // 2. the blue palette stutters over to red
-  function redShift() {
-    var t = 0, hits = Math.round(rnd(3, 6));
-    for (var i = 0; i < hits; i++) {
-      (function (a, dur) {
-        at(a, function () { applyVars(RED); });
-        at(a + dur, restoreVars);
-      })(t, rnd(50, 150));
-      t += rnd(110, 320);
-    }
-    return t + 380;
-  }
+  // --- retry set. The palette/scan/chroma/hold/block/static/collapse batch was
+  // scrapped; these work on a different principle: the page is punched out or
+  // over-driven in place rather than shifted or recoloured. ---
 
-  // 3. a bright bar rolls down the screen, like a CRT losing sync
-  function scanRoll() {
-    var bar = el("dg-roll", { top: "-15vh" });
-    var dur = rnd(420, 800), steps = 26;
-    bar.style.opacity = "0.85";
-    for (var i = 0; i <= steps; i++) {
-      (function (frac) {
-        at(dur * frac, function () { bar.style.top = (-15 + frac * 118) + "vh"; });
-      })(i / steps);
-    }
-    at(dur, function () { bar.style.opacity = "0"; });
-    sweep(bar, dur);
-    return dur + 320;
-  }
-
-  // 4. colour bleeds apart, warm one way and washed the other
-  function chromaBleed() {
-    var a = el("dg-chroma a"), b = el("dg-chroma b");
-    a.dataset.peak = "0.55"; b.dataset.peak = "0.4";
-    var t = 0, hits = Math.round(rnd(3, 6));
-    for (var i = 0; i < hits; i++) {
-      (function (start, dur, off) {
-        at(start, function () {
-          a.style.transform = "translateX(" + off + "px)";
-          b.style.transform = "translateX(" + (-off) + "px)";
-          a.style.opacity = "0.55"; b.style.opacity = "0.4";
-        });
-        at(start + dur, function () { a.style.opacity = "0"; b.style.opacity = "0"; });
-      })(t, rnd(60, 150), rnd(3, 11) * (Math.random() < 0.5 ? -1 : 1));
-      t += rnd(120, 300);
-    }
-    sweep(a, t); sweep(b, t);
-    return t + 360;
-  }
-
-  // 5. vertical hold slips: the page jumps up and down in steps
-  function verticalHold() {
-    var t = 0, hits = Math.round(rnd(5, 10));
-    for (var i = 0; i < hits; i++) {
-      (function (a, px) { at(a, function () { shiftBody(px); }); })(t, Math.round(rnd(-26, 26)));
-      t += rnd(45, 110);
-    }
-    at(t, unshiftBody);
-    return t + 260;
-  }
-
-  // 6. a spray of inverted blocks
-  function blockCorrupt() {
-    var n = Math.round(rnd(6, 14)), t = 0, made = [];
+  // 2. dropout: rectangles of signal simply vanish to black
+  function dropout() {
+    var n = Math.round(rnd(3, 7)), t = 0, made = [];
     for (var i = 0; i < n; i++) {
-      var b = el("dg-block", {
-        left: rnd(0, 88) + "%", top: rnd(0, 90) + "%",
-        width: rnd(4, 26) + "%", height: rnd(6, 60) + "px",
+      var b = el("dg-drop", {
+        left: rnd(0, 78) + "%", top: rnd(0, 82) + "%",
+        width: rnd(8, 34) + "%", height: rnd(4, 22) + "%",
       });
-      b.dataset.peak = "0.9";
-      flick(b, t, rnd(50, 130));
+      b.dataset.peak = "1";
+      flick(b, t, rnd(40, 120));
       made.push(b);
-      t += rnd(25, 90);
+      t += rnd(30, 110);
     }
     made.forEach(function (b) { sweep(b, t); });
     return t + 300;
   }
 
-  // 7. static: red-tinted noise, hard on and hard off
-  function staticBurst() {
-    var n = el("dg-noise", { backgroundImage: "url(" + noise() + ")" });
-    n.dataset.peak = "0.5";
-    var t = 0, hits = Math.round(rnd(3, 7));
-    for (var i = 0; i < hits; i++) {
-      (function (a, dur) {
-        at(a, function () {
-          n.style.backgroundPosition = Math.round(rnd(0, 180)) + "px " + Math.round(rnd(0, 180)) + "px";
-          n.style.opacity = "0.5";
-        });
-        at(a + dur, function () { n.style.opacity = "0"; });
-      })(t, rnd(40, 110));
-      t += rnd(70, 190);
-    }
-    sweep(n, t);
+  // 3. bloom: the whole screen over-exposes for an instant
+  function bloom() {
+    var v = el("dg-bloom");
+    v.dataset.peak = "1";
+    var t = 0, hits = Math.round(rnd(2, 4));
+    for (var i = 0; i < hits; i++) { flick(v, t, rnd(60, 130)); t += rnd(150, 380); }
+    sweep(v, t);
+    return t + 320;
+  }
+
+  // 4. crush: contrast slams, the midtones disappear and come back
+  function crush() {
+    var v = el("dg-crush");
+    v.dataset.peak = "1";
+    var t = 0, hits = Math.round(rnd(3, 6));
+    for (var i = 0; i < hits; i++) { flick(v, t, rnd(50, 110)); t += rnd(90, 260); }
+    sweep(v, t);
     return t + 300;
   }
 
-  // 8. signal loss: everything squeezes to a line, holds, then comes back
-  function signalLoss() {
-    var cover = el("dg-collapse"), line = el("dg-line");
-    cover.dataset.peak = "0.92";
-    at(0, function () {
-      cover.style.opacity = "0.92";
-      cover.style.transition = "transform 160ms ease-in";
-      cover.style.transform = "scaleY(0.012)";
-    });
-    at(170, function () { line.style.opacity = "1"; });
-    at(430, function () { line.style.opacity = "0"; });
-    at(470, function () {
-      cover.style.transition = "transform 220ms ease-out, opacity 220ms ease-out";
-      cover.style.transform = "scaleY(1)";
-      cover.style.opacity = "0";
-    });
-    sweep(cover, 700); sweep(line, 700);
-    return 820;
+  // 5. comb: a dense grille of thin dark lines drops over everything
+  function comb() {
+    var v = el("dg-comb");
+    v.dataset.peak = "1";
+    var t = 0, hits = Math.round(rnd(2, 5));
+    for (var i = 0; i < hits; i++) {
+      (function (a) {
+        at(a, function () {
+          v.style.backgroundPosition = "0 " + Math.round(rnd(0, 8)) + "px";
+          v.style.opacity = "1";
+        });
+        at(a + rnd(70, 160), function () { v.style.opacity = "0"; });
+      })(t);
+      t += rnd(140, 320);
+    }
+    sweep(v, t);
+    return t + 320;
+  }
+
+  // 6. edge burn: the vignette closes in and glows red at the rim
+  function edgeBurn() {
+    var v = el("dg-edge");
+    v.dataset.peak = "1";
+    at(0, function () { v.style.opacity = "1"; });
+    at(rnd(260, 460), function () { v.style.opacity = "0"; });
+    sweep(v, 700);
+    return 780;
   }
 
   var EFFECTS = [
     { key: "tear", name: "Tear bands", run: tearBands },
-    { key: "red", name: "Red shift", run: redShift },
-    { key: "roll", name: "Scan roll", run: scanRoll },
-    { key: "chroma", name: "Chroma bleed", run: chromaBleed },
-    { key: "hold", name: "Vertical hold", run: verticalHold },
-    { key: "blocks", name: "Block corruption", run: blockCorrupt },
-    { key: "static", name: "Static burst", run: staticBurst },
-    { key: "signal", name: "Signal loss", run: signalLoss },
+    { key: "drop", name: "Dropout", run: dropout },
+    { key: "bloom", name: "Bloom", run: bloom },
+    { key: "crush", name: "Contrast crush", run: crush },
+    { key: "comb", name: "Comb", run: comb },
+    { key: "edge", name: "Edge burn", run: edgeBurn },
   ];
 
   function clearFx() {
@@ -303,9 +247,8 @@ window.DashGlitch = (function () {
 
   return {
     play: play, glitch: glitch,
-    // the console codes name these two directly
+    // the console codes name this directly
     burst: function () { return play(0); },
-    redShift: function () { return play(1); },
     startRandom: startRandom, stopRandom: stopRandom, setEnabled: setEnabled,
     effects: EFFECTS.map(function (e) { return e.name; }),
   };

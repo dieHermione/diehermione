@@ -79,6 +79,52 @@
     log.scrollTop = log.scrollHeight;
   }
 
+  // Who is typing. Only fetched when a privileged command is actually used,
+  // and cached, so the console costs nothing on pages that never run one.
+  var me = null;
+  function who() {
+    if (me) return Promise.resolve(me);
+    return fetch("/api/me")
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) { me = d; return d; })
+      .catch(function () { return null; });
+  }
+
+  /* ---- wing commands: wing <command> [username] [quantity] ---- */
+  var WING = {
+    add_points: {
+      admin: true,
+      usage: "wing add_points <username> <amount>",
+      run: function (args) {
+        var user = args[0], n = parseInt(args[1], 10);
+        if (!user || !Number.isInteger(n)) return Promise.resolve(WING.add_points.usage);
+        return fetch("/api/users/" + encodeURIComponent(user) + "/points", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ amount: n }),
+        }).then(function (r) {
+          return r.json().catch(function () { return {}; }).then(function (d) {
+            if (!r.ok) return d.error || "That didn't work.";
+            return (n >= 0 ? "gave " : "took ") + Math.abs(n) + " points " +
+                   (n >= 0 ? "to " : "from ") + user + ". they now have " + d.points + ".";
+          });
+        });
+      },
+    },
+  };
+
+  function runWing(parts) {
+    var name = (parts[1] || "").toLowerCase();
+    var cmd = WING[name];
+    if (!cmd) { say("Command not recognized.", "no"); return; }
+    who().then(function (d) {
+      // "Rejected." is reserved for a real command the caller may not run
+      if (cmd.admin && !(d && d.isAdmin)) { say("Rejected.", "no"); return; }
+      Promise.resolve(cmd.run(parts.slice(2))).then(function (msg) {
+        say(msg || "done.", "ok");
+      });
+    });
+  }
+
   // Each value is a function, so a code can do anything. The real secret codes
   // still need inventing; these are the placeholders.
   var CODES = {
@@ -86,19 +132,21 @@
       if (window.Subliminal) window.Subliminal.flashRandom("SHE SEES ALL");
       return "she is looking.";
     },
-    "static": function () { if (window.DashGlitch) window.DashGlitch.play(6); return "signal disturbed."; },
-    "bleed": function () { if (window.DashGlitch) window.DashGlitch.play(1); return "it runs red."; },
-    "collapse": function () { if (window.DashGlitch) window.DashGlitch.play(7); return "signal lost."; },
-    "quiet": function () { if (window.Ambience) window.Ambience.setMuted(true); return "the room falls silent."; },
-    "listen": function () { if (window.Ambience) window.Ambience.setMuted(false); return "the lights start humming."; },
+    "static": function () { if (window.DashGlitch) window.DashGlitch.play(1); return "signal disturbed."; },
+    "bleed": function () { if (window.DashGlitch) window.DashGlitch.play(5); return "it runs red."; },
+    "collapse": function () { if (window.DashGlitch) window.DashGlitch.play(2); return "signal lost."; },
+    "quiet": function () { if (window.AudioBus) window.AudioBus.set("ambience", { muted: true }); return "the room falls silent."; },
+    "listen": function () { if (window.AudioBus) window.AudioBus.set("ambience", { muted: false }); return "the lights start humming."; },
   };
 
   function submit(raw) {
-    var code = String(raw || "").trim().toLowerCase();
-    if (!code) return;
-    say("> " + code, "in");
-    var fn = CODES[code];
-    if (!fn) { say("rejected.", "no"); return; }
+    var line = String(raw || "").trim();
+    if (!line) return;
+    say("> " + line, "in");
+    var parts = line.split(/\s+/);
+    if (parts[0].toLowerCase() === "wing") { runWing(parts); return; }
+    var fn = CODES[line.toLowerCase()];
+    if (!fn) { say("Command not recognized.", "no"); return; }
     var out;
     try { out = fn(); } catch (e) { out = "something broke."; }
     say(out || "accepted.", "ok");
@@ -108,7 +156,7 @@
     open = true;
     box.classList.add("open");
     box.setAttribute("aria-hidden", "false");
-    if (!log.childElementCount) say("angelOS // restricted input", "ok");
+    if (!log.childElementCount) say("angelOS // console", "ok");
     setTimeout(function () { input.focus(); }, 60);
   }
   function hide() {

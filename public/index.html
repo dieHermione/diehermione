@@ -9,7 +9,6 @@
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <script src="/glitch.js"></script>
   <script src="/dashglitch.js"></script>
-  <script src="/ambience.js" defer></script>
   <script src="/boot.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -74,6 +73,7 @@
     .errline { color: var(--err); min-height: 1.2em; margin: 0.6rem 0 0; }
     .fields { margin-top: 0.4rem; }
   </style>
+  <script src="/audio.js"></script>
 </head>
 <body>
   <div id="scene">
@@ -212,5 +212,6 @@
       if (window.Subliminal) window.Subliminal.setEnabled(ok);
     })();
   </script>
+  <script src="/ambience.js" defer></script>
 </body>
 </html>

@@ -40,6 +40,7 @@
     .nav button:hover { background: var(--br); color: var(--bg); }
     #back { border-color: var(--dim); color: var(--c); box-shadow: none; }
   </style>
+  <script src="/audio.js"></script>
 </head>
 <body class="has-top-nav">
   <canvas id="game"></canvas>
@@ -53,6 +54,7 @@
 
   <div class="nav">
     <button id="start" type="button">Start</button>
+    <button id="pause" type="button" disabled>Pause</button>
     <button id="back" type="button">Dashboard</button>
   </div>
 
@@ -67,7 +69,7 @@
        drawn as one tapered outline, so it bends and twists with the turns.
        There is no self-collision, so the body is purely cosmetic. */
 
-    const SPEED = 190;          // px per second
+    const SPEED = 380;          // px per second
     const TURN = 3.4;           // radians per second at full lock
     // The trail is the body, so its length in px is also how much of a turn
     // stays visible: at SPEED this is a little over a second of history.
@@ -97,7 +99,7 @@
     let teleportChance = 0.9;
     let path = [];              // [{x,y}], newest first; the body is this trail
     let angle = 0, turnInput = 0, targetLen = START_LEN;
-    let food = null, score = 0, earned = 0, alive = false, raf = null, last = 0;
+    let food = null, score = 0, earned = 0, alive = false, raf = null, last = 0, paused = false;
 
     // wrap coordinates onto the torus the old grid used
     function wrap(p) {
@@ -125,15 +127,11 @@
     }
 
     // The food escaping is the game's whole tease, so it gets a subliminal of
-    // its own: a single brief blip, not the dashboard's full strobe, and rate
-    // limited because escapes come thick and fast.
+    // its own: a single brief blip rather than the dashboard's full strobe.
+    // It fires on every escape, with no rate limit.
     const TAUNTS = ["keep trying", "so close", "not for you", "again", "almost",
                     "try harder", "not yet", "reach", "further", "good servant"];
-    let lastTaunt = 0;
     function taunt() {
-      const now = Date.now();
-      if (now - lastTaunt < 2500) return;
-      lastTaunt = now;
       if (window.Subliminal) window.Subliminal.blip(TAUNTS[Math.floor(Math.random() * TAUNTS.length)]);
     }
 
@@ -252,6 +250,7 @@
     function frame(now) {
       raf = requestAnimationFrame(frame);
       if (!alive) return;
+      if (paused) { last = now; return; }                    // hold position, do not bank time
       const dt = Math.min(0.05, (now - last) / 1000 || 0);   // clamp after a tab stall
       last = now;
       step(dt);
@@ -277,6 +276,8 @@
       sizeCanvas(); reset(); earned = 0; showScore();
       statusEl.textContent = "";
       document.getElementById("start").textContent = "Restart";
+      const pb = document.getElementById("pause");
+      pb.disabled = false; pb.textContent = "Pause"; paused = false;
       last = performance.now();
       if (!raf) raf = requestAnimationFrame(frame);
     }
@@ -291,6 +292,11 @@
       return 0;
     }
     document.addEventListener("keydown", (e) => {
+      if (e.key === "p" || e.key === "P" || e.code === "Space") {
+        const t = e.target, tag = (t && t.tagName || "").toLowerCase();
+        if (tag === "input" || tag === "textarea") return;
+        e.preventDefault(); togglePause(); return;
+      }
       const d = keyDir(e);
       if (!d) return;
       e.preventDefault();
@@ -301,6 +307,14 @@
       if (d && Math.sign(turnInput) === d) turnInput = 0;
     });
 
+    function togglePause() {
+      if (!alive) return;
+      paused = !paused;
+      const pb = document.getElementById("pause");
+      pb.textContent = paused ? "Resume" : "Pause";
+      statusEl.textContent = paused ? "paused" : "";
+    }
+    document.getElementById("pause").addEventListener("click", togglePause);
     document.getElementById("start").addEventListener("click", start);
     document.getElementById("back").addEventListener("click", () => { window.location.href = "/dashboard"; });
 
@@ -316,5 +330,6 @@
   <script src="/notifications.js" defer></script>
   <script src="/updatecheck.js" defer></script>
   <script src="/console.js" defer></script>
+  <script src="/ambience.js" defer></script>
 </body>
 </html>
