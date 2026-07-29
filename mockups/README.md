@@ -30,13 +30,13 @@ That writes `mockups/out/<batch>-<NN>.png` at 1500x900. One batch only:
 
 | Batch | File | Designs | Status |
 |---|---|---|---|
-| Profile | `profile.html` | 10 | **awaiting a pick** (second attempt; first 5 rejected) |
+| Profile | `profile.html` | 10 | **CHOSEN: 10** (man page), and **built** |
 | Wheel | `wheel.html` | 5 | **CHOSEN: 5** (unrolled cylinder) |
 | Game select | `select.html` | 4 | **CHOSEN: 2** (paste-up) |
-| Chess | `chess.html` | 10 | **awaiting a pick** (second attempt; first 4 rejected) |
-| T9 phone | `t9.html` | 6 | **awaiting a pick** (second attempt) |
-| Slots | `slots.html` | 6 | **awaiting a pick** (second attempt) |
-| Dummy Parse | `dummyparse.html` | 20 | **awaiting a pick** |
+| Chess | `chess.html` | 10 | **awaiting a pick** (third attempt, no theme restriction) |
+| T9 phone | `t9.html` | 6 | **awaiting a pick** (third attempt, real handset forms) |
+| Slots | `slots.html` | 6 | **awaiting a pick** (third attempt, no theme restriction) |
+| Dummy Parse | `dummyparse.html` | 20 | **CHOSEN: 10** (big ability cards) + the 11 timeline, both **built** |
 | Skill check | *(not kept)* | n/a | **CHOSEN: 1** (pure dial) |
 | Summary | *(not kept)* | n/a | **CHOSEN: 1** (source + entry) |
 
@@ -54,23 +54,29 @@ below if the visuals are needed again.
 
 ## What the design brief actually asks for
 
-Terminal aesthetic throughout, but **explicitly not minimalism** - the standing
-instruction is "as overdesigned and maximalist as possible". The first profile
-and chess attempts were rejected for being too samey, not too busy: the profile
-five were all "an institutional record about you", and the chess four were all
-"board in the middle, panels either side". The second attempts deliberately
-spread across different organising ideas.
+The standing instruction is **explicitly not minimalism**: "as overdesigned and
+maximalist as possible". The terminal aesthetic was the default, but it is
+**lifted for chess and slots** (2026-07-29): those two batches were rejected as
+ten and six versions of the same dark panel, so the third attempts each give
+every design its own material world. T9 was rejected separately for reading as
+a calculator; the third attempt builds specific real handsets instead.
 
 ## Known gaps in the mockups
 
 Several designs show data the server does not produce yet. Whichever is picked,
 these need adding or dropping at build time:
 
-- **Profile**: the 24h activity log, and the invented fields (clearance,
-  handler, flags, carry-forward).
-- **Chess**: the ply scrubber implies a stored move history with rewind points.
-- **Dummy Parse**: the rotation timeline (design 11) implies a planner, and the
-  gauge cluster (design 9) implies live stat readouts the engine does not expose.
-  Designs 3, 12 and 18 lean on a large arena and will squeeze the stat panel,
-  so those want stats behind a toggle.
+- **Chess**: the ply scrubber in the earlier batch implied a stored move history
+  with rewind points. The current batch shows a plain move list, but REWIND
+  still needs that history behind it.
+- **Dummy Parse**: the gauge cluster (design 9) implies live stat readouts the
+  engine does not expose. Designs 3, 12 and 18 lean on a large arena and will
+  squeeze the stat panel, so those want stats behind a toggle.
 - **Slots**: symbols are placeholder glyphs; custom art is expected later.
+
+Resolved at build time:
+
+- **Profile** design 10 needed lifetime writing counters, so the profile API now
+  reports angelcoins plus lines completed and penance/devotion series.
+- **Dummy Parse** design 11 implied a rotation *planner*. There is no planner, so
+  the built timeline draws the rotation actually cast instead.

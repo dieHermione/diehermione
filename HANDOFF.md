@@ -16,7 +16,7 @@ identity: `hermione`. Push after each task; the user likes frequent pushes.
 
 ---
 
-## Where things stand now (latest big session — read this first)
+## Where things stand now (latest big session - read this first)
 
 A large batch of reworks landed. Current truth, superseding stale sections below:
 
@@ -67,7 +67,7 @@ the gentle sibling (`/writing?mode=devotion`, own Games entry): same code, "pena
 still TODO), no difficulty, feeds the dailies. No more Restart/Abandon; no
 category box (top-left just shows the mode).
 
-**Elysium (`views/elysium.html`)**: the **drawn tree was removed** — text-only
+**Elysium (`views/elysium.html`)**: the **drawn tree was removed** - text-only
 now (canopy state moved into inspect text); stats are all **white/lowercase**;
 the event toast floats **down from above**; a **back button** + `Version 0.01`.
 Trees **start damaged** (nurse them back) and growth is **tripled**.
@@ -181,7 +181,7 @@ ladder + Visitor.
 
 ---
 
-## Admin (SUPERSEDED — admin is now the dashboard panel, not the profile)
+## Admin (SUPERSEDED - admin is now the dashboard panel, not the profile)
 
 The whole admin panel moved into an **"Admin" tab** on `/profile`, shown only
 when Hermione views her own profile. `views/admin.html` was deleted; `/admin`
@@ -271,7 +271,7 @@ hand-drawn; no tree-specific dailies yet; no site-points hookup (intentional).
 - Everything daily resets at **noon America/New_York** via `todayKey()`. Compute
   day keys no other way.
 
-## Guestbook (SUPERSEDED — guestbook was removed entirely)
+## Guestbook (SUPERSEDED - guestbook was removed entirely)
 One reply per comment, by the profile owner or Hermione (no chains). Server
 routes `POST|DELETE /api/profile/:name/guestbook/:id/reply`; GET returns
 `reply` + `canReply` per entry.
@@ -550,13 +550,64 @@ costs and a pool exist because Focus governs mana regen. **The brief opens with
 Arcane Mage as the reference but names Priest as the first class**, and every
 ability is Priest-flavoured, so Priest is what is built.
 
+### Landed 2026-07-29, later still (profile + Dummy Parse rebuilds)
+
+**Profile is the man page** (mockup 10). `views/profile.html` was rewritten as
+the account's own entry in the angeldom manual: NAME with a square portrait,
+SYNOPSIS, DESCRIPTION, COUNTERS, EXIT STATUS, and a SEE ALSO row that carries
+the real controls (edit, logout, hermione, dashboard). It is self-contained and
+no longer loads `site.css`; the shared-shell variables (`--panel-bg`,
+`--table-border`, `--button-bg` and the rest) are **remapped locally** onto the
+terminal palette so the `ranks.js` ladder modal matches the page. The page
+carries its own `[hidden]{display:none !important}`, since that rule used to
+come from site.css.
+
+Dropped with the old page, all already dead: the guestbook loader, the
+never-called `initAdmin()` block, `?embed=1` mode, the dark-mode overrides.
+
+**COUNTERS needed real data**, so `server.js` grew `writingCounters(user)`:
+`/api/profile/:username` now reports `angelcoins` plus `linesCompleted`,
+`penanceSeries` and `devotionSeries`. Accounts predating the counters are
+seeded once from their capped `writingLog`, and the seeding runs **before** the
+new entry joins the log in `/api/writing/complete`, or a series would count
+twice.
+
+**Dummy Parse is mockup 10** ("big ability cards") **with three tabs**. Parse:
+arena with the cast bar and resources floated at its foot, a 5x2 deck of cards
+with key, name, cost and description, meter down the right. Build: the stat
+allocation given room, with a resulting-numbers panel; the meter keeps a
+one-line copy of the build so it stays readable mid-fight. Rotation: mockup 11.
+
+**The rotation timeline draws the real rotation, not a plan.** Design 11 said
+"planned rotation" and there is no planner, so the tab shows what was actually
+cast: one lane per ability, casts over their own hatched cooldown, the global
+cooldown on a thin lane of its own, a now marker, and a follow-last-30s /
+fit-whole-parse toggle. **Cooldown bars come from `S.cdlog`, not `S.cd`**,
+because `S.cd` only remembers the current end; keeping a bar "open" until it
+expires is what makes Timeturn, Temporal Mark and Rewind visibly shorten it.
+
+**Testing note that saved real time:** `scratchpad/shot.js` drives headless
+Chrome over the DevTools protocol, so an authenticated page can be screenshotted
+*and* interacted with first (`node shot.js <url> <out.png> [w] [h] [js]`). Pair
+it with an untracked `public/_shot.html` that logs in and redirects, since
+`.gitignore` already covers `public/_*.html`. The Browser pane reported a 0x0
+viewport this whole session even after `tabs_select`, so every layout check went
+through headless Chrome instead.
+
 ### Mockup picks so far
-**Chosen:** Wheel **5** (unrolled cylinder), Game select **2** (paste-up),
-Skill check **1** (pure dial), Summary **1** (source + entry).
-**Re-attempted, awaiting a pick:** Profile (10 new directions), Chess (10 new).
-**Still to redo:** T9 (must resemble real flip phones, non-photorealistic),
-Slots (try again). The four minigames were only sharing `_games.html` for
-capture convenience; **that file is deleted and they must stay separate.**
+**Chosen and built:** Profile **10** (man page), Dummy Parse **10** (big ability
+cards) plus the **11** rotation timeline as a tab.
+**Chosen, not built yet:** Wheel **5** (unrolled cylinder), Game select **2**
+(paste-up), Skill check **1** (pure dial), Summary **1** (source + entry).
+**Third attempts, awaiting a pick:** Chess (10), T9 (6), Slots (6).
+
+The **terminal restriction is lifted for chess and slots** (the user's call on
+2026-07-29: both earlier batches were "the same design again"), so those two are
+now ten and six different material worlds. T9 was rejected for resembling a
+calculator, so the third attempt builds specific real handsets: a Razr V3, a
+Nokia-style brick, a Y2K gloss flip, a slider, a joystick candybar and a rugged
+site phone. The four minigames were only sharing `_games.html` for capture
+convenience; **that file is deleted and they must stay separate.**
 
 ### Still queued from the big pass
 
@@ -605,26 +656,26 @@ capture convenience; **that file is deleted and they must stay separate.**
   with the new line set (first line "Hermione is my guardian angel."). Editor
   lives in the dashboard admin panel; the game builds the sequence client-side.
 
-### Mockups produced, awaiting selection (still mockups only — nothing wired)
+### Mockups produced, awaiting selection (still mockups only - nothing wired)
 All built as parameterised `?d=N` files in `public/` (`_snake`, `_deathroll`,
 `_wheel`, `_select`, `_auth`, `_boot`, `_dash`) and captured with headless Chrome.
 **These `_*.html` files are untracked (won't deploy); delete once directions are
 locked.**
-- **Game reskins** — 10 maximalist concepts each for Snake (full-window),
+- **Game reskins** - 10 maximalist concepts each for Snake (full-window),
   Deathroll (player/enemy cards), Wheel; plus 5 game-selection concepts (film
   projector, tarot fan, turntable, poster wall, corridor).
-- **Terminal-blue redesign** (black / baby-blue) — 6 login/registration concepts,
+- **Terminal-blue redesign** (black / baby-blue) - 6 login/registration concepts,
   3 loading/boot animations (Penance-style scroll, blue), 6 dashboard concepts.
 
 ### LOCKED-IN mockup choices (implement later, not yet built)
 - **Snake → Blood Ritual** (concept 2: dark-red terminal, corrupting).
 - **Deathroll → Blood Ritual** (concept 2).
 - **Wheel → Blood Ritual but in BLUE** (baby-blue, to match the Devotion/login
-  terminal theme — not red).
+  terminal theme - not red).
 - **Game selection → Poster wall** (`_select.html?d=4`), BUT replace the flat
   single-colour + name posters with cards styled like the **current login
   offline-mode cards** (the game-preview cards on the login card-navigator, e.g.
-  the black/red Penance guest card) — each poster is a mini game-styled card.
+  the black/red Penance guest card) - each poster is a mini game-styled card.
 
 ### Still open
 - **Chess** is still wired but unlinked and not redesigned.
