@@ -504,6 +504,60 @@ Untracked parameterised files in `public/` (gitignored, never deploy):
 Capture with headless Chrome at 1500x900. **Nothing is wired; no direction has
 been picked.** Delete these once choices are locked.
 
+### Landed 2026-07-29, later (tithe removal + Dummy Parse)
+
+**Tithe was only half removed, and it was still live.** The button came off the
+dashboard, but `settleTithe()` still ran on login and on every `/api/me`, so
+accounts were quietly being docked 25 points a day and told so. The "You did
+not tithe" notification was **not** a stale leftover. Gone now: the penalty,
+`/api/tithe`, and the `tithedToday` field. `clearTitheLeftovers()` sweeps the
+`tithe-miss` notification and the `tithedOn`/`titheCheckedOn` fields off each
+account the next time it loads.
+
+**Snake escape roll was frame-rate dependent.** It rolled once per frame at
+`teleportChance * dt * 6`; when speed doubled to 380px/s the head crossed the
+flee radius in about four frames, so the food escaped ~31% of the time instead
+of 90%. Now **one roll as the head crosses into range**, re-arming on exit, so
+the rate is exactly `teleportChance` regardless of speed or frame rate
+(simulated: 89.9% over 20k approaches). The blip was also being halved by the
+subliminal `SPEED` to ~75ms; it is now exempt and runs 190ms.
+
+### NEW GAME: Dummy Parse (`views/dummyparse.html`, `/dummyparse`)
+A real-time single-target damage sim. No player movement, no player health, no
+boss mechanics, no multiplayer. **Built in one pass, no mockup: a redesign is
+expected later.**
+
+- **Stats** all use one curve: `value = max * p / (p + K)`. Strictly
+  diminishing, cap is approached but never reached, so **stacking one stat is
+  always worse than spreading**. 100 points, saved per browser, locked during
+  combat.
+- **GCD** is 1.5s scaled by Haste and **starts when a cast begins**, so a cast
+  at or above the GCD hides it and only instants/short casts wait.
+- Abilities are **hitscan** (land at cast end) or **projectiles** (land on
+  arrival). Crits are 2x + Critical Damage. **Fracture** rolls on direct hits,
+  stacks to 5, consumed whole by the next ability.
+- **Priest**, 10 abilities on `1-5 q e r f g`. Divine Flame is the stacking DoT
+  (cap 15, 2s ticks). Brand banks half of window damage and detonates for half
+  of that. Timeturn and Temporal Mark both reduce **remaining** cooldown time,
+  not cooldown length.
+- Parses POST to `/api/parse` and are stored whole in `parses.json`
+  (gitignored) with the event list, so a leaderboard can be built off `dps`
+  later. `GET /api/parses` returns summaries only.
+
+**Gaps filled because the brief left them open:** ability 9 had no name and is
+now **Vigil**; Rewind and Timeturn had no cooldown and got 60s and 30s; mana
+costs and a pool exist because Focus governs mana regen. **The brief opens with
+Arcane Mage as the reference but names Priest as the first class**, and every
+ability is Priest-flavoured, so Priest is what is built.
+
+### Mockup picks so far
+**Chosen:** Wheel **5** (unrolled cylinder), Game select **2** (paste-up),
+Skill check **1** (pure dial), Summary **1** (source + entry).
+**Re-attempted, awaiting a pick:** Profile (10 new directions), Chess (10 new).
+**Still to redo:** T9 (must resemble real flip phones, non-photorealistic),
+Slots (try again). The four minigames were only sharing `_games.html` for
+capture convenience; **that file is deleted and they must stay separate.**
+
 ### Still queued from the big pass
 
 **Mockups only (nothing wired). Eight batches:**
