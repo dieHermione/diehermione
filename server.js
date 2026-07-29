@@ -1041,7 +1041,7 @@ app.get("/api/dailies", (req, res) => {
       },
       {
         id: "snake",
-        label: "Snake earnings",
+        label: "Snake",
         detail: "",
         reward: "+" + SNAKE_COMPLETION_BONUS + " points",
         done: snakeToday >= SNAKE_DAILY_TARGET,
@@ -1050,7 +1050,7 @@ app.get("/api/dailies", (req, res) => {
       {
         id: "writing",
         label: "Devotion",
-        detail: "Complete " + DEVOTION_DAILY_TARGET + " lines of Devotion",
+        detail: "Complete " + DEVOTION_DAILY_TARGET + " lines in Devotion",
         reward: WRITING_DAILY_POINTS + " points",
         done: devToday >= DEVOTION_DAILY_TARGET,
         progress: { current: Math.min(devToday, DEVOTION_DAILY_TARGET), max: DEVOTION_DAILY_TARGET },

@@ -12,31 +12,30 @@
   <style>
     /* Snake — Blood Ritual skin, full window (dark-red terminal). Snake colours
        come from the CSS vars below so the existing draw code stays untouched. */
-    :root { --button-bg: #ff3b2f; --heart-color: #ffffff;
-            --c:#cf3730; --br:#ff3b2f; --dim:#7a2b27; --bg:#060102; --glow:rgba(255,50,40,0.42); }
+    :root { --button-bg: #ff2010; --heart-color: #ffffff;
+            --c:#d20f05; --br:#ff2010; --dim:#5e0f09; --bg:#000000; --glow:rgba(255,32,16,0.45); }
     * { box-sizing: border-box; }
     [hidden] { display: none !important; }
     html, body { height: 100%; margin: 0; overflow: hidden; }
-    body { background: radial-gradient(130% 100% at 50% 45%, #1a0405 0, #050101 100%);
-      color: var(--c); font-family: "IBM Plex Mono", monospace; }
+    body { background: #000; color: var(--c); font-family: "IBM Plex Mono", monospace; font-weight: 600; }
     #game { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; background:
-      repeating-linear-gradient(0deg, rgba(207,55,48,0.04) 0 1px, transparent 1px 4px); z-index: 1; touch-action: none; }
+      repeating-linear-gradient(0deg, rgba(210,15,5,0.045) 0 1px, transparent 1px 4px); z-index: 1; touch-action: none; }
     .scan { position: fixed; inset: 0; z-index: 3; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(0,0,0,0.3) 0 1px, transparent 1px 3px); }
     .vig { position: fixed; inset: 0; z-index: 2; pointer-events: none; box-shadow: inset 0 0 26vh 9vh rgba(0,0,0,0.72); }
 
     .hud { position: fixed; z-index: 5; }
-    .hud .k { font-size: 0.7rem; letter-spacing: 0.28em; text-transform: uppercase; color: var(--dim); }
+    .hud .k { font-size: 0.7rem; letter-spacing: 0.28em; text-transform: uppercase; color: var(--dim); font-weight: 700; }
     .hud .v { font-weight: 800; color: var(--br); text-shadow: 0 0 14px var(--glow); line-height: 1; font-variant-numeric: tabular-nums; }
     .tl { top: 3vh; left: 3vw; } .tr { top: 3vh; right: 3vw; text-align: right; }
     .bl { bottom: 3vh; left: 3vw; } .br2 { bottom: 3vh; right: 3vw; text-align: right; }
     .tl .v { font-size: clamp(2rem, 5vw, 3.4rem); } .tr .v, .bl .v { font-size: clamp(1.2rem, 2.6vw, 1.8rem); }
     .title { position: fixed; top: 3vh; left: 50%; transform: translateX(-50%); z-index: 5; text-align: center; }
     .title h1 { font-size: clamp(1.3rem, 3vw, 2.2rem); letter-spacing: 0.34em; text-transform: uppercase; color: var(--br); text-shadow: 0 0 22px var(--glow); font-weight: 700; }
-    .title .status { color: var(--dim); font-size: 0.9rem; letter-spacing: 0.06em; margin-top: 0.7rem; min-height: 1.3em; }
+    .title .status { color: var(--dim); font-size: 0.9rem; letter-spacing: 0.06em; margin-top: 0.7rem; min-height: 1.3em; font-weight: 700; }
 
     .nav { position: fixed; bottom: 3vh; left: 50%; transform: translateX(-50%); z-index: 6; display: flex; gap: 1rem; }
-    .nav button { font-family: inherit; cursor: pointer; font-size: 0.9rem; letter-spacing: 0.18em; text-transform: uppercase;
-      padding: 0.6rem 1.8rem; border: 1.5px solid var(--br); background: transparent; color: var(--br); box-shadow: 0 0 18px rgba(255,50,40,0.25); }
+    .nav button { font-family: inherit; cursor: pointer; font-size: 0.9rem; letter-spacing: 0.18em; text-transform: uppercase; font-weight: 700;
+      padding: 0.6rem 1.8rem; border: 1.5px solid var(--br); background: transparent; color: var(--br); box-shadow: 0 0 18px rgba(255,32,16,0.28); }
     .nav button:hover { background: var(--br); color: var(--bg); }
     #back { border-color: var(--dim); color: var(--c); box-shadow: none; }
   </style>
@@ -46,7 +45,7 @@
   <div class="vig"></div>
   <div class="scan"></div>
 
-  <div class="title"><h1>Serpent</h1><p class="status" id="status">an offering to the Princess</p></div>
+  <div class="title"><p class="status" id="status">an offering to the Princess</p></div>
   <div class="hud tl"><div class="k">score</div><div class="v" id="hud-score">0</div></div>
   <div class="hud tr"><div class="k">length</div><div class="v" id="hud-length">3</div></div>
   <div class="hud bl"><div class="k">points earned</div><div class="v" id="hud-earned">0</div></div>
@@ -67,7 +66,9 @@
     function sizeGrid() {
       const dpr = 1;
       canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-      CELL = Math.max(20, Math.min(44, Math.floor(Math.min(canvas.width, canvas.height) / 20)));
+      // smaller cells => a denser grid, so the arena reads bigger and the
+      // snake/food read smaller against it
+      CELL = Math.max(12, Math.min(26, Math.floor(Math.min(canvas.width, canvas.height) / 34)));
       COLS = Math.floor(canvas.width / CELL);
       ROWS = Math.floor(canvas.height / CELL);
       OFFX = Math.floor((canvas.width - COLS * CELL) / 2);
@@ -133,12 +134,12 @@
     }
     function draw() {
       drawBoard();
-      drawHeart(OFFX + food.x * CELL + CELL / 2, OFFY + food.y * CELL + CELL / 2, CELL * 0.9);
+      drawHeart(OFFX + food.x * CELL + CELL / 2, OFFY + food.y * CELL + CELL / 2, CELL * 0.7);
       const base = headColor();
       snake.forEach((seg, i) => {
         ctx.fillStyle = segmentColor(base, i);
         if (i === 0) { ctx.save(); ctx.shadowColor = base; ctx.shadowBlur = CELL * 0.6; }
-        const pad = 1.5, r = 5;
+        const pad = CELL * 0.2, r = Math.max(2, CELL * 0.22);
         const x = OFFX + seg.x * CELL + pad, y = OFFY + seg.y * CELL + pad, w = CELL - pad * 2;
         ctx.beginPath(); ctx.roundRect(x, y, w, w, r); ctx.fill();
         if (i === 0) ctx.restore();
@@ -169,15 +170,15 @@
     }
     function gameOver() {
       alive = false; clearInterval(timer); timer = null;
-      statusEl.textContent = "the serpent falls · score " + score + (earned ? " · earned " + earned + " points" : "") + " · press start to begin again";
+      statusEl.textContent = "fallen · score " + score + (earned ? " · earned " + earned + " points" : "") + " · press start to begin again";
       document.getElementById("start").textContent = "Start";
     }
     function start() {
       if (timer) clearInterval(timer);
       sizeGrid(); reset(); earned = 0; showScore();
-      statusEl.textContent = "feed the serpent";
+      statusEl.textContent = "";
       document.getElementById("start").textContent = "Restart";
-      draw(); timer = setInterval(tick, 120);
+      draw(); timer = setInterval(tick, 80);
     }
 
     const UP = { x: 0, y: -1 }, DOWN = { x: 0, y: 1 }, LEFT = { x: -1, y: 0 }, RIGHT = { x: 1, y: 0 };

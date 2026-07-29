@@ -16,7 +16,7 @@
   /* Penance is a dark-red terminal at rest (corrupts toward hotter red in JS).
      Devotion is the blue sibling and never corrupts. These are the resting
      palettes; JS lerps --c/--dim toward the corruption target during play. */
-  :root { --c: #cf3730; --dim: #7a2b27; --ok: #ffffff; --err: #ff2a20; --glow: rgba(207,55,48,0.4); }
+  :root { --c: #c11208; --dim: #6b120d; --ok: #ffffff; --err: #ff2a20; --glow: rgba(193,18,8,0.42); }
   :root[data-mode="devotion"] { --c: #8fd0ff; --dim: #3f6a94; --ok: #ffffff; --err: #e0543a; --glow: rgba(60,140,220,0.4); }
   body { font-family: "IBM Plex Mono", monospace; background: #04060a; color: var(--c); }
   #app { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; padding: 4vh 5vw; }
@@ -72,7 +72,7 @@
   #play .target.split::before, #play .target.split::after {
     content: attr(data-t); position: absolute; left: 0; top: 0; width: 100%; pointer-events: none; }
   #play .target.split::before { color: #ff2f24; clip-path: inset(0 0 100% 0); animation: gSliceA 2.2s steps(1,end) infinite; }
-  #play .target.split::after  { color: #46c8ff; clip-path: inset(0 0 100% 0); animation: gSliceB 2.9s steps(1,end) infinite; }
+  #play .target.split::after  { color: #8a0f07; clip-path: inset(0 0 100% 0); animation: gSliceB 2.9s steps(1,end) infinite; }
   #play .bar { margin-top: 1.2rem; }
   .barfill { display: inline-block; letter-spacing: -1px; }
   .tear { position: absolute; left: -6vw; right: -6vw; height: 5px; background: #ff2a20; opacity: 0.16; pointer-events: none; }
@@ -218,8 +218,8 @@
   // Per-mode palette. Penance rests on a dark red and corrupts toward hotter
   // red; Devotion is blue and never leaves it (corruption() is pinned to 0).
   const PAL = {
-    penance:  { pure: { c: "#cf3730", dim: "#7a2b27", glow: "rgba(207,55,48,0.4)" },
-                foul: { c: "#ff3b2f", dim: "#9a201a", glow: "rgba(255,50,40,0.5)" } },
+    penance:  { pure: { c: "#c11208", dim: "#6b120d", glow: "rgba(193,18,8,0.42)" },
+                foul: { c: "#ee1305", dim: "#8c0f07", glow: "rgba(238,19,5,0.5)" } },
     devotion: { pure: { c: "#8fd0ff", dim: "#3f6a94", glow: "rgba(60,140,220,0.4)" },
                 foul: { c: "#8fd0ff", dim: "#3f6a94", glow: "rgba(60,140,220,0.4)" } },
   };
@@ -263,12 +263,12 @@
     for (let i = 0; i < size; i++) d[i] = Math.random() * 2 - 1;
     const n = a.createBufferSource(); n.buffer = buf; n.loop = true;
     ambFilt = a.createBiquadFilter(); ambFilt.type = "lowpass"; ambFilt.frequency.value = 360;
-    ambGain = a.createGain(); ambGain.gain.value = DEVOTION ? 0.02 : 0.045;
+    ambGain = a.createGain(); ambGain.gain.value = DEVOTION ? 0.012 : 0.022;
     n.connect(ambFilt).connect(ambGain).connect(a.destination); n.start();
   }
   function setAmbience(t) {
     if (!ambGain || !actx) return; const now = actx.currentTime;
-    ambGain.gain.setTargetAtTime((DEVOTION ? 0.02 : 0.045) + t * 0.11, now, 0.3);
+    ambGain.gain.setTargetAtTime((DEVOTION ? 0.012 : 0.022) + t * 0.05, now, 0.3);
     ambFilt.frequency.setTargetAtTime(360 + t * 2800, now, 0.3);
     ambFilt.type = t > 0.6 ? "highpass" : "lowpass";
   }

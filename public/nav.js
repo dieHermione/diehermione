@@ -147,11 +147,12 @@
     if (document.getElementById("dashback-style")) return;
     var s = document.createElement("style");
     s.id = "dashback-style";
+    // No plate behind the chevron: it inherits the page's own text colour so it
+    // reads correctly on the dark terminal skins as well as the light ones.
     s.textContent = ".dash-back{position:fixed;top:1.3rem;left:1.3rem;z-index:1000;width:2.6rem;height:2.6rem;" +
-      "border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.55);" +
-      "backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);box-shadow:0 6px 16px rgba(40,90,120,0.2);" +
-      "color:#2a6a86;text-decoration:none;transition:transform .2s ease,background .2s ease;}" +
-      ".dash-back:hover{transform:translateY(-2px);background:rgba(255,255,255,0.85);}" +
+      "border-radius:50%;display:flex;align-items:center;justify-content:center;background:none;" +
+      "color:inherit;opacity:0.75;text-decoration:none;transition:transform .2s ease,opacity .2s ease;}" +
+      ".dash-back:hover{transform:translateY(-2px);opacity:1;}" +
       ".dash-back svg{width:22px;height:22px;}";
     document.head.appendChild(s);
   }

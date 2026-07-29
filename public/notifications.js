@@ -231,8 +231,9 @@
     panel.append(clear);
   }
 
-  // A synthesised meow, a swept tone through a moving formant filter. No asset
-  // to ship, and it fails quietly if the browser hasn't allowed audio yet.
+  // A synthesised low bell: a struck fundamental plus inharmonic partials, each
+  // ringing out on its own decay. No asset to ship, and it fails quietly if the
+  // browser hasn't allowed audio yet.
   let audioCtx = null;
   function playMeow() {
     try {
@@ -242,36 +243,32 @@
       if (audioCtx.state === "suspended") audioCtx.resume();
       const now = audioCtx.currentTime;
 
-      const osc = audioCtx.createOscillator();
-      osc.type = "sawtooth";
-      osc.frequency.setValueAtTime(620, now);
-      osc.frequency.linearRampToValueAtTime(880, now + 0.13);
-      osc.frequency.linearRampToValueAtTime(500, now + 0.42);
+      const out = audioCtx.createGain();
+      out.gain.value = 0.5;
+      out.connect(audioCtx.destination);
 
-      // wobble, so it sounds animal rather than electronic
-      const vib = audioCtx.createOscillator();
-      const vibGain = audioCtx.createGain();
-      vib.frequency.value = 15;
-      vibGain.gain.value = 22;
-      vib.connect(vibGain).connect(osc.frequency);
-
-      // the vowel: "ee" opening to "ow"
-      const formant = audioCtx.createBiquadFilter();
-      formant.type = "bandpass";
-      formant.Q.value = 5;
-      formant.frequency.setValueAtTime(1100, now);
-      formant.frequency.linearRampToValueAtTime(1750, now + 0.12);
-      formant.frequency.linearRampToValueAtTime(750, now + 0.45);
-
-      const gain = audioCtx.createGain();
-      gain.gain.setValueAtTime(0.0001, now);
-      gain.gain.exponentialRampToValueAtTime(0.16, now + 0.05);
-      gain.gain.setValueAtTime(0.16, now + 0.28);
-      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.5);
-
-      osc.connect(formant).connect(gain).connect(audioCtx.destination);
-      osc.start(now); vib.start(now);
-      osc.stop(now + 0.52); vib.stop(now + 0.52);
+      // ratios are deliberately inharmonic; that is what reads as "bell"
+      // rather than "organ". Higher partials fade faster, as on a real one.
+      const FUND = 174;
+      const PARTIALS = [
+        { ratio: 1.00, gain: 0.20, decay: 2.6 },
+        { ratio: 2.01, gain: 0.11, decay: 1.9 },
+        { ratio: 2.97, gain: 0.07, decay: 1.3 },
+        { ratio: 4.23, gain: 0.04, decay: 0.8 },
+        { ratio: 5.43, gain: 0.02, decay: 0.5 },
+      ];
+      PARTIALS.forEach((p) => {
+        const osc = audioCtx.createOscillator();
+        osc.type = "sine";
+        osc.frequency.value = FUND * p.ratio;
+        const g = audioCtx.createGain();
+        g.gain.setValueAtTime(0.0001, now);
+        g.gain.exponentialRampToValueAtTime(p.gain, now + 0.008);   // hard strike
+        g.gain.exponentialRampToValueAtTime(0.0001, now + p.decay);
+        osc.connect(g).connect(out);
+        osc.start(now);
+        osc.stop(now + p.decay + 0.05);
+      });
     } catch {}
   }
 

@@ -40,7 +40,7 @@ window.Subliminal = (function () {
     if (styleInjected) return; styleInjected = true;
     var css = [
       ".subliminal{position:fixed;inset:0;z-index:99999;pointer-events:none;overflow:hidden;display:flex;align-items:center;justify-content:center;}",
-      ".subliminal .w{font-family:'Oswald','Quicksand',-apple-system,sans-serif;font-weight:700;text-transform:uppercase;",
+      ".subliminal .w{font-family:'IBM Plex Mono',ui-monospace,monospace;font-weight:700;text-transform:uppercase;",
       "letter-spacing:0.01em;line-height:0.98;text-align:center;color:#fff;opacity:0;text-shadow:" + GLOW_WHITE + ";}",
       ".subliminal .tint{position:absolute;inset:0;background:#fff;opacity:0;mix-blend-mode:difference;}",
     ].join("");

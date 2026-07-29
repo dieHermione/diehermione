@@ -6,7 +6,7 @@
   <title>Dashboard - angeldom.me</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
   <script src="/me.js"></script>
   <script src="/glitch.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Major+Mono+Display&display=swap" rel="stylesheet" />
@@ -65,17 +65,13 @@
     .control-card { grid-area: actions; align-self: end; }
     .controls { display: flex; flex-direction: column; align-items: flex-start; gap: 0.1rem; }
     .ctl-btn, .controls a { display: block; background: none; border: none; color: var(--c); font-family: inherit; font-size: 1.08rem; letter-spacing: 0.04em; padding: 0.16rem 0; cursor: pointer; text-align: left; }
-    .controls a::before, .ctl-dropdown > .ctl-btn::before, #tithe::before, #hermione-link::before { content: "› "; color: var(--dim2); }
+    .controls a::before, .ctl-dropdown > .ctl-btn::before, #hermione-link::before, #logout::before { content: "› "; color: var(--dim2); }
     .controls a:hover, .ctl-btn:hover { color: var(--bright); text-shadow: 0 0 10px var(--glow); }
     .ctl-dropdown { position: relative; }
     .ctl-menu { display: flex; flex-direction: column; padding-left: 1.1rem; }
     .ctl-menu a { font-size: 1rem; color: var(--dim); }
     .ctl-menu a::before { content: "· "; color: var(--dim2); }
     .ctl-menu a:hover { color: var(--bright); }
-    #tithe.tithed .th-default { color: var(--dim); }
-    #tithe .th-hover { display: none; }
-    #tithe:hover .th-hover { display: inline; } #tithe:hover .th-default { display: none; }
-    #tithe:disabled { color: var(--dim2); cursor: not-allowed; }
     .ctl-btn.ghost { color: var(--dim); }
     .sub-test { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-top: 1rem; padding-top: 0.8rem; border-top: 1px solid var(--dim2); }
     .sub-test .lbl { width: 100%; font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--dim); }
@@ -92,6 +88,12 @@
     /* ---- dailies / admin panel ---- */
     .dailies-card { grid-area: dailies; display: flex; flex-direction: column; min-height: 0; border-left: 1px solid var(--dim2); padding-left: 2vw; }
     .dailies-card h2 { color: var(--dim); letter-spacing: 0.2em; text-transform: uppercase; font-size: 0.72rem; font-weight: 400; margin: 0 0 0.8rem; }
+    /* the panel heading doubles as a collapse toggle once it holds the admin controls */
+    .dailies-card h2.collapsible { cursor: pointer; user-select: none; }
+    .dailies-card h2.collapsible:hover { color: var(--c); }
+    .dailies-card h2 .chev { display: inline-block; margin-right: 0.4rem; transition: transform 0.15s; }
+    .dailies-card.collapsed h2 .chev { transform: rotate(-90deg); }
+    .dailies-card.collapsed .panel-body { display: none; }
     .panel-body { flex: 1; min-height: 0; max-height: 60vh; overflow-y: auto; padding-right: 0.3rem;
       scrollbar-width: thin; scrollbar-color: rgba(120,190,255,0.45) transparent; }   /* Firefox */
     .panel-body::-webkit-scrollbar { width: 7px; } .panel-body::-webkit-scrollbar-track { background: transparent; }
@@ -105,7 +107,6 @@
     .daily .mini-bar { height: 3px; background: rgba(120,190,255,0.14); margin-top: 0.4rem; overflow: hidden; }
     .daily .mini-bar span { display: block; height: 100%; background: var(--accent); }
     .daily .reward { color: var(--dim); font-size: 0.78rem; white-space: nowrap; }
-    .daily-reset { color: var(--dim2); font-size: 0.8rem; margin-top: 1rem; }
 
     /* ---- leaderboard ---- */
     .leaderboard-card { grid-area: board; border-left: 1px solid var(--dim2); padding-left: 2vw; min-height: 0; overflow: hidden; }
@@ -190,13 +191,13 @@
     <section class="control-card">
       <div class="stitle">enter</div>
       <div class="controls">
-        <a href="/snake">Snake</a>
-        <a href="/writing">Penance</a>
-        <a href="/writing?mode=devotion">Devotion</a>
-        <a href="/deathroll">Deathroll</a>
-        <a href="/elysium">Elysium</a>
-        <button id="tithe" class="ctl-btn" type="button" hidden><span class="th-default">Tithe</span><span class="th-hover">Tithe again</span></button>
-        <a id="hermione-link" class="ctl-btn" href="/profile?user=hermione" hidden>Hermione's profile</a>
+        <a href="/snake" title="Chase the food. Classic Snake clone.">Snake</a>
+        <a href="/writing" title="A writeforme clone for punishments.">Penance</a>
+        <a href="/writing?mode=devotion" title="A calmer writeforme clone for mantras.">Devotion</a>
+        <a href="/deathroll" title="A two-player dice game. The first player to roll a 1 loses.">Deathroll</a>
+        <a href="/elysium" title="A simple game about caring for a tree.">Elysium</a>
+        <a id="hermione-link" class="ctl-btn" href="/profile?user=hermione" hidden>Hermione</a>
+        <button id="logout" class="ctl-btn" type="button">Log out</button>
       </div>
       <div class="sub-test">
         <span class="lbl">Subliminal test</span>
@@ -206,7 +207,6 @@
     </section>
 
     <aside class="balance-card" id="balance-card">
-      <div class="stitle">vessel</div>
       <div class="bal-num" id="bal-num">—</div>
       <div class="bal-sub" id="bal-sub">—</div>
       <div class="bal-coins" id="bal-coins">✦ <span id="coin-num">0</span><span class="coin-lbl">angelcoins</span></div>
@@ -216,7 +216,6 @@
       <h2 id="panel-title">Dailies</h2>
       <div class="panel-body" id="panel-body">
         <div class="daily-list" id="daily-list"></div>
-        <p class="daily-reset" id="daily-reset"></p>
       </div>
     </aside>
 
@@ -243,7 +242,6 @@
 
   <script>
     let myRank = "—";
-    let fakeTithe = false;
 
     const h = new Date().getHours();
     document.getElementById("greeting").textContent =
@@ -272,15 +270,6 @@
       document.getElementById("bal-sub").textContent = "points · Archangel";
       document.getElementById("coin-num").textContent = "∞";
     }
-    function setupFakeTithe() {
-      fakeTithe = true;
-      const tithe = document.getElementById("tithe");
-      tithe.hidden = false;
-      tithe.disabled = false;
-      tithe.classList.add("tithed");
-      tithe.querySelector(".th-default").textContent = "Tithed today";
-    }
-
     window.siteMe()
       .then((d) => {
         if (d.checkIn) {
@@ -296,17 +285,21 @@
         document.getElementById("hermione-link").hidden = isHermione;
         if (isHermione) {
           setFakeBalance();
-          // no tithe for Hermione
-          document.getElementById("tithe").hidden = true;
-          // her panel holds the admin controls instead of dailies
-          document.getElementById("dailies-card").hidden = false;
-          document.getElementById("panel-title").textContent = "Admin controls";
+          // her panel holds the admin controls instead of dailies, and collapses
+          const card = document.getElementById("dailies-card");
+          const title = document.getElementById("panel-title");
+          card.hidden = false;
+          title.innerHTML = '<span class="chev">▾</span>Admin controls';
+          title.classList.add("collapsible");
+          title.addEventListener("click", () => {
+            card.classList.toggle("collapsed");
+            fitDash();
+          });
           buildAdminPanel();
         } else {
           setBalance(d.points, d.angelcoins);
-          document.getElementById("tithe").hidden = noEcon;
           document.getElementById("dailies-card").hidden = noEcon;
-          if (!noEcon) { applyTitheState(d.points, d.tithedToday); loadDailies(); }
+          if (!noEcon) loadDailies();
         }
         loadCopy(isHermione);
       })
@@ -434,9 +427,13 @@
         label.className = "label";
         label.textContent = d.label;
         bodyEl.append(label);
-        const detailText = d.progress && !d.done
-          ? (d.detail ? d.detail + " " : "") + d.progress.current + "/" + d.progress.max + " until complete"
-          : d.detail;
+        // an explicit detail stands on its own; the x/y readout is only the
+        // fallback for dailies that carry progress but no wording of their own
+        const detailText = d.detail
+          ? d.detail
+          : d.progress && !d.done
+            ? d.progress.current + "/" + d.progress.max + " until complete"
+            : "";
         if (detailText) {
           const detail = document.createElement("div");
           detail.className = "detail";
@@ -459,7 +456,6 @@
         row.append(reward);
         return row;
       }));
-      document.getElementById("daily-reset").textContent = "Resets at " + data.resets + ".";
     }
 
     // --- admin controls, rendered into the panel on Hermione's account ---
@@ -596,7 +592,7 @@
       // documentation
       const docSec = document.createElement("div"); docSec.className = "adm-sec";
       docSec.append(mk("h3", "Documentation"));
-      [["Guide", "/guide"], ["Technical notes", "/tech"], ["Card nav demo", "/cardnav"]].forEach(([t, h]) => {
+      [["Guide", "/guide"], ["Technical notes", "/tech"]].forEach(([t, h]) => {
         const a = document.createElement("a"); a.className = "adm-doc"; a.href = h; a.textContent = t; docSec.append(a);
       });
       wrap.append(docSec);
@@ -646,17 +642,6 @@
     document.getElementById("pt-close").addEventListener("click", () => document.getElementById("pmodal").classList.remove("open"));
     document.getElementById("pmodal").addEventListener("click", (ev) => { if (ev.target.id === "pmodal") document.getElementById("pmodal").classList.remove("open"); });
 
-    function applyTitheState(points, tithedToday) {
-      const tithe = document.getElementById("tithe");
-      const negative = (points || 0) < 0;
-      // only truly disabled when in the red; once tithed it stays clickable
-      tithe.disabled = negative;
-      tithe.classList.toggle("tithed", tithedToday && !negative);
-      tithe.querySelector(".th-default").textContent = tithedToday && !negative
-        ? "Tithed today"
-        : negative ? "Tithe (in the red)" : "Tithe";
-    }
-
     let noticeTimer = null;
     function flashNotice(text) {
       const notice = document.getElementById("checkin-notice");
@@ -666,19 +651,10 @@
       noticeTimer = setTimeout(() => { notice.hidden = true; }, 4000);
     }
 
-    async function doTithe() {
-      if (fakeTithe) return;   // the Princess's tithe is decorative for now
-      const res = await fetch("/api/tithe", { method: "POST" });
-      const data = await res.json().catch(() => ({}));
-      flashNotice(res.ok
-        ? "Tithed " + data.amount + " points. You have " + data.points + " left."
-        : data.error || "That didn't work.");
-      if (res.ok) {
-        applyTitheState(data.points, true);
-        setBalance(data.points);
-      }
-    }
-    document.getElementById("tithe").addEventListener("click", doTithe);
+    document.getElementById("logout").addEventListener("click", async () => {
+      await fetch("/api/logout", { method: "POST" }).catch(() => {});
+      window.location.href = "/";
+    });
 
     // --- Eastern-time clock (EST/EDT via Intl; daily reset is 6am Eastern) ---
     const RESET_HOUR = 6;

@@ -689,7 +689,11 @@ function renderMenu(t) {
     const v = document.createElement("span"); v.className = "v " + (row.band(t) || ""); v.textContent = row.pick(t);
     r.append(k, v); return r;
   }));
-  document.getElementById("controls").querySelector('[data-action="fertilize"]').disabled = !t.fertilizeReady;
+  // fertilize sits on a cooldown; say how long is left rather than just greying out
+  const fert = document.getElementById("controls").querySelector('[data-action="fertilize"]');
+  fert.disabled = !t.fertilizeReady;
+  fert.textContent = t.fertilizeReady ? "Fertilize" : "Fertilize · " + t.fertilizeIn + "h";
+  fert.title = t.fertilizeReady ? "" : "On cooldown for another " + t.fertilizeIn + " hours.";
 }
 
 function render(t) {

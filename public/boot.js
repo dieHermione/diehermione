@@ -41,7 +41,7 @@
   function play(opts) {
     opts = opts || {};
     var text = opts.text || DEVOTIONALS[(Math.random() * DEVOTIONALS.length) | 0];
-    var duration = opts.duration || 2200;
+    var duration = opts.duration || 5200;
     ensureStyle();
     var ov = document.createElement("div"); ov.id = "boot-overlay";
     ov.innerHTML = '<div class="glow"></div><div class="scan"></div><div class="vig"></div>' +
@@ -74,7 +74,7 @@
       setTimeout(function () {
         if (opts.navigateTo) window.location.href = opts.navigateTo;
         else if (typeof opts.onDone === "function") opts.onDone();
-      }, 420);
+      }, 750);
     }
     requestAnimationFrame(frame);
   }

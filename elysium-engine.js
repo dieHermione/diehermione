@@ -352,9 +352,7 @@ const ACTIONS = {
     return { say: "You thin the canopy. Airflow improves, but every cut is a wound.", tone: "calm" };
   },
   fertilize(state, now) {
-    const last = state.actions.fertilize || -999;
-    const since = state.ageTicks - last;
-    if (since < 18) return { say: "The soil is still rich from the last feeding. Wait a while.", tone: "warn", noStamp: true };
+    if (fertilizeLeft(state) > 0) return { say: "The soil is still rich from the last feeding. Wait a while.", tone: "warn", noStamp: true };
     const rot = diseaseOf(state, "root");
     if (rot) {
       state.risk.root = clamp(state.risk.root + 14, 0, 130);
@@ -388,6 +386,15 @@ function worstDisease(state, families) {
   const set = state.diseases.filter((d) => families.includes(DISEASES[d.type].family));
   set.sort((a, b) => b.stage - a.stage || b.progress - a.progress);
   return set[0] || null;
+}
+
+// Fertilize cooldown bookkeeping. The stamp is read with ?? rather than ||:
+// tick 0 is a legitimate timestamp, and || treated it as "never fed", so a
+// fresh tree could be fertilized every tick.
+const FERTILIZE_COOLDOWN = 18;
+function fertilizeLeft(state) {
+  const last = state.actions.fertilize ?? -999;
+  return Math.max(0, FERTILIZE_COOLDOWN - (state.ageTicks - last));
 }
 
 function applyAction(state, action, now = Date.now()) {
@@ -506,7 +513,9 @@ function publicView(state, now = Date.now()) {
     inspectConfidence: state.inspect.confidence,
     inspectClues: state.inspect.clues,
     journal: state.journal.slice(0, 24),
-    fertilizeReady: (state.ageTicks - (state.actions.fertilize || -999)) >= 18,
+    fertilizeReady: fertilizeLeft(state) === 0,
+    // hours left on the fertilize cooldown, so the UI can say why it is greyed
+    fertilizeIn: fertilizeLeft(state),
   };
 }
 function stageProgress(state) {
