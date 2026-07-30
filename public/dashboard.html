@@ -125,12 +125,22 @@
     .dailies-card h2.collapsible:hover, .leaderboard-card h2.collapsible:hover { color: var(--c); }
     .dailies-card h2 .chev, .leaderboard-card h2 .chev { display: inline-block; margin-right: 0.4rem; transition: transform 0.15s; }
     .fold-right.collapsed > *:not(h2) { display: none; }
-    .fold-right.collapsed { padding-left: 0.9rem; overflow: hidden; }
-    .fold-right.collapsed h2 { writing-mode: vertical-rl; transform: rotate(180deg);
+    /* The spine's heading is taken out of flow: as vertical text it is tall
+       enough to push the grid past fitDash's threshold, which scaled the whole
+       dashboard (top bar included) the moment a card was folded. Absolute
+       positioning means a fold changes nothing but the folded card.
+       The left border is the divider to this card's left, so it goes too. */
+    .fold-right.collapsed { position: relative; padding-left: 0; border-left: none; overflow: hidden; }
+    .fold-right.collapsed h2 { position: absolute; top: 0; left: 0.3rem;
+      writing-mode: vertical-rl; transform: rotate(180deg);
       white-space: nowrap; margin: 0; height: 100%; }
     .fold-right.collapsed h2 .chev { transform: rotate(90deg); }
     /* the column has to give the space back, or the card just leaves a hole */
-    .dash.c-dailies { grid-template-columns: 1.3fr 3rem 1.15fr; }
+    /* --board-w is pinned in JS to the leaderboard's live width before a fold,
+       so folding the middle column hands its space to the first column only.
+       The leaderboard keeps its size and the hero keeps its right edge, which
+       is what the notifications bell is anchored to. */
+    .dash.c-dailies { grid-template-columns: 1fr 3rem var(--board-w, 1.15fr); }
     .dash.c-board { grid-template-columns: 1.15fr 1.75fr 3rem; }
     .dash.c-dailies.c-board { grid-template-columns: 1fr 3rem 3rem; }
 
@@ -245,12 +255,19 @@
         <a href="/deathroll" data-tip="A two-player dice game. The first player to roll a 1 loses.">Deathroll</a>
         <a href="/elysium" data-tip="A simple game about caring for a tree.">Elysium</a>
         <a href="/dummyparse" data-tip="Beat on a target dummy. Optimise stats and rotation for damage.">Dummy Parse</a>
+        <a href="/wheel" data-tip="One turn a day. Pays angelcoins.">Wheel</a>
+        <a href="/chess" data-tip="Chess against Hermione. You play white.">Chess</a>
+        <a href="/skillcheck" data-tip="Hit the key while the needle is in the red.">Skill Check</a>
+        <a id="profile-link" class="ctl-btn" href="/profile">Profile</a>
         <a id="hermione-link" class="ctl-btn" href="/profile?user=hermione" hidden>Hermione</a>
         <button id="settings-toggle" class="ctl-btn" type="button" aria-expanded="false">Settings</button>
         <div class="settings" id="settings" hidden>
           <label class="set-row set-check">
             <input type="checkbox" id="set-sub" /> <span>Subliminals</span>
           </label>
+          <div class="set-row"><span class="set-k">Master</span>
+            <input type="range" id="vol-master" min="0" max="100" />
+            <button class="set-mute" id="mute-master" type="button">on</button></div>
           <div class="set-row"><span class="set-k">Music</span>
             <input type="range" id="vol-music" min="0" max="100" />
             <button class="set-mute" id="mute-music" type="button">on</button></div>
@@ -376,11 +393,19 @@
           title.innerHTML = '<span class="chev">▾</span>Admin controls';
           title.classList.add("collapsible");
           title.addEventListener("click", () => {
+            pinBoardWidth();
             const shut = card.classList.toggle("collapsed");
             document.querySelector(".dash").classList.toggle("c-dailies", shut);
             fitDash();
           });
           buildAdminPanel();
+          // the panel is long; it opens folded and she unfolds it when wanted
+          requestAnimationFrame(() => {
+            pinBoardWidth();
+            card.classList.add("collapsed");
+            document.querySelector(".dash").classList.add("c-dailies");
+            fitDash();
+          });
         } else {
           setBalance(d.points, d.angelcoins);
           document.getElementById("dailies-card").hidden = noEcon;
@@ -820,6 +845,7 @@
       title.innerHTML = '<span class="chev">▾</span>Leaderboard';
       title.classList.add("collapsible");
       title.addEventListener("click", () => {
+        pinBoardWidth();
         const shut = card.classList.toggle("collapsed");
         document.querySelector(".dash").classList.toggle("c-board", shut);
         fitDash();
@@ -846,7 +872,7 @@
         applyEffects();
       });
 
-      bus.channels.forEach((name) => {
+      ["master"].concat(bus.channels).forEach((name) => {
         const slider = document.getElementById("vol-" + name);
         const mute = document.getElementById("mute-" + name);
         if (!slider || !mute) return;
@@ -906,6 +932,15 @@
     // Shrink the whole dashboard to fit the viewport height instead of scrolling.
     // Content height varies (admin panel, dailies), so re-fit whenever it changes.
     const _dash = document.querySelector(".dash");
+
+    // Folding a column must not resize the leaderboard or shift the bell, so
+    // its live width is measured and pinned before the grid changes.
+    function pinBoardWidth() {
+      const board = document.getElementById("board-card");
+      if (!_dash || !board) return;
+      if (board.classList.contains("collapsed")) return;
+      _dash.style.setProperty("--board-w", Math.round(board.getBoundingClientRect().width) + "px");
+    }
     function fitDash() {
       if (!_dash) return;
       _dash.style.transform = "";

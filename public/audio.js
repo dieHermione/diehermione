@@ -36,6 +36,8 @@ window.AudioBus = (function () {
   var KEY = "angeldom-audio";
   var CHANNELS = ["music", "ambience", "typing"];
   var DEFAULTS = {
+    // master scales the other three; it is not a channel of its own
+    master: { volume: 1, muted: false },
     music: { volume: 0.5, muted: false },
     ambience: { volume: 0.5, muted: false },
     typing: { volume: 0.5, muted: false },
@@ -84,7 +86,9 @@ window.AudioBus = (function () {
   }
   function level(name) {
     var c = state[name] || DEFAULTS.typing;
-    return c.muted ? 0 : c.volume;
+    var m = state.master || DEFAULTS.master;
+    if (c.muted || m.muted) return 0;
+    return c.volume * m.volume;
   }
   function apply() {
     CHANNELS.forEach(function (name) {
@@ -100,7 +104,8 @@ window.AudioBus = (function () {
     return { volume: c.volume, muted: c.muted };
   }
   function set(name, patch) {
-    if (CHANNELS.indexOf(name) < 0) return;
+    if (name !== "master" && CHANNELS.indexOf(name) < 0) return;
+    if (!state[name]) state[name] = { volume: DEFAULTS[name].volume, muted: DEFAULTS[name].muted };
     if (patch && typeof patch.volume === "number") state[name].volume = Math.max(0, Math.min(1, patch.volume));
     if (patch && typeof patch.muted === "boolean") state[name].muted = patch.muted;
     persist(); apply(); notify();
