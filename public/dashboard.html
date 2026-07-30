@@ -34,7 +34,29 @@
     .dash { position: relative; z-index: 5; width: min(1640px, 94vw); height: calc(100vh - 104px); margin: 46px auto 0;
       display: grid; grid-template-columns: 1.15fr 1.4fr 1fr; grid-template-rows: auto 1fr auto; gap: 3.2vh 3vw;
       grid-template-areas: "hello hello clock" "actions dailies board" "vessel dailies board"; }
-    @media (max-width: 900px) { .dash { grid-template-columns: 1fr; grid-template-areas: "hello" "clock" "actions" "vessel" "dailies" "board"; height: auto; } html,body{ overflow:auto; } }
+    /* no admin panel: the middle column closes up instead of leaving a hole */
+    .dash.no-panel { grid-template-columns: 1.3fr 1fr;
+      grid-template-areas: "hello clock" "actions board" "vessel board"; }
+    @media (max-width: 900px) {
+      .dash, .dash.no-panel, .dash.c-dailies, .dash.c-board, .dash.c-dailies.c-board {
+        grid-template-columns: 1fr;
+        grid-template-areas: "hello" "clock" "actions" "vessel" "dailies" "board";
+        height: auto;
+      }
+      html, body { overflow: auto; }
+      /* One column has no room for a folded spine, and the absolutely
+         positioned vertical heading collapsed the card to nothing. Folding is
+         simply off below this width. */
+      .fold-right.collapsed { position: static; overflow: visible;
+        border-left: 1px solid var(--dim2); padding-left: 2vw; }
+      .fold-right.collapsed > *:not(h2) { display: block; }
+      #dailies-card.collapsed h2, .fold-right.collapsed h2 {
+        position: static; inset: auto; width: auto; padding: 0;
+        writing-mode: horizontal-tb; transform: none; background: none;
+        display: block; height: auto;
+      }
+      .fold-right.collapsed h2 .chev { transform: none; }
+    }
 
     /* ---- hello (welcome + flavor) ---- */
     .hero { grid-area: hello; position: relative; }
@@ -295,8 +317,8 @@
       <div class="bal-coins" id="bal-coins">✦ <span id="coin-num">0</span><span class="coin-lbl">angelcoins</span></div>
     </aside>
 
-    <aside class="dailies-card panel-card fold-right" id="dailies-card">
-      <h2 id="panel-title">Dailies</h2>
+    <aside class="dailies-card panel-card fold-right" id="dailies-card" hidden>
+      <h2 id="panel-title">Admin controls</h2>
       <div class="panel-body" id="panel-body">
         <div class="daily-list" id="daily-list"></div>
       </div>
@@ -413,10 +435,11 @@
             document.querySelector(".dash").classList.add("c-dailies");
             fitDash();
           });
+          document.querySelector(".dash").classList.remove("no-panel");
         } else {
+          // the middle column was the dailies panel; without it the grid closes up
+          document.querySelector(".dash").classList.add("no-panel");
           setBalance(d.points, d.angelcoins);
-          document.getElementById("dailies-card").hidden = noEcon;
-          if (!noEcon) loadDailies();
         }
         loadCopy(isHermione);
       })
@@ -524,56 +547,6 @@
       editor.classList.add("open");
     }
 
-    async function loadDailies() {
-      const res = await fetch("/api/dailies");
-      if (!res.ok) return;
-      const data = await res.json();
-      const list = document.getElementById("daily-list");
-      list.replaceChildren(...data.dailies.map((d) => {
-        const row = document.createElement("div");
-        row.className = "daily" + (d.done ? " done" : "");
-
-        const tick = document.createElement("div");
-        tick.className = "tick";
-        tick.textContent = d.done ? "✓" : "";
-        row.append(tick);
-
-        const bodyEl = document.createElement("div");
-        bodyEl.className = "body";
-        const label = document.createElement("div");
-        label.className = "label";
-        label.textContent = d.label;
-        bodyEl.append(label);
-        // an explicit detail stands on its own; the x/y readout is only the
-        // fallback for dailies that carry progress but no wording of their own
-        const detailText = d.detail
-          ? d.detail
-          : d.progress && !d.done
-            ? d.progress.current + "/" + d.progress.max + " until complete"
-            : "";
-        if (detailText) {
-          const detail = document.createElement("div");
-          detail.className = "detail";
-          detail.textContent = detailText;
-          bodyEl.append(detail);
-        }
-        if (d.progress) {
-          const bar = document.createElement("div");
-          bar.className = "mini-bar";
-          const fill = document.createElement("span");
-          fill.style.width = Math.min(100, (d.progress.current / d.progress.max) * 100) + "%";
-          bar.append(fill);
-          bodyEl.append(bar);
-        }
-        row.append(bodyEl);
-
-        const reward = document.createElement("span");
-        reward.className = "reward";
-        reward.textContent = d.reward;
-        row.append(reward);
-        return row;
-      }));
-    }
 
     // --- admin controls, rendered into the panel on Hermione's account ---
     async function buildAdminPanel() {

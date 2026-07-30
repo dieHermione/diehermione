@@ -250,7 +250,6 @@ app.post("/api/login", async (req, res) => {
   req.session.username = user.username;
   const checkIn = awardDailyCheckIn(users, user.username.toLowerCase());
   if (clearTitheLeftovers(users, user.username.toLowerCase())) saveUsers(users);
-  seedNotifications(user);
   saveUsers(users);
   res.json({ ok: true, checkIn });
 });
@@ -1427,55 +1426,10 @@ app.post("/api/wheel/spin", (req, res) => {
   });
 });
 
-// --- dailies: objectives that reset with the noon-Eastern day ---
-app.get("/api/dailies", (req, res) => {
-  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
-  const users = loadUsers();
-  const key = req.session.username.toLowerCase();
-  const user = users[key];
-  if (!user) return res.status(401).json({ error: "Not logged in." });
-  if (rankFor(user, key) === "Visitor") {
-    return res.json({ resets: "noon Eastern", dailies: [] });   // no dailies for visitors
-  }
-  const today = todayKey();
-  const snakeToday = user.snakeDay === today ? user.snakeToday || 0 : 0;
-  const devToday = user.devotionDay === today ? user.devotionCount || 0 : 0;
-  res.json({
-    resets: "noon Eastern",
-    dailies: [
-      {
-        id: "checkin",
-        label: "Daily check-in",
-        detail: "",
-        reward: DAILY_CHECKIN_POINTS + " points",
-        done: user.lastCheckIn === today,
-      },
-      {
-        id: "wheel",
-        label: "Spin the wheel",
-        detail: "",
-        reward: "up to " + Math.max(...WHEEL_SEGMENTS.map((s) => s.coins)) + " angelcoins",
-        done: user.wheelDay === today,
-      },
-      {
-        id: "snake",
-        label: "Snake",
-        detail: "",
-        reward: "+" + SNAKE_COMPLETION_BONUS + " points",
-        done: snakeToday >= SNAKE_DAILY_TARGET,
-        progress: { current: snakeToday, max: SNAKE_DAILY_TARGET },
-      },
-      {
-        id: "writing",
-        label: "Devotion",
-        detail: "Complete " + DEVOTION_DAILY_TARGET + " lines in Devotion",
-        reward: WRITING_DAILY_POINTS + " points",
-        done: devToday >= DEVOTION_DAILY_TARGET,
-        progress: { current: Math.min(devToday, DEVOTION_DAILY_TARGET), max: DEVOTION_DAILY_TARGET },
-      },
-    ],
-  });
-});
+// The dailies panel and its API were removed: the objectives were busywork.
+// The payouts they used to advertise (the Snake completion bonus, the
+// Devotion 50-line reward) still fire; they are just no longer presented
+// as a checklist.
 
 // --- writing: categories of passages, typed one after another ---
 // The player only sees the category; what's inside is shuffled per attempt.
@@ -1978,17 +1932,6 @@ function dropNotification(user, id) {
 
 // Nudge about the day's objectives once per noon-Eastern day, so it lands when
 // the dailies actually reset rather than on every sign-in.
-function seedNotifications(user) {
-  const today = todayKey();
-  if (user.dailiesNotifiedOn === today) return;
-  user.dailiesNotifiedOn = today;
-  pushNotification(
-    user,
-    "dailies-" + today,
-    "You have new daily objectives to complete. :3",
-    "/dashboard"
-  );
-}
 
 app.get("/api/notifications", (req, res) => {
   if (!req.session.username) return res.status(401).json({ error: "Not logged in." });

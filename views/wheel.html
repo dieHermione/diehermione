@@ -227,11 +227,24 @@
       turning = false;
       document.getElementById("vault").textContent = Number(data.angelcoins).toLocaleString();
       showPay("+" + data.won + " ✦", "");
-      turnBtn.disabled = !data.canSpin;
-      if (!data.canSpin) document.getElementById("rule").textContent = "COME BACK TOMORROW";
+      // the turn is spent, so the button stops being a dead control and
+      // becomes the way out
+      if (!data.canSpin) {
+        document.getElementById("rule").textContent = "COME BACK TOMORROW";
+        becomeLeave();
+      }
     }
 
-    turnBtn.addEventListener("click", turn);
+    function becomeLeave() {
+      turnBtn.disabled = false;
+      turnBtn.textContent = "leave";
+      turnBtn.dataset.leave = "1";
+    }
+
+    turnBtn.addEventListener("click", () => {
+      if (turnBtn.dataset.leave) { window.location.href = "/games"; return; }
+      turn();
+    });
 
     // real odds, off the server's own weights, rather than counting faces
     function oddsLine() {
@@ -259,6 +272,7 @@
         buildFaces();
         document.getElementById("odds").innerHTML = oddsLine();
         turnBtn.disabled = !state.canSpin;
+        if (!state.canSpin) becomeLeave();
         if (!state.canSpin) document.getElementById("rule").textContent = "COME BACK TOMORROW";
         showPay(null, state.canSpin ? "READY" : "SPUN TODAY");
       })
