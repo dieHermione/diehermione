@@ -182,15 +182,11 @@ function isPending(user) {
 // both granted and earned, and the leaderboard reflects both.
 const DAILY_CHECKIN_POINTS = 5;
 const SNAKE_FOOD_POINTS = 1;
-const WRITING_DAILY_POINTS = 50;
 // The Devotion daily is fulfilled by completing this many Devotion lines in a day.
-const DEVOTION_DAILY_TARGET = 50;
 // Snake pickups are reported by the browser, so they can't be trusted outright.
 // These bound the damage: a daily ceiling makes farming pointless, and a token
 // bucket caps the sustained rate while still allowing honest bursts (food can
 // spawn right in front of the snake and be eaten on the very next 120ms tick).
-const SNAKE_DAILY_TARGET = 20;   // eat this many to complete the daily
-const SNAKE_COMPLETION_BONUS = 10; // extra payout for completing it, once a day
 const SNAKE_BURST = 8;
 const SNAKE_REFILL_MS = 2000;
 
@@ -1155,31 +1151,23 @@ app.post("/api/snake/food", (req, res) => {
 
   user.foodEaten = (user.foodEaten || 0) + 1;   // lifetime
 
-  // food eaten today, tracked for the daily objective (no longer a point cap)
+  // Every pickup pays. The completion bonus that went with the old daily
+  // objective is gone along with the dailies themselves.
   const today = todayKey();
   if (user.snakeDay !== today) {
     user.snakeDay = today;
     user.snakeToday = 0;
   }
   user.snakeToday += 1;
-  if (!visitor) user.angelcoins = (user.angelcoins || 0) + SNAKE_FOOD_POINTS;   // every pickup pays angelcoins
-
-  // completing the daily (20 eaten) triggers an extra payout, once per day
-  let bonus = 0;
-  if (user.snakeToday >= SNAKE_DAILY_TARGET && user.snakeBonusDay !== today) {
-    user.snakeBonusDay = today;
-    bonus = SNAKE_COMPLETION_BONUS;
-    if (!visitor) user.angelcoins = (user.angelcoins || 0) + bonus;
-  }
+  if (!visitor) user.angelcoins = (user.angelcoins || 0) + SNAKE_FOOD_POINTS;
   saveUsers(users);
   res.json({
     ok: true,
     earned: SNAKE_FOOD_POINTS,
-    bonus,
+    bonus: 0,
     points: user.points,
     angelcoins: user.angelcoins || 0,
     eaten: user.snakeToday,
-    target: SNAKE_DAILY_TARGET,
   });
 });
 
@@ -1578,18 +1566,12 @@ app.post("/api/writing/complete", (req, res) => {
   user.writingTasksCompleted = (user.writingTasksCompleted || 0) + 1;
   user.lettersTyped = (user.lettersTyped || 0) + clampInt(req.body.letters, 100000000);
 
-  // The daily objective is Devotion-specific: complete DEVOTION_DAILY_TARGET
-  // Devotion lines in a day. Only Devotion series count toward it (Penance is
-  // logged but does not feed the dailies). The reward pays out once, the first
-  // time the day's running total crosses the target.
+  // The day's Devotion line count is still kept, because Hermione reads it.
+  // The payout that used to come with crossing 50 is gone with the dailies.
   const today = todayKey();
   if (entry.category === "devotion") {
     if (user.devotionDay !== today) { user.devotionDay = today; user.devotionCount = 0; }
     user.devotionCount = (user.devotionCount || 0) + entry.passages;
-    if (user.devotionCount >= DEVOTION_DAILY_TARGET && user.writingDay !== today) {
-      user.writingDay = today;
-      if (rankFor(user, key) !== "Visitor") user.angelcoins = (user.angelcoins || 0) + WRITING_DAILY_POINTS;
-    }
   }
 
   // tell Hermione, but never about her own practice runs
