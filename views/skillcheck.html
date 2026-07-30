@@ -92,6 +92,18 @@
       color: var(--bright); padding: .8rem 2.6rem; cursor: pointer; box-shadow: 0 0 22px var(--glow);
     }
     .btn:hover { background: rgba(120,190,255,.12); }
+    .setup { max-width: 40rem; }
+    .opt { display: flex; align-items: center; gap: 1.2rem; margin-top: 1rem; }
+    .opt .ok { font-size: 9px; letter-spacing: .34em; color: var(--dim); width: 4.5rem; text-align: right; }
+    .opt .row { display: flex; gap: .5rem; flex-wrap: wrap; }
+    .chip {
+      border: 1px solid var(--dim2); background: transparent; color: var(--dim);
+      font-family: inherit; font-size: .74rem; letter-spacing: .2em; text-transform: uppercase;
+      padding: .42rem 1.1rem; cursor: pointer;
+    }
+    .chip:hover { color: var(--c); border-color: var(--dim); }
+    .chip.on { border-color: var(--c); color: var(--bright); box-shadow: 0 0 14px var(--glow); }
+    .hint { font-size: .82rem; color: var(--dim2); margin-top: 1rem; }
     .verdict { font-size: 1.1rem; color: var(--c); margin-top: .6rem; }
     .verdict .g { color: var(--ok); } .verdict .b { color: var(--err); }
   </style>
@@ -102,15 +114,40 @@
   <div class="rd tl">REPETITION<b id="r-rep">0 / 0</b></div>
   <div class="rd tr">STREAK<b id="r-streak">0</b></div>
   <div class="rd bl">FAILED<b id="r-failed">0</b></div>
-  <div class="rd br">NEXT IN<b id="r-next">&mdash;</b></div>
+  <div class="rd br">MODE<b id="r-mode">easy</b></div>
   <div class="pips" id="pips"></div>
 
   <div class="mid" id="mid">
-    <div>
+    <div class="setup">
       <h1>SKILL CHECK</h1>
       <p>A needle runs around the dial. Press the key drawn in the middle while the
-        needle is inside the red arc. Too early, too late, or not at all: all three fail.
-        <br><span class="keys">SPACE &middot; 1 2 3 4 5 &middot; Q E R G F</span></p>
+        needle is inside the red arc. Too early, too late, or not at all: all three fail.</p>
+
+      <div class="opt">
+        <span class="ok">KEYS</span>
+        <div class="row" id="opt-keys">
+          <button class="chip on" type="button" data-keys="all">all ten</button>
+          <button class="chip" type="button" data-keys="space">space only</button>
+        </div>
+      </div>
+      <div class="opt">
+        <span class="ok">MODE</span>
+        <div class="row" id="opt-mode">
+          <button class="chip on" type="button" data-mode="easy">easy</button>
+          <button class="chip" type="button" data-mode="demanding">demanding</button>
+        </div>
+      </div>
+      <div class="opt">
+        <span class="ok">REPS</span>
+        <div class="row" id="opt-reps">
+          <button class="chip" type="button" data-reps="6">6</button>
+          <button class="chip on" type="button" data-reps="12">12</button>
+          <button class="chip" type="button" data-reps="20">20</button>
+          <button class="chip" type="button" data-reps="40">40</button>
+        </div>
+      </div>
+      <p class="hint" id="hint">Easy keeps whatever you have made. Demanding sends you back to zero on any failure.</p>
+
       <p id="verdict" class="verdict"></p>
       <button class="btn" id="start" type="button">begin</button>
     </div>
@@ -127,9 +164,18 @@
       })),
     ];
 
-    const REPS = 12;              // checks in a run
-    const GAP_MIN = 900, GAP_MAX = 3200;   // ms between checks, so you cannot settle
-    const SWEEP_MIN = 1500, SWEEP_MAX = 2600;  // ms for one trip around the dial
+    // Chosen on the settings screen rather than fixed.
+    let reps = 12;
+    let mode = "easy";            // "demanding" resets the count on any failure
+    let keyMode = "all";          // or "space"
+
+    const GAP_MIN = 900, GAP_MAX = 10000;      // up to ten seconds, so you cannot settle
+    // half again as fast as the first pass
+    const SWEEP_MIN = 1000, SWEEP_MAX = 1733;  // ms for one trip around the dial
+    // the needle starts at 0deg, so the zone has to begin far enough round that
+    // there is time to react to it. Expressed in time, not degrees, because the
+    // sweep varies.
+    const MIN_LEAD_MS = 340;
 
     const dial = document.getElementById("dial");
     const wrap = document.getElementById("dialwrap");
@@ -237,12 +283,17 @@
       const x = Math.round((vw - size) / 2 + (Math.random() - 0.5) * vw * 0.30);
       const y = Math.round((vh - size) / 2 + (Math.random() - 0.5) * vh * 0.26);
       const zoneSize = 26 + Math.random() * 16;          // degrees of good zone
-      const zoneFrom = 40 + Math.random() * 250;          // never right at the start
       const sweep = SWEEP_MIN + Math.random() * (SWEEP_MAX - SWEEP_MIN);
+      // never on or just in front of the needle: leave at least MIN_LEAD_MS of
+      // travel before the zone opens, and keep the whole arc on the dial
+      const minFrom = (MIN_LEAD_MS / sweep) * 360;
+      const maxFrom = 350 - zoneSize;
+      const zoneFrom = minFrom + Math.random() * Math.max(0, maxFrom - minFrom);
 
+      const pool = keyMode === "space" ? [KEYS[0]] : KEYS;
       check = {
         size, x, y, zoneFrom, zoneSize, sweep,
-        key: KEYS[Math.floor(Math.random() * KEYS.length)],
+        key: pool[Math.floor(Math.random() * pool.length)],
         start: performance.now(),
         done: false,
       };
@@ -274,35 +325,35 @@
       if (hit) { run.hits++; run.streak++; sndHit(); }
       else { run.failed++; run.streak = 0; sndMiss(); }
       run.results.push({ hit, why });
+      // demanding is all or nothing: one failure and the count starts again
+      if (!hit && mode === "demanding") { run.rep = -1; run.results = []; run.hits = 0; }
       paint();
       setTimeout(() => {
         wrap.hidden = true;
         check = null;
         run.rep++;
-        if (run.rep >= REPS) return finish();
+        if (run.rep >= reps) return finish();
+        // repaint here too, or a demanding reset keeps showing the old count
+        // until the next check happens to spawn
+        paint();
         schedule();
       }, 420);
     }
 
     function schedule() {
-      const gap = GAP_MIN + Math.random() * (GAP_MAX - GAP_MIN);
-      const at = performance.now() + gap;
-      clearInterval(gapTimer);
-      gapTimer = setInterval(() => {
-        const left = Math.max(0, at - performance.now());
-        document.getElementById("r-next").textContent = (left / 1000).toFixed(1) + "s";
-        if (left <= 0) { clearInterval(gapTimer); spawn(); }
-      }, 60);
+      // the countdown used to be on screen, which told you exactly when to look
+      clearTimeout(gapTimer);
+      gapTimer = setTimeout(spawn, GAP_MIN + Math.random() * (GAP_MAX - GAP_MIN));
     }
 
     /* ---------- run control ---------- */
     function paint() {
       document.getElementById("r-rep").textContent =
-        Math.min(run.rep + (check ? 1 : 0), REPS) + " / " + REPS;
+        Math.min(Math.max(0, run.rep) + (check ? 1 : 0), reps) + " / " + reps;
       document.getElementById("r-streak").textContent = run.streak;
       document.getElementById("r-failed").textContent = run.failed;
       pipsEl.replaceChildren();
-      for (let i = 0; i < REPS; i++) {
+      for (let i = 0; i < reps; i++) {
         const p = document.createElement("i");
         const r = run.results[i];
         p.className = "pip" + (r ? (r.hit ? " hit" : " miss") : "");
@@ -312,14 +363,14 @@
 
     function begin() {
       run = { rep: 0, hits: 0, failed: 0, streak: 0, results: [] };
+      document.getElementById("r-mode").textContent = mode;
       midEl.hidden = true;
       paint();
       schedule();
     }
 
     function finish() {
-      clearInterval(gapTimer);
-      document.getElementById("r-next").textContent = "—";
+      clearTimeout(gapTimer);
       midEl.hidden = false;
       const v = document.getElementById("verdict");
       v.innerHTML = "<span class='g'>" + run.hits + " hit</span> &nbsp; " +
@@ -327,6 +378,24 @@
       document.getElementById("start").textContent = "again";
       paint();
     }
+
+    function chipGroup(id, apply) {
+      const box = document.getElementById(id);
+      box.addEventListener("click", (e) => {
+        const b = e.target.closest(".chip");
+        if (!b) return;
+        [...box.querySelectorAll(".chip")].forEach((x) => x.classList.toggle("on", x === b));
+        apply(b.dataset);
+      });
+    }
+    chipGroup("opt-keys", (d) => { keyMode = d.keys; });
+    chipGroup("opt-mode", (d) => {
+      mode = d.mode;
+      document.getElementById("hint").textContent = mode === "demanding"
+        ? "Demanding: one failure and the count starts again from zero."
+        : "Easy keeps whatever you have made. Demanding sends you back to zero on any failure.";
+    });
+    chipGroup("opt-reps", (d) => { reps = Number(d.reps); });
 
     document.getElementById("start").addEventListener("click", () => {
       window.AudioBus && window.AudioBus.ctx();   // the gesture that starts audio
@@ -338,8 +407,9 @@
       const tag = (e.target && e.target.tagName || "").toLowerCase();
       if (tag === "input" || tag === "textarea") return;
       if (!run || !check || check.done) return;
-      // any of the ten keys answers the check; only the right one can pass
-      const pressedOne = KEYS.some((k) => k.match(e));
+      // only a key that could have been asked for answers the check
+      const pool = keyMode === "space" ? [KEYS[0]] : KEYS;
+      const pressedOne = pool.some((k) => k.match(e));
       if (!pressedOne) return;
       e.preventDefault();
       if (!check.key.match(e)) { resolve(false, "wrong key"); return; }
