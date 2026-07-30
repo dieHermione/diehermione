@@ -20,6 +20,7 @@ const DEATHROLL_FILE = path.join(process.env.DATA_DIR || __dirname, "deathroll.j
 const SITE_FILE = path.join(process.env.DATA_DIR || __dirname, "site.json");
 const ELYSIUM_FILE = path.join(process.env.DATA_DIR || __dirname, "elysium.json");
 const DEVOTION_FILE = path.join(process.env.DATA_DIR || __dirname, "devotion.json");
+const PENANCE_FILE = path.join(process.env.DATA_DIR || __dirname, "penance.json");
 const SUBLIMINAL_FILE = path.join(process.env.DATA_DIR || __dirname, "subliminal.json");
 const DECRYPT_FILE = path.join(process.env.DATA_DIR || __dirname, "decrypt.json");
 const PARSE_FILE = path.join(process.env.DATA_DIR || __dirname, "parses.json");
@@ -1756,6 +1757,74 @@ function saveDevotion(data) {
 }
 
 // Any player (accounts or guests) may read the presets to play Devotion.
+/* Penance gets preset line-sets too, stored and edited exactly like Devotion's.
+   Penance keeps its own free-text box as well: a preset is an alternative to
+   writing your own lines, not a replacement for it. */
+const PENANCE_DEFAULTS = {
+  presets: [
+    {
+      id: "correction",
+      name: "correction",
+      lines: [
+        "I will not waste Her time.",
+        "I was warned, and I did it anyway.",
+        "I am writing this because I earned it.",
+        "My comfort is not the point.",
+        "I will do better because She expects it.",
+        "I am sorry, and sorry is not enough.",
+      ],
+    },
+    {
+      id: "obedience",
+      name: "obedience",
+      lines: [
+        "I do not decide what happens to me.",
+        "I asked for this and I will finish it.",
+        "Her patience is not infinite.",
+        "I will not argue with Her judgement.",
+        "I exist to be corrected.",
+      ],
+    },
+  ],
+};
+function loadPenance() {
+  try {
+    const data = JSON.parse(fs.readFileSync(PENANCE_FILE, "utf8"));
+    if (data && Array.isArray(data.presets) && data.presets.length) return data;
+  } catch {}
+  return JSON.parse(JSON.stringify(PENANCE_DEFAULTS));
+}
+
+// one validator for both games' presets
+function cleanPresets(incoming, fallbackName) {
+  const presets = [];
+  for (const p of incoming) {
+    const name = String(p && p.name || "").trim().slice(0, 60) || fallbackName;
+    const lines = (Array.isArray(p && p.lines) ? p.lines : [])
+      .map((l) => String(l).trim()).filter(Boolean).slice(0, 100);
+    if (!lines.length) continue;               // a preset needs at least one line
+    const id = String(p && p.id || name).toLowerCase().replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "").slice(0, 40) || ("preset-" + presets.length);
+    presets.push({ id, name, lines });
+  }
+  return presets;
+}
+
+app.get("/api/penance/presets", (req, res) => {
+  if (!req.session.username && !req.session.guest) return res.status(401).json({ error: "Not logged in." });
+  res.json({ presets: loadPenance().presets });
+});
+app.post("/api/penance/presets", (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });
+  const incoming = Array.isArray(req.body.presets) ? req.body.presets : null;
+  if (!incoming) return res.status(400).json({ error: "presets must be an array." });
+  const presets = cleanPresets(incoming, "penance");
+  if (!presets.length) return res.status(400).json({ error: "Add at least one preset with a line." });
+  fs.writeFileSync(PENANCE_FILE, JSON.stringify({ presets }, null, 2));
+  res.json({ ok: true, presets });
+});
+
 app.get("/api/devotion/presets", (req, res) => {
   if (!req.session.username && !req.session.guest) return res.status(401).json({ error: "Not logged in." });
   res.json({ presets: loadDevotion().presets });
