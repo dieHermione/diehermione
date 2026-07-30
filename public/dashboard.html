@@ -179,6 +179,12 @@
     .dash.c-dailies { grid-template-columns: 1fr 3rem var(--board-w, 1.15fr); }
     .dash.c-board { grid-template-columns: 1.15fr 1.75fr 3rem; }
     .dash.c-dailies.c-board { grid-template-columns: 1fr 3rem 3rem; }
+    /* The clock shares the leaderboard's column. When the board folds to a 3rem
+       spine that column narrows and the clock is in the top row of it, so it
+       would squish. Keep the clock single-line and let it spill left over the
+       empty hero space instead; it stays pinned to the same right edge. The
+       fixed 3rem track means the overflow never widens the spine below it. */
+    .dash.c-board .clock-card { justify-self: end; width: max-content; overflow: visible; }
 
     /* admin sub-sections fold upwards, independently */
     .adm-sec h3 { cursor: pointer; user-select: none; }
@@ -864,6 +870,22 @@
       noticeTimer = setTimeout(() => { notice.hidden = true; }, 4000);
     }
 
+    // Folding the board grows the hero, which drags the notifications bell (pinned
+    // to the hero's right edge) into the space the clock now overflows into. Shift
+    // the bell left to sit just clear of the clock while the board is folded.
+    function placeNotif() {
+      const slot = document.getElementById("notif-slot");
+      const hero = slot && slot.offsetParent;
+      const clock = document.getElementById("clock-card");
+      if (!slot || !hero || !clock) return;
+      if (document.querySelector(".dash").classList.contains("c-board")) {
+        const gap = 20;
+        slot.style.right = Math.max(0, hero.offsetLeft + hero.offsetWidth - clock.offsetLeft + gap) + "px";
+      } else {
+        slot.style.right = "";
+      }
+    }
+
     // --- leaderboard folds to the right, same as the panel beside it ---
     (function () {
       const card = document.getElementById("board-card");
@@ -875,6 +897,7 @@
         const shut = card.classList.toggle("collapsed");
         document.querySelector(".dash").classList.toggle("c-board", shut);
         fitDash();
+        placeNotif();
       });
     })();
 
@@ -979,6 +1002,7 @@
       } else {
         document.body.style.overflow = "";
       }
+      placeNotif();
     }
     try { new ResizeObserver(fitDash).observe(_dash); } catch (e) {}
     window.addEventListener("resize", fitDash);
