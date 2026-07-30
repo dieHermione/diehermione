@@ -145,8 +145,8 @@
     // be written later. What each item covers, for reference:
     //   feet   - Feet, socks, shoes, anything adjacent. The biggest thing.
     //   tasks  - Research / Essays / Games / Other.
-    const KINK_SCALE_A = ["I hate them", "", "I like them", "", "I am obsessed"];
-    const KINK_SCALE_B = ["I hate this", "", "I like this", "", "I need it"];
+    const KINK_SCALE_A = ["I hate them", "not really", "I like them", "quite a lot", "I am obsessed"];
+    const KINK_SCALE_B = ["I hate this", "not really", "I like this", "quite a lot", "I need it"];
     const KINKS = [
       { id: "feet",         label: "Feet",         sub: "Feet, socks, shoes, anything adjacent to them.", hint: "placeholder", scale: KINK_SCALE_A },
       { id: "tasks",        label: "Tasks / Chores", sub: "Research / Essays / Games / Other.",            hint: "placeholder", scale: KINK_SCALE_B },
@@ -232,8 +232,6 @@
       return `<div class="step">
         <div class="eyebrow">limits</div>
         <h1>hard limits</h1>
-        <p class="lede">Anything that is off the table, full stop. Free text. Leave it blank only if you
-          truly have none.</p>
         <textarea id="limits" placeholder="write your limits here" maxlength="1000">${esc(A.limits)}</textarea>
       </div>`;
     }
@@ -259,9 +257,9 @@
     function reviewStep() {
       const krows = KINKS.map((k) => {
         const v = A.kinks[k.id];
-        const warn = (k.id === "feet" || k.id === "tasks") && v < 4;
+        // No warning shown to the applicant; the Feet/Tasks flag is Hermione's to see.
         return `<div class="ritem"><span class="k">${esc(k.label)}</span>
-          <span class="v ${warn ? "warn" : ""}">${v} / 5${warn ? " &middot; below 4" : ""}</span></div>`;
+          <span class="v">${v} / 5</span></div>`;
       }).join("");
       const prows = PUNISHMENTS.map((p) =>
         `<div class="ritem"><span class="k">${esc(p.label)}</span>
@@ -283,10 +281,7 @@
       return `<div class="step done">
         <div class="mark">✓</div>
         <h1>sent</h1>
-        <p class="lede" style="margin-left:auto;margin-right:auto">Your answers are with Hermione. She will
-          review them and approve your account. You can close this, or return to the entrance to sign in
-          once you are approved.</p>
-        <div style="margin-top:1.6rem"><a class="btn primary" href="/">to the entrance</a></div>
+        <div style="margin-top:1.6rem"><a class="btn primary" href="/">go back</a></div>
       </div>`;
     }
 
