@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>decrypt animation mockups</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=VT323&family=Major+Mono+Display&display=swap" rel="stylesheet" />
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{--c:#aee3ff;--dim:#4f7ea0;--dim2:#2c4a5e;--bright:#eafaff;--accent:#8fd0ff;
+        --glow:rgba(120,190,255,.32);--red:#ff3b2f;--deep:#c11208;--gold:#ffd27a;
+        --amber:#ffb648;--green:#7dffb0}
+  html,body{height:100%}
+  body{background:#000;color:var(--c);font-family:"IBM Plex Mono",monospace;font-size:15px;overflow:hidden}
+  .scan{position:fixed;inset:0;z-index:200;pointer-events:none;
+    background:repeating-linear-gradient(0deg,rgba(0,0,0,.26) 0 1px,transparent 1px 3px)}
+  .vig{position:fixed;inset:0;z-index:199;pointer-events:none;box-shadow:inset 0 0 26vh 9vh rgba(0,0,0,.72)}
+  .stage{position:absolute;inset:0;padding:5vh 5vw;overflow:hidden}
+  .tag{position:fixed;left:10px;bottom:8px;z-index:300;color:#5a6b78;font-size:11px;letter-spacing:.18em}
+  .hdr{display:flex;justify-content:space-between;font-size:11px;letter-spacing:.34em;color:var(--dim)}
+  .hdr b{color:var(--bright);font-weight:400}
+  .cur{display:inline-block;width:.6em;height:1em;background:var(--c);vertical-align:-.12em;
+    animation:blink 1s steps(1) infinite}
+  @keyframes blink{50%{opacity:0}}
+
+  /* ---- 1: BIOS / POST ---- */
+  .bios{font-family:"IBM Plex Mono",monospace;font-size:15px;line-height:1.55;color:#cfe9ff}
+  .bios .top{display:flex;justify-content:space-between;color:var(--dim);border-bottom:1px solid var(--dim2);
+    padding-bottom:.5rem;margin-bottom:1rem;letter-spacing:.2em}
+  .bios .mem b{color:var(--bright)}
+  .bios .dev{color:var(--dim)}.bios .dev b{color:var(--c);font-weight:400}
+  .bios .ok{color:var(--green)}
+  .bios .pay{margin-top:1.2rem;color:var(--accent)}
+  .bios .pay .l{opacity:0;animation:biosline .01s forwards}
+
+  /* ---- 2: per-character glyph solve ---- */
+  .solve{position:absolute;inset:0;display:grid;place-content:center;text-align:center}
+  .solve .line{font-size:clamp(1.1rem,2.6vw,2rem);letter-spacing:.16em;line-height:2.1;color:var(--bright);
+    text-shadow:0 0 18px var(--glow)}
+  .solve .line.small{font-size:clamp(.8rem,1.4vw,1rem);letter-spacing:.34em;color:var(--dim);text-shadow:none}
+  .solve .g{display:inline-block;min-width:.62em}
+  .solve .g.lock{color:var(--bright)}
+  .solve .g.work{color:var(--accent);opacity:.85}
+
+  /* ---- 3: hex dump ---- */
+  .hex{display:grid;grid-template-columns:auto 1fr auto;gap:0 2vw;font-size:13px;line-height:1.5;height:100%}
+  .hex .col-head{grid-column:1/-1;display:grid;grid-template-columns:auto 1fr auto;gap:0 2vw;
+    color:var(--dim);letter-spacing:.2em;border-bottom:1px solid var(--dim2);padding-bottom:.4rem;margin-bottom:.6rem}
+  .hex .off{color:var(--dim)}
+  .hex .byt{color:#7fb4d6;word-spacing:.1em}
+  .hex .asc{color:var(--dim2);white-space:pre;font-family:"IBM Plex Mono",monospace}
+  .hex .asc .r{color:var(--accent)}
+  .hex .body{grid-column:1/-1;display:grid;grid-template-columns:auto 1fr auto;gap:0 2vw;overflow:hidden}
+
+  /* ---- 4: boot log with checkpoints ---- */
+  .boot{font-size:14px;line-height:1.7}
+  .boot .row{display:flex;gap:.8rem;opacity:0}
+  .boot .row .st{width:6.5em;flex:none}
+  .boot .st b{color:var(--dim)}
+  .boot .row.done .st b{color:var(--green)}
+  .boot .row.warn .st b{color:var(--amber)}
+  .boot .txt{color:var(--c)}
+  .boot .bar{margin-top:1.4rem;border:1px solid var(--dim2);height:1.1rem;position:relative;max-width:640px}
+  .boot .bar i{position:absolute;inset:0;width:0;background:linear-gradient(90deg,#1a3a4d,var(--accent));
+    box-shadow:0 0 14px var(--glow)}
+  .boot .bar .pct{position:absolute;inset:0;display:grid;place-items:center;font-size:11px;
+    letter-spacing:.3em;color:var(--bright)}
+  .boot .final{margin-top:1.2rem;color:var(--accent);opacity:0}
+
+  /* ---- 5: CRT phosphor warmup ---- */
+  .crt{position:absolute;inset:0;background:#000;overflow:hidden}
+  .crt .glass{position:absolute;inset:8%;border-radius:40% / 60%;background:radial-gradient(ellipse at 50% 42%,
+    rgba(20,44,58,.5),rgba(0,0,0,.9) 78%);box-shadow:inset 0 0 12vh 3vh rgba(0,0,0,.85)}
+  .crt .content{position:absolute;inset:0;display:grid;place-content:center;text-align:center;
+    font-family:"VT323",monospace;color:#c7f3ff;text-shadow:0 0 12px rgba(140,220,255,.6)}
+  .crt .content .big{font-size:clamp(1.6rem,4.4vw,3.4rem);letter-spacing:.08em;line-height:1.3}
+  .crt .content .sub{font-size:clamp(1rem,2vw,1.4rem);color:#5fb6d8;letter-spacing:.3em;margin-top:.8rem}
+  .crt .beam{position:absolute;left:0;right:0;top:50%;height:2px;background:#dffcff;
+    box-shadow:0 0 22px 6px rgba(200,245,255,.8)}
+  .crt .screen{position:absolute;inset:0;transform:scaleY(.002);opacity:0}
+  .crt.on .screen{animation:crton 1s ease forwards}
+  .crt.on .beam{animation:beamout 1s ease forwards}
+  .crt.on .content{animation:phos 2.2s ease .7s forwards}
+  @keyframes crton{0%{transform:scaleY(.002);opacity:0}55%{transform:scaleY(.02);opacity:1}
+    75%{transform:scaleY(1.02)}100%{transform:scaleY(1);opacity:1}}
+  @keyframes beamout{0%{opacity:1;height:2px}60%{opacity:1}100%{opacity:0;height:0}}
+  @keyframes phos{0%{opacity:0;filter:blur(6px)}40%{opacity:.5;filter:blur(2px)}100%{opacity:1;filter:blur(0)}}
+</style></head>
+<body>
+<div class="stage" id="stage"></div><div class="vig"></div><div class="scan"></div><div class="tag" id="tag"></div>
+<script>
+// The lines a real decrypt would resolve to. Kept generic and on-theme.
+const PAYLOAD=[
+  "ESTABLISHING LINK TO angeldom.me",
+  "VERIFYING DEVOTIONAL RECORD",
+  "IDENTITY CONFIRMED :: seraph",
+  "ACCESS GRANTED",
+  "WELCOME BACK, ANGEL",
+];
+const GLYPHS="!<>-_\\/[]{}=+*^?#01ø×÷¤§ΞΔΨ";
+const rg=()=>GLYPHS[Math.floor(Math.random()*GLYPHS.length)];
+const hdr=(right)=>`<div class="hdr"><span>angelOS v0.2</span><span>${right}</span></div>`;
+
+/* 1 --------------------------------------------------- BIOS / POST memory count */
+function d1(){
+  return `<div class="bios">
+    ${hdr("PHOENIX-ANGEL BIOS v0.2 &nbsp; 30 JUL 2026")}
+    <div class="top"><span>angelOS Cryogenic Loader</span><span>PWR-ON SELF TEST</span></div>
+    <div class="mem">Memory Test : <b id="memv">0</b> KB OK</div>
+    <div class="dev">Detecting Primary Master ... <b>ANGEL-SSD 000 GB</b> <span class="ok">[OK]</span></div>
+    <div class="dev">Detecting Devotion Bus  ... <b>present</b> <span class="ok">[OK]</span></div>
+    <div class="dev">Detecting Vessel        ... <b>seraph</b> <span class="ok">[OK]</span></div>
+    <div class="pay" id="pay"></div>
+    <div id="prompt"></div>
+  </div>`;
+}
+function i1(){
+  const memv=document.getElementById("memv");
+  let m=0; const target=655360;
+  const t=setInterval(()=>{ m+=Math.round(target/28); if(m>=target){m=target;clearInterval(t);payload();}
+    memv.textContent=m.toLocaleString(); },40);
+  function payload(){
+    const pay=document.getElementById("pay"); let i=0;
+    const t2=setInterval(()=>{
+      if(i>=PAYLOAD.length){clearInterval(t2);
+        document.getElementById("prompt").innerHTML='<span style="color:var(--green)">&gt;</span> <span class="cur"></span>';return;}
+      const l=document.createElement("div"); l.className="l"; l.style.animation="none"; l.style.opacity=1;
+      l.textContent="DECRYPT :: "+PAYLOAD[i]; pay.appendChild(l); i++;
+    },260);
+  }
+}
+
+/* 2 --------------------------------------------- per-character glyph solve */
+function d2(){
+  return `<div class="solve" id="solve">
+    <div class="line small" data-t="angelOS v0.2 // secure channel"></div>
+    <div class="line" data-t="VERIFYING DEVOTIONAL RECORD"></div>
+    <div class="line" data-t="IDENTITY :: seraph"></div>
+    <div class="line" data-t="WELCOME BACK, ANGEL"></div>
+  </div>`;
+}
+function i2(){
+  document.querySelectorAll("#solve .line").forEach((line,li)=>{
+    const txt=line.dataset.t; line.textContent="";
+    const cells=[...txt].map(ch=>{const s=document.createElement("span");s.className="g work";
+      s.textContent=ch===" "?" ":rg();line.appendChild(s);return {s,ch};});
+    cells.forEach((c,ci)=>{
+      if(c.ch===" "){c.s.textContent=" ";c.s.className="g lock";return;}
+      const spin=setInterval(()=>{c.s.textContent=rg();},55);
+      setTimeout(()=>{clearInterval(spin);c.s.textContent=c.ch;c.s.className="g lock";},
+        700*li+70*ci+400);
+    });
+  });
+}
+
+/* 3 ------------------------------------------------------- hex dump resolve */
+function d3(){
+  const rows=22;
+  let body="";
+  for(let i=0;i<rows;i++){
+    const off=(0xA000+i*16).toString(16).toUpperCase().padStart(6,"0");
+    body+=`<div class="off">${off}</div><div class="byt" data-r="${i}"></div><div class="asc" data-r="${i}"></div>`;
+  }
+  return `<div class="hex">
+    <div class="col-head"><span>OFFSET</span><span>BYTES</span><span>DECRYPTED</span></div>
+    <div class="body" id="hexbody">${body}</div>
+  </div>`;
+}
+function i3(){
+  // scatter the payload lines across the ascii column, revealing as "decrypted"
+  const bytes=document.querySelectorAll("#hexbody .byt");
+  const ascs=document.querySelectorAll("#hexbody .asc");
+  const revealRows={3:PAYLOAD[0],7:PAYLOAD[1],11:PAYLOAD[2],15:PAYLOAD[3],19:PAYLOAD[4]};
+  function hx(){return Math.floor(Math.random()*256).toString(16).toUpperCase().padStart(2,"0");}
+  function dots(n){let s="";for(let i=0;i<n;i++)s+=".";return s;}
+  bytes.forEach((b)=>{ b.textContent=Array.from({length:16},hx).join(" "); });
+  ascs.forEach((a,i)=>{ a.textContent=dots(24); });
+  // roll the byte columns continuously
+  setInterval(()=>{ bytes.forEach(b=>{ if(Math.random()<0.5)
+    b.textContent=Array.from({length:16},hx).join(" "); }); },90);
+  // resolve the marked rows one by one
+  let k=0; const keys=Object.keys(revealRows);
+  const t=setInterval(()=>{ if(k>=keys.length){clearInterval(t);return;}
+    const ri=+keys[k]; const a=ascs[ri]; const full="  "+revealRows[ri];
+    let j=0; const t2=setInterval(()=>{ if(j>full.length){clearInterval(t2);return;}
+      a.innerHTML='<span class="r">'+full.slice(0,j)+'</span>'+dots(Math.max(0,24-j)); j++; },28);
+    k++; },520);
+}
+
+/* 4 ------------------------------------------------ boot log + progress bar */
+function d4(){
+  const steps=[
+    ["mount","mounting /dev/angel","done"],
+    ["keys","loading devotion keyring","done"],
+    ["handshake","handshake with angeldom.me","done"],
+    ["record","reading vessel record: seraph","done"],
+    ["verify","verifying signature","warn"],
+    ["decrypt","decrypting session payload","done"],
+  ];
+  const rows=steps.map(([id,txt,k])=>
+    `<div class="row" data-k="${k}"><span class="st">[ <b>....</b> ]</span><span class="txt">${txt}</span></div>`).join("");
+  return `<div class="boot">
+    ${hdr("session bring-up")}
+    <div style="margin:1.2rem 0 1rem;color:var(--dim);letter-spacing:.2em">angelOS :: decrypt sequence</div>
+    <div id="rows">${rows}</div>
+    <div class="bar"><i id="fill"></i><span class="pct" id="pct">0%</span></div>
+    <div class="final" id="final">&gt; WELCOME BACK, ANGEL <span class="cur"></span></div>
+  </div>`;
+}
+function i4(){
+  const rows=[...document.querySelectorAll("#rows .row")];
+  const fill=document.getElementById("fill"), pct=document.getElementById("pct");
+  let i=0;
+  const t=setInterval(()=>{
+    if(i>=rows.length){clearInterval(t);
+      setTimeout(()=>document.getElementById("final").style.animation="biosline .4s forwards",300);return;}
+    const r=rows[i]; r.style.opacity=1;
+    const k=r.dataset.k; const st=r.querySelector(".st b");
+    setTimeout(()=>{ st.textContent=k==="warn"?"WARN":" OK "; r.classList.add(k==="warn"?"warn":"done"); },220);
+    const p=Math.round(((i+1)/rows.length)*100);
+    fill.style.width=p+"%"; pct.textContent=p+"%";
+    i++;
+  },430);
+}
+
+/* 5 --------------------------------------------------- CRT phosphor warmup */
+function d5(){
+  return `<div class="crt" id="crt">
+    <div class="glass"></div>
+    <div class="screen">
+      <div class="content">
+        <div class="big">WELCOME BACK,<br>ANGEL</div>
+        <div class="sub">angelOS v0.2 // seraph</div>
+      </div>
+    </div>
+    <div class="beam"></div>
+  </div>`;
+}
+function i5(){ requestAnimationFrame(()=>document.getElementById("crt").classList.add("on")); }
+
+const DS=[d1,d2,d3,d4,d5];
+const IN=[i1,i2,i3,i4,i5];
+const NM=[
+  "1  BIOS / POST: the machine powers on and counts itself before the payload",
+  "2  glyph solve: each character spins through noise and locks to the real letter",
+  "3  hex dump: raw memory streams and the ASCII column resolves into words",
+  "4  boot log: a checkpointed bring-up sequence with a filling progress bar",
+  "5  CRT warmup: the display itself wakes, the text fades up through the phosphor",
+];
+// a shared keyframe used by a couple of designs
+const kf=document.createElement("style");
+kf.textContent="@keyframes biosline{to{opacity:1}}";
+document.head.appendChild(kf);
+
+const n=Math.min(DS.length,Math.max(1,parseInt(new URLSearchParams(location.search).get("d")||"1",10)));
+document.getElementById("stage").innerHTML=DS[n-1]();
+document.getElementById("tag").textContent=NM[n-1];
+if(IN[n-1]) IN[n-1]();
+</script>
+</body>
+</html>
