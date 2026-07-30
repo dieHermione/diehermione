@@ -37,7 +37,7 @@ That writes `mockups/out/<batch>-<NN>.png` at 1500x900. One batch only:
 | T9 phone | `t9.html` | 6 | **awaiting a pick** (fifth attempt, the actual RAZR V3) |
 | Slots | `slots.html` | 6 | **CHOSEN: 5** (scratch card), not built yet |
 | Dummy Parse | `dummyparse.html` | 20 | **CHOSEN: 10** (big ability cards) + the 11 timeline, both **built** |
-| Decrypt anim | `decrypt.html` | 5 | **awaiting a pick** (CLI-startup theme; animated) |
+| Decrypt anim | `decrypt.html` | 5 | **CHOSEN: 1** (BIOS/POST), with a tweak, not built yet |
 | Dashboard | `dashboard.html` | 15 | **awaiting a pick** (terminal theme, 15 organising ideas) |
 | Skill check | *(not kept)* | n/a | **CHOSEN: 1** (pure dial), and **built** |
 | Summary | *(not kept)* | n/a | **CHOSEN: 1** (source + entry), and **built** |
