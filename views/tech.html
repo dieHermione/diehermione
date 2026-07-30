@@ -6,291 +6,315 @@
   <title>Technical notes - angeldom.me</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cause:wght@400..700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/site.css" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Major+Mono+Display&display=swap" rel="stylesheet" />
   <script src="/me.js"></script>
+  <script src="/audio.js"></script>
   <style>
-    .card {
-      background: var(--panel-bg);
-      border-radius: 12px;
-      box-shadow: 0 10px 40px var(--shadow);
-      width: 100%;
-      max-width: 902px;
-      padding: 2.2rem 2.475rem;
-      color: var(--text-color);
+    /* Technical notes: same manual layout as the guide.
+       Rewritten 2026-07-30; the old copy described the pre-redesign site. */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    [hidden] { display: none !important; }
+
+    :root {
+      --c: #aee3ff; --dim: #4f7ea0; --dim2: #2c4a5e; --bright: #eafaff;
+      --accent: #8fd0ff; --glow: rgba(120,190,255,.32); --red: #ff3b2f; --err: #ff5a4a;
     }
-    h1 {
-      font-family: "Cause", sans-serif;
-      font-size: 1.5rem;
-      color: var(--heading-color);
-      margin-bottom: 0.4rem;
+    html, body { height: 100%; }
+    body {
+      background: #000; color: var(--c);
+      font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 14px;
+      overflow: hidden;
     }
-    h2 {
-      font-family: "Cause", sans-serif;
-      font-size: 1.15rem;
-      color: var(--heading-color);
-      margin: 2rem 0 0.75rem;
-      padding-top: 1.25rem;
-      border-top: 1px solid var(--table-border);
-    }
-    h2:first-of-type { border-top: none; padding-top: 0; margin-top: 1.5rem; }
-    h3 { font-size: 0.98rem; margin: 1.15rem 0 0.4rem; }
-    p, li { line-height: 1.6; font-size: 0.92rem; }
-    p { margin-bottom: 0.75rem; }
-    ul, ol { margin: 0 0 0.85rem 1.15rem; }
-    li { margin-bottom: 0.3rem; }
-    .lede { color: var(--muted-color); margin-bottom: 1.5rem; }
-    strong { font-weight: 700; }
-    code {
-      font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-      font-size: 0.85em;
-      padding: 0.1rem 0.35rem;
-      border-radius: 5px;
-      background: var(--notif-item-bg, rgba(36, 197, 237, 0.15));
-    }
-    table { width: 100%; border-collapse: collapse; margin-bottom: 1rem; font-size: 0.88rem; }
-    th, td { text-align: left; padding: 0.5rem 0.65rem; vertical-align: top; }
-    th { color: var(--table-header-color); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; }
-    tr + tr td { border-top: 1px solid var(--table-border); }
-    .toc {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.4rem;
-      margin-bottom: 1.5rem;
-      padding-bottom: 1.25rem;
-      border-bottom: 1px solid var(--table-border);
-    }
-    .toc a {
-      padding: 0.3rem 0.7rem;
-      border-radius: 999px;
-      background: var(--notif-item-bg, rgba(36, 197, 237, 0.15));
-      color: var(--text-color);
-      text-decoration: none;
-      font-size: 0.78rem;
-      font-weight: 600;
-    }
-    .toc a:hover { background: var(--button-bg); color: var(--button-text); }
-    .note {
-      border-left: 3px solid var(--button-bg);
-      padding: 0.6rem 0.9rem;
-      margin: 0.85rem 0;
-      background: var(--notif-item-bg, rgba(36, 197, 237, 0.1));
-      border-radius: 0 8px 8px 0;
-      font-size: 0.88rem;
+    .scan { position: fixed; inset: 0; z-index: 200; pointer-events: none;
+      background: repeating-linear-gradient(0deg, rgba(0,0,0,.30) 0 1px, transparent 1px 3px); }
+    .vig { position: fixed; inset: 0; z-index: 199; pointer-events: none;
+      box-shadow: inset 0 0 24vh 8vh rgba(0,0,0,.7); }
+
+    .doc { position: absolute; inset: 0; display: grid;
+      grid-template-columns: 16rem minmax(0, 1fr); gap: 3rem; padding: 3vh 4vw; }
+
+    nav { overflow-y: auto; padding-top: 3.4rem; }
+    nav .eyebrow { font-size: 10px; letter-spacing: .35em; color: var(--dim);
+      border-bottom: 1px solid var(--dim2); padding-bottom: .4rem; margin-bottom: .8rem; }
+    nav a { display: block; color: var(--dim); text-decoration: none;
+      font-size: 12.5px; padding: .22rem 0; cursor: pointer; }
+    nav a::before { content: "› "; color: var(--dim2); }
+    nav a:hover, nav a.on { color: var(--bright); }
+
+    main { overflow-y: auto; padding-right: 1rem; }
+    h1 { font-family: "Major Mono Display", monospace; font-weight: 400;
+      font-size: clamp(1.9rem, 4vw, 3rem); color: var(--bright);
+      text-shadow: 0 0 30px var(--glow); line-height: 1; margin-bottom: .5rem; }
+    .lede { color: var(--dim); font-size: 15px; line-height: 1.9; max-width: 48rem; margin-bottom: 2.4rem; }
+    section { margin-bottom: 2.6rem; scroll-margin-top: 1rem; max-width: 48rem; }
+    h2 { font-size: 12px; letter-spacing: .3em; color: var(--bright); font-weight: 400;
+      border-bottom: 1px solid var(--dim2); padding-bottom: .35rem; margin-bottom: .9rem; }
+    h3 { font-size: 13.5px; color: var(--accent); font-weight: 400; margin: 1.2rem 0 .35rem; }
+    p { line-height: 1.95; margin-bottom: .8rem; }
+    ul { list-style: none; margin: .3rem 0 .9rem; }
+    li { line-height: 1.9; padding-left: 1.3rem; position: relative; }
+    li::before { content: "\00B7"; position: absolute; left: 0; color: var(--dim2); }
+    b { color: var(--bright); font-weight: 400; }
+    code { color: var(--accent); }
+    .rows { display: grid; grid-template-columns: 13rem 1fr; gap: .3rem .9rem; margin: .5rem 0 1rem; }
+    .rows .k { color: var(--bright); }
+    .rows .v { color: var(--dim); line-height: 1.85; }
+    .warn { border-left: 2px solid var(--red); padding-left: 1rem; color: var(--c);
+      line-height: 1.9; margin: .9rem 0; }
+    .warn b { color: #ffb0a8; }
+    .note { border-left: 2px solid var(--dim2); padding-left: 1rem; color: var(--dim);
+      line-height: 1.9; margin: .9rem 0; }
+    .foot { color: var(--dim2); font-size: 11px; letter-spacing: .2em; margin: 2rem 0 4rem; }
+
+    @media (max-width: 900px) {
+      body { overflow: auto; }
+      .doc { position: static; grid-template-columns: 1fr; gap: 1.4rem; padding-top: 4.5rem; }
+      nav { padding-top: 0; }
+      main { overflow: visible; }
     }
   </style>
-  <script src="/audio.js"></script>
 </head>
 <body class="has-top-nav">
-  <main class="card">
-    <h1>Technical notes</h1>
-    <p class="lede">How the site is built, why it's built that way, and the traps to avoid when changing it.</p>
+  <div class="doc">
+    <nav id="index"><div class="eyebrow">CONTENTS</div></nav>
 
-    <div class="toc">
-      <a href="#shape">Shape</a>
-      <a href="#layout">File layout</a>
-      <a href="#storage">Storage</a>
-      <a href="#auth">Auth</a>
-      <a href="#routes">Routes</a>
-      <a href="#frontend">Front end</a>
-      <a href="#day">The day key</a>
-      <a href="#currency">Currency</a>
-      <a href="#games">Games</a>
-      <a href="#traps">Traps</a>
-      <a href="#recipes">Recipes</a>
-      <a href="#deploy">Deploying</a>
-      <a href="#limits">Known limits</a>
-    </div>
+    <main id="body">
+      <h1>technical notes</h1>
+      <p class="lede">How the thing is put together, for whoever works on it next. The running
+        handoff in <code>HANDOFF.md</code> is the authority on what changed recently; this page
+        is the shape of the system rather than its history.</p>
 
-    <h2 id="shape">Shape of the thing</h2>
-    <p>A single Express server (<code>server.js</code>, roughly 1,200 lines) serving static HTML pages and a JSON API. No database, no build step, no framework, no bundler. Data lives in JSON files on disk. Each page is a self-contained HTML file with its own inline <code>&lt;style&gt;</code> and <code>&lt;script&gt;</code>.</p>
-    <p>That means you can edit any page and reload, with nothing to compile. What each page still owns is its own layout, its own logic and its own page-specific variables. The parts every page shares, namely the nav, the theme and the base CSS variables, live in <code>public/</code> and are pulled in, not copied.</p>
-    <div class="note"><strong>Node 18+</strong> is required (the start script uses <code>--env-file-if-exists</code>). Dependencies: <code>express</code>, <code>express-session</code>, <code>bcryptjs</code>, <code>chess.js</code>.</div>
+      <section id="shape">
+        <h2>SHAPE</h2>
+        <p>One Express server, <code>server.js</code>, serving static files and a JSON API.
+          No database: state is JSON files on disk. No build step: the browser gets the source
+          as written. Deployed on Railway, which redeploys on every push to <code>main</code>.</p>
+        <p>There is exactly one admin identity, <code>hermione</code>, and a great deal of the
+          product is "what she can do that you cannot".</p>
+      </section>
 
-    <h2 id="layout">File layout</h2>
-    <table>
-      <tr><th>Path</th><th>What it is</th></tr>
-      <tr><td><code>server.js</code></td><td>Everything server-side: routes, storage helpers, game rules</td></tr>
-      <tr><td><code>public/index.html</code></td><td>Sign-in and registration. The only page without the nav</td></tr>
-      <tr><td><code>public/dashboard.html</code></td><td>Dailies, welcome, leaderboard, profile card</td></tr>
-      <tr><td><code>public/site.css</code></td><td>Shared: theme variables, base layout, nav and theme-toggle styles</td></tr>
-      <tr><td><code>public/me.js</code></td><td>Shared: single-flight <code>/api/me</code>, exposed as <code>window.siteMe()</code></td></tr>
-      <tr><td><code>public/nav.js</code></td><td>Shared: injects the nav bar and the theme toggle</td></tr>
-      <tr><td><code>public/notifications.js</code></td><td>Shared: injects the bell and the envelope link into any nav it finds</td></tr>
-      <tr><td><code>public/ranks.js</code></td><td>Shared: the rank legend modal</td></tr>
-      <tr><td><code>public/pieces/</code></td><td>Chess piece SVGs (Cburnett set, CC BY-SA)</td></tr>
-      <tr><td><code>views/task.html</code></td><td>Doing one task: the essay surface or the repetition drill, chosen by type</td></tr>
-      <tr><td><code>views/*.html</code></td><td>Every logged-in page: profile, admin, tasks, guide, and the games</td></tr>
-    </table>
-    <p><code>public/</code> is served statically; <code>views/</code> is not. Those pages are sent explicitly by routes guarded with <code>requireLogin</code>. Anything in <code>public/</code> is reachable without a session, so nothing sensitive belongs there.</p>
+      <section id="layout">
+        <h2>LAYOUT</h2>
+        <div class="rows">
+          <span class="k">server.js</span><span class="v">Everything server-side: routes,
+            auth, storage, game rules that must not be client-refereed.</span>
+          <span class="k">elysium-engine.js</span><span class="v">The tree simulation, kept
+            as a pure CommonJS module so it can be exercised with plain node.</span>
+          <span class="k">public/</span><span class="v">Anything served without a session:
+            the login page and every shared script.</span>
+          <span class="k">views/</span><span class="v">Pages that require one. Served with
+            <code>sendFile</code> from a route, so the static middleware cannot hand them
+            out.</span>
+          <span class="k">mockups/</span><span class="v">Design exploration. Parameterised
+            single files, one design per <code>?d=N</code>, rendering off
+            <code>file://</code>.</span>
+        </div>
+      </section>
 
-    <h2 id="storage">Storage</h2>
-    <p>Five JSON files, each read and written whole. All resolve to <code>process.env.DATA_DIR</code> when set, falling back to the repo directory:</p>
-    <table>
-      <tr><th>File</th><th>Shape</th></tr>
-      <tr><td><code>users.json</code></td><td><code>{ [lowercaseName]: user }</code>, the username is the key</td></tr>
-      <tr><td><code>games.json</code></td><td>Chess, keyed by the non-hermione player</td></tr>
-      <tr><td><code>deathroll.json</code></td><td>Deathroll, keyed the same way</td></tr>
-      <tr><td><code>writing.json</code></td><td>Array of categories, each holding passages</td></tr>
-      <tr><td><code>site.json</code></td><td>The editable dashboard copy</td></tr>
-    </table>
-    <p>All five are gitignored. Production keeps its own copies on a Railway volume, so local testing can never affect live data, and a deploy never overwrites live data either.</p>
+      <section id="storage">
+        <h2>STORAGE</h2>
+        <p>Each concern gets its own file under <code>DATA_DIR</code> (the repo root in
+          development). All of them are gitignored: several hold real writing.</p>
+        <div class="rows">
+          <span class="k">users.json</span><span class="v">Accounts, keyed by lowercased
+            username. Points, angelcoins, stats, notifications, daily stamps.</span>
+          <span class="k">games.json</span><span class="v">Chess, keyed by the non-admin
+            player, with a snapshot stack behind rewind.</span>
+          <span class="k">deathroll.json</span><span class="v">Deathroll games.</span>
+          <span class="k">elysium.json</span><span class="v">One tree per account.</span>
+          <span class="k">parses.json</span><span class="v">Dummy Parse runs, stored whole
+            with their event lists.</span>
+          <span class="k">summaries.json</span><span class="v">Handed-in summaries.</span>
+          <span class="k">devotion.json<br>penance.json</span><span class="v">Editable preset
+            line-sets for the two writing games.</span>
+          <span class="k">subliminal.json<br>decrypt.json</span><span class="v">Editable
+            message pools for the flashes and the login decrypt.</span>
+        </div>
+        <p class="note">Every loader falls back to a built-in default when its file is missing
+          or unparseable, so a fresh deploy and a corrupted file behave the same way: the site
+          comes up.</p>
+      </section>
 
-    <h3>The user record</h3>
-    <p>Written keys: <code>username</code>, <code>passwordHash</code>, <code>createdAt</code>, <code>pronouns</code>, <code>rank</code>, <code>points</code>, <code>status</code>, <code>intro</code>, <code>icon</code>, <code>bio</code>, <code>flagged</code>, <code>notifications</code>, plus per-day bookkeeping: <code>lastCheckIn</code>, <code>wheelDay</code>, <code>snakeDay</code>, <code>snakeToday</code>, <code>writingDay</code>, <code>tithedOn</code>, <code>titheCheckedOn</code>, <code>dailiesNotifiedOn</code>. Lifetime stats: <code>foodEaten</code>, <code>lettersTyped</code>, <code>writingTasksCompleted</code>, <code>customTasksCompleted</code>, and a capped <code>writingLog</code>.</p>
-    <h3>Tasks</h3>
-    <p>Assigned tasks live on the user record as <code>tasks</code>. Keeping them there means there is no join to do, and the placement <em>is</em> the authorisation: a completion route looks the task up in the session user's own array, so another person's id is simply not found. Two types share the record, with <code>type</code> deciding which fields matter: <code>essay</code> uses <code>minWords</code> and <code>submission</code>, <code>repetition</code> uses <code>text</code>, <code>reps</code> and <code>repsDone</code>.</p>
-    <p>An essay does not complete on submit. It moves to <code>submitted</code> and waits in Hermione's review queue; she either accepts it, which pays the reward through <code>completeTask()</code>, or sends it back, which returns it to <code>active</code> with the submission kept and a <code>reviewNote</code> attached. A repetition has nothing to judge and so completes as soon as the count is met. Rewards are set explicitly at assignment: the route rejects a missing or empty value rather than defaulting to zero, so a reward is never handed out by accident.</p>
-    <p>The essay word count is recomputed on the server at submit; the browser's count only drives the progress bar. Repetitions are client-refereed like Snake, so the server checks the submitted text matches the assigned line and caps at the assigned count. Rewards are paid in <code>completeTask()</code>, which returns early if the task is already done, so extra calls after completion cannot pay twice.</p>
+      <section id="auth">
+        <h2>AUTH</h2>
+        <p><code>express-session</code>, in memory. Restarting the server signs everyone out;
+          that is accepted rather than solved.</p>
+        <div class="rows">
+          <span class="k">requireLogin</span><span class="v">A real account. Used where there
+            has to be somewhere to write the result.</span>
+          <span class="k">requirePlayer</span><span class="v">An account or a guest. Used by
+            the single-player games.</span>
+          <span class="k">isAdmin(req)</span><span class="v">The one identity check. Every
+            admin route repeats it; nothing is trusted from the client.</span>
+          <span class="k">playerId(req)</span><span class="v">One identity for accounts and
+            guests alike, so games can file state under either.</span>
+        </div>
+        <p>Registration creates the account in a <code>pending</code> state. Pending accounts
+          cannot sign in and do not appear in listings until approved.</p>
+        <p class="warn"><b>Hiding is not access control.</b> Chess is the worked example: the
+          controls only Hermione has live in <code>views/chess-extra.js</code>, behind a route
+          that 404s for everyone else, so the opponent's copy of the page has no trace of them.
+          That is to avoid spoiling the game. The endpoints themselves still check
+          <code>isAdmin</code> on every call, and that is the part that actually matters.</p>
+      </section>
 
-    <p>Everything is read defensively (<code>user.points || 0</code>) because records predate most fields. Adding a field needs no migration. Removing one is a choice between tolerating stale keys and migrating: <code>rankFor()</code> still maps the retired <code>role</code> values <code>domme</code>/<code>sub</code> onto Visitor/Citizen, whereas the retired <code>dollars</code> balance was folded into <code>points</code> by <code>migrateDollars()</code>, which runs inside <code>loadUsers()</code> and rewrites the file once. Migrate when a stale key would be read as real data; tolerate it when it is merely unused.</p>
-    <div class="note"><strong>Read-modify-write.</strong> Every handler loads the whole file, mutates, and saves. Node's single thread plus synchronous <code>fs</code> makes each handler atomic, so concurrent requests can't interleave. But two handlers that both load users must not run <code>await</code> between load and save, or the later write will clobber the earlier.</div>
+      <section id="frontend">
+        <h2>FRONT-END CONVENTIONS</h2>
+        <p>The old shared shell (<code>site.css</code> plus a pill nav) is being retired. New
+          pages are <b>self-contained</b>: one file, its own palette, no shared stylesheet.
+          Several older pages still use the shell, so expect both.</p>
+        <p>A self-contained page still has to carry a few things the shell used to provide:</p>
+        <ul>
+          <li><code>[hidden] { display: none !important }</code>, because <code>hidden</code>
+            loses to any explicit <code>display</code>.</li>
+          <li>The palette variables the shared scripts read: <code>--c</code>,
+            <code>--dim</code>, <code>--bright</code>, <code>--accent</code>,
+            <code>--glow</code>, <code>--err</code>. The console and the ambience controls
+            theme themselves off these.</li>
+          <li><code>class="has-top-nav"</code> on the body plus <code>nav.js</code>, which is
+            all the back chevron needs. It gates on <code>siteMe()</code>, so
+            <code>me.js</code> has to come with it.</li>
+        </ul>
 
-    <h2 id="auth">Auth and permissions</h2>
-    <p>Passwords are bcrypt-hashed (cost 10). Sessions come from <code>express-session</code> with an in-memory store, so a server restart signs everyone out, which is fine here but is also why the daily check-in can't depend on login alone.</p>
-    <p>There is exactly one permission check in the whole codebase:</p>
-    <p><code>isAdmin(req)</code>: true when the session username lowercases to <code>"hermione"</code>.</p>
-    <p>Admin is an identity, not a flag on the record, so it can't be granted by editing data. Every privileged route calls it server-side. The client hides admin controls too, but that's cosmetic. The server is the boundary.</p>
-    <h3>Approval</h3>
-    <p>Registration creates the record with <code>status: "pending"</code> and deliberately does not set <code>req.session.username</code>. Login refuses a pending account, and <code>/api/me</code> destroys the session of one that has been put back to pending, so an account can be revoked mid-session. <code>POST /api/users/:username/approve</code> deletes the <code>status</code> key; turning someone away is just the existing DELETE.</p>
-    <p>The pending check in login sits <em>after</em> the bcrypt comparison, on purpose. Checking it first would let anyone learn which usernames exist and are waiting, without knowing the password.</p>
-    <p>Records that predate the flow have no <code>status</code>, and <code>isPending()</code> treats absence as approved, so no migration was needed.</p>
+        <h3>Shared scripts</h3>
+        <div class="rows">
+          <span class="k">me.js</span><span class="v"><code>siteMe()</code>. One
+            <code>/api/me</code> per page: independent callers race the daily check-in.</span>
+          <span class="k">nav.js</span><span class="v">The back chevron, and the signed-out
+            bounce.</span>
+          <span class="k">audio.js</span><span class="v">One AudioContext and one gain node
+            per channel, with a master over them. Settings persist in one localStorage key so
+            every tab agrees, and continuous sound takes a lock over BroadcastChannel so two
+            visible tabs do not both play it.</span>
+          <span class="k">console.js</span><span class="v">The drop-down console. Swallows
+            keystrokes in the capture phase so the typing games do not also see them.</span>
+          <span class="k">glitch.js</span><span class="v">Subliminal flashes.</span>
+          <span class="k">dashglitch.js</span><span class="v">Screen distortion. Tear bands
+            also run on their own faster clock.</span>
+          <span class="k">boot.js</span><span class="v">The decrypt animation and its
+            sound.</span>
+          <span class="k">updatecheck.js</span><span class="v">Polls a boot id and offers a
+            reload when the server has restarted.</span>
+        </div>
+      </section>
 
-    <p>Permission patterns worth knowing:</p>
-    <ul>
-      <li><code>canEditProfile()</code>: the owner or Hermione</li>
-      <li>Rank changes: Hermione only, even on your own profile</li>
-      <li>Games keyed by player: the key <em>is</em> the authorisation; a player can only ever address their own row</li>
-    </ul>
+      <section id="time">
+        <h2>THE DAY KEY</h2>
+        <p>Everything daily rolls over at <b>6am America/New_York</b>. <code>todayKey()</code>
+          is the only correct way to ask what day it is: it shifts by the reset hour before
+          taking the date, so "today" means "since the last reset". Comparing
+          <code>Date</code>s directly will be wrong twice a year and wrong every morning.</p>
+      </section>
 
-    <h2 id="routes">Routes</h2>
-    <p>Page routes send HTML; everything under <code>/api</code> returns JSON and answers <code>401</code> when signed out.</p>
-    <table>
-      <tr><th>Route</th><th>Notes</th></tr>
-      <tr><td><code>POST /api/register</code></td><td>Requires pronouns, a signup rank and an intro. Creates the account <em>pending</em> and does not sign you in</td></tr>
-      <tr><td><code>POST /api/login</code> · <code>POST /api/logout</code></td><td>Login also runs check-in and seeds notifications</td></tr>
-      <tr><td><code>GET /api/me</code></td><td>Identity, points, and the daily check-in result</td></tr>
-      <tr><td><code>GET|PUT /api/profile/:username</code></td><td>PUT is owner-or-admin; rank is admin-only</td></tr>
-      <tr><td><code>GET /api/ranks</code></td><td>The ladder, plus which ranks are assignable</td></tr>
-      <tr><td><code>GET /api/users</code> · <code>POST .../points</code> · <code>POST .../flag</code> · <code>POST .../approve</code> · <code>DELETE</code></td><td>Admin only</td></tr>
-      <tr><td><code>GET /api/leaderboard</code></td><td>Flagged users only, Hermione excluded</td></tr>
-      <tr><td><code>GET /api/dailies</code></td><td>Objectives with done state and progress</td></tr>
-      <tr><td><code>GET /api/tasks</code></td><td>Your own tasks, never anyone else's</td></tr>
-      <tr><td><code>POST /api/tasks/:id/{essay,rep}</code></td><td>Hand in an essay, or count one repetition</td></tr>
-      <tr><td><code>GET|POST /api/users/:name/tasks</code> · <code>DELETE .../:id</code></td><td>Assign, read and unassign. Admin only</td></tr>
-      <tr><td><code>POST /api/users/:name/tasks/:id/review</code></td><td>Accept or send back a handed-in essay. Admin only</td></tr>
-      <tr><td><code>GET|PUT /api/writing[/:id]</code> · <code>POST /api/writing/complete</code></td><td>Category shelf, edit (admin), and logging a finished writing series</td></tr>
-      <tr><td><code>GET|POST /api/profile/:name/guestbook</code> · <code>DELETE .../:id</code></td><td>Read, sign, and remove guestbook comments</td></tr>
-      <tr><td><code>GET|POST /api/wheel</code></td><td>Server picks the wedge and awards it</td></tr>
-      <tr><td><code>POST /api/snake/food</code></td><td>Rate limited and daily capped</td></tr>
-      <tr><td><code>GET|PUT /api/writing[/:id]</code></td><td>List hides passages; PUT is admin only</td></tr>
-      <tr><td><code>/api/deathroll/{game,games,start,roll}</code></td><td>Turn order enforced server-side</td></tr>
-      <tr><td><code>GET|DELETE|POST /api/notifications[...]</code></td><td>List, dismiss one, clear all</td></tr>
-      <tr><td><code>GET|PUT /api/site</code></td><td>Dashboard copy; PUT admin only</td></tr>
-      <tr><td><code>POST /api/tithe</code></td><td>REMOVED. Tithing is deprecated; the route and the miss penalty are gone.</td></tr>
-    </table>
+      <section id="trust">
+        <h2>TRUST</h2>
+        <p>The single-player games referee themselves and report their results. Snake's food
+          count, the writing games' line counts and Dummy Parse's numbers are all taken on
+          trust. This is deliberate: the audience is small and known, and the alternative is
+          simulating each game server-side.</p>
+        <p>What is <b>not</b> trusted: anything that moves points or ranks, the chess rules,
+          the wheel's outcome, and everything behind <code>isAdmin</code>.</p>
+      </section>
 
-    <h2 id="frontend">Front-end conventions</h2>
-    <h3>Theming</h3>
-    <p>The CSS variables are declared once, in <code>site.css</code>: <code>:root</code> for light, <code>body[data-theme="dark"]</code> for dark. Components reference variables, never literals. A hardcoded colour is a bug waiting for the next palette change, and the greyscale conversion had to hunt down a dozen of them.</p>
-    <p>Page-specific variables (<code>--board-*</code>, <code>--wedge-*</code>, <code>--picker-*</code>, <code>--heart-color</code>) still live on the page that uses them. Because <code>site.css</code> is linked before a page's own <code>&lt;style&gt;</code>, a page can still override anything shared at equal specificity.</p>
-    <p>Theme selection is deliberately three-state: no stored preference means <em>follow the system</em> and keep following it; clicking the toggle stores a choice that wins from then on. <code>applyTheme(theme, persist)</code> only writes to <code>localStorage</code> when <code>persist</code> is true. Page load must never persist, or the site stops tracking the system.</p>
+      <section id="traps">
+        <h2>TRAPS THIS CODEBASE HAS ALREADY SPRUNG</h2>
+        <ul>
+          <li><b>SVG elements have no <code>hidden</code> or <code>className</code> IDL
+            property.</b> Assigning either silently does nothing. Put state on a wrapper div,
+            or use <code>setAttribute</code>.</li>
+          <li><b>A <code>filter</code> on page content becomes the containing block for
+            <code>position: fixed</code> descendants</b>, which throws the console and every
+            modal across the screen. Screen effects use backdrop-filter overlays instead.</li>
+          <li><b>A CSS animation ending in <code>transform: none</code> wipes a positioning
+            transform.</b> Centre with <code>inset</code> or a wrapper if the element also
+            animates.</li>
+          <li><b>Anything appended to an element that a render function empties will be
+            removed mid-animation.</b> Hang overlays on a parent that survives the repaint.</li>
+          <li><b>Vertical text is tall.</b> A collapsed panel's rotated heading grew the
+            dashboard grid enough to trigger its scale-to-fit and visibly shrink the whole
+            page. It is out of flow now.</li>
+          <li><b><code>crossorigin="anonymous"</code> on audio</b> makes playback need CORS
+            headers the host may not send.</li>
+          <li><b>Frame-rate dependent probability.</b> Snake's food rolled its escape once per
+            frame, so doubling the speed changed the odds. Roll on the state change, not on
+            the frame.</li>
+        </ul>
+      </section>
 
-    <h3>Shared scripts</h3>
-    <p><code>nav.js</code>, <code>notifications.js</code> and <code>ranks.js</code> inject their own styles and markup into whatever page includes them, rather than each page carrying copies.</p>
-    <p><code>nav.js</code> builds the nav and the theme toggle. It only injects the nav on pages whose <code>&lt;body&gt;</code> carries <code>has-top-nav</code>, and that gate is what keeps the login page nav-free and stops it running the signed-in redirect. Adding a nav item is one line in its <code>NAV_LINKS</code> or <code>GAMES</code> array.</p>
-    <p><code>notifications.js</code> finds <code>.top-nav .nav-links</code> and appends the bell, then polls every 15 seconds. It must load <em>after</em> <code>nav.js</code>, or there is no nav to append to. Both are <code>defer</code>, and defer scripts run in document order, so the tag order is the whole mechanism.</p>
-    <div class="note"><strong>One <code>/api/me</code> per page.</strong> <code>me.js</code> exposes <code>window.siteMe()</code>, a promise fetched once and shared. The page, the nav and the bell all want the same identity, but the server reports the daily check-in exactly once, so independent callers raced and the notice vanished at random. Never call <code>/api/me</code> directly; use <code>siteMe()</code>. It is loaded without <code>defer</code> so it exists before any page's inline script runs.</div>
-    <p>The meow is synthesised with Web Audio: a sawtooth swept 620→880→500 Hz through a moving bandpass formant, with vibrato. No audio file to host, and it fails silently if the browser hasn't allowed audio yet.</p>
+      <section id="recipes">
+        <h2>RECIPES</h2>
+        <h3>Adding a game</h3>
+        <ul>
+          <li>Put the page in <code>views/</code> and give it a route with
+            <code>requirePlayer</code>, or <code>requireLogin</code> if it has to remember
+            anything.</li>
+          <li>Add it to the list at the top of <code>views/games.html</code>. That is the only
+            place games are listed; the dashboard just links to the wall.</li>
+          <li>Mark it <code>multi: true</code> if a guest cannot play it, and it will be
+            pasted over for them.</li>
+          <li>Add it to <code>GAMES</code> in <code>console.js</code> so
+            <code>pray launch</code> knows the name.</li>
+        </ul>
+        <h3>Adding an editable text pool</h3>
+        <p>Follow <code>decrypt.json</code>: a defaults constant, a loader that falls back to
+          it, an open GET if the login page needs it, an admin-only POST, and one more call to
+          the shared preset editor in the dashboard's admin panel.</p>
+      </section>
 
-    <h3>The profile card, reused</h3>
-    <p>Profiles carry lifetime stats (food eaten, letters typed, writing series, custom tasks) and a guestbook tab any approved account may sign; the owner, the author, or Hermione may delete a comment. Hermione's card hides its points and stats and gains a white halo through the shared <code>.card.princess-glow</code> rule (a compound selector, so it beats each page's own <code>.card</code> box-shadow regardless of load order).</p>
-    <p>Rather than re-implement that card in the admin panel, the admin <em>iframes</em> <code>/profile?embed=1</code> so the copy is literally the page and can never drift. Embed mode hides the nav and toggle and pads the body so the halo is not clipped; logout from inside the frame targets <code>window.top</code> so it lands on the real login screen rather than a login card in a box. The admin is two columns above 1040px (cards left, that profile right) and stacks below.</p>
+      <section id="testing">
+        <h2>TESTING</h2>
+        <p>The sandbox is a scratch <code>DATA_DIR</code> and a second port:</p>
+        <p><code>DATA_DIR=&lt;scratch&gt; PORT=57999 SESSION_SECRET=sandbox node server.js</code></p>
+        <p class="warn"><b>Check for a leftover server before trusting any request.</b> One
+          from an earlier session will hold the port, the new one dies with EADDRINUSE, and
+          curl happily answers from the old data. Check with
+          <code>lsof -nP -iTCP:57999 -sTCP:LISTEN</code>, and kill the PID it prints:
+          <code>pkill</code> on the command line kills the shell wrapper and leaves node
+          holding the socket.</p>
+        <p>Static files under <code>public/</code> and <code>views/</code> serve fresh; only
+          <code>server.js</code> changes need a restart.</p>
+      </section>
 
-    <h3>Rendering</h3>
-    <p>DOM is built with <code>createElement</code> and <code>textContent</code>, not <code>innerHTML</code> with interpolated values. Usernames, bios and messages are all user-controlled; <code>textContent</code> makes injection structurally impossible. The one place <code>innerHTML</code> appears is for fixed SVG icon markup.</p>
+      <section id="limits">
+        <h2>KNOWN LIMITS</h2>
+        <ul>
+          <li>Sessions are in memory, so a restart signs everyone out.</li>
+          <li>Writes are whole-file and unsynchronised. Two simultaneous writes to the same
+            file can lose one. The traffic does not warrant more.</li>
+          <li>The photosensitivity flag is read from localStorage on the login page, because
+            that page runs before anyone is identified. A flagged account is unprotected on
+            its first visit from a new browser.</li>
+          <li>Guests are held in memory, so a restart forgets them and their games.</li>
+        </ul>
+      </section>
 
-    <h2 id="day">The day key</h2>
-    <p>Every daily thing hangs off <code>todayKey()</code>, which returns a <code>YYYY-MM-DD</code> string that rolls over at <strong>noon America/New_York</strong>, not midnight. It reads the Eastern wall clock via <code>Intl.DateTimeFormat</code> and subtracts 12 hours before taking the date, so the label only changes at midday. Using the zone rather than a fixed offset means it survives daylight saving.</p>
-    <p>Anything daily compares a stored key against this one. Testing a rollover is a matter of backdating the stored key rather than waiting.</p>
-    <div class="note">Don't compute day keys any other way. A plain <code>toISOString().slice(0,10)</code> disagrees with this function for twelve hours out of every day, which is exactly how one test appeared to fail when the code was correct.</div>
-
-    <h2 id="currency">Currency and trust</h2>
-    <p>Points are the only currency: both granted by Hermione and earned by playing. Two of the three earned sources are browser-reported, which can't be trusted outright. The defences are deliberately economic rather than cryptographic:</p>
-    <ul>
-      <li><strong>Snake</strong>: every pickup pays 1 point (no daily cap), and eating 20 in a day adds a one-time +10 completion bonus. The token bucket below is still the only brake on farming rate.</li>
-      <li><strong>Token bucket</strong>: 8 pickups burst, refilling one per 2s. A fixed minimum gap was tried first and rejected: food can legitimately spawn in front of the snake and be eaten on the next 120ms tick, so a hard floor would reject honest pickups.</li>
-      <li><strong>Server-side outcomes</strong>: the wheel and deathroll pick their results on the server; the client only animates what it's told.</li>
-    </ul>
-    <div class="note"><strong>Tithing is a daily obligation.</strong> <code>settleTithe()</code> runs on login and on the first <code>/api/me</code> of a new day: if the account went the previous day without tithing and is not already negative, 25 points are taken. Points may go negative, and while negative the obligation is suspended and the button disabled until the balance returns to zero. The tithe day is tracked with <code>tithedOn</code>, the settle day with <code>titheCheckedOn</code>, both noon-Eastern keys.</div>
-    <p>If points ever buy something worth cheating for, the real fix is server-authoritative gameplay, where the client sends inputs and the server owns the state. Until then the cap is the honest boundary.</p>
-    <div class="note"><strong>Merging the currencies had a side effect worth knowing.</strong> Points used to be admin-granted only, so the leaderboard ranked what Hermione had chosen to award. Now that playing earns points too, it ranks grinding as well. If those ever need separating again, track earned and granted totals as distinct fields and rank on the granted one. Do not try to infer the split after the fact.</div>
-
-    <div class="note"><strong>Writing categories seed once, then the file wins.</strong> <code>loadCategories()</code> returns the stored <code>writing.json</code> whenever it is valid; only when there is no usable file does it write the in-code defaults to disk and return a deep clone. After that first seed the stored copy is authoritative, so Hermione's edits can never be reverted by the defaults, and the defaults constant is never mutated.</div>
-
-    <h2 id="games">Game implementations</h2>
-    <table>
-      <tr><th>Game</th><th>Where the logic lives</th></tr>
-      <tr><td>Chess</td><td>Server, via <code>chess.js</code>. Legality, checkmate and FEN all validated server-side</td></tr>
-      <tr><td>Deathroll</td><td>Server. RNG, turn order, and the losing roll</td></tr>
-      <tr><td>Wheel</td><td>Server. Weighted pick; client animates to the returned index</td></tr>
-      <tr><td>Snake</td><td>Client. The loop is local; only payouts touch the server</td></tr>
-      <tr><td>Writing</td><td>Split. Passages and shuffling from the server, typing checked locally</td></tr>
-    </table>
-    <p>Two-player games (chess, deathroll) are keyed by the non-Hermione player and polled every 3–4 seconds. Deathroll additionally pushes a notification on each roll, using a fixed id per game so repeat rolls update one line rather than stacking twenty.</p>
-
-    <h2 id="traps">Traps this codebase has already sprung</h2>
-    <p>Each of these cost real debugging time. They will recur.</p>
-    <ul>
-      <li><strong><code>hidden</code> loses to <code>display</code>.</strong> An element styled <code>display: flex</code> ignores the <code>hidden</code> attribute. This leaked the admin nav dropdown to every user, and the deathroll opponent picker to players. Any component that might be hidden needs an explicit <code>[hidden] { display: none; }</code> rule.</li>
-      <li><strong>Buttons don't inherit fonts.</strong> A <code>&lt;button&gt;</code> falls back to the browser UI font unless given <code>font-family: inherit</code>. That's why "Games" looked wrong next to its neighbours.</li>
-      <li><strong>Hover gaps break hover-revealed controls.</strong> A control offset away from the thing that reveals it leaves dead space the cursor must cross; <code>:hover</code> drops mid-travel and the control disappears before it can be clicked. A transparent <code>::after</code> bridging the gap keeps <code>:hover</code> alive. This has now happened twice: the nav dropdown menu, and the dashboard copy pencils, which sat 7px outside the text that revealed them and so could never be clicked at all. If a control appears on hover, check you can actually <em>reach</em> it, not just see it. Related: reveal with <code>opacity</code> rather than <code>display: none</code>, or the control cannot be tabbed to either.</li>
-      <li><strong>CSS specificity in grids.</strong> <code>.dr-grid &gt; .card</code> (two classes) beats <code>.player-card</code> (one), which silently sized the deathroll side cards like the board.</li>
-      <li><strong>Selects can't show a value they don't have.</strong> Setting a <code>&lt;select&gt;</code> to a value with no matching option leaves it blank. Legacy free-text pronouns would have silently cleared on save, which is why values are canonicalised server-side.</li>
-      <li><strong>Two callers, one-shot data.</strong> The dashboard once called <code>/api/me</code> twice; whichever landed first consumed the once-per-day check-in result and the notice vanished at random. Now structurally prevented by <code>siteMe()</code>, but the shape recurs with any endpoint that reports something only once, so reach for the same single-flight pattern rather than hoping callers stay disciplined.</li>
-    </ul>
-    <h3>When editing many pages at once</h3>
-    <p>There are twelve HTML files, and sweeping edits across them are usually scripted. Prefer Python with explicit string replacement over <code>perl -pi -e</code>: a malformed perl substitution prepended text to every line of <code>dashboard.html</code> and required restoring the file from git. Always verify with a grep count afterwards, and keep the working tree committed before a bulk edit.</p>
-    <p>Two lessons from the sweep that extracted the shared shell. Make the script <em>report</em> anything it does not recognise instead of silently skipping it, because a rule deleted on a wrong assumption is invisible afterwards. And remember a CSS rule's preceding comment is not part of its selector: matching on selector text alone missed every rule that had a comment above it.</p>
-
-    <h2 id="recipes">Recipes</h2>
-    <h3>Adding a page</h3>
-    <ol>
-      <li>Copy an existing view for the boilerplate, then delete its body. The shell now comes from the shared files, so there is little to inherit.</li>
-      <li>Give <code>&lt;body&gt;</code> the <code>has-top-nav</code> class, or no nav is injected.</li>
-      <li>Include the four shared tags in this order: <code>/site.css</code>, <code>/me.js</code> (no <code>defer</code>), then <code>/nav.js</code> and <code>/notifications.js</code> (both <code>defer</code>).</li>
-      <li>Add <code>app.get("/thing", requireLogin, …)</code> pointing at it.</li>
-      <li>If it belongs in the nav, add one entry to <code>NAV_LINKS</code> or <code>GAMES</code> in <code>nav.js</code>. No sweep.</li>
-    </ol>
-    <h3>Adding a daily objective</h3>
-    <p>Append an object to the array in <code>GET /api/dailies</code> with <code>label</code>, <code>detail</code>, <code>reward</code>, <code>done</code>, and optionally <code>progress</code>. The dashboard card renders whatever it's given. Store its state on the user record with a day key compared against <code>todayKey()</code>.</p>
-    <h3>Adding a currency source</h3>
-    <p>Award server-side, cap it per day, and read the balance back from the response rather than trusting the client's arithmetic.</p>
-
-    <h2 id="deploy">Deploying</h2>
-    <p>Pushing to <code>main</code> triggers a Railway build; the site is live at angeldom.me within a minute or two. <code>SESSION_SECRET</code> must be set in production or sessions reset on every deploy. <code>DATA_DIR</code> must point at the mounted volume or data is lost on redeploy.</p>
-    <p>Because data files are gitignored, a deploy never touches live data, and local experiments never reach production. Verify a deploy landed by fetching something the new code serves, not just by checking the site responds.</p>
-
-    <h2 id="limits">Known limits</h2>
-    <ul>
-      <li><strong>Sessions are in-memory</strong>, so every restart signs everyone out.</li>
-      <li><strong>JSON files don't scale</strong> and have no transactions. Fine for a handful of accounts; swap for a database before it's more.</li>
-      <li><strong>Avatars are base64 inside <code>users.json</code></strong>, which is why they're shrunk to 256px. Many large images would bloat every read of the file.</li>
-      <li><strong>Snake and Writing are client-refereed</strong>. See the trust notes above.</li>
-      <li><strong>No rate limiting on login</strong>, so passwords could be brute-forced given time.</li>
-      <li><strong>Each page still owns its own layout CSS and logic.</strong> The shared shell covers the nav, the theme and the base variables, but page styles are still per-file. Much smaller than the old duplication, and no longer the dominant cost of a change.</li>
-    </ul>
-  </main>
+      <div class="foot">angelOS v0.2 &nbsp;·&nbsp; revised 30 july 2026</div>
+    </main>
+  </div>
+  <div class="vig"></div><div class="scan"></div>
 
   <script>
+    const nav = document.getElementById("index");
+    const main = document.getElementById("body");
+    const secs = [...main.querySelectorAll("section")];
+    secs.forEach((sec) => {
+      const a = document.createElement("a");
+      a.textContent = sec.querySelector("h2").textContent.toLowerCase();
+      a.addEventListener("click", () => main.scrollTo({
+        top: sec.offsetTop - main.offsetTop, behavior: "smooth",
+      }));
+      nav.append(a);
+    });
+    const links = [...nav.querySelectorAll("a")];
+    main.addEventListener("scroll", () => {
+      let at = 0;
+      secs.forEach((sec, i) => { if (sec.getBoundingClientRect().top < 140) at = i; });
+      links.forEach((a, i) => a.classList.toggle("on", i === at));
+    }, { passive: true });
 
-    window.siteMe()
-      .then((d) => {
-      })
-      .catch(() => (window.location.href = "/"));
+    window.siteMe().catch(() => (window.location.href = "/"));
   </script>
   <script src="/nav.js" defer></script>
-  <script src="/notifications.js" defer></script>
   <script src="/updatecheck.js" defer></script>
   <script src="/console.js" defer></script>
   <script src="/ambience.js" defer></script>

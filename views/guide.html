@@ -6,234 +6,259 @@
   <title>Guide - angeldom.me</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cause:wght@400..700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/site.css" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Major+Mono+Display&display=swap" rel="stylesheet" />
   <script src="/me.js"></script>
+  <script src="/audio.js"></script>
   <style>
-    .card {
-      background: var(--panel-bg);
-      border-radius: 12px;
-      box-shadow: 0 10px 40px var(--shadow);
-      width: 100%;
-      max-width: 902px;
-      padding: 2.2rem 2.475rem;
-      color: var(--text-color);
+    /* Guide: the terminal skin, laid out as a manual with a built index.
+       Rewritten 2026-07-30; the old copy described the pre-redesign site. */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    [hidden] { display: none !important; }
+
+    :root {
+      --c: #aee3ff; --dim: #4f7ea0; --dim2: #2c4a5e; --bright: #eafaff;
+      --accent: #8fd0ff; --glow: rgba(120,190,255,.32); --red: #ff3b2f; --err: #ff5a4a;
     }
-    h1 {
-      font-family: "Cause", sans-serif;
-      font-size: 1.5rem;
-      color: var(--heading-color);
-      margin-bottom: 0.4rem;
+    html, body { height: 100%; }
+    body {
+      background: #000; color: var(--c);
+      font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 14px;
+      overflow: hidden;
     }
-    h2 {
-      font-family: "Cause", sans-serif;
-      font-size: 1.15rem;
-      color: var(--heading-color);
-      margin: 2rem 0 0.75rem;
-      padding-top: 1.25rem;
-      border-top: 1px solid var(--table-border);
-    }
-    h2:first-of-type { border-top: none; padding-top: 0; margin-top: 1.5rem; }
-    h3 { font-size: 0.98rem; margin: 1.15rem 0 0.4rem; }
-    p, li { line-height: 1.6; font-size: 0.92rem; }
-    p { margin-bottom: 0.75rem; }
-    ul, ol { margin: 0 0 0.85rem 1.15rem; }
-    li { margin-bottom: 0.3rem; }
-    .lede { color: var(--muted-color); margin-bottom: 1.5rem; }
-    strong { font-weight: 700; }
-    code {
-      font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-      font-size: 0.85em;
-      padding: 0.1rem 0.35rem;
-      border-radius: 5px;
-      background: var(--notif-item-bg, rgba(36, 197, 237, 0.15));
-    }
-    table { width: 100%; border-collapse: collapse; margin-bottom: 1rem; font-size: 0.88rem; }
-    th, td { text-align: left; padding: 0.5rem 0.65rem; vertical-align: top; }
-    th { color: var(--table-header-color); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; }
-    tr + tr td { border-top: 1px solid var(--table-border); }
-    .toc {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.4rem;
-      margin-bottom: 1.5rem;
-      padding-bottom: 1.25rem;
-      border-bottom: 1px solid var(--table-border);
-    }
-    .toc a {
-      padding: 0.3rem 0.7rem;
-      border-radius: 999px;
-      background: var(--notif-item-bg, rgba(36, 197, 237, 0.15));
-      color: var(--text-color);
-      text-decoration: none;
-      font-size: 0.78rem;
-      font-weight: 600;
-    }
-    .toc a:hover { background: var(--button-bg); color: var(--button-text); }
-    .note {
-      border-left: 3px solid var(--button-bg);
-      padding: 0.6rem 0.9rem;
-      margin: 0.85rem 0;
-      background: var(--notif-item-bg, rgba(36, 197, 237, 0.1));
-      border-radius: 0 8px 8px 0;
-      font-size: 0.88rem;
+    .scan { position: fixed; inset: 0; z-index: 200; pointer-events: none;
+      background: repeating-linear-gradient(0deg, rgba(0,0,0,.30) 0 1px, transparent 1px 3px); }
+    .vig { position: fixed; inset: 0; z-index: 199; pointer-events: none;
+      box-shadow: inset 0 0 24vh 8vh rgba(0,0,0,.7); }
+
+    .doc { position: absolute; inset: 0; display: grid;
+      grid-template-columns: 16rem minmax(0, 1fr); gap: 3rem; padding: 3vh 4vw; }
+
+    /* ---- index ---- */
+    nav { overflow-y: auto; padding-top: 3.4rem; }
+    nav .eyebrow { font-size: 10px; letter-spacing: .35em; color: var(--dim);
+      border-bottom: 1px solid var(--dim2); padding-bottom: .4rem; margin-bottom: .8rem; }
+    nav a { display: block; color: var(--dim); text-decoration: none;
+      font-size: 12.5px; padding: .22rem 0; cursor: pointer; }
+    nav a::before { content: "› "; color: var(--dim2); }
+    nav a:hover, nav a.on { color: var(--bright); }
+
+    /* ---- body ---- */
+    main { overflow-y: auto; padding-right: 1rem; }
+    h1 { font-family: "Major Mono Display", monospace; font-weight: 400;
+      font-size: clamp(2.2rem, 5vw, 3.6rem); color: var(--bright);
+      text-shadow: 0 0 30px var(--glow); line-height: 1; margin-bottom: .5rem; }
+    .lede { color: var(--dim); font-size: 15px; line-height: 1.9; max-width: 46rem; margin-bottom: 2.4rem; }
+    section { margin-bottom: 2.6rem; scroll-margin-top: 1rem; max-width: 46rem; }
+    h2 { font-size: 12px; letter-spacing: .3em; color: var(--bright); font-weight: 400;
+      border-bottom: 1px solid var(--dim2); padding-bottom: .35rem; margin-bottom: .9rem; }
+    h3 { font-size: 13.5px; color: var(--accent); font-weight: 400; margin: 1.2rem 0 .35rem; }
+    p { line-height: 1.95; margin-bottom: .8rem; color: var(--c); }
+    ul { list-style: none; margin: .3rem 0 .9rem; }
+    li { line-height: 1.9; padding-left: 1.3rem; position: relative; }
+    li::before { content: "\00B7"; position: absolute; left: 0; color: var(--dim2); }
+    b { color: var(--bright); font-weight: 400; }
+    em { color: var(--dim); font-style: normal; }
+    code { color: var(--accent); }
+    .kbd { border: 1px solid var(--dim2); padding: 0 .35rem; color: var(--bright); font-size: 12px; }
+    .rows { display: grid; grid-template-columns: 9rem 1fr; gap: .3rem .9rem; margin: .5rem 0 1rem; }
+    .rows .k { color: var(--bright); }
+    .rows .v { color: var(--dim); line-height: 1.85; }
+    .note { border-left: 2px solid var(--dim2); padding-left: 1rem; color: var(--dim);
+      line-height: 1.9; margin: .9rem 0; }
+    .foot { color: var(--dim2); font-size: 11px; letter-spacing: .2em; margin: 2rem 0 4rem; }
+
+    @media (max-width: 900px) {
+      body { overflow: auto; }
+      .doc { position: static; grid-template-columns: 1fr; gap: 1.4rem; padding-top: 4.5rem; }
+      nav { padding-top: 0; }
+      main { overflow: visible; }
     }
   </style>
-  <script src="/audio.js"></script>
 </head>
 <body class="has-top-nav">
-  <main class="card">
-    <h1>Guide</h1>
-    <p class="lede">How angeldom.me works from the outside: everything a person using the site can see, earn, or do.</p>
+  <div class="doc">
+    <nav id="index"><div class="eyebrow">CONTENTS</div></nav>
 
-    <div class="toc">
-      <a href="#accounts">Accounts</a>
-      <a href="#nav">Getting around</a>
-      <a href="#dashboard">Dashboard</a>
-      <a href="#profiles">Profiles</a>
-      <a href="#ranks">Ranks</a>
-      <a href="#currency">Points</a>
-      <a href="#dailies">Dailies</a>
-      <a href="#tasks">Tasks</a>
-      <a href="#games">Games</a>
-      <a href="#notifications">Notifications</a>
-      <a href="#hermione">Hermione's powers</a>
-      <a href="#faq">Odds and ends</a>
-    </div>
+    <main id="body">
+      <h1>guide</h1>
+      <p class="lede">What everything on angeldomme is, and what it does to you. If this page
+        and the site disagree, the site is right and this page is out of date. Say so and it
+        will be fixed.</p>
 
-    <h2 id="accounts">Accounts</h2>
-    <p>Registering asks for five things: a username (3–30 characters), a password (8 or more), your <strong>pronouns</strong>, whether you're a <strong>Visitor</strong> or a <strong>Citizen</strong>, and a short note saying <strong>who you are</strong>. Hover either rank button to read what it means.</p>
-    <p>The site is invite only, so registering does not sign you in. Your account is created and then waits: Hermione reads your note and either approves it or turns it away. Until she approves it, signing in is refused. Once she has, log in normally. There's no second step.</p>
-    <p>Passwords are hashed with bcrypt before storage, so nobody, including Hermione, can read them back. Sessions last a day, and staying signed in is normal; there is no need to log in fresh each visit.</p>
-    <p><strong>Logging out</strong> lives on your Profile page, next to Edit profile. It is deliberately not in the navigation bar.</p>
+      <section id="accounts">
+        <h2>ACCOUNTS</h2>
+        <p>Three ways in, and they are not the same thing.</p>
+        <div class="rows">
+          <span class="k">disciple</span><span class="v">A full account. Holds points and
+            angelcoins, gets dailies, can appear on the leaderboard. Invite only: you
+            register, and Hermione decides.</span>
+          <span class="k">visitor</span><span class="v">A real account that sits outside the
+            economy. Nothing pays out and there are no dailies, but your progress and stats
+            are still kept.</span>
+          <span class="k">guest</span><span class="v">No account at all. A session under a
+            temporary name, thrown away after three hours of silence. Offered under
+            "no account?" on the way in.</span>
+        </div>
+        <p>Registration asks whether you are <b>photosensitive</b>. Answer honestly: yes turns
+          off every flashing and strobing effect on your account. There is no way to change
+          that answer afterwards yet, so if it needs changing, ask.</p>
+      </section>
 
-    <h2 id="nav">Getting around</h2>
-    <p>Every page except the sign-in screen carries the same pill-shaped navigation: Dashboard, Profile, Tasks, a <strong>Games</strong> dropdown, and, for Hermione only, an Admin button. To its right sits the notification bell. The light/dark toggle floats at the very top-right of the page, outside the nav.</p>
-    <p>The Games menu opens on hover and stays open as you move down into it. Chess exists and still works at <code>/chess</code>, but is currently hidden from the menu.</p>
+      <section id="dashboard">
+        <h2>THE DASHBOARD</h2>
+        <p>Where you land. The clock is US Eastern and counts down to the daily reset at
+          <b>6am Eastern</b>, which is when everything daily rolls over.</p>
+        <ul>
+          <li><b>Balance</b> shows points, angelcoins and your rank.</li>
+          <li><b>Dailies</b> are the day's objectives and what they pay.</li>
+          <li><b>Leaderboard</b> lists whoever Hermione has chosen to list.</li>
+          <li><b>Games</b> opens the wall. Everything is reached from there.</li>
+          <li><b>Settings</b> holds the subliminals switch and the audio mixer.</li>
+        </ul>
+      </section>
 
-    <h3>Light and dark</h3>
-    <p>On your first visit the site follows your browser or system setting. The moment you click the toggle, your choice is remembered and overrides the system from then on. Dark mode is a full greyscale palette; light mode is sky blue.</p>
+      <section id="money">
+        <h2>POINTS AND ANGELCOINS</h2>
+        <p>Two currencies, earned differently, not interchangeable.</p>
+        <p><b>Points</b> are your standing with her. Signing in on a new day pays <b>5</b>.
+          Otherwise Hermione gives and takes them by hand, and that is the main way they move.</p>
+        <p><b>Angelcoins</b> come out of the games. Snake pays <b>1</b> a pickup. The wheel
+          pays 1 to 200 on its one turn a day, weighted hard to the low end: the mean is
+          about 9.5, and a hundred or more turns up roughly once in eighty. Finishing the
+          Devotion daily pays <b>50</b>.</p>
+        <p class="note">Visitors earn neither. Guests earn neither, and lose everything when
+          the session ends.</p>
+      </section>
 
-    <h2 id="dashboard">Dashboard</h2>
-    <p>Three panels, with the middle column centred on the page:</p>
-    <ul>
-      <li><strong>Dailies</strong> (left), the once-a-day rewards and whether you've claimed them.</li>
-      <li><strong>Welcome + Leaderboard</strong> (middle), a greeting, and the ranked points table.</li>
-      <li><strong>Your profile</strong> (right), a summary card with a shortcut to the full page.</li>
-    </ul>
-    <p>Below 1100px wide these stack into one column instead.</p>
-    <p>The <strong>Tithe</strong> button gives up 5 points. They are burned, not handed to anyone. It refuses if you have fewer than 5, so tithing can never take you below zero, and it doesn't appear on Hermione's own dashboard.</p>
-    <p>The <strong>leaderboard</strong> only lists accounts Hermione has chosen to show, ranked by points. If you aren't listed, that's a setting on her side, not a bug.</p>
+      <section id="dailies">
+        <h2>DAILIES</h2>
+        <p>A short list that resets at 6am Eastern. At present: check in, eat <b>20</b> food
+          in Snake, and complete <b>50</b> lines in Devotion. Each pays once. Penance is
+          logged but does not feed the dailies; only Devotion does.</p>
+      </section>
 
-    <h2 id="profiles">Profiles</h2>
-    <p>Your profile holds a picture, a bio, your pronouns, your rank and your points, plus the date you joined and how old the account is.</p>
-    <ul>
-      <li><strong>Picture</strong>: click it to open your file picker; it uploads the moment you choose. Images are shrunk to a 256px square automatically, so large photos are fine.</li>
-      <li><strong>Bio</strong>: up to 500 characters, via Edit profile.</li>
-      <li><strong>Pronouns</strong>: She/Her, He/Him or They/Them.</li>
-      <li><strong>Rank</strong>: see below; you can't set your own.</li>
-    </ul>
-    <p>Anyone signed in can view anyone else's profile, and usernames on the leaderboard link straight to them, but only you (and Hermione) can edit yours.</p>
+      <section id="ranks">
+        <h2>RANKS</h2>
+        <p>A ladder, lowest first: Servant, Follower, Devoted, Worshipper, Disciple, and two
+          above those that you do not hold. Visitor sits off the ladder entirely. Everyone
+          starts at Servant and only Hermione moves anyone. Click a rank wherever it appears
+          to see the whole ladder.</p>
+      </section>
 
-    <h2 id="ranks">Ranks</h2>
-    <p>Click any rank badge to open the legend. The ladder runs:</p>
-    <table>
-      <tr><th>#</th><th>Rank</th><th></th></tr>
-      <tr><td>1</td><td><strong>Princess</strong></td><td></td></tr>
-      <tr><td>2</td><td><strong>??</strong></td><td></td></tr>
-      <tr><td>3</td><td>Disciple</td><td></td></tr>
-      <tr><td>4</td><td>Worshipper</td><td></td></tr>
-      <tr><td>5</td><td>Devoted</td><td></td></tr>
-      <tr><td>6</td><td>Follower</td><td></td></tr>
-      <tr><td>7</td><td>Servant</td><td></td></tr>
-      <tr><td>-</td><td>Visitor</td><td>Not a sub.</td></tr>
-    </table>
-    <p>Ranks are cosmetic for now. They change what your badge says and nothing else. Only Hermione can hand them out, which she does by opening the legend from someone's profile and clicking a rank.</p>
+      <section id="games">
+        <h2>THE GAMES</h2>
+        <p>All of them are on the wall at <code>/games</code>. Deathroll, Chess and Elysium
+          need an account; a guest can open the rest.</p>
 
-    <h2 id="currency">Points</h2>
-    <p>Points are the only currency. They decide your position on the leaderboard, and can go down as well as up.</p>
-    <p>They come from two places. Hermione grants them directly, and you'll get a notification either way, including when they go down. You also earn them by playing:</p>
-    <table>
-      <tr><th>Source</th><th>Amount</th><th>Limit</th></tr>
-      <tr><td>Daily check-in</td><td>5</td><td>Once a day, automatic</td></tr>
-      <tr><td>Spinning the wheel</td><td>1–25</td><td>One spin a day</td></tr>
-      <tr><td>Snake, per heart</td><td>1</td><td>20 a day</td></tr>
-      <tr><td>Tithing</td><td>−5</td><td>Whenever you like</td></tr>
-    </table>
-    <p>Hermione keeps no points herself.</p>
+        <h3>Snake</h3>
+        <p>No grid: the head turns rather than snapping, and the body is the trail behind it.
+          The food runs when you get close, and drifts on its own besides. Running into your
+          own body ends the run, which only becomes possible once you are long enough to
+          reach it.</p>
 
-    <h2 id="dailies">Dailies and the reset</h2>
-    <p>Daily things reset at <strong>noon Eastern</strong>, not midnight. A "day" therefore runs noon to noon: claim something at 1pm and it's available again at noon the next day.</p>
-    <p>The check-in is automatic. Simply opening the site once a day pays 5 points, whether or not you log in fresh. The Dailies panel tracks each objective and shows progress where it applies.</p>
+        <h3>Penance</h3>
+        <p>Lines, for punishment. Take a preset or write your own, choose how many and how
+          harsh. The screen corrupts as you slip, and on <em>merciless</em> one mistake sends
+          you back to the start of the line.</p>
 
-    <h2 id="tasks">Tasks</h2>
-    <p>Hermione sets tasks, and they appear on your <strong>Tasks</strong> page with an Open button. You get a notification when one arrives. There are two kinds.</p>
-    <h3>Essays</h3>
-    <p>She picks a topic and a minimum number of words. Opening it gives you a plain writing box with a running word count and a bar that fills as you approach the minimum. Hand it in once the bar is full.</p>
-    <p>Handing in does not finish the task. It goes to Hermione, and the box locks while she has it. She either accepts it, and the points are paid then, or sends it back with a note saying why. A task sent back returns to your list with what you wrote still in the box, so you revise rather than start again.</p>
-    <h3>Writing it out</h3>
-    <p>She picks a line and how many times you are to write it. You type it exactly, the same rules as the Writing game: no pasting, and backspace does nothing. A wrong key shakes the line and you carry on from where you were. Each completed pass counts, and the bar tracks how many are left.</p>
-    <p>Writing something out needs no review, since there is nothing to judge: it finishes the moment the count is met.</p>
-    <p>Tasks can carry a points reward, paid once when the task is finished, which for an essay means when Hermione accepts it. Finished tasks stay on the page so you can look back at them.</p>
+        <h3>Devotion</h3>
+        <p>The same machine, calmer. Preset line-sets only, no difficulty, no corruption.
+          Fifty lines completes the daily.</p>
 
-    <h2 id="games">Games</h2>
+        <h3>Wheel</h3>
+        <p>One turn a day. The faces run past on a cylinder and whichever stops under the pin
+          pays.</p>
 
-    <h3>Wheel</h3>
-    <p>Eight wedges from 1 to 25 points, weighted so the big prizes are rare (roughly 22% for 1 point, about 2% for 25). One spin a day. The result is decided the moment you press Spin, and the animation is just showing you what already happened.</p>
+        <h3>Deathroll</h3>
+        <p>Two players and one falling die. Whatever you roll becomes the other player's
+          maximum. Whoever rolls a 1 loses.</p>
 
-    <h3>Snake</h3>
-    <p>Arrow keys or WASD. Walls <strong>wrap</strong>, so leaving one edge brings you back on the opposite side; only running into yourself ends the run. Each heart is worth 1 point, up to 20 a day.</p>
-    <div class="note">The food is shy. Come within one square of it and it will usually bolt somewhere far away, 90% of the time, and it lands at least eight squares off. Eating one is meant to be difficult.</div>
+        <h3>Chess</h3>
+        <p>Against Hermione. You are white, she is black. She has powers you do not, and you
+          will not be told what they are.</p>
 
-    <h3>Writing</h3>
-    <p>Pick a category and type its passages out exactly, one after another. The passages inside are hidden until you start, and are shuffled fresh each attempt.</p>
-    <ul>
-      <li>No pasting, and <strong>backspace does nothing</strong>.</li>
-      <li>A wrong key doesn't send you back to the start; it counts as a mistake and you carry on.</li>
-      <li>Your mistake tally is shown as you go and summarised at the end.</li>
-    </ul>
+        <h3>Elysium</h3>
+        <p>A tree, kept in real time. It grows and sickens whether or not you are watching, so
+          it is measured in days rather than minutes. Water, mist, trim, feed and inspect all
+          have costs as well as uses. It starts damaged.</p>
 
-    <h3>Deathroll</h3>
-    <p>Hermione picks a number and rolls it. You then roll a die of whatever she rolled, she rolls yours, and so on down. Whoever rolls a <strong>1</strong> loses.</p>
-    <p>Turns are enforced, so you can only roll when it's genuinely your turn. When the other player rolls while you're elsewhere on the site, you'll get a notification. Both players' profile cards flank the board.</p>
+        <h3>Dummy Parse</h3>
+        <p>A damage sim against a target that does not fight back. Spend 100 stat points, learn
+          a rotation, beat your own number. Every stat has diminishing returns, so stacking one
+          is always worse than spreading. The timed 30 and 60 second runs are ranked; free runs
+          are not, because you choose when they end.</p>
 
-    <h3>Chess</h3>
-    <p>Still playable at <code>/chess</code>, where you play white and Hermione plays black, but hidden from the Games menu for now. Hermione can remove your pieces at will.</p>
+        <h3>Skill Check</h3>
+        <p>A needle runs a dial. Press the key drawn in the middle while it is inside the red.
+          Early, late and missed all fail, and the dial moves and changes size between
+          attempts.</p>
 
-    <h2 id="notifications">Notifications</h2>
-    <p>The <strong>bell</strong> collects notifications: your daily objectives, points changes, deathroll turns, and tasks Hermione sets you. A white dot appears when something is waiting, and a sound plays when a new one arrives while you're on the site. Dismiss them individually or clear them all.</p>
-        <div class="note">Notifications are polled every 15 seconds, so something may take up to that long to appear. The deathroll page clears its own notifications, since you're watching the rolls there anyway.</div>
+        <h3>Summary</h3>
+        <p>A real article and a word limit. Read it, then say it back inside the limit. Going
+          over is the only way to fail. She reads what you hand in.</p>
+      </section>
 
-    <h2 id="hermione">What Hermione can do</h2>
-    <p>The <code>hermione</code> account is the site's admin. Beyond the Admin panel she can:</p>
-    <ul>
-      <li>Grant or remove points, and show or hide accounts on the leaderboard</li>
-      <li>Delete accounts, on a 15-second timer that can be cancelled</li>
-      <li>Edit anyone's profile, and hand out ranks</li>
-      <li>Rewrite the Writing categories and the dashboard's greeting text</li>
-      <li>Spin the wheel without a daily limit, and start deathrolls</li>
-      <li>Remove chess pieces mid-game</li>
-    </ul>
-    <p>She holds the rank Princess permanently and keeps no points.</p>
+      <section id="console">
+        <h2>THE CONSOLE</h2>
+        <p>Press <span class="kbd">`</span> on any signed-in page to slide a console down, and
+          <span class="kbd">Esc</span> to close it. Up and down walk back through what you
+          have already typed.</p>
+        <p>Commands begin with <code>pray</code>. <code>pray launch &lt;game&gt;</code> opens a
+          game by name, <code>pray reload</code> reloads the page, <code>pray quit</code> tries
+          to close the tab. <code>pray</code> on its own is not a mistake.</p>
+        <p class="note">Other things can be typed into it. Whether anything answers is not
+          documented here.</p>
+      </section>
 
-    <h2 id="faq">Odds and ends</h2>
-    <ul>
-      <li><strong>Nothing here is real money.</strong> Points are a number on your profile.</li>
-      <li><strong>Your data</strong> is a username, a hashed password, and whatever you choose to put on your profile. Pictures are stored with your account.</li>
-      <li><strong>If a page looks empty</strong>, you're probably signed out. Most pages send you back to sign-in when your session ends.</li>
-      <li><strong>Windows users</strong>: the decorative bows on the sign-in page need a font that Windows lacks, so the site loads one for you.</li>
-    </ul>
-  </main>
+      <section id="effects">
+        <h2>WHAT THE SITE DOES TO THE SCREEN</h2>
+        <p>Text flashes on its own, and the picture tears and distorts from time to time. Both
+          are deliberate. Both are off entirely for anyone who answered yes to the
+          photosensitivity question, and the flashing can also be switched off in Settings by
+          anyone who would simply rather not.</p>
+        <p>Sound is mixed in Settings: a master level over music, ambience and interface noise,
+          each with its own mute. A game with its own audio controls opens matching those, and
+          changing it inside the game does not change these.</p>
+      </section>
+
+      <section id="hermione">
+        <h2>WHAT HERMIONE CAN DO</h2>
+        <p>Approve and turn away registrations. Give, take and set points. Set anyone's rank.
+          Choose who appears on the leaderboard. Delete accounts. Read every finished set of
+          lines and every summary handed in. Write the subliminal messages, the Devotion and
+          Penance presets, and the lines the login screen decrypts.</p>
+        <p>And whatever she has in the games that is not written down.</p>
+      </section>
+
+      <div class="foot">angelOS v0.2 &nbsp;·&nbsp; revised 30 july 2026</div>
+    </main>
+  </div>
+  <div class="vig"></div><div class="scan"></div>
 
   <script>
+    // the index is built from the page, so a new section cannot fall out of it
+    const nav = document.getElementById("index");
+    const main = document.getElementById("body");
+    const secs = [...main.querySelectorAll("section")];
+    secs.forEach((sec) => {
+      const a = document.createElement("a");
+      a.textContent = sec.querySelector("h2").textContent.toLowerCase();
+      a.addEventListener("click", () => main.scrollTo({
+        top: sec.offsetTop - main.offsetTop, behavior: "smooth",
+      }));
+      nav.append(a);
+    });
+    // mark whichever section is nearest the top of the reading column
+    const links = [...nav.querySelectorAll("a")];
+    main.addEventListener("scroll", () => {
+      let at = 0;
+      secs.forEach((sec, i) => { if (sec.getBoundingClientRect().top < 140) at = i; });
+      links.forEach((a, i) => a.classList.toggle("on", i === at));
+    }, { passive: true });
 
-    window.siteMe()
-      .then((d) => {
-      })
-      .catch(() => (window.location.href = "/"));
+    window.siteMe().catch(() => (window.location.href = "/"));
   </script>
   <script src="/nav.js" defer></script>
-  <script src="/notifications.js" defer></script>
   <script src="/updatecheck.js" defer></script>
   <script src="/console.js" defer></script>
   <script src="/ambience.js" defer></script>
