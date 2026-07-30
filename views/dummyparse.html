@@ -86,6 +86,51 @@
     animation:pop .28s ease-out forwards}
   @keyframes pop{from{opacity:1;transform:translate(-50%,-50%) scale(.4)}to{opacity:0;transform:translate(-50%,-50%) scale(1.5)}}
 
+  /* ---- impact art: one per ability school, drawn on the dummy ---- */
+  .fx{position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);pointer-events:none;z-index:4}
+  .fx-burst{width:150px;height:150px;border-radius:50%;border:2px solid rgba(255,150,120,.9);
+    animation:fxring .5s ease-out forwards}
+  .fx-column{width:70px;height:230px;
+    background:linear-gradient(180deg,rgba(255,255,255,.85),rgba(120,190,255,.25) 40%,transparent);
+    animation:fxcol .5s ease-out forwards}
+  .fx-sigil{width:130px;height:130px;border:2px solid var(--accent);
+    animation:fxsigil .6s ease-out forwards}
+  .fx-note{width:120px;height:120px;border-radius:50%;border:2px dashed var(--gold);
+    animation:fxring .55s ease-out forwards}
+  .fx-clock{width:120px;height:120px;border-radius:50%;
+    border:2px solid var(--gold);border-right-color:transparent;border-bottom-color:transparent;
+    animation:fxclock .6s ease-out forwards}
+  .fx-halo{width:170px;height:60px;border-radius:50%;border:2px solid rgba(255,210,122,.9);
+    animation:fxring .55s ease-out forwards}
+  .fx-spike i,.fx-spear i{position:absolute;left:50%;top:50%;width:3px;height:26px;
+    background:linear-gradient(180deg,#fff,rgba(255,90,70,0));
+    transform-origin:50% 0;transform:rotate(var(--a)) translateY(0);
+    animation:fxshard .45s ease-out forwards}
+  .fx-spear i{background:linear-gradient(180deg,#fff,rgba(160,220,255,0))}
+  @keyframes fxring{from{opacity:.95;transform:translate(-50%,-50%) scale(.35)}
+    to{opacity:0;transform:translate(-50%,-50%) scale(1.35)}}
+  @keyframes fxcol{0%{opacity:0;transform:translate(-50%,-50%) scaleY(.2)}
+    25%{opacity:1}100%{opacity:0;transform:translate(-50%,-50%) scaleY(1.1)}}
+  @keyframes fxsigil{from{opacity:.95;transform:translate(-50%,-50%) rotate(0deg) scale(.4)}
+    to{opacity:0;transform:translate(-50%,-50%) rotate(120deg) scale(1.25)}}
+  @keyframes fxclock{from{opacity:.95;transform:translate(-50%,-50%) rotate(0deg) scale(.5)}
+    to{opacity:0;transform:translate(-50%,-50%) rotate(-320deg) scale(1.2)}}
+  @keyframes fxshard{from{opacity:1;transform:rotate(var(--a)) translateY(0) scaleY(.4)}
+    to{opacity:0;transform:rotate(var(--a)) translateY(var(--d)) scaleY(1)}}
+
+  /* ---- leaderboard ---- */
+  .lbrow{display:grid;grid-template-columns:2.4rem 1fr 5rem 5rem 4rem;gap:.5rem;
+    font-size:12px;padding:.34rem .2rem;border-bottom:1px solid rgba(44,74,94,.5)}
+  .lbrow.head{color:var(--dim);font-size:9px;letter-spacing:.26em;text-transform:uppercase;border-color:var(--dim2)}
+  .lbrow b{color:var(--bright);font-weight:400}
+  .lbrow.me{background:rgba(120,190,255,.09)}
+  .lbwrap{height:100%;display:flex;flex-direction:column;border:1px solid var(--dim2);padding:1rem 1.2rem;min-height:0}
+  .lbtabs{display:flex;gap:.4rem;margin-bottom:.8rem}
+  .modesel{display:flex;gap:.4rem;align-items:center}
+  .modesel select{background:#04070a;border:1px solid var(--dim2);color:var(--bright);
+    font-family:inherit;font-size:9px;letter-spacing:.2em;text-transform:uppercase;padding:.3rem .5rem;cursor:pointer}
+  .modesel select:disabled{opacity:.4}
+
   /* ---- cast bar + resources, floated at the foot of the arena ---- */
   .castwrap{position:absolute;left:50%;bottom:1.1rem;transform:translateX(-50%);width:min(460px,74%);text-align:center}
   .castbar{height:20px;border:1px solid var(--c);position:relative;background:rgba(0,0,0,.7);overflow:hidden}
@@ -203,7 +248,14 @@
       <button class="tab on" type="button" data-view="parse">parse</button>
       <button class="tab" type="button" data-view="build">build</button>
       <button class="tab" type="button" data-view="rotation">rotation</button>
+      <button class="tab" type="button" data-view="board">leaderboard</button>
     </div>
+    <span class="modesel"><label for="mode">MODE</label>
+      <select id="mode">
+        <option value="0">free run</option>
+        <option value="30">30 seconds</option>
+        <option value="60">60 seconds</option>
+      </select></span>
     <span id="statusline">allocate your stats, then pull</span>
     <span><span class="live" id="livedot" hidden>● IN COMBAT</span> <span id="clock">00:00</span></span>
   </div>
@@ -266,6 +318,19 @@
         <div class="lbl">RESULTING NUMBERS</div>
         <div id="derived" style="font-size:11.5px;line-height:2"></div>
       </section>
+    </div>
+  </div>
+
+  <!-- =================== leaderboard ===================== -->
+  <div class="view" id="view-board">
+    <div class="lbwrap">
+      <div class="lbtabs">
+        <button class="tab on" type="button" data-lb="30">30 seconds</button>
+        <button class="tab" type="button" data-lb="60">60 seconds</button>
+      </div>
+      <div id="lbrows" style="overflow-y:auto;min-height:0"></div>
+      <div class="tlnote" style="margin-top:.8rem">Only timed runs are ranked: a free run
+        ends whenever you decide it has, so it cannot be compared. Best run per player.</div>
     </div>
   </div>
 
@@ -336,27 +401,36 @@ const FRACTURE_PER_STACK = 0.08;     // +8% to the next ability, per stack
    travel > 0 means a projectile: damage lands when it arrives.
    travel = 0 is hitscan: damage lands the instant the cast finishes. */
 const ABILITIES = [
-  { id:"decree", key:"1", name:"Decree", cast:2.0, cd:12, mana:900, dmg:900, travel:0.35,
-    flame:5, text:"Big hit. Applies 5 Divine Flame." },
-  { id:"timeturn", key:"2", name:"Timeturn", cast:8.0, cd:30, mana:700, dmg:0, travel:0,
-    channel:true, tick:2.0, cdrPct:0.15,
-    text:"Channel. Every 2s, cuts 15% off every active cooldown." },
-  { id:"brand", key:"3", name:"Brand", cast:1.5, cd:90, mana:1200, dmg:0, travel:0,
+  { id:"smite", key:"1", name:"Smite", cast:1.5, cd:0, mana:600, dmg:400, travel:0.28,
+    perFlame:90, fx:"spike", tone:392,
+    text:"No cooldown. Hits harder for every Divine Flame stack on the target." },
+  { id:"decree", key:"2", name:"Decree", cast:2.0, cd:30, mana:900, dmg:900, travel:0.35,
+    flame:5, fx:"burst", tone:262,
+    text:"Big hit. Applies 5 Divine Flame." },
+  { id:"judgement", key:"3", name:"Judgement", cast:5.0, cd:45, mana:1800, dmg:2600, travel:0,
+    flame:10, over:3.0, overTicks:6, fx:"column", tone:196,
+    text:"Very big hit, dealt over 3s. Applies 10 Divine Flame." },
+  { id:"lightspear", key:"4", name:"Lightspear", cast:0, cd:25, mana:750, dmg:1500, travel:0.22,
+    consume:5, fx:"spear", tone:587,
+    text:"Instant. Eats 5 Divine Flame to hit far harder." },
+  { id:"timeturn", key:"5", name:"Timeturn", cast:4.0, cd:120, mana:700, dmg:0, travel:0,
+    channel:true, tick:1.0, cdrPct:0.15, refill:true, fx:"clock", tone:330,
+    text:"Channel. Every 1s cuts 15% off every active cooldown, and refills your mana over the cast." },
+  { id:"brand", key:"q", name:"Brand", cast:1.5, cd:90, mana:1200, dmg:0, travel:0,
+    fx:"sigil", tone:220,
     text:"+50% damage for 15s. Banks half of what you deal, then detonates for half of that." },
-  { id:"judgement", key:"4", name:"Judgement", cast:5.0, cd:45, mana:1800, dmg:2600, travel:0,
-    flame:10, text:"Very big hit. Applies 10 Divine Flame." },
-  { id:"melody", key:"5", name:"Melody", cast:0, cd:25, mana:400, dmg:0, travel:0,
-    text:"Instant. +20% Haste and +20% Fracture Chance for 15s." },
-  { id:"mark", key:"q", name:"Temporal Mark", cast:0, cd:16, mana:350, dmg:0, travel:0,
+  { id:"mark", key:"e", name:"Temporal Mark", cast:0, cd:45, mana:350, dmg:0, travel:0,
+    fx:"clock", tone:349,
     text:"Instant. For 20s, every crit cuts 3% off active cooldowns." },
-  { id:"rewind", key:"e", name:"Rewind", cast:0, cd:60, mana:500, dmg:0, travel:0,
+  { id:"rewind", key:"g", name:"Rewind", cast:0, cd:60, mana:500, dmg:0, travel:0,
+    fx:"clock", tone:294,
     text:"Instant. Resets the cooldown of the last ability you used." },
-  { id:"smite", key:"r", name:"Smite", cast:1.5, cd:18, mana:600, dmg:400, travel:0.28,
-    perFlame:90, text:"Hits harder for every Divine Flame stack on the target." },
-  { id:"vigil", key:"f", name:"Vigil", cast:4.0, cd:30, mana:1000, dmg:300, travel:0,
-    vigil:18, text:"Applies a DoT that raises your Critical Damage while it runs." },
-  { id:"lightspear", key:"g", name:"Lightspear", cast:0, cd:15, mana:750, dmg:1500, travel:0.22,
-    consume:5, text:"Instant. Eats 5 Divine Flame to hit far harder." },
+  { id:"melody", key:"f", name:"Melody", cast:0, cd:35, mana:400, dmg:0, travel:0,
+    fx:"note", tone:494,
+    text:"Instant. +20% Haste and +20% Fracture Chance for 15s." },
+  { id:"vigil", key:"r", name:"Vigil", cast:1.5, cd:30, mana:1000, dmg:300, travel:0,
+    vigil:18, fx:"halo", tone:440,
+    text:"Applies a DoT that raises your Critical Damage while it runs." },
 ];
 const BY_KEY = {}; ABILITIES.forEach(a => BY_KEY[a.key] = a);
 const BY_ID  = {}; ABILITIES.forEach(a => BY_ID[a.id] = a);
@@ -376,10 +450,88 @@ function freshState() {
     brandUntil:0, brandBank:0,
     total:0, byAbility:{}, events:[], log:[],
     projectiles:[],
+    overTime:[],                 // Judgement and anything else paid out in ticks
+    limit:0,                     // 0 = run until you stop; 30 or 60 = timed
+    ended:false,
     // rotation timeline: what was cast, when the GCD ran, and how long each
     // cooldown actually lasted after Timeturn/Mark/Rewind got at it
     casts:[], gcds:[], cdlog:[],
   };
+}
+
+/* ---------- sound ----------
+   One helper for every spell noise, so the whole game has a single voice.
+   These ride the *typing* channel because the settings panel only carries
+   three, the same compromise the hover blips already make. */
+function actx(){ const b = window.AudioBus; return b && b.ctx(); }
+function out(){ const b = window.AudioBus; return b && b.channel("typing"); }
+
+function blip(freq, ms, type, peak, slideTo) {
+  const ctx = actx(), dest = out();
+  if (!ctx || !dest) return;
+  const osc = ctx.createOscillator(), g = ctx.createGain();
+  osc.type = type || "sine";
+  osc.frequency.setValueAtTime(freq, ctx.currentTime);
+  if (slideTo) osc.frequency.exponentialRampToValueAtTime(slideTo, ctx.currentTime + ms / 1000);
+  g.gain.setValueAtTime(0.0001, ctx.currentTime);
+  g.gain.exponentialRampToValueAtTime(peak || 0.12, ctx.currentTime + 0.01);
+  g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + ms / 1000);
+  osc.connect(g); g.connect(dest);
+  osc.start(); osc.stop(ctx.currentTime + ms / 1000 + 0.03);
+}
+
+// a held tone that climbs while a cast runs, cut off when it ends or is cancelled
+let castVoice = null;
+function startCastVoice(a, seconds) {
+  stopCastVoice();
+  const ctx = actx(), dest = out();
+  if (!ctx || !dest) return;
+  const osc = ctx.createOscillator(), g = ctx.createGain();
+  osc.type = a.channel ? "triangle" : "sawtooth";
+  const base = (a.tone || 300) * 0.5;
+  osc.frequency.setValueAtTime(base, ctx.currentTime);
+  osc.frequency.linearRampToValueAtTime(base * 1.6, ctx.currentTime + Math.max(0.1, seconds));
+  g.gain.setValueAtTime(0.0001, ctx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.035, ctx.currentTime + 0.08);
+  osc.connect(g); g.connect(dest);
+  osc.start();
+  castVoice = { osc, g, ctx };
+}
+function stopCastVoice() {
+  if (!castVoice) return;
+  const { osc, g, ctx } = castVoice;
+  castVoice = null;
+  try {
+    g.gain.cancelScheduledValues(ctx.currentTime);
+    g.gain.setValueAtTime(Math.max(0.0001, g.gain.value), ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.06);
+    osc.stop(ctx.currentTime + 0.09);
+  } catch (e) {}
+}
+const sfxCastDone = (a) => blip(a.tone || 330, 180, "square", 0.10, (a.tone || 330) * 1.9);
+const sfxImpact = (crit) => {
+  blip(crit ? 160 : 120, crit ? 260 : 150, "sawtooth", crit ? 0.16 : 0.09, crit ? 60 : 55);
+  if (crit) blip(880, 200, "triangle", 0.10, 1600);
+};
+const sfxCancel = () => blip(300, 130, "sine", 0.08, 90);
+
+/* ---------- impact art ----------
+   Every landing draws something on the dummy, keyed off the ability's own
+   `fx`, so a Lightspear does not look like a Vigil tick. */
+function impactFx(kind) {
+  const arena = document.getElementById("arena");
+  const el = document.createElement("div");
+  el.className = "fx fx-" + (kind || "burst");
+  if (kind === "spear" || kind === "spike") {
+    for (let i = 0; i < 5; i++) {
+      const sh = document.createElement("i");
+      sh.style.setProperty("--a", (Math.random() * 360) + "deg");
+      sh.style.setProperty("--d", (28 + Math.random() * 46) + "px");
+      el.append(sh);
+    }
+  }
+  arena.append(el);
+  setTimeout(() => el.remove(), 700);
 }
 
 /* ---------- derived numbers ---------- */
@@ -421,6 +573,8 @@ function dealDamage(base, label, kind, opts) {
   }
   floatText(amount, crit ? "crit" : kind === "dot" ? "dot" : kind === "brand" ? "brand" : "norm");
   hitDummy();
+  impactFx(opts && opts.fx);
+  sfxImpact(crit);
   pushLog(`${label} ${crit ? "<span class='cr'>CRIT</span> " : ""}<b>${amount.toLocaleString()}</b>`);
   return amount;
 }
@@ -444,6 +598,7 @@ function ready(a) {
 
 function tryCast(a) {
   if (!ready(a)) return;
+  const prevCd = S.cd[a.id] || 0;
   S.mana -= a.mana;
   // The GCD starts when the cast BEGINS, so a cast at or above the GCD length
   // hides it entirely; only shorter casts and instants ever wait on it.
@@ -455,14 +610,35 @@ function tryCast(a) {
   S.cdlog.push({ id:a.id, start:S.t, end:S.cd[a.id], open:true });
   S.casts.push({ id:a.id, name:a.name, start:S.t, end:S.t + len, channel:!!a.channel, instant:len <= 0 });
   if (len <= 0) { finishCast(a); return; }
-  S.cast = { a, start:S.t, end:S.t + len, nextTick: a.channel ? S.t + (a.tick / (1 + haste())) : 0 };
+  S.cast = {
+    a, start:S.t, end:S.t + len,
+    nextTick: a.channel ? S.t + (a.tick / (1 + haste())) : 0,
+    prevCd, manaSpent: a.mana,
+  };
+  startCastVoice(a, len);
   pushLog(`casting <b>${a.name}</b>`);
 }
 
 function finishCast(a) {
   S.cast = null;
+  stopCastVoice();
+  sfxCastDone(a);
   if (a.travel > 0 && a.dmg > 0) { launch(a); return; }
   applyEffect(a);
+}
+
+// Escape drops the cast. The GCD is already spent and stays spent, but the
+// mana and the cooldown are handed back, so pulling out of a long cast is a
+// real choice rather than a pure loss.
+function cancelCast() {
+  if (!S || !S.cast) return;
+  const c = S.cast;
+  S.cast = null;
+  stopCastVoice();
+  sfxCancel();
+  S.mana = Math.min(MANA_MAX, S.mana + c.manaSpent);
+  S.cd[c.a.id] = c.prevCd;
+  pushLog(`<b>${c.a.name}</b> cancelled`);
 }
 
 // projectile: the hit lands when it arrives, not when the cast ends
@@ -478,20 +654,28 @@ function launch(a) {
 function applyEffect(a) {
   switch (a.id) {
     case "decree":
-      dealDamage(a.dmg, a.name, "hit");
+      dealDamage(a.dmg, a.name, "hit", { fx: a.fx });
       addFlame(a.flame);
       break;
     case "judgement":
-      dealDamage(a.dmg, a.name, "hit");
+      // paid out over three seconds rather than in one lump
+      S.overTime.push({
+        label: a.name, fx: a.fx,
+        per: a.dmg / a.overTicks,
+        left: a.overTicks,
+        interval: a.over / a.overTicks,
+        next: S.t,
+      });
       addFlame(a.flame);
+      pushLog(`<b>Judgement</b> begins, ${a.over}s`);
       break;
     case "smite":
-      dealDamage(a.dmg + a.perFlame * S.flame, a.name, "hit");
+      dealDamage(a.dmg + a.perFlame * S.flame, a.name, "hit", { fx: a.fx });
       break;
     case "lightspear": {
       const used = Math.min(a.consume, S.flame);
       S.flame -= used;
-      dealDamage(a.dmg + used * 210, a.name, "hit");
+      dealDamage(a.dmg + used * 210, a.name, "hit", { fx: a.fx });
       pushLog(`Lightspear consumed <b>${used}</b> Divine Flame`);
       break;
     }
@@ -515,11 +699,13 @@ function applyEffect(a) {
       } else pushLog(`<b>Rewind</b> found nothing to reset`);
       break;
     case "vigil":
-      dealDamage(a.dmg, a.name, "hit");
+      dealDamage(a.dmg, a.name, "hit", { fx: a.fx });
       S.vigilUntil = S.t + a.vigil; S.vigilNext = S.t + 2;
       S.buffs.vigil = { until:S.vigilUntil, label:"Vigil +crit dmg", gold:true };
       break;
   }
+  // the buff-only casts land nothing, so give them their own flourish
+  if (["brand", "melody", "mark", "rewind"].includes(a.id)) impactFx(a.fx);
   // Rewind targets the ability used before Rewind itself
   if (a.id !== "rewind") S.lastPrev = a.id;
 }
@@ -556,6 +742,24 @@ function frame(now) {
 
   // mana
   S.mana = Math.min(MANA_MAX, S.mana + manaRegen() * dt);
+  // Timeturn refills the pool over its own cast
+  if (S.cast && S.cast.a.refill) {
+    const span = Math.max(0.1, S.cast.end - S.cast.start);
+    S.mana = Math.min(MANA_MAX, S.mana + (MANA_MAX / span) * dt);
+  }
+
+  // anything being paid out in ticks (Judgement)
+  for (let i = S.overTime.length - 1; i >= 0; i--) {
+    const ot = S.overTime[i];
+    while (ot.left > 0 && S.t >= ot.next) {
+      dealDamage(ot.per, ot.label, "hit", { fx: ot.fx });
+      ot.left--; ot.next += ot.interval;
+    }
+    if (ot.left <= 0) S.overTime.splice(i, 1);
+  }
+
+  // a timed run stops itself
+  if (S.limit && S.t >= S.limit && !S.ended) { S.t = S.limit; end(); return; }
 
   // cast / channel
   if (S.cast) {
@@ -563,6 +767,7 @@ function frame(now) {
     if (c.a.channel && S.t >= c.nextTick && S.t < c.end) {
       c.nextTick += c.a.tick / (1 + haste());
       reduceCooldowns(c.a.cdrPct);
+      impactFx("clock");
       pushLog(`<b>Timeturn</b> tick: cooldowns cut ${Math.round(c.a.cdrPct*100)}%`);
     }
     if (S.t >= c.end) finishCast(c.a);
@@ -586,12 +791,12 @@ function frame(now) {
   if (S.flame > 0 && S.t >= S.flameNext) {
     S.flameNext += FLAME_TICK;
     if (S.t > S.flameUntil) { S.flame = 0; pushLog(`Divine Flame faded`); }
-    else dealDamage(FLAME_PER_STACK * S.flame, "Divine Flame", "dot", { isDot:true });
+    else dealDamage(FLAME_PER_STACK * S.flame, "Divine Flame", "dot", { isDot:true, fx:"burst" });
   }
   // Vigil DoT ticks
   if (S.t < S.vigilUntil && S.t >= S.vigilNext) {
     S.vigilNext += 2;
-    dealDamage(150, "Vigil", "dot", { isDot:true });
+    dealDamage(150, "Vigil", "dot", { isDot:true, fx:"halo" });
   }
   // Brand detonation
   if (S.brandUntil && S.t >= S.brandUntil) {
@@ -649,6 +854,7 @@ document.querySelectorAll(".tab").forEach(btn => {
     document.querySelectorAll(".view").forEach(v => v.classList.toggle("on", v.id === "view-" + view));
     if (view === "rotation") renderTimeline();
     if (view === "build") renderStats();
+    if (view === "board") loadBoard();
   });
 });
 
@@ -736,8 +942,11 @@ document.getElementById("tlmode").addEventListener("click", () => {
 /* ---------- render ---------- */
 function render() {
   const t = S.t || 0.001;
+  const shown = S.limit && S.running ? Math.max(0, S.limit - t) : t;
   document.getElementById("clock").textContent =
-    String(Math.floor(t/60)).padStart(2,"0") + ":" + String(Math.floor(t%60)).padStart(2,"0");
+    (S.limit && S.running ? "-" : "") +
+    String(Math.floor(shown/60)).padStart(2,"0") + ":" +
+    String(Math.floor(shown%60)).padStart(2,"0");
   document.getElementById("parsetime").textContent = t.toFixed(1) + "s";
   document.getElementById("dps").textContent = Math.round(S.total / t).toLocaleString();
   document.getElementById("taken").textContent = S.total.toLocaleString();
@@ -882,6 +1091,10 @@ document.addEventListener("keydown", (e) => {
   if (e.repeat) return;
   const tag = (e.target && e.target.tagName || "").toLowerCase();
   if (tag === "input" || tag === "textarea") return;
+  if (e.key === "Escape") {
+    if (S && S.running && S.cast) { e.preventDefault(); cancelCast(); }
+    return;
+  }
   const k = (e.key || "").toLowerCase();
   const a = BY_KEY[k];
   if (!a) return;
@@ -891,20 +1104,28 @@ document.addEventListener("keydown", (e) => {
 
 /* ---------- run control ---------- */
 function pull() {
+  const mode = Number(document.getElementById("mode").value) || 0;
   S = freshState();
+  S.limit = mode;
   S.running = true;
   lastFrame = performance.now();
   document.getElementById("pull").disabled = true;
   document.getElementById("stop").disabled = false;
   document.getElementById("livedot").hidden = false;
-  document.getElementById("statusline").textContent = "in combat";
+  document.getElementById("statusline").textContent =
+    S.limit ? "in combat, " + S.limit + "s" : "in combat";
+  document.getElementById("mode").disabled = true;
   renderStats();                               // greys the +/- out
   if (!raf) raf = requestAnimationFrame(frame);
 }
 async function end() {
   if (!S || !S.running) return;
   S.running = false;
+  S.ended = true;
+  S.cast = null;
+  stopCastVoice();
   syncCooldownBars();
+  document.getElementById("mode").disabled = false;
   document.getElementById("pull").disabled = false;
   document.getElementById("stop").disabled = true;
   document.getElementById("livedot").hidden = true;
@@ -917,25 +1138,84 @@ async function end() {
     await fetch("/api/parse", {
       method:"POST", headers:{ "Content-Type":"application/json" },
       body: JSON.stringify({
-        cls:"priest", duration:+S.t.toFixed(2), total:S.total, dps,
+        cls:"priest", mode:String(S.limit || "free"),
+        duration:+S.t.toFixed(2), total:S.total, dps,
         build: Object.assign({}, points),
         byAbility: S.byAbility,
         events: S.events.slice(0, 4000),
       }),
     });
     pushLog(`<b>parse saved</b>`);
+    if (S.limit) loadBoard();
   } catch (e) { pushLog(`parse could not be saved`); }
   render();
 }
 document.getElementById("pull").addEventListener("click", pull);
 document.getElementById("stop").addEventListener("click", end);
 
+/* ---------- leaderboard ----------
+   Only the timed modes are ranked. A free run ends when the player says so,
+   which makes its dps meaningless as a comparison. */
+let lbMode = "30";
+document.querySelectorAll("[data-lb]").forEach((b) => {
+  b.addEventListener("click", () => {
+    lbMode = b.dataset.lb;
+    document.querySelectorAll("[data-lb]").forEach((x) => x.classList.toggle("on", x === b));
+    loadBoard();
+  });
+});
+
+async function loadBoard() {
+  const rows = document.getElementById("lbrows");
+  rows.textContent = "loading…";
+  let data;
+  try {
+    const res = await fetch("/api/parses/leaderboard?mode=" + encodeURIComponent(lbMode));
+    if (!res.ok) throw new Error();
+    data = await res.json();
+  } catch (e) { rows.textContent = "could not load the leaderboard."; return; }
+
+  rows.replaceChildren();
+  const head = document.createElement("div");
+  head.className = "lbrow head";
+  ["#", "player", "dps", "damage", "when"].forEach((t) => {
+    const s = document.createElement("span"); s.textContent = t; head.append(s);
+  });
+  rows.append(head);
+  if (!data.parses.length) {
+    const empty = document.createElement("div");
+    empty.className = "tlnote";
+    empty.textContent = "nobody has run " + lbMode + " seconds yet.";
+    rows.append(empty);
+    return;
+  }
+  data.parses.forEach((p, i) => {
+    const row = document.createElement("div");
+    row.className = "lbrow" + (p.player === window.__me ? " me" : "");
+    const cells = [
+      String(i + 1),
+      p.player,
+      Number(p.dps).toLocaleString(),
+      Number(p.total).toLocaleString(),
+      new Date(p.at).toLocaleDateString(),
+    ];
+    cells.forEach((t, n) => {
+      const el = document.createElement(n === 2 ? "b" : "span");
+      el.textContent = t;
+      row.append(el);
+    });
+    rows.append(row);
+  });
+}
+
 /* ---------- boot ---------- */
 loadBuild();
 S = freshState();
 renderStats();
 render();
-window.siteMe().catch(() => (window.location.href = "/"));
+window.siteMe()
+  .then((d) => { window.__me = d.username; })
+  .catch(() => (window.location.href = "/"));
 </script>
 <script src="/nav.js" defer></script>
 <script src="/notifications.js" defer></script>

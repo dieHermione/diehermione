@@ -945,6 +945,8 @@ app.post("/api/parse", (req, res) => {
     player: who,
     guest: Boolean(req.session.guest),
     cls: String(b.cls || "priest").slice(0, 20),
+    // "free", "30" or "60"; only the timed ones are ever ranked
+    mode: ["30", "60"].includes(String(b.mode)) ? String(b.mode) : "free",
     at: new Date().toISOString(),
     duration: +duration.toFixed(2),
     total: Math.round(total),
@@ -960,6 +962,23 @@ app.post("/api/parse", (req, res) => {
 });
 
 // Summaries only. The event list is large and nothing needs it yet.
+// Best timed run per player. A free run stops whenever the player likes, so
+// its dps is not comparable and never appears here.
+app.get("/api/parses/leaderboard", (req, res) => {
+  if (!playerId(req)) return res.status(401).json({ error: "Not logged in." });
+  const mode = ["30", "60"].includes(String(req.query.mode)) ? String(req.query.mode) : "30";
+  const best = new Map();
+  for (const p of loadParses()) {
+    if (p.mode !== mode) continue;
+    const prev = best.get(p.player);
+    if (!prev || p.dps > prev.dps) {
+      best.set(p.player, { player: p.player, guest: p.guest, dps: p.dps, total: p.total, at: p.at });
+    }
+  }
+  const parses = [...best.values()].sort((a, b) => b.dps - a.dps).slice(0, 50);
+  res.json({ mode, parses });
+});
+
 app.get("/api/parses", (req, res) => {
   if (!playerId(req)) return res.status(401).json({ error: "Not logged in." });
   const mine = String(req.query.mine || "") === "1";
