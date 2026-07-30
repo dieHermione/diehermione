@@ -141,8 +141,9 @@
         tag: "lines, for mantras",  sub: "the gentle sibling" },
       { n: "deathroll",  t: "red",   g: "X", href: "/deathroll",
         tag: "two-player dice",     sub: "first to roll a 1 loses", multi: true },
+      // Elysium is requireLogin, not requirePlayer: a tree has to be remembered
       { n: "elysium",    t: "green", g: "E", href: "/elysium",
-        tag: "care for a tree",     sub: "slow, and it remembers" },
+        tag: "care for a tree",     sub: "slow, and it remembers", multi: true },
       { n: "wheel",      t: "blue",  g: "W", href: "/wheel",
         tag: "one turn a day",      sub: "pays angelcoins" },
       { n: "chess",      t: "paper", g: "C", href: "/chess",
@@ -187,7 +188,7 @@
         a.className = "p " + g.t;
         a.href = g.href;
         a.tabIndex = 0;
-        // multiplayer needs an account, so a guest sees it pasted over
+        // anything needing an account is pasted over for a guest
         const locked = guest && g.multi;
         if (locked) {
           a.classList.add("locked");

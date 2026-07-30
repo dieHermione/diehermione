@@ -37,6 +37,8 @@
     .links a { font-size: 1.08rem; padding: 0.16rem 0; position: relative; }
     .links a::before { content: "› "; color: var(--dim2); }
     .links a:hover { color: var(--bright); text-shadow: 0 0 10px var(--glow); }
+    .links.locked span { font-size: 1.08rem; padding: 0.16rem 0; color: var(--dim2); }
+    .links.locked span::before { content: "× "; }
 
     .links a[data-tip]::after {
       content: "// " attr(data-tip);
@@ -68,21 +70,27 @@
 
     <div class="cols">
       <section>
-        <div class="stitle">alone</div>
+        <div class="stitle">open to you</div>
         <div class="links">
-          <a href="/snake" data-tip="Chase the food. Classic Snake clone.">Snake</a>
-          <a href="/writing" data-tip="A writeforme clone for punishments.">Penance</a>
-          <a href="/writing?mode=devotion" data-tip="A calmer writeforme clone for mantras.">Devotion</a>
-          <a href="/wheel" data-tip="One spin. Pays angelcoins, which a guest cannot keep.">Wheel</a>
-          <a href="/dummyparse" data-tip="Beat on a target dummy. Optimise stats and rotation for damage.">Dummy Parse</a>
+          <a href="/games">Every game &rarr;</a>
+          <a href="/snake">Snake</a>
+          <a href="/writing">Penance</a>
+          <a href="/writing?mode=devotion">Devotion</a>
+          <a href="/wheel">Wheel</a>
+          <a href="/dummyparse">Dummy Parse</a>
+          <a href="/skillcheck">Skill Check</a>
+          <a href="/summary">Summary</a>
         </div>
       </section>
       <section>
-        <div class="stitle">against hermione</div>
-        <div class="links">
-          <a href="/deathroll" data-tip="A two-player dice game. The first player to roll a 1 loses.">Deathroll</a>
-          <a href="/chess" data-tip="Chess against Hermione. She plays black.">Chess</a>
+        <div class="stitle">needs an account</div>
+        <div class="links locked">
+          <span>Deathroll</span>
+          <span>Chess</span>
+          <span>Elysium</span>
         </div>
+        <p class="note" style="margin-top:1.2rem">Multiplayer and anything that has
+          to be remembered between visits needs somewhere to remember it.</p>
       </section>
     </div>
 
