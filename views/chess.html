@@ -6,370 +6,407 @@
   <title>Chess - angeldom.me</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cause:wght@400..700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/site.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <script src="/me.js"></script>
-  <style>    :root {
-      --picker-bg: #fff;
-      --picker-text: #333;
-      --border-color: #444444;
-      --board-light: #ffffff;
-      --board-dark: #b0b0b0;
-      --board-selected: #f5c542;
-      --board-last: #fce9b8;
-    }    body[data-theme="dark"] {
-      --picker-bg: #2a2a2a;
-      --picker-text: #ececec;
-      --border-color: #1f1f1f;
-      --board-light: #e6e6e6;
-      --board-dark: #6e6e6e;
-      --board-selected: #f5c542;
-      --board-last: #d9c27a;
+  <style>
+    /* Chess, "ink wash" (mockup 9): rice paper, sumi brush, a lot of empty
+       space, one red seal. Self-contained, no site.css. */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    [hidden] { display: none !important; }
+
+    :root {
+      --paper: #efe9dd;
+      --ink: #2b2723;
+      --ink-soft: #6d6459;
+      --ink-faint: #857b6f;
+      --dark-sq: #c3bbab;
+      --light-sq: #efe9dd;
+      --vermilion: #a4322a;
+      /* the shared-shell scripts (console, ambience) read these */
+      --c: var(--ink); --dim: var(--ink-faint); --bright: #16130f;
+      --accent: var(--vermilion); --glow: rgba(90, 80, 70, 0.25); --err: var(--vermilion);
     }
-    .site-header {
-      font-family: "Cause", sans-serif;
-      font-size: 3rem;
-      font-weight: 700;
-      color: var(--header-color);
-      text-shadow: 0 2px 12px rgba(255, 255, 255, 0.6);
-      text-align: center;
-      margin-bottom: 1.25rem;
-      padding: 20px 0;
-    }
-    .bow { display: inline-block; }
-    .bow.flip { transform: scaleX(-1); }
-    .card {
-      background: var(--panel-bg);
-      border-radius: 12px;
-      box-shadow: 0 10px 40px var(--shadow);
-      width: 100%;
-      max-width: 572px;
-      padding: 2.2rem;
-      text-align: center;
-      color: var(--text-color);
-    }
-    .status { color: var(--text-color); font-weight: 600; margin-bottom: 1rem; min-height: 1.4em; }
-    .picker { margin-bottom: 1rem; }
-    .picker select {
-      padding: 0.4rem 0.6rem;
-      border: 1px solid var(--picker-bg);
-      border-radius: 8px;
-      font-size: 0.95rem;
-      background: var(--picker-bg);
-      color: var(--picker-text);
-    }
-    #board {
-      display: grid;
-      grid-template-columns: repeat(8, 1fr);
-      grid-template-rows: repeat(8, 1fr);
-      width: 100%;
-      max-width: 440px;
-      aspect-ratio: 1;
-      margin: 0 auto 1.25rem;
-      border: 3px solid var(--border-color);
-      border-radius: 8px;
+
+    html, body { height: 100%; }
+    body {
+      background: var(--paper);
+      color: var(--ink);
+      font-family: "Cormorant Garamond", serif;
+      font-size: 16px;
       overflow: hidden;
+    }
+    /* two soft washes so the paper is never a flat fill */
+    body::before {
+      content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background:
+        radial-gradient(70% 60% at 80% 18%, rgba(120,110,95,0.14), transparent 60%),
+        radial-gradient(50% 50% at 8% 92%, rgba(120,110,95,0.12), transparent 60%);
+    }
+
+    .sheet {
+      position: absolute; inset: 0; z-index: 1;
+      display: grid; grid-template-columns: 1fr auto;
+      gap: 4rem; align-items: center;
+      padding: 5vh 5vw;
+    }
+    .col { min-width: 0; }
+
+    h1 { font-size: clamp(2.2rem, 4vw, 4.2rem); font-weight: 300; line-height: .95; }
+    h1 em { font-style: italic; color: var(--ink-soft); }
+    .rule { width: 110px; height: 2px; background: var(--ink); margin: 1.2rem 0; transform: rotate(-.6deg); }
+
+    .meta {
+      font-family: Inter, sans-serif; font-size: 9px; letter-spacing: .34em;
+      text-transform: uppercase; color: var(--ink-faint); line-height: 2.4;
+    }
+    .meta b { color: var(--ink); font-weight: 500; letter-spacing: .1em; }
+    .meta .taken { font-family: "Cormorant Garamond", serif; font-size: 1.2rem; letter-spacing: 0; }
+
+    .status {
+      font-size: 1.35rem; font-style: italic; color: var(--ink-soft);
+      margin-top: 1rem; min-height: 1.6em;
+    }
+    .status.alert { color: var(--vermilion); font-style: normal; }
+
+    .moves {
+      font-size: 1.02rem; line-height: 1.85; color: var(--ink-soft);
+      column-count: 2; column-gap: 1.6rem; margin-top: 1.1rem;
+      max-width: 26rem; max-height: 12rem; overflow: hidden;
+    }
+    .moves b { color: var(--ink); font-weight: 600; }
+    .moves .empty { color: var(--ink-faint); font-style: italic; }
+
+    .acts { display: flex; gap: .8rem; margin-top: 1.3rem; }
+    .brush {
+      font-family: "Cormorant Garamond", serif; font-size: 1.1rem;
+      padding: .38rem 1.5rem; cursor: pointer;
+      border: 1px solid var(--ink); background: transparent; color: var(--ink);
+    }
+    .brush:hover { background: rgba(43, 39, 35, .07); }
+    .brush:disabled { opacity: .35; cursor: not-allowed; }
+
+    /* the seal, bottom of the text column */
+    .seal {
+      width: 52px; height: 52px; background: var(--vermilion); color: #f4efe6;
+      display: grid; place-items: center; font-family: Cinzel, serif; font-size: 1.5rem;
+      margin-top: 1.3rem; transform: rotate(-3deg);
+      box-shadow: 2px 3px 0 rgba(90, 20, 15, .4);
+    }
+
+    /* ---- the board ---- */
+    .brd { padding: 1px; background: var(--ink); box-shadow: 14px 18px 34px rgba(60,50,40,.28); }
+    #board {
+      position: relative;
+      display: grid;
+      grid-template-columns: repeat(8, var(--sq));
+      grid-template-rows: repeat(8, var(--sq));
+      --sq: clamp(44px, 7.4vw, 78px);
       user-select: none;
     }
-    .square { position: relative; cursor: pointer; }
-    .square.light { background: var(--board-light); }
-    .square.dark { background: var(--board-dark); }
+    .square {
+      position: relative; display: grid; place-items: center;
+      background: var(--light-sq); cursor: default;
+    }
+    .square.dark { background: var(--dark-sq); }
+    .square.playable { cursor: pointer; }
+    .square .rk, .square .fl {
+      position: absolute; font-family: Inter, sans-serif; font-size: 9px;
+      color: var(--ink); opacity: .45;
+    }
+    .square .rk { left: 3px; top: 2px; }
+    .square .fl { right: 3px; bottom: 1px; }
+
+    .pc { font-size: calc(var(--sq) * .74); line-height: 1; position: relative; z-index: 2; }
+    /* a white piece on pale paper needs a drawn rim, not just a shadow */
+    .pc.w {
+      color: #fdfbf6;
+      text-shadow: -1px 0 0 #6b6358, 1px 0 0 #6b6358, 0 -1px 0 #6b6358, 0 1px 0 #6b6358,
+                   0 2px 3px rgba(60,50,40,.45);
+    }
+    .pc.b { color: var(--ink); text-shadow: 0 1px 2px rgba(255,255,255,.2); }
+
+    /* a brushed ring rather than a hard box */
     .square.selected::after {
-      content: "";
-      position: absolute;
-      inset: 0;
-      box-shadow: inset 0 0 0 3px var(--board-selected);
+      content: ""; position: absolute; inset: 8%; border-radius: 48% 52% 50% 50% / 52% 48% 52% 48%;
+      border: 2px solid var(--vermilion); opacity: .85;
     }
-    .square.last::after {
-      content: "";
-      position: absolute;
-      inset: 0;
-      box-shadow: inset 0 0 0 3px var(--board-last);
+    .square.last::before {
+      content: ""; position: absolute; inset: 0;
+      background: radial-gradient(closest-side, rgba(164,50,42,.16), transparent 78%);
     }
-    .square img { width: 100%; height: 100%; display: block; pointer-events: none; }
-    .nav { display: flex; gap: 0.75rem; justify-content: center; }
-    button {
-      padding: 0.6rem 1.25rem;
-      background: var(--button-bg);
-      color: var(--button-text);
-      border: none;
-      border-radius: 8px;
-      font-size: 0.95rem;
-      font-weight: 600;
-      cursor: pointer;
+
+    @media (max-width: 1000px) {
+      .sheet { grid-template-columns: 1fr; gap: 1.6rem; align-content: start;
+               padding-top: 4.5rem; overflow-y: auto; }
+      .moves { max-height: 7rem; }
     }
-    button:hover { background: var(--button-hover-bg); }
-    .note { color: var(--muted-color); font-size: 0.85rem; margin-top: 1rem; }
   </style>
   <script src="/audio.js"></script>
 </head>
 <body class="has-top-nav">
-    <main class="card">
-    <div class="picker" id="picker" hidden>
-      <label for="opponent">Game vs </label>
-      <select id="opponent"></select>
+  <div class="sheet">
+    <div class="col">
+      <h1><span id="p-white">…</span><br><em>and</em> <span id="p-black">…</span></h1>
+      <div class="rule"></div>
+      <div class="meta">
+        WHITE <b id="m-white">…</b><br>
+        BLACK <b id="m-black">…</b><br>
+        TAKEN <span class="taken" id="m-taken">&mdash;</span>
+      </div>
+      <p class="status" id="status">Loading…</p>
+      <div class="moves" id="moves"></div>
+      <div class="acts">
+        <button class="brush" id="newgame" type="button">New game</button>
+      </div>
+      <div id="extra-slot"></div>
+      <div class="seal">&#9819;</div>
     </div>
-    <p class="status" id="status">Loading…</p>
-    <div id="board"></div>
-    <div class="nav">
-      <button id="removebtn" type="button" hidden>Remove piece</button>
-      <button id="newgame" type="button">New game</button>
-      <button id="back" type="button">Dashboard</button>
-    </div>
-    <p class="note" id="note" hidden>You play white; Hermione plays black. Click a piece, then its destination. Pawns promote to queens.</p>
-  </main>
-  <script>
+    <div class="brd"><div id="board"></div></div>
+  </div>
 
-    let mySide = "w";      // players are white; hermione is black ("b")
-    let isAdmin = false;
-    let opponent = null;   // admin only: which player's game is shown
-    let game = null;
-    let selected = null;
-    let busy = false;
-    let removeMode = false;
+  <script>
+    /* The board, the move loop, and nothing else. Anything that only one
+       account may do lives in a separate file that the server refuses to serve
+       to anybody else, so it is not in this document for them to read. */
+
+    const G = {
+      mySide: "w",       // players are white; the other side is black
+      isAdmin: false,
+      opponent: null,    // set by the extra script when there is one
+      game: null,
+      selected: null,
+      busy: false,
+      animating: false,
+      mode: null,        // the extra script may put the board into its own mode
+      onPaint: null,     // and hook the end of every paint
+      onClick: null,     // and intercept clicks while its mode is on
+    };
 
     const boardEl = document.getElementById("board");
     const statusEl = document.getElementById("status");
+    const GLYPH = { k: "♚", q: "♛", r: "♜", b: "♝", n: "♞", p: "♟" };
+    const FULL_SET = "qrrbbnnpppppppp";   // one side's pieces, king excluded
 
-    const PIECE_SRC = (ch) =>
-      "/pieces/" + (ch === ch.toUpperCase() ? "w" : "p") + ch.toUpperCase() + ".svg";
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
     function squares() {
-      // board squares in render order, honoring orientation (own side at bottom)
       const files = "abcdefgh".split("");
       const ranks = [8, 7, 6, 5, 4, 3, 2, 1];
       const list = [];
       for (const r of ranks) for (const f of files) list.push(f + r);
-      return mySide === "b" ? list.reverse() : list;
+      return G.mySide === "b" ? list.reverse() : list;
     }
 
     function fenBoard(fen) {
-      // expand the FEN placement field into a { square: pieceChar } map
       const map = {};
       const rows = fen.split(" ")[0].split("/");
       rows.forEach((row, i) => {
         let file = 0;
         for (const ch of row) {
           if (/\d/.test(ch)) file += Number(ch);
-          else {
-            map["abcdefgh"[file] + (8 - i)] = ch;
-            file++;
-          }
+          else { map["abcdefgh"[file] + (8 - i)] = ch; file++; }
         }
       });
       return map;
     }
 
+    // what is missing from each side's starting set, drawn as glyphs
+    function capturedGlyphs(pieces) {
+      const left = { w: [], b: [] };
+      Object.values(pieces).forEach((ch) => {
+        const side = ch === ch.toUpperCase() ? "w" : "b";
+        if (ch.toLowerCase() !== "k") left[side].push(ch.toLowerCase());
+      });
+      const missing = [];
+      for (const side of ["w", "b"]) {
+        const pool = left[side].slice();
+        for (const ch of FULL_SET) {
+          const at = pool.indexOf(ch);
+          if (at === -1) missing.push(GLYPH[ch]);
+          else pool.splice(at, 1);
+        }
+      }
+      return missing.join("");
+    }
+
+    function pieceSide(ch) { return ch === ch.toUpperCase() ? "w" : "b"; }
+
+    function lastMoveSquares() {
+      // chess.js reports SAN, not squares, so highlight the destination only:
+      // the trailing coordinate of the last move is enough to read the board
+      const h = (G.game && G.game.history) || [];
+      if (!h.length) return [];
+      const m = /([a-h][1-8])(?:=[QRBN])?[+#]?$/.exec(h[h.length - 1]);
+      return m ? [m[1]] : [];
+    }
+
     function render() {
       boardEl.replaceChildren();
-      if (!game) return;
-      const pieces = fenBoard(game.fen);
+      if (!G.game) return;
+      const pieces = fenBoard(G.game.fen);
+      const last = lastMoveSquares();
       let dark = false;
       squares().forEach((sq, i) => {
         if (i % 8 !== 0) dark = !dark;
         const div = document.createElement("div");
-        div.className = "square " + (dark ? "dark" : "light");
+        div.className = "square" + (dark ? " dark" : "");
         div.dataset.square = sq;
-        div.setAttribute("role", "button");
-        div.setAttribute("aria-label", sq + (pieces[sq] ? " " + pieces[sq] : ""));
-        if (sq === selected) div.classList.add("selected");
+        if (sq === G.selected) div.classList.add("selected");
+        if (last.includes(sq)) div.classList.add("last");
         const piece = pieces[sq];
         if (piece) {
-          const img = document.createElement("img");
-          img.src = PIECE_SRC(piece);
-          img.alt = piece;
-          div.append(img);
+          const span = document.createElement("span");
+          span.className = "pc " + pieceSide(piece);
+          span.textContent = GLYPH[piece.toLowerCase()];
+          div.append(span);
         }
+        // coordinates go on the edges as drawn, not as named: when the board is
+        // flipped for black, "a" and "1" are no longer the left and bottom edges
+        if (i % 8 === 0) {
+          const rk = document.createElement("i");
+          rk.className = "rk"; rk.textContent = sq[1];
+          div.append(rk);
+        }
+        if (i >= 56) {
+          const fl = document.createElement("i");
+          fl.className = "fl"; fl.textContent = sq[0];
+          div.append(fl);
+        }
+        const clickable = G.mode
+          ? Boolean(piece)
+          : G.game.turn === G.mySide && !G.game.gameOver;
+        if (clickable) div.classList.add("playable");
         div.addEventListener("click", () => onSquareClick(sq, piece));
         boardEl.append(div);
       });
+      paint();
+    }
+
+    function paint() {
+      const them = G.isAdmin ? (G.game && G.game.opponent) || "nobody" : "hermione";
+      const me = window.__me || "you";
+      document.getElementById("p-white").textContent = G.isAdmin ? them : me;
+      document.getElementById("p-black").textContent = G.isAdmin ? me : "hermione";
+      document.getElementById("m-white").textContent = G.isAdmin ? them : me;
+      document.getElementById("m-black").textContent = "hermione, archangel";
+      const taken = G.game ? capturedGlyphs(fenBoard(G.game.fen)) : "";
+      document.getElementById("m-taken").textContent = taken || "—";
+
+      const moves = document.getElementById("moves");
+      moves.replaceChildren();
+      const h = (G.game && G.game.history) || [];
+      if (!h.length) {
+        const p = document.createElement("div");
+        p.className = "empty";
+        p.textContent = "no moves yet";
+        moves.append(p);
+      }
+      for (let i = 0; i < h.length; i += 2) {
+        const row = document.createElement("div");
+        const w = document.createElement("b");
+        w.textContent = h[i];
+        row.append(document.createTextNode((i / 2 + 1) + ". "), w);
+        if (h[i + 1]) row.append(document.createTextNode(" " + h[i + 1]));
+        moves.append(row);
+      }
+
       statusEl.textContent = statusText();
+      statusEl.classList.toggle("alert", Boolean(G.game && (G.game.check || G.game.gameOver)));
+      if (G.onPaint) G.onPaint();
     }
 
     function statusText() {
-      if (!game) return "";
-      if (removeMode) return "Click one of " + game.opponent + "'s pieces to remove it.";
-      if (game.checkmate) {
-        const winner = game.winner === "w" ? "White" : "Black";
-        return "Checkmate. " + winner + " wins!";
+      if (!G.game) return "";
+      if (G.modeText) return G.modeText;
+      if (G.game.checkmate) {
+        return "checkmate. " + (G.game.winner === "w" ? "white" : "black") + " wins.";
       }
-      if (game.draw || game.gameOver) return "Draw.";
-      const mine = game.turn === mySide;
-      let text = mine ? "Your move" : "Waiting for " + (isAdmin ? game.opponent : "Hermione") + "…";
-      if (game.check) text += ", check!";
+      if (G.game.draw || G.game.gameOver) return "a draw.";
+      const mine = G.game.turn === G.mySide;
+      let text = mine ? "your move." : "waiting for " + (G.isAdmin ? G.game.opponent : "hermione") + ".";
+      if (G.game.check) text += " check.";
       return text;
     }
 
-    function pieceSide(ch) {
-      return ch === ch.toUpperCase() ? "w" : "b";
-    }
-
     async function onSquareClick(sq, piece) {
-      if (!game || game.gameOver || busy) return;
-      if (removeMode) {
-        if (piece && pieceSide(piece) === "w") await sendRemove(sq);
+      if (!G.game || G.game.gameOver || G.busy || G.animating) return;
+      if (G.mode) { if (G.onClick) await G.onClick(sq, piece); return; }
+      if (G.game.turn !== G.mySide) return;
+      if (G.selected && sq !== G.selected) {
+        if (piece && pieceSide(piece) === G.mySide) { G.selected = sq; render(); return; }
+        await sendMove(G.selected, sq);
         return;
       }
-      if (game.turn !== mySide) return;
-      if (selected && sq !== selected) {
-        if (piece && pieceSide(piece) === mySide) {
-          selected = sq;
-          render();
-          return;
-        }
-        await sendMove(selected, sq);
-        return;
-      }
-      if (piece && pieceSide(piece) === mySide) {
-        selected = selected === sq ? null : sq;
+      if (piece && pieceSide(piece) === G.mySide) {
+        G.selected = G.selected === sq ? null : sq;
         render();
       }
+    }
+
+    async function post(url, body) {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json().catch(() => ({}));
+      return { ok: res.ok, data };
     }
 
     async function sendMove(from, to) {
-      busy = true;
+      G.busy = true;
       const body = { from, to };
-      if (isAdmin) body.opponent = opponent;
-      const res = await fetch("/api/chess/move", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      const data = await res.json().catch(() => ({}));
-      busy = false;
-      if (res.ok) {
-        game = data.game;
-        selected = null;
-        render();
-      } else if (data.error && data.error !== "Illegal move.") {
-        statusEl.textContent = data.error;
-      } else {
-        selected = null;
-        render();
-      }
-    }
-
-    function setRemoveMode(on) {
-      removeMode = on;
-      document.getElementById("removebtn").textContent = on ? "Cancel remove" : "Remove piece";
-      selected = null;
-      render();
-    }
-
-    async function sendRemove(square) {
-      busy = true;
-      const res = await fetch("/api/chess/remove", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ opponent, square }),
-      });
-      const data = await res.json().catch(() => ({}));
-      busy = false;
-      setRemoveMode(false);
-      if (res.ok) {
-        game = data.game;
-        render();
-      } else if (data.error) {
-        statusEl.textContent = data.error;
-      }
+      if (G.opponent) body.opponent = G.opponent;
+      const { ok, data } = await post("/api/chess/move", body);
+      G.busy = false;
+      if (ok) { G.game = data.game; G.selected = null; render(); }
+      else if (data.error && data.error !== "Illegal move.") { statusEl.textContent = data.error; }
+      else { G.selected = null; render(); }
     }
 
     async function loadGame() {
-      if (busy) return;
-      const url = isAdmin
-        ? "/api/chess/game?opponent=" + encodeURIComponent(opponent || "")
+      if (G.busy || G.animating) return;
+      const url = G.isAdmin
+        ? "/api/chess/game?opponent=" + encodeURIComponent(G.opponent || "")
         : "/api/chess/game";
       const res = await fetch(url);
-      if (!res.ok) {
-        if (res.status === 401) window.location.href = "/";
-        return;
-      }
+      if (!res.ok) { if (res.status === 401) window.location.href = "/"; return; }
       const data = await res.json();
-      if (!game || data.game.fen !== game.fen || data.game.opponent !== game.opponent) {
-        game = data.game;
-        selected = null;
+      if (!G.game || data.game.fen !== G.game.fen || data.game.opponent !== G.game.opponent) {
+        G.game = data.game;
+        G.selected = null;
         render();
       }
     }
-
-    async function loadAdminGames() {
-      const res = await fetch("/api/chess/games");
-      if (!res.ok) return;
-      const data = await res.json();
-      const select = document.getElementById("opponent");
-      const current = opponent;
-      select.replaceChildren();
-      for (const g of data.games) {
-        const opt = document.createElement("option");
-        opt.value = g.key;
-        opt.textContent = g.opponent + (g.gameOver ? " (finished)" : g.turn === "b" ? " (your move)" : "");
-        select.append(opt);
-      }
-      if (data.games.length === 0) {
-        statusEl.textContent = "No games yet. Players start games from their dashboards.";
-        boardEl.replaceChildren();
-        game = null;
-        return;
-      }
-      opponent = data.games.some((g) => g.key === current) ? current : data.games[0].key;
-      select.value = opponent;
-      await loadGame();
-    }
-
-    document.getElementById("opponent").addEventListener("change", (e) => {
-      opponent = e.target.value;
-      game = null;
-      selected = null;
-      removeMode = false;
-      document.getElementById("removebtn").textContent = "Remove piece";
-      loadGame();
-    });
-
-    document.getElementById("removebtn").addEventListener("click", () => {
-      if (!game || game.gameOver) return;
-      setRemoveMode(!removeMode);
-    });
 
     document.getElementById("newgame").addEventListener("click", async () => {
-      if (isAdmin && !opponent) return;
+      if (G.isAdmin && !G.opponent) return;
       if (!confirm("Start a fresh game? The current board will be cleared.")) return;
-      const body = isAdmin ? { opponent } : {};
-      const res = await fetch("/api/chess/reset", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok) {
-        game = data.game;
-        selected = null;
-        render();
-      }
+      const { ok, data } = await post("/api/chess/reset", G.opponent ? { opponent: G.opponent } : {});
+      if (ok) { G.game = data.game; G.selected = null; render(); }
     });
 
-    document.getElementById("back").addEventListener("click", () => {
-      window.location.href = "/dashboard";
-    });
+    // handed to the extra script so it does not have to reach into globals
+    window.ChessCore = { G, boardEl, statusEl, render, paint, post, sleep, loadGame, pieceSide };
 
     window.siteMe()
       .then(async (d) => {
-        isAdmin = d.username.toLowerCase() === "hermione";
-        mySide = isAdmin ? "b" : "w";
-        document.getElementById("note").hidden = isAdmin;
-        if (isAdmin) {
-          document.getElementById("picker").hidden = false;
-          document.getElementById("removebtn").hidden = false;
-          await loadAdminGames();
-          setInterval(loadAdminGames, 4000);
-        } else {
-          await loadGame();
-          setInterval(loadGame, 3000);
+        window.__me = d.username;
+        G.isAdmin = Boolean(d.isAdmin);
+        G.mySide = G.isAdmin ? "b" : "w";
+        if (G.isAdmin) {
+          // 404s for everyone else, so the rest of the game is not in their copy
+          const s = document.createElement("script");
+          s.src = "/chess-extra.js";
+          document.body.append(s);
+          return;
         }
+        await loadGame();
+        setInterval(loadGame, 3000);
       })
       .catch(() => (window.location.href = "/"));
   </script>
   <script src="/nav.js" defer></script>
-  <script src="/notifications.js" defer></script>
   <script src="/updatecheck.js" defer></script>
   <script src="/console.js" defer></script>
   <script src="/ambience.js" defer></script>

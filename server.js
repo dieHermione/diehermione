@@ -628,6 +628,18 @@ app.delete("/api/users/:username", (req, res) => {
 });
 
 // --- chess: every game is player (white) vs the hermione account (pink) ---
+
+// Rewind needs somewhere to rewind to. Replaying `history` is not enough,
+// because a strike changes the position without adding a move, so every
+// mutation snapshots the whole state first. Games that predate this simply
+// start with an empty stack.
+const CHESS_PAST_CAP = 200;
+function pushSnapshot(entry) {
+  if (!Array.isArray(entry.past)) entry.past = [];
+  entry.past.push({ fen: entry.fen, history: [...entry.history] });
+  if (entry.past.length > CHESS_PAST_CAP) entry.past.shift();
+}
+
 function gameState(entry, key) {
   const chess = new Chess(entry.fen);
   return {
@@ -641,6 +653,8 @@ function gameState(entry, key) {
     winner: chess.isCheckmate() ? (chess.turn() === "w" ? "b" : "w") : null,
     history: entry.history,
     updatedAt: entry.updatedAt,
+    // how far back Hermione could wind it; the opponent never reads this
+    rewindable: Array.isArray(entry.past) ? entry.past.length : 0,
   };
 }
 
@@ -688,6 +702,7 @@ app.post("/api/chess/move", (req, res) => {
   } catch {
     return res.status(400).json({ error: "Illegal move." });
   }
+  pushSnapshot(entry);
   entry.fen = chess.fen();
   entry.history.push(move.san);
   entry.updatedAt = new Date().toISOString();
@@ -709,6 +724,8 @@ app.post("/api/chess/remove", (req, res) => {
   }
   const chess = new Chess(entry.fen);
   if (chess.isGameOver()) return res.status(400).json({ error: "The game is over." });
+  // a strike is spent instead of a move, so it is hers to take only on her turn
+  if (chess.turn() !== "b") return res.status(400).json({ error: "Only on your turn." });
   const piece = chess.get(square);
   if (!piece) return res.status(404).json({ error: "No piece on that square." });
   if (piece.color !== "w") {
@@ -724,7 +741,31 @@ app.post("/api/chess/remove", (req, res) => {
   } catch {
     return res.status(400).json({ error: "Removing that piece would break the game." });
   }
+  pushSnapshot(entry);
   entry.fen = fen;
+  entry.updatedAt = new Date().toISOString();
+  saveGames(games);
+  res.json({ game: gameState(entry, key) });
+});
+
+// Rewind: step the whole game back through the snapshot stack. Admin only, and
+// deliberately not advertised anywhere the opponent's client can see it.
+app.post("/api/chess/rewind", (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });
+  const key = chessKeyFor(req, req.body.opponent);
+  if (!key) return res.status(400).json({ error: "A valid opponent is required." });
+  const games = loadGames();
+  const entry = games[key];
+  if (!entry) return res.status(404).json({ error: "No such game." });
+  if (!Array.isArray(entry.past) || entry.past.length === 0) {
+    return res.status(400).json({ error: "Nothing to rewind to." });
+  }
+  const steps = Math.max(1, Math.min(entry.past.length, parseInt(req.body.steps, 10) || 1));
+  let snap = null;
+  for (let i = 0; i < steps; i++) snap = entry.past.pop();
+  entry.fen = snap.fen;
+  entry.history = snap.history;
   entry.updatedAt = new Date().toISOString();
   saveGames(games);
   res.json({ game: gameState(entry, key) });
@@ -843,6 +884,15 @@ app.post("/api/elysium/debug", requireLogin, (req, res) => {
 
 app.get("/chess", requirePlayer, (req, res) => {
   res.sendFile(path.join(__dirname, "views", "chess.html"));
+});
+
+// Hermione's half of the chess page. It lives in views/ rather than public/ so
+// the static middleware cannot hand it out, and this route 404s rather than
+// 403s for anyone else: a refusal would confirm there is something to refuse.
+app.get("/chess-extra.js", (req, res) => {
+  if (!req.session.username || !isAdmin(req)) return res.status(404).end();
+  res.type("application/javascript");
+  res.sendFile(path.join(__dirname, "views", "chess-extra.js"));
 });
 
 // --- Dummy Parse: a damage sim against a target that does not fight back ---
