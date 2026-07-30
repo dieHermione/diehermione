@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Skill Check - angeldom.me</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="/me.js"></script>
+  <script src="/audio.js"></script>
+  <style>
+    /* Skill check, "pure dial" (design 1): one ring on black, a red good-zone
+       arc, a white needle, the key you have to press drawn in the middle, four
+       corner readouts and a row of hit/miss pips.
+
+       The brief also asks for the size and position of each check to be
+       random, which pulls against a dial that is always centred. Both are
+       honoured: the dial stays the only thing on screen but drifts around the
+       middle of it and changes size, so you cannot rest your eyes in one spot. */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    [hidden] { display: none !important; }
+
+    :root {
+      --c: #aee3ff; --dim: #4f7ea0; --dim2: #2c4a5e; --bright: #eafaff;
+      --accent: #8fd0ff; --glow: rgba(120,190,255,.32);
+      --red: #ff3b2f; --deep: #c11208; --ok: #7dffb0; --err: #ff5a4a;
+    }
+    html, body { height: 100%; }
+    body {
+      background: #000; color: var(--c);
+      font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 14px;
+      overflow: hidden;
+    }
+    .scan {
+      position: fixed; inset: 0; z-index: 200; pointer-events: none;
+      background: repeating-linear-gradient(0deg, rgba(0,0,0,.30) 0 1px, transparent 1px 3px);
+    }
+    .vig {
+      position: fixed; inset: 0; z-index: 199; pointer-events: none;
+      box-shadow: inset 0 0 24vh 8vh rgba(0,0,0,.7);
+    }
+
+    /* ---- the four corner readouts ---- */
+    .rd { position: fixed; z-index: 20; font-size: 10px; letter-spacing: .3em; color: var(--dim); }
+    .rd b { display: block; font-size: 2.4rem; letter-spacing: .02em; color: var(--bright);
+            line-height: 1.1; margin-top: .25rem; font-weight: 400; }
+    .rd.tl { top: 3vh; left: 3vw; }
+    .rd.tr { top: 3vh; right: 3vw; text-align: right; }
+    .rd.bl { bottom: 3vh; left: 3vw; }
+    .rd.br { bottom: 3vh; right: 3vw; text-align: right; }
+    .rd.bl b { color: var(--err); }
+
+    /* ---- the pips ---- */
+    .pips {
+      position: fixed; left: 50%; bottom: 3vh; transform: translateX(-50%); z-index: 20;
+      display: flex; gap: 4px; max-width: 70vw; flex-wrap: wrap; justify-content: center;
+    }
+    .pip { width: 10px; height: 10px; border: 1px solid var(--dim2); }
+    .pip.hit { background: var(--c); border-color: var(--c); box-shadow: 0 0 8px var(--glow); }
+    .pip.miss { background: var(--deep); border-color: var(--red); }
+
+    /* ---- the dial ---- */
+    /* SVG elements have no `hidden` or `className` IDL property, so the state
+       lives on a plain div wrapper and the svg is only ever drawn into. */
+    #dialwrap { position: fixed; z-index: 10; pointer-events: none; }
+    #dialwrap svg { display: block; }
+    .key {
+      position: absolute; inset: 0; display: grid; place-items: center;
+      font-size: 2.6rem; letter-spacing: .1em; color: var(--bright);
+      text-shadow: 0 0 26px var(--glow);
+    }
+    /* the caption is wider than the glyph, so centre the block, not just it */
+    .key > div { text-align: center; }
+    .key small { display: block; text-align: center; font-size: 9px;
+                 letter-spacing: .34em; color: var(--dim); margin-top: .5rem; }
+    #dialwrap.good .key { color: var(--ok); text-shadow: 0 0 30px rgba(125,255,176,.7); }
+    #dialwrap.bad .key { color: var(--err); text-shadow: 0 0 30px rgba(255,90,74,.7); }
+
+    /* ---- centre text between runs ---- */
+    .mid {
+      position: fixed; inset: 0; z-index: 30; display: grid; place-items: center;
+      text-align: center; padding: 2rem;
+    }
+    .mid h1 { font-size: 2.6rem; font-weight: 400; color: var(--bright);
+              letter-spacing: .12em; text-shadow: 0 0 30px var(--glow); }
+    .mid p { color: var(--dim); line-height: 2; margin-top: 1rem; max-width: 34rem; }
+    .mid .keys { color: var(--c); }
+    .btn {
+      margin-top: 1.6rem; border: 1.5px solid var(--c); background: transparent;
+      font-family: inherit; font-size: .82rem; letter-spacing: .34em; text-transform: uppercase;
+      color: var(--bright); padding: .8rem 2.6rem; cursor: pointer; box-shadow: 0 0 22px var(--glow);
+    }
+    .btn:hover { background: rgba(120,190,255,.12); }
+    .verdict { font-size: 1.1rem; color: var(--c); margin-top: .6rem; }
+    .verdict .g { color: var(--ok); } .verdict .b { color: var(--err); }
+  </style>
+</head>
+<body class="has-top-nav">
+  <div id="dialwrap" hidden><svg id="dial"></svg><div class="key" id="dialkey"></div></div>
+
+  <div class="rd tl">REPETITION<b id="r-rep">0 / 0</b></div>
+  <div class="rd tr">STREAK<b id="r-streak">0</b></div>
+  <div class="rd bl">FAILED<b id="r-failed">0</b></div>
+  <div class="rd br">NEXT IN<b id="r-next">&mdash;</b></div>
+  <div class="pips" id="pips"></div>
+
+  <div class="mid" id="mid">
+    <div>
+      <h1>SKILL CHECK</h1>
+      <p>A needle runs around the dial. Press the key drawn in the middle while the
+        needle is inside the red arc. Too early, too late, or not at all: all three fail.
+        <br><span class="keys">SPACE &middot; 1 2 3 4 5 &middot; Q E R G F</span></p>
+      <p id="verdict" class="verdict"></p>
+      <button class="btn" id="start" type="button">begin</button>
+    </div>
+  </div>
+
+  <div class="vig"></div><div class="scan"></div>
+
+  <script>
+    const SVG = "http://www.w3.org/2000/svg";
+    const KEYS = [
+      { code: "Space", label: "SPACE", match: (e) => e.code === "Space" },
+      ...["1", "2", "3", "4", "5", "q", "e", "r", "g", "f"].map((k) => ({
+        code: k, label: k.toUpperCase(), match: (e) => (e.key || "").toLowerCase() === k,
+      })),
+    ];
+
+    const REPS = 12;              // checks in a run
+    const GAP_MIN = 900, GAP_MAX = 3200;   // ms between checks, so you cannot settle
+    const SWEEP_MIN = 1500, SWEEP_MAX = 2600;  // ms for one trip around the dial
+
+    const dial = document.getElementById("dial");
+    const wrap = document.getElementById("dialwrap");
+    const keyEl = document.getElementById("dialkey");
+    const midEl = document.getElementById("mid");
+    const pipsEl = document.getElementById("pips");
+
+    let run = null;      // { rep, hits, failed, streak, results[] }
+    let check = null;    // the live check
+    let raf = null;
+    let gapTimer = null;
+
+    /* ---------- sound ---------- */
+    // a short two-tone chirp on spawn, and a flat thud on a miss. These ride
+    // the typing channel, the same as the other interface sounds.
+    function beep(freq, ms, type, gainTo) {
+      const bus = window.AudioBus;
+      const ctx = bus && bus.ctx();
+      const out = bus && bus.channel("typing");
+      if (!ctx || !out) return;
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.type = type || "square";
+      osc.frequency.setValueAtTime(freq, ctx.currentTime);
+      g.gain.setValueAtTime(0.0001, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(gainTo || 0.14, ctx.currentTime + 0.008);
+      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + ms / 1000);
+      osc.connect(g); g.connect(out);
+      osc.start(); osc.stop(ctx.currentTime + ms / 1000 + 0.02);
+    }
+    const sndSpawn = () => { beep(880, 90, "square", .10); setTimeout(() => beep(1320, 70, "square", .08), 70); };
+    const sndHit   = () => beep(1760, 120, "triangle", .16);
+    const sndMiss  = () => beep(110, 260, "sawtooth", .12);
+
+    /* ---------- the dial ---------- */
+    function polar(cx, cy, r, deg) {
+      const a = ((deg - 90) * Math.PI) / 180;
+      return [cx + r * Math.cos(a), cy + r * Math.sin(a)];
+    }
+    function arcPath(cx, cy, r, from, to) {
+      const [x1, y1] = polar(cx, cy, r, from);
+      const [x2, y2] = polar(cx, cy, r, to);
+      return "M " + x1 + " " + y1 + " A " + r + " " + r + " 0 " +
+        ((to - from) % 360 > 180 ? 1 : 0) + " 1 " + x2 + " " + y2;
+    }
+
+    function drawDial(c) {
+      const S = c.size, cx = S / 2, cy = S / 2, r = S / 2 - 14;
+      dial.setAttribute("viewBox", "0 0 " + S + " " + S);
+      dial.setAttribute("width", S);
+      dial.setAttribute("height", S);
+      wrap.style.left = c.x + "px";
+      wrap.style.top = c.y + "px";
+      wrap.style.width = S + "px";
+      wrap.style.height = S + "px";
+      dial.replaceChildren();
+
+      const ring = document.createElementNS(SVG, "circle");
+      ring.setAttribute("cx", cx); ring.setAttribute("cy", cy); ring.setAttribute("r", r);
+      ring.setAttribute("fill", "none");
+      ring.setAttribute("stroke", "#2c4a5e");
+      ring.setAttribute("stroke-width", "3");
+      dial.append(ring);
+
+      const zone = document.createElementNS(SVG, "path");
+      zone.setAttribute("d", arcPath(cx, cy, r, c.zoneFrom, c.zoneFrom + c.zoneSize));
+      zone.setAttribute("fill", "none");
+      zone.setAttribute("stroke", "#ff3b2f");
+      zone.setAttribute("stroke-width", "11");
+      zone.setAttribute("stroke-linecap", "butt");
+      zone.setAttribute("filter", "drop-shadow(0 0 10px rgba(255,59,47,.8))");
+      dial.append(zone);
+      c.zoneEl = zone;
+
+      const needle = document.createElementNS(SVG, "line");
+      needle.setAttribute("x1", cx); needle.setAttribute("y1", cy);
+      needle.setAttribute("stroke", "#eafaff");
+      needle.setAttribute("stroke-width", "3");
+      needle.setAttribute("filter", "drop-shadow(0 0 8px rgba(234,250,255,.9))");
+      dial.append(needle);
+      c.needleEl = needle;
+      c.geom = { cx, cy, r };
+
+      keyEl.replaceChildren();
+      const inner = document.createElement("div");
+      inner.textContent = c.key.label;
+      const small = document.createElement("small");
+      small.textContent = "PRESS IN THE RED";
+      inner.append(small);
+      keyEl.append(inner);
+    }
+
+    function moveNeedle(c, deg) {
+      const { cx, cy, r } = c.geom;
+      const [x, y] = polar(cx, cy, r + 4, deg);
+      c.needleEl.setAttribute("x2", x);
+      c.needleEl.setAttribute("y2", y);
+    }
+
+    /* ---------- a single check ---------- */
+    function spawn() {
+      const vw = window.innerWidth, vh = window.innerHeight;
+      // random size, and a position that drifts around the middle of the screen
+      const size = Math.round(Math.min(vw, vh) * (0.30 + Math.random() * 0.26));
+      const x = Math.round((vw - size) / 2 + (Math.random() - 0.5) * vw * 0.30);
+      const y = Math.round((vh - size) / 2 + (Math.random() - 0.5) * vh * 0.26);
+      const zoneSize = 26 + Math.random() * 16;          // degrees of good zone
+      const zoneFrom = 40 + Math.random() * 250;          // never right at the start
+      const sweep = SWEEP_MIN + Math.random() * (SWEEP_MAX - SWEEP_MIN);
+
+      check = {
+        size, x, y, zoneFrom, zoneSize, sweep,
+        key: KEYS[Math.floor(Math.random() * KEYS.length)],
+        start: performance.now(),
+        done: false,
+      };
+      wrap.hidden = false;
+      wrap.className = "";
+      drawDial(check);
+      moveNeedle(check, 0);
+      sndSpawn();
+      raf = requestAnimationFrame(tick);
+    }
+
+    function tick(now) {
+      if (!check || check.done) return;
+      const t = (now - check.start) / check.sweep;
+      if (t >= 1) { resolve(false, "missed"); return; }
+      moveNeedle(check, t * 360);
+      raf = requestAnimationFrame(tick);
+    }
+
+    function needleDeg() {
+      return ((performance.now() - check.start) / check.sweep) * 360;
+    }
+
+    function resolve(hit, why) {
+      if (!check || check.done) return;
+      check.done = true;
+      cancelAnimationFrame(raf);
+      wrap.className = hit ? "good" : "bad";
+      if (hit) { run.hits++; run.streak++; sndHit(); }
+      else { run.failed++; run.streak = 0; sndMiss(); }
+      run.results.push({ hit, why });
+      paint();
+      setTimeout(() => {
+        wrap.hidden = true;
+        check = null;
+        run.rep++;
+        if (run.rep >= REPS) return finish();
+        schedule();
+      }, 420);
+    }
+
+    function schedule() {
+      const gap = GAP_MIN + Math.random() * (GAP_MAX - GAP_MIN);
+      const at = performance.now() + gap;
+      clearInterval(gapTimer);
+      gapTimer = setInterval(() => {
+        const left = Math.max(0, at - performance.now());
+        document.getElementById("r-next").textContent = (left / 1000).toFixed(1) + "s";
+        if (left <= 0) { clearInterval(gapTimer); spawn(); }
+      }, 60);
+    }
+
+    /* ---------- run control ---------- */
+    function paint() {
+      document.getElementById("r-rep").textContent =
+        Math.min(run.rep + (check ? 1 : 0), REPS) + " / " + REPS;
+      document.getElementById("r-streak").textContent = run.streak;
+      document.getElementById("r-failed").textContent = run.failed;
+      pipsEl.replaceChildren();
+      for (let i = 0; i < REPS; i++) {
+        const p = document.createElement("i");
+        const r = run.results[i];
+        p.className = "pip" + (r ? (r.hit ? " hit" : " miss") : "");
+        pipsEl.append(p);
+      }
+    }
+
+    function begin() {
+      run = { rep: 0, hits: 0, failed: 0, streak: 0, results: [] };
+      midEl.hidden = true;
+      paint();
+      schedule();
+    }
+
+    function finish() {
+      clearInterval(gapTimer);
+      document.getElementById("r-next").textContent = "—";
+      midEl.hidden = false;
+      const v = document.getElementById("verdict");
+      v.innerHTML = "<span class='g'>" + run.hits + " hit</span> &nbsp; " +
+        "<span class='b'>" + run.failed + " failed</span>";
+      document.getElementById("start").textContent = "again";
+      paint();
+    }
+
+    document.getElementById("start").addEventListener("click", () => {
+      window.AudioBus && window.AudioBus.ctx();   // the gesture that starts audio
+      begin();
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.repeat) return;
+      const tag = (e.target && e.target.tagName || "").toLowerCase();
+      if (tag === "input" || tag === "textarea") return;
+      if (!run || !check || check.done) return;
+      // any of the ten keys answers the check; only the right one can pass
+      const pressedOne = KEYS.some((k) => k.match(e));
+      if (!pressedOne) return;
+      e.preventDefault();
+      if (!check.key.match(e)) { resolve(false, "wrong key"); return; }
+      const deg = needleDeg();
+      const inZone = deg >= check.zoneFrom && deg <= check.zoneFrom + check.zoneSize;
+      resolve(inZone, inZone ? "hit" : deg < check.zoneFrom ? "early" : "late");
+    });
+
+    window.siteMe().catch(() => (window.location.href = "/"));
+  </script>
+  <script src="/nav.js" defer></script>
+  <script src="/updatecheck.js" defer></script>
+  <script src="/console.js" defer></script>
+  <script src="/ambience.js" defer></script>
+</body>
+</html>
