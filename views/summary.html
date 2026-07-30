@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Summary - angeldom.me</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="/me.js"></script>
+  <script src="/audio.js"></script>
+  <style>
+    /* Summary, "source + entry" (design 1): the source down the left, your
+       answer down the right, with a live word count and a limit meter under it.
+       Self-contained, no site.css. */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    [hidden] { display: none !important; }
+
+    :root {
+      --c: #aee3ff; --dim: #4f7ea0; --dim2: #2c4a5e; --bright: #eafaff;
+      --accent: #8fd0ff; --glow: rgba(120,190,255,.32);
+      --red: #ff3b2f; --deep: #c11208; --ok: #7dffb0; --err: #ff5a4a; --gold: #ffd27a;
+    }
+    html, body { height: 100%; }
+    body {
+      background: #000; color: var(--c);
+      font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 14px;
+      overflow: hidden;
+    }
+    .scan { position: fixed; inset: 0; z-index: 200; pointer-events: none;
+      background: repeating-linear-gradient(0deg, rgba(0,0,0,.30) 0 1px, transparent 1px 3px); }
+    .vig { position: fixed; inset: 0; z-index: 199; pointer-events: none;
+      box-shadow: inset 0 0 24vh 8vh rgba(0,0,0,.7); }
+
+    .stage { position: absolute; inset: 0; padding: 3vh 3vw; display: flex; flex-direction: column; gap: 1rem; }
+    .hdr { display: flex; justify-content: space-between; font-size: 10px;
+      letter-spacing: .35em; color: var(--dim); flex-shrink: 0; }
+    .hdr > span:first-child { padding-left: 2.8rem; }
+    .hdr b { color: var(--bright); font-weight: 400; }
+
+    .cols { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 2.4rem; }
+    .pane { display: flex; flex-direction: column; min-height: 0; }
+    .pane > h2 {
+      font-size: 9px; letter-spacing: .3em; color: var(--dim); font-weight: 400;
+      border-bottom: 1px solid var(--dim2); padding-bottom: .35rem; margin-bottom: .8rem;
+      display: flex; justify-content: space-between;
+    }
+    .pane > h2 b { color: var(--bright); font-weight: 400; }
+
+    /* ---- the source ---- */
+    .topic { font-size: 2.1rem; color: var(--bright); line-height: 1.1;
+      text-shadow: 0 0 26px var(--glow); }
+    .kind { font-size: 9px; letter-spacing: .3em; text-transform: uppercase;
+      color: var(--accent); margin-top: .4rem; }
+    .source {
+      margin-top: 1.1rem; overflow-y: auto; min-height: 0; flex: 1;
+      font-size: 14.5px; line-height: 2; color: var(--c);
+      border-left: 1px solid var(--dim2); padding-left: 1.2rem;
+    }
+    .cite { font-size: 9px; letter-spacing: .2em; color: var(--dim2); margin-top: .8rem; flex-shrink: 0; }
+    .cite a { color: var(--dim); }
+
+    /* ---- the entry ---- */
+    textarea {
+      flex: 1; min-height: 0; width: 100%; resize: none;
+      background: rgba(120,190,255,.04); border: 1px solid var(--dim2);
+      color: var(--bright); font-family: inherit; font-size: 15px; line-height: 1.9;
+      padding: .9rem 1rem;
+    }
+    textarea:focus { outline: none; border-color: var(--c); box-shadow: 0 0 18px var(--glow); }
+    textarea:disabled { opacity: .55; }
+
+    .meterwrap { flex-shrink: 0; margin-top: .8rem; }
+    .counts { display: flex; justify-content: space-between; font-size: 11px; color: var(--dim); }
+    .counts b { color: var(--bright); font-weight: 400; }
+    .counts.over b { color: var(--err); }
+    .meter { height: 5px; background: rgba(44,74,94,.6); margin-top: .4rem; position: relative; overflow: hidden; }
+    .meter i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .12s linear; }
+    .meter.near i { background: var(--gold); }
+    .meter.over i { background: var(--red); }
+
+    .rules { font-size: 10px; line-height: 1.9; color: var(--dim2); margin-top: .7rem; }
+    .acts { display: flex; gap: .6rem; margin-top: .9rem; flex-shrink: 0; }
+    .btn {
+      border: 1.5px solid var(--c); background: transparent; color: var(--bright);
+      font-family: inherit; font-size: .78rem; letter-spacing: .28em; text-transform: uppercase;
+      padding: .7rem 1.8rem; cursor: pointer;
+    }
+    .btn:hover:not(:disabled) { background: rgba(120,190,255,.12); }
+    .btn:disabled { opacity: .35; cursor: not-allowed; }
+    .btn.ghost { border-color: var(--dim2); color: var(--dim); }
+
+    .verdict { font-size: 12px; line-height: 1.9; margin-top: .7rem; min-height: 2.4em; }
+    .verdict.good { color: var(--ok); }
+    .verdict.bad { color: var(--err); }
+
+    @media (max-width: 900px) {
+      body { overflow: auto; }
+      .stage { position: static; min-height: 100%; }
+      .cols { grid-template-columns: 1fr; gap: 1.4rem; }
+      .source { max-height: 40vh; }
+      textarea { min-height: 12rem; }
+    }
+  </style>
+</head>
+<body class="has-top-nav">
+  <div class="stage">
+    <div class="hdr">
+      <span>ANGELDOM // SUMMARY</span>
+      <span id="state">FETCHING</span>
+      <span>LIMIT <b id="hdr-limit">—</b> WORDS</span>
+    </div>
+
+    <div class="cols">
+      <section class="pane">
+        <h2><span>SOURCE</span><b id="src-words">—</b></h2>
+        <div class="topic" id="topic">…</div>
+        <div class="kind" id="kind"></div>
+        <div class="source" id="source">reaching the archive…</div>
+        <div class="cite" id="cite"></div>
+      </section>
+
+      <section class="pane">
+        <h2><span>YOUR SUMMARY</span><b id="limit-note">—</b></h2>
+        <textarea id="entry" placeholder="say it back, shorter" disabled
+                  spellcheck="false" autocomplete="off"></textarea>
+        <div class="meterwrap">
+          <div class="counts" id="counts">
+            <span><b id="wc">0</b> words</span>
+            <span id="left">—</span>
+          </div>
+          <div class="meter" id="meter"><i id="fill"></i></div>
+          <div class="rules">Read the source, then put it in your own words inside the limit.
+            Going over the limit is the only way to fail. Copying whole phrases is not
+            checked, but she will be reading it.</div>
+        </div>
+        <div class="acts">
+          <button class="btn" id="submit" type="button" disabled>hand in</button>
+          <button class="btn ghost" id="skip" type="button">another topic</button>
+        </div>
+        <div class="verdict" id="verdict"></div>
+      </section>
+    </div>
+  </div>
+  <div class="vig"></div><div class="scan"></div>
+
+  <script>
+    const entry = document.getElementById("entry");
+    const submitBtn = document.getElementById("submit");
+    const skipBtn = document.getElementById("skip");
+    const verdict = document.getElementById("verdict");
+
+    let round = null;      // { title, kind, text, url, limit }
+    let handedIn = false;
+
+    const countWords = (s) => s.trim().split(/\s+/).filter(Boolean).length;
+
+    function paintCount() {
+      if (!round) return;
+      const n = countWords(entry.value);
+      const frac = Math.min(1.6, n / round.limit);
+      document.getElementById("wc").textContent = n;
+      document.getElementById("fill").style.width = Math.min(100, frac * 100) + "%";
+      const meter = document.getElementById("meter");
+      meter.classList.toggle("near", n > round.limit * 0.85 && n <= round.limit);
+      meter.classList.toggle("over", n > round.limit);
+      document.getElementById("counts").classList.toggle("over", n > round.limit);
+      document.getElementById("left").textContent = n > round.limit
+        ? (n - round.limit) + " over"
+        : (round.limit - n) + " left";
+      submitBtn.disabled = handedIn || n === 0 || n > round.limit;
+    }
+
+    async function load() {
+      handedIn = false;
+      round = null;
+      verdict.textContent = "";
+      verdict.className = "verdict";
+      entry.value = "";
+      entry.disabled = true;
+      submitBtn.disabled = true;
+      document.getElementById("state").textContent = "FETCHING";
+      document.getElementById("source").textContent = "reaching the archive…";
+      document.getElementById("topic").textContent = "…";
+      document.getElementById("kind").textContent = "";
+      document.getElementById("cite").textContent = "";
+
+      let data;
+      try {
+        const res = await fetch("/api/summary/topic");
+        data = await res.json();
+        if (!res.ok) throw new Error(data.error || "no");
+      } catch (e) {
+        document.getElementById("state").textContent = "NO SIGNAL";
+        document.getElementById("source").textContent =
+          (e && e.message) || "Could not reach the archive.";
+        return;
+      }
+
+      round = data;
+      document.getElementById("state").textContent = "READY";
+      document.getElementById("topic").textContent = data.title;
+      document.getElementById("kind").textContent = data.kindLabel;
+      document.getElementById("source").textContent = data.text;
+      document.getElementById("src-words").textContent = data.sourceWords + " words";
+      document.getElementById("hdr-limit").textContent = data.limit;
+      document.getElementById("limit-note").textContent = data.limit + " words or fewer";
+      if (data.url) {
+        const a = document.createElement("a");
+        a.href = data.url; a.target = "_blank"; a.rel = "noreferrer noopener";
+        a.textContent = data.url.replace(/^https?:\/\//, "");
+        document.getElementById("cite").replaceChildren(
+          document.createTextNode("SOURCE: "), a);
+      }
+      entry.disabled = false;
+      paintCount();
+      entry.focus();
+    }
+
+    async function handIn() {
+      if (!round || handedIn) return;
+      const words = countWords(entry.value);
+      if (words === 0 || words > round.limit) return;
+      handedIn = true;
+      submitBtn.disabled = true;
+      entry.disabled = true;
+      document.getElementById("state").textContent = "HANDED IN";
+      try {
+        await fetch("/api/summary/complete", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            topic: round.title, kind: round.kind, limit: round.limit,
+            words, text: entry.value,
+          }),
+        });
+        verdict.className = "verdict good";
+        verdict.textContent = "Handed in: " + words + " words of a possible " +
+          round.limit + ". She will read it.";
+      } catch (e) {
+        verdict.className = "verdict bad";
+        verdict.textContent = "Written, but it could not be handed in.";
+      }
+      skipBtn.textContent = "next topic";
+    }
+
+    entry.addEventListener("input", paintCount);
+    submitBtn.addEventListener("click", handIn);
+    skipBtn.addEventListener("click", load);
+    // the games swallow plain keys, so hand-in needs a modifier
+    entry.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); handIn(); }
+    });
+
+    window.siteMe().then(load).catch(() => (window.location.href = "/"));
+  </script>
+  <script src="/nav.js" defer></script>
+  <script src="/updatecheck.js" defer></script>
+  <script src="/console.js" defer></script>
+  <script src="/ambience.js" defer></script>
+</body>
+</html>

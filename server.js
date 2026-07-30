@@ -22,6 +22,7 @@ const ELYSIUM_FILE = path.join(process.env.DATA_DIR || __dirname, "elysium.json"
 const DEVOTION_FILE = path.join(process.env.DATA_DIR || __dirname, "devotion.json");
 const SUBLIMINAL_FILE = path.join(process.env.DATA_DIR || __dirname, "subliminal.json");
 const PARSE_FILE = path.join(process.env.DATA_DIR || __dirname, "parses.json");
+const SUMMARY_FILE = path.join(process.env.DATA_DIR || __dirname, "summaries.json");
 
 // --- simple JSON-file user store (fine for testing; swap for a DB later) ---
 function loadUsers() {
@@ -929,6 +930,99 @@ app.get("/chess-extra.js", (req, res) => {
   if (!req.session.username || !isAdmin(req)) return res.status(404).end();
   res.type("application/javascript");
   res.sendFile(path.join(__dirname, "views", "chess-extra.js"));
+});
+
+/* --- Summary: read a real article, say it back in a set number of words ---
+   The source text comes from Wikipedia's public REST summary endpoint, proxied
+   here so the browser makes no third-party request and so a failure has one
+   place to fall back from. Titles are a fixed hand-picked list; nothing the
+   player types ever reaches Wikipedia. */
+const SUMMARY_TOPICS = [
+  ["event", "Apollo 11"], ["event", "Chernobyl disaster"], ["event", "Great Fire of London"],
+  ["event", "Battle of Hastings"], ["event", "Magna Carta"], ["event", "1815 eruption of Mount Tambora"],
+  ["event", "Spanish flu"], ["event", "Sinking of the Titanic"],
+  ["object", "Rubik's Cube"], ["object", "Astrolabe"], ["object", "Typewriter"],
+  ["object", "Lighthouse"], ["object", "Metronome"], ["object", "Kaleidoscope"],
+  ["object", "Sextant"], ["object", "Zoetrope"], ["object", "Barometer"],
+  ["character", "Sherlock Holmes"], ["character", "Frankenstein's monster"], ["character", "Count Dracula"],
+  ["character", "Don Quixote"], ["character", "Captain Ahab"], ["character", "Miss Havisham"],
+  ["character", "Cheshire Cat"], ["character", "Baba Yaga"], ["character", "Hamlet"],
+];
+const KIND_LABEL = { event: "a historical event", object: "a real-world object", character: "a fictional character" };
+
+// one page is fetched per round; a small cache keeps repeat rounds polite
+const summaryCache = new Map();
+const SUMMARY_TTL = 6 * 60 * 60 * 1000;
+
+async function fetchTopic(title) {
+  const hit = summaryCache.get(title);
+  if (hit && Date.now() - hit.at < SUMMARY_TTL) return hit.data;
+  const url = "https://en.wikipedia.org/api/rest_v1/page/summary/" + encodeURIComponent(title.replace(/ /g, "_"));
+  const res = await fetch(url, {
+    headers: { "accept": "application/json", "user-agent": "angeldomme/0.2 (summary game)" },
+    signal: AbortSignal.timeout(6000),
+  });
+  if (!res.ok) throw new Error("wikipedia " + res.status);
+  const j = await res.json();
+  const data = {
+    title: j.title || title,
+    text: String(j.extract || "").trim(),
+    url: (j.content_urls && j.content_urls.desktop && j.content_urls.desktop.page) || "",
+  };
+  if (!data.text) throw new Error("no extract");
+  summaryCache.set(title, { at: Date.now(), data });
+  return data;
+}
+
+app.get("/summary", requirePlayer, (req, res) => {
+  touchGuest(req);
+  res.sendFile(path.join(__dirname, "views", "summary.html"));
+});
+
+app.get("/api/summary/topic", async (req, res) => {
+  if (!playerId(req)) return res.status(401).json({ error: "Not logged in." });
+  touchGuest(req);
+  // try a few, so one dead title does not end the round
+  const pool = SUMMARY_TOPICS.slice().sort(() => Math.random() - 0.5).slice(0, 4);
+  for (const [kind, title] of pool) {
+    try {
+      const data = await fetchTopic(title);
+      const words = data.text.split(/\s+/).filter(Boolean).length;
+      // the limit scales with the source, rounded to something readable
+      const limit = Math.max(25, Math.min(60, Math.round(words / 4 / 5) * 5));
+      return res.json({ kind, kindLabel: KIND_LABEL[kind], ...data, sourceWords: words, limit });
+    } catch (e) { /* try the next one */ }
+  }
+  res.status(503).json({ error: "Could not reach the archive. Try again in a moment." });
+});
+
+function loadSummaries() {
+  try { const d = JSON.parse(fs.readFileSync(SUMMARY_FILE, "utf8")); return Array.isArray(d.entries) ? d.entries : []; }
+  catch { return []; }
+}
+
+// Kept so Hermione can read them later; there is no admin view for these yet.
+app.post("/api/summary/complete", (req, res) => {
+  const who = playerId(req);
+  if (!who) return res.status(401).json({ error: "Not logged in." });
+  touchGuest(req);
+  const text = String(req.body.text || "").trim().slice(0, 4000);
+  if (!text) return res.status(400).json({ error: "Nothing written." });
+  const entry = {
+    id: Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 7),
+    player: who,
+    guest: Boolean(req.session.guest),
+    at: new Date().toISOString(),
+    topic: String(req.body.topic || "").slice(0, 200),
+    kind: String(req.body.kind || "").slice(0, 20),
+    limit: Math.max(0, Math.min(500, parseInt(req.body.limit, 10) || 0)),
+    words: Math.max(0, Math.min(5000, parseInt(req.body.words, 10) || 0)),
+    text,
+  };
+  const list = loadSummaries();
+  list.unshift(entry);
+  fs.writeFileSync(SUMMARY_FILE, JSON.stringify({ entries: list.slice(0, 300) }, null, 2));
+  res.json({ ok: true });
 });
 
 // --- Dummy Parse: a damage sim against a target that does not fight back ---
