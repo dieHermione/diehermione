@@ -67,7 +67,8 @@
        at a constant speed; steering turns that angle rather than snapping to
        one of four directions. The body is the trail the head has just walked,
        drawn as one tapered outline, so it bends and twists with the turns.
-       There is no self-collision, so the body is purely cosmetic. */
+       Running into your own body ends the run: the first stretch behind the
+       head is skipped so a hard turn cannot kill you on its own. */
 
     const SPEED = 380;          // px per second
     const TURN = 3.4;           // radians per second at full lock
@@ -78,6 +79,9 @@
     const HEAD_R = 9;           // head radius; the body tapers away from this
     const FOOD_R = 9;
     const FLEE_R = 46;          // the food bolts if the head gets this close
+    const FOOD_SPEED = SPEED / 2;   // the food drifts at half the snake's pace
+    const FOOD_TURN_MIN = 0.5, FOOD_TURN_MAX = 1.8;  // seconds between direction changes
+    const NECK = 34;            // trail points behind the head that cannot kill
 
     let W = 0, H = 0;
     function sizeCanvas() {
@@ -101,6 +105,7 @@
     let angle = 0, turnInput = 0, targetLen = START_LEN;
     let food = null, score = 0, earned = 0, alive = false, raf = null, last = 0, paused = false;
     let fleeArmed = true;       // one escape roll per approach, not per frame
+    let foodAngle = 0, foodTurnAt = 0, elapsed = 0;
 
     // wrap coordinates onto the torus the old grid used
     function wrap(p) {
@@ -116,6 +121,9 @@
       return Math.hypot(dx, dy);
     }
     function placeFood(minDist) {
+      // a fresh piece of food sets off in a new random direction
+      foodAngle = Math.random() * Math.PI * 2;
+      foodTurnAt = elapsed + FOOD_TURN_MIN + Math.random() * (FOOD_TURN_MAX - FOOD_TURN_MIN);
       const head = path[0] || { x: W / 2, y: H / 2 };
       let best = null, bestD = -1;
       for (let i = 0; i < 40; i++) {                 // rejection sample, keep the furthest
@@ -141,7 +149,7 @@
       const start = { x: W / 2, y: H / 2 };
       for (let i = 0; i < 24; i++) path.push({ x: start.x - i * 4, y: start.y });
       angle = 0; turnInput = 0; targetLen = START_LEN;
-      score = 0; alive = true;
+      score = 0; alive = true; elapsed = 0;
       food = placeFood(220);
     }
 
@@ -156,12 +164,37 @@
       }
     }
 
+    // The body kills, but only past the neck: the trail immediately behind the
+    // head is always within a body-width of it, so counting that would end the
+    // run the instant you turned hard.
+    function hitsSelf(head) {
+      for (let i = NECK; i < path.length; i++) {
+        if (dist(head, path[i]) < HEAD_R * 0.9) return true;
+      }
+      return false;
+    }
+
+    function moveFood(dt) {
+      if (!food) return;
+      if (elapsed >= foodTurnAt) {
+        foodAngle += (Math.random() - 0.5) * Math.PI;
+        foodTurnAt = elapsed + FOOD_TURN_MIN + Math.random() * (FOOD_TURN_MAX - FOOD_TURN_MIN);
+      }
+      food = wrap({
+        x: food.x + Math.cos(foodAngle) * FOOD_SPEED * dt,
+        y: food.y + Math.sin(foodAngle) * FOOD_SPEED * dt,
+      });
+    }
+
     function step(dt) {
+      elapsed += dt;
       angle += turnInput * TURN * dt;
       const head = path[0];
       const next = wrap({ x: head.x + Math.cos(angle) * SPEED * dt, y: head.y + Math.sin(angle) * SPEED * dt });
       path.unshift(next);
       trimPath();
+      if (hitsSelf(next)) { gameOver(); return; }
+      moveFood(dt);
 
       if (food) {
         const d = dist(next, food);
@@ -282,6 +315,16 @@
       document.getElementById("hud-length").textContent = Math.round(targetLen);
       document.getElementById("hud-earned").textContent = earned;
     }
+    function gameOver() {
+      alive = false;
+      statusEl.textContent = "You ran into yourself. " + score +
+        (score === 1 ? " piece" : " pieces") + " eaten.";
+      const pb = document.getElementById("pause");
+      pb.disabled = true;
+      document.getElementById("start").textContent = "Play again";
+      draw();
+    }
+
     function start() {
       sizeCanvas(); reset(); earned = 0; showScore();
       statusEl.textContent = "";
