@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>dashboard mockups — maximalist</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Major+Mono+Display&display=swap" rel="stylesheet" />
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{--c:#aee3ff;--dim:#4f7ea0;--dim2:#2c4a5e;--bright:#eafaff;--accent:#8fd0ff;
+        --glow:rgba(120,190,255,.32);--red:#ff3b2f;--gold:#ffd27a;--gold2:#c99a45;
+        --amber:#ffb648;--green:#7dffb0;--panel:#08131c;--line:#1c3a4d;--line2:#122633}
+  html,body{height:100%}
+  body{background:#02060a;color:var(--c);font-family:"IBM Plex Mono",monospace;font-size:13px;overflow:hidden}
+  .scan{position:fixed;inset:0;z-index:200;pointer-events:none;
+    background:repeating-linear-gradient(0deg,rgba(0,0,0,.22) 0 1px,transparent 1px 3px)}
+  .vig{position:fixed;inset:0;z-index:199;pointer-events:none;box-shadow:inset 0 0 26vh 9vh rgba(0,0,0,.72)}
+  .stage{position:absolute;inset:0;padding:2vh 1.6vw;overflow:hidden}
+  .tag{position:fixed;left:10px;bottom:6px;z-index:300;color:#5a6b78;font-size:11px;letter-spacing:.16em}
+
+  /* ---- shared ornament ---- */
+  .gold{color:var(--gold)} .g2{color:var(--gold2)} .acc{color:var(--accent)} .br{color:var(--bright)}
+  .dimc{color:var(--dim)} .grn{color:var(--green)}
+  pre{font-family:inherit;white-space:pre;line-height:1.15}
+  .full{position:absolute;inset:0;padding:2.2vh 2vw;display:flex;flex-direction:column;overflow:hidden}
+  .glow{text-shadow:0 0 14px var(--glow)}
+  .goldglow{text-shadow:0 0 14px rgba(255,210,122,.4)}
+  /* an ornate double frame drawn with borders + corner marks */
+  .oframe{position:relative;border:1px solid var(--gold2);box-shadow:inset 0 0 0 3px #02060a,inset 0 0 0 4px var(--line);
+    padding:1rem 1.2rem;background:linear-gradient(180deg,rgba(120,190,255,.03),transparent 70%)}
+  .oframe::before,.oframe::after{content:"✦";position:absolute;color:var(--gold);font-size:11px}
+  .oframe::before{top:3px;left:5px}.oframe::after{bottom:3px;right:5px}
+  .corner{position:absolute;color:var(--gold);font-size:11px}
+  .rule{color:var(--gold2);letter-spacing:.02em;white-space:nowrap;overflow:hidden}
+  .lbl{color:var(--dim);letter-spacing:.24em;text-transform:uppercase;font-size:9px}
+  .big{font-size:2.2rem;color:var(--bright);line-height:1}
+  h1{font-family:"Major Mono Display",monospace;font-weight:400;text-transform:lowercase;letter-spacing:.04em;
+    color:var(--bright)}
+  a{color:inherit;text-decoration:none}
+
+  /* ============ 1 ornate framed altar ============ */
+  .m1{position:absolute;inset:1.4vh 1.4vw;border:2px solid var(--gold2);padding:0;
+    box-shadow:inset 0 0 0 4px #02060a,inset 0 0 0 5px var(--line),0 0 40px rgba(0,0,0,.6);display:flex;flex-direction:column}
+  .m1 .band{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);
+    padding:.5rem 1rem;color:var(--dim);letter-spacing:.24em;font-size:10px;text-transform:uppercase;background:rgba(255,210,122,.03)}
+  .m1 .band .gold{letter-spacing:.3em}
+  .m1 .body{flex:1;display:grid;grid-template-columns:1.4fr 1fr;min-height:0}
+  .m1 .altar{border-right:1px solid var(--line);padding:1.6rem;display:flex;flex-direction:column;justify-content:center}
+  .m1 .altar .sig{color:var(--gold);font-size:2.4rem;text-align:center;margin-bottom:1rem;letter-spacing:.5rem}
+  .m1 .altar h1{font-size:3rem;line-height:1.02;text-align:center}
+  .m1 .altar .sub{color:var(--dim);text-align:center;margin-top:1rem;letter-spacing:.1em}
+  .m1 .altar .pts{text-align:center;margin-top:1.6rem}
+  .m1 .side{padding:1.2rem;display:flex;flex-direction:column;gap:.5rem}
+  .m1 .row{display:flex;justify-content:space-between;border-bottom:1px dotted var(--line);padding:.3rem 0}
+  .m1 .row b{color:var(--gold);font-weight:400}
+  .m1 .nav a{display:block;padding:.2rem 0;color:var(--c)}.m1 .nav a::before{content:"❧ ";color:var(--gold2)}
+
+  /* ============ 2 sigil grid HUD ============ */
+  .m2{position:absolute;inset:0;display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(3,1fr);
+    gap:1px;background:var(--line2);padding:1px}
+  .m2 .cell{background:#040a10;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    padding:.6rem;overflow:hidden}
+  .m2 .cell .sg{font-size:2.2rem;color:var(--accent);text-shadow:0 0 18px var(--glow)}
+  .m2 .cell .k{font-size:8px;letter-spacing:.2em;color:var(--dim);text-transform:uppercase;margin-top:.4rem}
+  .m2 .cell .v{color:var(--bright);font-size:1.1rem}
+  .m2 .center{grid-column:2/4;grid-row:2;background:radial-gradient(circle,rgba(255,210,122,.08),#040a10 70%)}
+  .m2 .center .halo{font-size:3.4rem;color:var(--gold);text-shadow:0 0 26px rgba(255,210,122,.5)}
+  .m2 .center h1{font-size:1.6rem;margin-top:.3rem}
+  .m2 .cell::before{content:"";position:absolute;inset:6px;border:1px solid rgba(255,210,122,.12)}
+
+  /* ============ 3 illuminated manuscript ============ */
+  .m3{position:absolute;inset:1.6vh 3vw;border:1px solid var(--gold2);padding:1.4rem 1.8rem;
+    box-shadow:inset 0 0 0 6px #02060a,inset 0 0 0 7px var(--line);column-gap:2.4rem;display:grid;
+    grid-template-columns:auto 1fr 1fr;gap:0 2rem;overflow:hidden}
+  .m3 .drop{font-family:"Major Mono Display",monospace;font-size:7rem;color:var(--gold);line-height:.9;
+    text-shadow:0 0 24px rgba(255,210,122,.4)}
+  .m3 .col{font-size:12px;line-height:1.9;color:var(--c)}
+  .m3 .col h2{color:var(--gold);font-weight:400;letter-spacing:.1em;font-size:11px;text-transform:uppercase;
+    border-bottom:1px solid var(--line);margin-bottom:.4rem;padding-bottom:.2rem}
+  .m3 .col .row{display:flex;justify-content:space-between}.m3 .col b{color:var(--bright);font-weight:400}
+  .m3 .marg{writing-mode:vertical-rl;color:var(--gold2);letter-spacing:.3em;font-size:9px;text-transform:uppercase}
+
+  /* ============ 4 command cathedral ============ */
+  .m4{position:absolute;inset:0;display:grid;grid-template-columns:1fr 1.3fr 1fr;height:100%;gap:0}
+  .m4 .nave{border-left:1px solid var(--line);border-right:1px solid var(--line);
+    background:repeating-linear-gradient(0deg,rgba(120,190,255,.03) 0 1px,transparent 1px 26px);
+    display:flex;flex-direction:column;align-items:center;padding:2vh 1rem;overflow:hidden}
+  .m4 .rose{font-size:5rem;color:var(--gold);text-shadow:0 0 30px rgba(255,210,122,.4);margin-top:1rem}
+  .m4 .clk{font-size:2.2rem;color:var(--accent);margin-top:.6rem}
+  .m4 .col{padding:2vh 1rem;display:flex;flex-direction:column;gap:.8rem;overflow:hidden}
+  .m4 .arch{border:1px solid var(--line);border-radius:40% 40% 0 0;padding:1rem .8rem .8rem;text-align:center;
+    background:linear-gradient(180deg,rgba(255,210,122,.04),transparent)}
+  .m4 .arch .k{font-size:8px;letter-spacing:.2em;color:var(--dim);text-transform:uppercase}
+  .m4 .arch .v{color:var(--bright);font-size:1.4rem}
+  .m4 .col.r{align-items:stretch}
+  .m4 .lb div{display:flex;justify-content:space-between;padding:.14rem 0;border-bottom:1px dotted var(--line)}
+  .m4 .lb b{color:var(--gold)}
+
+  /* ============ 5 mission-control wall ============ */
+  .m5{position:absolute;inset:0;display:grid;grid-template-columns:repeat(6,1fr);grid-auto-rows:1fr;gap:2px;
+    background:#0a1a24;padding:2px}
+  .m5 .p{background:#040b11;border:1px solid var(--line);padding:.4rem .5rem;overflow:hidden;position:relative;font-size:10px}
+  .m5 .p .k{color:var(--dim);font-size:8px;letter-spacing:.14em;text-transform:uppercase}
+  .m5 .p .v{color:var(--bright);font-size:1rem}
+  .m5 .p .dot{position:absolute;top:.4rem;right:.4rem;width:5px;height:5px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green)}
+  .m5 .p.amber .dot{background:var(--amber);box-shadow:0 0 6px var(--amber)}
+  .m5 .wide{grid-column:span 3}.m5 .tall{grid-row:span 2}
+  .m5 .hero{grid-column:span 3;grid-row:span 2;display:flex;flex-direction:column;justify-content:center;
+    background:radial-gradient(circle at 30% 30%,rgba(120,190,255,.06),#040b11 70%)}
+  .m5 .hero h1{font-size:2rem}
+  .m5 .lb i{display:block;color:var(--c)}.m5 .lb b{color:var(--gold)}
+
+  /* ============ 6 tarot spread ============ */
+  .m6{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:1.4rem;padding:2vw}
+  .m6 .card{width:min(21%,220px);aspect-ratio:.66;border:1px solid var(--gold2);position:relative;
+    box-shadow:inset 0 0 0 4px #02060a,inset 0 0 0 5px var(--line),0 18px 40px rgba(0,0,0,.7);
+    display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:1rem .7rem;
+    background:linear-gradient(180deg,rgba(255,210,122,.04),transparent 60%)}
+  .m6 .card:nth-child(odd){transform:rotate(-2deg)}.m6 .card:nth-child(even){transform:rotate(2deg)}
+  .m6 .card .rn{color:var(--gold);letter-spacing:.2em;font-size:9px}
+  .m6 .card .sig{font-size:2.6rem;color:var(--accent);text-shadow:0 0 20px var(--glow)}
+  .m6 .card .nm{color:var(--bright);text-align:center;font-size:.8rem;letter-spacing:.06em}
+  .m6 .card .v{color:var(--gold);font-size:1.3rem}
+
+  /* ============ 7 veve circuit ============ */
+  .m7{position:absolute;inset:0}
+  .m7 svg{position:absolute;inset:0;width:100%;height:100%}
+  .m7 .node{position:absolute;transform:translate(-50%,-50%);text-align:center}
+  .m7 .node .sg{font-size:1.6rem;color:var(--gold);text-shadow:0 0 16px rgba(255,210,122,.4)}
+  .m7 .node .k{font-size:8px;letter-spacing:.16em;color:var(--dim);text-transform:uppercase}
+  .m7 .node .v{color:var(--bright)}
+  .m7 .core{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);text-align:center}
+  .m7 .core h1{font-size:1.8rem}.m7 .core .sig{font-size:2.4rem;color:var(--accent);text-shadow:0 0 24px var(--glow)}
+
+  /* ============ 8 grimoire spread ============ */
+  .m8{position:absolute;inset:1.4vh 2vw;display:grid;grid-template-columns:1fr 2px 1fr;border:1px solid var(--gold2);
+    box-shadow:inset 0 0 0 5px #02060a,inset 0 0 0 6px var(--line)}
+  .m8 .spine{background:linear-gradient(var(--gold2),transparent,var(--gold2))}
+  .m8 .page{padding:1.4rem 1.6rem;overflow:hidden}
+  .m8 .page h2{color:var(--gold);font-weight:400;letter-spacing:.12em;text-transform:uppercase;font-size:11px;text-align:center;
+    margin-bottom:.6rem}
+  .m8 .page .seal{text-align:center;color:var(--gold);font-size:1.8rem;margin:.4rem 0}
+  .m8 .page p{font-size:12px;line-height:1.9;color:var(--c)}
+  .m8 .page .row{display:flex;justify-content:space-between;border-bottom:1px dotted var(--line);padding:.2rem 0}
+  .m8 .page b{color:var(--bright);font-weight:400}
+
+  /* ============ 9 concentric halo ============ */
+  .m9{position:absolute;inset:0;display:grid;place-items:center}
+  .m9 .rings{position:relative;width:min(84vh,92vw);aspect-ratio:1}
+  .m9 .ring{position:absolute;border:1px solid var(--line);border-radius:50%}
+  .m9 .ring.g{border-color:var(--gold2)}
+  .m9 .core{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);text-align:center}
+  .m9 .core .sig{font-size:2.6rem;color:var(--gold);text-shadow:0 0 26px rgba(255,210,122,.5)}
+  .m9 .core h1{font-size:1.7rem}
+  .m9 .orb{position:absolute;transform:translate(-50%,-50%);text-align:center;font-size:10px}
+  .m9 .orb .v{color:var(--bright);font-size:1rem}.m9 .orb .k{color:var(--dim);font-size:8px;letter-spacing:.14em;text-transform:uppercase}
+
+  /* ============ 10 ascii stained glass ============ */
+  .m10{position:absolute;inset:0;display:grid;place-items:center;overflow:hidden}
+  .m10 pre{color:var(--dim2);font-size:min(1.5vw,15px);line-height:1.05;position:absolute;opacity:.55}
+  .m10 .panels{position:relative;z-index:2;display:grid;grid-template-columns:repeat(3,auto);gap:1rem}
+  .m10 .gp{border:1px solid var(--gold2);background:rgba(2,6,10,.86);padding:.7rem 1rem;text-align:center;
+    box-shadow:inset 0 0 0 3px #02060a,inset 0 0 0 4px var(--line)}
+  .m10 .gp .k{font-size:8px;letter-spacing:.2em;color:var(--dim);text-transform:uppercase}
+  .m10 .gp .v{color:var(--bright);font-size:1.3rem}.m10 .gp.acc .v{color:var(--accent)}
+
+  /* ============ 11 reliquary panels ============ */
+  .m11{position:absolute;inset:0;padding:2vh 2vw;display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:1fr;gap:1rem}
+  .m11 .rel{border:1px solid var(--gold2);position:relative;padding:1rem;display:flex;flex-direction:column;
+    justify-content:center;align-items:center;box-shadow:inset 0 0 0 3px #02060a,inset 0 0 0 4px var(--line);
+    background:radial-gradient(circle at 50% 30%,rgba(255,210,122,.05),transparent 70%)}
+  .m11 .rel::before{content:"◈";position:absolute;top:-8px;left:50%;transform:translateX(-50%);color:var(--gold);background:#02060a;padding:0 4px}
+  .m11 .rel .k{font-size:8px;letter-spacing:.2em;color:var(--dim);text-transform:uppercase}
+  .m11 .rel .v{color:var(--bright);font-size:1.6rem;text-shadow:0 0 14px var(--glow)}
+  .m11 .rel .s{color:var(--gold);font-size:1.4rem}
+  .m11 .wide{grid-column:span 2}.m11 .wide h1{font-size:2rem}
+
+  /* ============ 12 teletype scripture ============ */
+  .m12{position:absolute;inset:0;padding:3vh 6vw;overflow:hidden;font-size:13px;line-height:1.85}
+  .m12 .mk{color:var(--gold);letter-spacing:.2em}
+  .m12 .verse{color:var(--c)}.m12 .verse b{color:var(--bright);font-weight:400}
+  .m12 .chap{color:var(--gold);text-transform:uppercase;letter-spacing:.24em;font-size:10px;margin-top:.6rem;
+    border-bottom:1px solid var(--line);padding-bottom:.2rem}
+  .m12 .v{color:var(--accent)}
+
+  /* ============ 13 great sigil board ============ */
+  .m13{position:absolute;inset:0;display:grid;grid-template-columns:1fr 1.4fr 1fr;height:100%}
+  .m13 .side{padding:2vh 1rem;display:flex;flex-direction:column;gap:.7rem;overflow:hidden}
+  .m13 .ann{border:1px solid var(--line);padding:.4rem .6rem;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+  .m13 .ann.lit{border-color:var(--gold2);color:var(--gold)}
+  .m13 .center{display:grid;place-items:center;border-left:1px solid var(--line);border-right:1px solid var(--line);
+    background:radial-gradient(circle,rgba(255,210,122,.05),transparent 65%)}
+  .m13 .center pre{color:var(--gold);font-size:min(1.5vw,15px);text-shadow:0 0 20px rgba(255,210,122,.35)}
+  .m13 .side .v{color:var(--bright)}.m13 .side .k{color:var(--dim);font-size:8px;letter-spacing:.2em;text-transform:uppercase}
+
+  /* ============ 14 data tapestry ============ */
+  .m14{position:absolute;inset:0;overflow:hidden}
+  .m14 pre.weave{position:absolute;inset:0;color:var(--line);font-size:14px;line-height:1;opacity:.7}
+  .m14 .panels{position:absolute;inset:0;padding:3vh 3vw;display:grid;grid-template-columns:repeat(3,1fr);
+    grid-auto-rows:min-content;gap:1rem;align-content:center}
+  .m14 .brocade{border:1px solid var(--gold2);background:rgba(2,6,10,.9);padding:.7rem 1rem;
+    box-shadow:inset 0 0 0 3px #02060a}
+  .m14 .brocade .k{color:var(--dim);font-size:8px;letter-spacing:.18em;text-transform:uppercase}
+  .m14 .brocade .v{color:var(--bright);font-size:1.2rem}.m14 .brocade.gold .v{color:var(--gold)}
+
+  /* ============ 15 the throne ============ */
+  .m15{position:absolute;inset:0;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:2vh 2vw;gap:1.4rem}
+  .m15 .wing{display:flex;flex-direction:column;gap:.9rem}
+  .m15 .wing.r{text-align:right}
+  .m15 .throne{text-align:center}
+  .m15 .throne pre{color:var(--gold);font-size:min(1.4vw,14px);line-height:1.05;text-shadow:0 0 20px rgba(255,210,122,.35)}
+  .m15 .throne h1{font-size:2.4rem;margin-top:.6rem}
+  .m15 .throne .sub{color:var(--dim);letter-spacing:.14em;margin-top:.3rem}
+  .m15 .read .k{font-size:8px;letter-spacing:.2em;color:var(--dim);text-transform:uppercase}
+  .m15 .read .v{color:var(--bright);font-size:1.5rem}
+  .m15 .nav a{display:block;padding:.14rem 0}.m15 .nav a::before{content:"✦ ";color:var(--gold2)}
+</style></head>
+<body>
+<div class="stage" id="stage"></div><div class="vig"></div><div class="scan"></div><div class="tag" id="tag"></div>
+<script>
+const U={name:"seraph",rank:"Disciple",pts:"4,205",coins:"300",flavor:"mirror mirror on the wall."};
+const CK={time:"05:34",date:"Thursday · July 30",tz:"EDT",reset:"0h 26m"};
+const NAV=["Games","Profile","Hermione","Settings","Log out"];
+const LB=[["I","valentine","9,180"],["II","noor","6,742"],["III","seraph","4,205"],["IV","ramona","3,110"],["V","ranker","1,800"]];
+const SIG=["✦","☾","✝","❖","♛","⚕","✧","⛧","❦","☩","✤","♆","✥","⟡","✠"];
+const rep=(s,n)=>s.repeat(n);
+const hdr=(r)=>`<span class="lbl">angelOS v0.2</span>`;
+
+/* 1 ---- ornate framed altar */
+function d1(){
+  return `<div class="m1">
+    <div class="band"><span class="gold">✦ &nbsp; A N G E L O S &nbsp; ✦</span><span>vessel record &middot; ${CK.tz}</span><span class="gold">✦ &nbsp; v0.2 &nbsp; ✦</span></div>
+    <div class="body">
+      <div class="altar">
+        <div class="sig">☩ ✦ ☩</div>
+        <h1 class="goldglow">welcome,<br>${U.name}</h1>
+        <div class="sub">${U.flavor}</div>
+        <div class="pts"><div class="big goldglow">${U.pts}</div><div class="lbl">points &middot; ${U.rank}</div></div>
+      </div>
+      <div class="side">
+        <div class="lbl" style="text-align:center;margin-bottom:.4rem">❧ the hours ❧</div>
+        <div class="row"><span>time</span><b>${CK.time} ${CK.tz}</b></div>
+        <div class="row"><span>reset in</span><b>${CK.reset}</b></div>
+        <div class="row"><span>angelcoins</span><b>${U.coins}</b></div>
+        <div class="lbl" style="text-align:center;margin:.7rem 0 .3rem">❧ the board ❧</div>
+        ${LB.slice(0,3).map(([r,n,p])=>`<div class="row"><span>${r} &nbsp; ${n}</span><b>${p}</b></div>`).join("")}
+        <div class="lbl" style="text-align:center;margin:.7rem 0 .3rem">❧ enter ❧</div>
+        <div class="nav">${NAV.map(n=>`<a>${n}</a>`).join("")}</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* 2 ---- sigil grid HUD */
+function d2(){
+  const cells=[["✦","points",U.pts],["☾","rank",U.rank],["⚕","coins",U.coins],["✧","clock",CK.time],
+    ["❖","reset",CK.reset],["♛","board","#3"],["✤","games","9"],["⛧","online","3"]];
+  let out=`<div class="m2">`;
+  // top row 4
+  cells.slice(0,4).forEach(([s,k,v])=>out+=`<div class="cell"><div class="sg glow">${s}</div><div class="v">${v}</div><div class="k">${k}</div></div>`);
+  // middle: two side cells + center
+  out+=`<div class="cell"><div class="sg glow">${cells[4][0]}</div><div class="v">${cells[4][2]}</div><div class="k">${cells[4][1]}</div></div>`;
+  out+=`<div class="center"><div class="halo">☩</div><h1 class="goldglow">${U.name}</h1><div class="k">${U.rank}</div></div>`;
+  out+=`<div class="cell"><div class="sg glow">${cells[5][0]}</div><div class="v">${cells[5][2]}</div><div class="k">${cells[5][1]}</div></div>`;
+  // bottom row 4
+  cells.slice(6).forEach(([s,k,v])=>out+=`<div class="cell"><div class="sg glow">${s}</div><div class="v">${v}</div><div class="k">${k}</div></div>`);
+  out+=`<div class="cell"><div class="sg glow">✝</div><div class="v" style="font-size:.8rem">games</div><div class="k">enter</div></div>`;
+  out+=`<div class="cell"><div class="sg glow">❧</div><div class="v" style="font-size:.8rem">profile</div><div class="k">enter</div></div>`;
+  out+=`</div>`;
+  return out;
+}
+
+/* 3 ---- illuminated manuscript */
+function d3(){
+  return `<div class="m3">
+    <div class="drop">S</div>
+    <div class="col">
+      <h2>✦ the vessel</h2>
+      <div class="row"><span>eraph, of the</span><b>${U.rank}</b></div>
+      <p style="margin:.4rem 0">${U.flavor} Bound in service, her hours numbered and her devotions kept in this illuminated record.</p>
+      <div class="row"><span>points accrued</span><b class="gold">${U.pts}</b></div>
+      <div class="row"><span>angelcoins</span><b>${U.coins}</b></div>
+      <h2 style="margin-top:.8rem">✦ the hours</h2>
+      <div class="row"><span>${CK.date}</span><b>${CK.time} ${CK.tz}</b></div>
+      <div class="row"><span>daily reset</span><b>${CK.reset}</b></div>
+    </div>
+    <div style="display:flex;gap:1rem">
+      <div class="col" style="flex:1">
+        <h2>✦ the board</h2>
+        ${LB.map(([r,n,p])=>`<div class="row"><span>${r} &nbsp; ${n}</span><b>${p}</b></div>`).join("")}
+        <h2 style="margin-top:.8rem">✦ passages</h2>
+        <div class="nav">${NAV.map(n=>`<div class="row"><span>&rsaquo; ${n}</span></div>`).join("")}</div>
+      </div>
+      <div class="marg">angelOS · liber vitae · anno mmxxvi</div>
+    </div>
+  </div>`;
+}
+
+/* 4 ---- command cathedral */
+function d4(){
+  return `<div class="m4">
+    <div class="col">
+      ${[["points",U.pts],["rank",U.rank],["coins",U.coins]].map(([k,v])=>`<div class="arch"><div class="k">${k}</div><div class="v goldglow">${v}</div></div>`).join("")}
+      <div class="nav" style="margin-top:auto;color:var(--dim);line-height:2">${NAV.map(n=>`<div>✦ ${n}</div>`).join("")}</div>
+    </div>
+    <div class="nave">
+      <div class="lbl">✦ sanctum ✦</div>
+      <div class="rose">✵</div>
+      <div class="clk goldglow">${CK.time}</div>
+      <div class="lbl" style="margin-top:.3rem">${CK.date} ${CK.tz}</div>
+      <h1 style="font-size:1.8rem;margin-top:1.4rem" class="goldglow">${U.name}</h1>
+      <div class="lbl" style="margin-top:.4rem">${U.flavor}</div>
+    </div>
+    <div class="col r">
+      <div class="lbl">✦ the board ✦</div>
+      <div class="lb">${LB.map(([r,n,p])=>`<div><span>${r} ${n}</span><b>${p}</b></div>`).join("")}</div>
+      <div class="arch" style="margin-top:1rem"><div class="k">reset in</div><div class="v">${CK.reset}</div></div>
+    </div>
+  </div>`;
+}
+
+/* 5 ---- mission control wall */
+function d5(){
+  const small=[["points",U.pts,""],["rank",U.rank,""],["coins",U.coins,""],["reset",CK.reset,""],
+    ["devotion","82%",""],["approvals","1","amber"],["wheel","rdy",""],["online","3",""],["games","9",""]];
+  return `<div class="m5">
+    <div class="hero"><div class="lbl">angelOS // vessel</div><h1 class="goldglow">${U.name}</h1><div class="lbl">${U.rank} &middot; ${U.flavor}</div></div>
+    <div class="p tall" style="grid-column:span 3"><span class="dot"></span><div class="k">clock ${CK.tz}</div><div class="v" style="font-size:1.8rem">${CK.time}</div><div class="k" style="margin-top:.4rem">${CK.date}</div>
+      <div class="lb" style="margin-top:.5rem">${LB.slice(0,3).map(([r,n,p])=>`<i>${r} ${n} <b>${p}</b></i>`).join("")}</div></div>
+    ${small.map(([k,v,c])=>`<div class="p ${c}"><span class="dot"></span><div class="k">${k}</div><div class="v">${v}</div></div>`).join("")}
+    <div class="p wide"><span class="dot"></span><div class="k">enter</div><div class="v" style="font-size:.8rem;color:var(--c)">${NAV.join(" &nbsp;·&nbsp; ")}</div></div>
+  </div>`;
+}
+
+/* 6 ---- tarot spread */
+function d6(){
+  const cards=[["I","☾","THE HOURS",CK.time],["II","✦","THE VESSEL",U.pts],["III","☩","THE ANGEL",U.rank],
+    ["IV","♛","THE BOARD","#3"],["V","⚕","THE COIN",U.coins]];
+  return `<div class="m6">${cards.map(([r,s,n,v])=>`<div class="card">
+    <div class="rn">${r}</div><div class="sig glow">${s}</div><div class="nm">${n}</div><div class="v goldglow">${v}</div>
+  </div>`).join("")}</div>`;
+}
+
+/* 7 ---- veve circuit */
+function d7(){
+  const nodes=[["✦","points",U.pts,22,26],["☾","clock",CK.time,78,24],["⚕","coins",U.coins,16,64],
+    ["♛","board","#3",84,66],["❖","reset",CK.reset,50,84]];
+  const lines=nodes.map(n=>`<line x1="50" y1="50" x2="${n[3]}" y2="${n[4]}" stroke="rgba(255,210,122,.28)" stroke-width="0.3"/>`).join("");
+  return `<div class="m7">
+    <svg viewBox="0 0 100 100" preserveAspectRatio="none">${lines}
+      <circle cx="50" cy="50" r="30" fill="none" stroke="var(--line)" stroke-width="0.3"/>
+      <circle cx="50" cy="50" r="20" fill="none" stroke="rgba(255,210,122,.25)" stroke-width="0.3"/></svg>
+    <div class="core"><div class="sig glow">☩</div><h1 class="goldglow">${U.name}</h1><div class="lbl">${U.rank}</div></div>
+    ${nodes.map(n=>`<div class="node" style="left:${n[3]}%;top:${n[4]}%"><div class="sg">${n[0]}</div><div class="v">${n[2]}</div><div class="k">${n[1]}</div></div>`).join("")}
+  </div>`;
+}
+
+/* 8 ---- grimoire spread */
+function d8(){
+  return `<div class="m8">
+    <div class="page">
+      <h2>✦ liber vitae ✦</h2>
+      <div class="seal">☩</div>
+      <p style="text-align:center;color:var(--dim)">${U.flavor}</p>
+      <div class="row" style="margin-top:.6rem"><span>vessel</span><b>${U.name}</b></div>
+      <div class="row"><span>rank</span><b>${U.rank}</b></div>
+      <div class="row"><span>points</span><b class="gold">${U.pts}</b></div>
+      <div class="row"><span>angelcoins</span><b>${U.coins}</b></div>
+      <div class="row"><span>the hour</span><b>${CK.time} ${CK.tz}</b></div>
+      <div class="row"><span>reset</span><b>${CK.reset}</b></div>
+    </div>
+    <div class="spine"></div>
+    <div class="page">
+      <h2>✦ the ledger of vessels ✦</h2>
+      <div class="seal">♛</div>
+      ${LB.map(([r,n,p])=>`<div class="row"><span>${r} &nbsp; ${n}</span><b>${p}</b></div>`).join("")}
+      <h2 style="margin-top:1rem">✦ rites ✦</h2>
+      <div style="color:var(--c);line-height:2;text-align:center">${NAV.map(n=>`✦ ${n}`).join("<br>")}</div>
+    </div>
+  </div>`;
+}
+
+/* 9 ---- concentric halo */
+function d9(){
+  const orbs=[["points",U.pts,50,6],["rank",U.rank,90,32],["coins",U.coins,82,74],
+    ["clock",CK.time,18,74],["board","#3",10,32]];
+  return `<div class="m9"><div class="rings">
+    ${[48,37,25].map((r,i)=>`<div class="ring ${i===1?'g':''}" style="inset:${50-r}% ${50-r}% ${50-r}% ${50-r}%"></div>`).join("")}
+    <div class="core"><div class="sig">☩</div><h1 class="goldglow">${U.name}</h1><div class="lbl">${U.rank}</div></div>
+    ${orbs.map(o=>`<div class="orb" style="left:${o[2]}%;top:${o[3]}%"><div class="v goldglow">${o[1]}</div><div class="k">${o[0]}</div></div>`).join("")}
+  </div></div>`;
+}
+
+/* 10 ---- ascii stained glass */
+function d10(){
+  const art=String.raw`      /\        /\
+     /  \  ✦   /  \
+    / ✝  \    / ☾  \
+   /______\  /______\
+   \      /  \      /
+    \ ☩  /    \ ⚕  /
+     \  /  ✦   \  /
+      \/        \/`;
+  return `<div class="m10"><pre>${rep(art+"\n\n",6)}</pre>
+    <div class="panels">
+      <div class="gp acc"><div class="k">clock</div><div class="v">${CK.time}</div></div>
+      <div class="gp" style="grid-row:span 2;display:flex;flex-direction:column;justify-content:center"><div class="k">vessel</div><h1 class="goldglow" style="font-size:1.5rem;margin:.3rem 0">${U.name}</h1><div class="k">${U.rank}</div><div class="v" style="margin-top:.4rem">${U.pts}</div></div>
+      <div class="gp"><div class="k">coins</div><div class="v">${U.coins}</div></div>
+      <div class="gp"><div class="k">rank</div><div class="v">#3</div></div>
+      <div class="gp"><div class="k">reset</div><div class="v">${CK.reset}</div></div>
+    </div>
+  </div>`;
+}
+
+/* 11 ---- reliquary panels */
+function d11(){
+  return `<div class="m11">
+    <div class="rel wide"><div class="k">the vessel</div><h1 class="goldglow">${U.name}</h1><div class="k">${U.rank} &middot; ${U.flavor}</div></div>
+    <div class="rel"><div class="k">points</div><div class="v">${U.pts}</div></div>
+    <div class="rel"><div class="k">angelcoins</div><div class="s">✦</div><div class="v">${U.coins}</div></div>
+    <div class="rel"><div class="k">clock ${CK.tz}</div><div class="v">${CK.time}</div></div>
+    <div class="rel"><div class="k">reset in</div><div class="v">${CK.reset}</div></div>
+    <div class="rel"><div class="k">rank</div><div class="v">#3</div></div>
+    <div class="rel wide"><div class="k">the board</div><div style="display:flex;gap:1.2rem;color:var(--c);margin-top:.3rem">${LB.slice(0,3).map(([r,n,p])=>`<span>${n} <b class="gold">${p}</b></span>`).join("")}</div></div>
+  </div>`;
+}
+
+/* 12 ---- teletype scripture */
+function d12(){
+  return `<div class="m12">
+    <div class="mk">✝ ─────────────────  angelOS · book of the vessel  ───────────────── ✝</div>
+    <div class="chap">i. the vessel</div>
+    <div class="verse"><span class="v">1</span> And she was named <b>${U.name}</b>, of the <b>${U.rank}</b>. <span class="v">2</span> ${U.flavor} <span class="v">3</span> Her points numbered <b class="gold">${U.pts}</b>, her coins <b>${U.coins}</b>.</div>
+    <div class="chap">ii. the hours</div>
+    <div class="verse"><span class="v">1</span> The hour was <b>${CK.time} ${CK.tz}</b>, upon <b>${CK.date}</b>. <span class="v">2</span> The reset should come in <b>${CK.reset}</b>.</div>
+    <div class="chap">iii. the board</div>
+    <div class="verse">${LB.map(([r,n,p],i)=>`<span class="v">${i+1}</span> ${n}, <b>${p}</b>. `).join("")}</div>
+    <div class="chap">iv. the rites</div>
+    <div class="verse">${NAV.map(n=>`❧ ${n}`).join(" &nbsp; ")}</div>
+    <div class="mk" style="margin-top:.8rem">✝ ──────────────────────  so it is written  ────────────────────── ✝</div>
+  </div>`;
+}
+
+/* 13 ---- great sigil board */
+function d13(){
+  const sigil=String.raw`         ✦
+       ╱ │ ╲
+     ╱   │   ╲
+   ◈─────☩─────◈
+     ╲   │   ╱
+       ╲ │ ╱
+         ✦`;
+  return `<div class="m13">
+    <div class="side">
+      <div class="lbl">✦ annunciators</div>
+      ${["games","profile","devotion","wheel"].map(a=>`<div class="ann lit">${a}</div>`).join("")}
+      <div class="ann amber" style="border-color:var(--amber);color:var(--amber)">approval</div>
+      <div style="margin-top:auto"><div class="k">points</div><div class="v" style="font-size:1.6rem">${U.pts}</div></div>
+    </div>
+    <div class="center"><pre>${sigil}</pre></div>
+    <div class="side" style="text-align:right">
+      <div class="lbl">✦ readouts</div>
+      <div><div class="k">clock ${CK.tz}</div><div class="v" style="font-size:1.6rem">${CK.time}</div></div>
+      <div><div class="k">reset in</div><div class="v">${CK.reset}</div></div>
+      <div><div class="k">angelcoins</div><div class="v">${U.coins}</div></div>
+      <div style="margin-top:auto"><div class="k">leader</div><div class="v gold">valentine</div></div>
+    </div>
+  </div>`;
+}
+
+/* 14 ---- data tapestry */
+function d14(){
+  const row="✦·☾·✝·❖·♛·⚕·";
+  const weave=rep(rep(row,12)+"\n"+rep("·◊·✧·⛧·❧·☩·✤",8)+"\n",40);
+  const items=[["vessel",U.name,"gold"],["rank",U.rank,""],["points",U.pts,"gold"],["angelcoins",U.coins,""],
+    ["clock",CK.time+" "+CK.tz,""],["reset",CK.reset,""],["rank #",  "3",""],["online","3",""],["leader","valentine","gold"]];
+  return `<div class="m14"><pre class="weave">${weave}</pre>
+    <div class="panels">${items.map(([k,v,c])=>`<div class="brocade ${c}"><div class="k">${k}</div><div class="v">${v}</div></div>`).join("")}</div>
+  </div>`;
+}
+
+/* 15 ---- the throne */
+function d15(){
+  const throne=String.raw`        .╲   ✦   ╱.
+      ╔══╧═══════╧══╗
+      ║   ☩  ☩  ☩   ║
+      ╟─────────────╢
+      ║    ◈ ✦ ◈    ║
+      ╚══╤═══════╤══╝
+        ╱         ╲`;
+  return `<div class="m15">
+    <div class="wing">
+      <div class="read"><div class="k">points</div><div class="v goldglow">${U.pts}</div></div>
+      <div class="read"><div class="k">rank</div><div class="v">${U.rank}</div></div>
+      <div class="read"><div class="k">angelcoins</div><div class="v">${U.coins}</div></div>
+      <div class="nav" style="margin-top:.6rem;color:var(--dim)">${NAV.slice(0,3).map(n=>`<a>${n}</a>`).join("")}</div>
+    </div>
+    <div class="throne">
+      <pre>${throne}</pre>
+      <h1 class="goldglow">${U.name}</h1>
+      <div class="sub">${U.rank} &middot; enthroned</div>
+    </div>
+    <div class="wing r">
+      <div class="read"><div class="k">clock ${CK.tz}</div><div class="v">${CK.time}</div></div>
+      <div class="read"><div class="k">reset in</div><div class="v">${CK.reset}</div></div>
+      <div class="read"><div class="k">the board</div><div class="v gold" style="font-size:1rem">valentine 9,180</div></div>
+      <div class="nav" style="margin-top:.6rem;color:var(--dim)">${NAV.slice(3).map(n=>`<a>${n}</a>`).join("")}</div>
+    </div>
+  </div>`;
+}
+
+const DS=[d1,d2,d3,d4,d5,d6,d7,d8,d9,d10,d11,d12,d13,d14,d15];
+const NM=[
+  "1  ornate framed altar: a gilt double frame, corner sigils, a central devotion",
+  "2  sigil grid: a glowing occult HUD, one sigil per stat, a haloed centre",
+  "3  illuminated manuscript: a dropped initial, ruled columns, marginalia",
+  "4  command cathedral: arched panels and a rose window over a lit nave",
+  "5  mission-control wall: every tile filled, blinking indicators, overload",
+  "6  tarot spread: the dashboard dealt as ornate occult cards",
+  "7  veve circuit: a traced sigil-schematic, stats at the nodes",
+  "8  grimoire spread: a two-page liber vitae with wax-seal sigils",
+  "9  concentric halo: ornate rings around the enthroned vessel",
+  "10 ascii stained glass: a symmetric glass backdrop behind gilt panels",
+  "11 reliquary panels: each stat kept like a relic in a gilt case",
+  "12 teletype scripture: the dashboard as a printed liturgy, chapter and verse",
+  "13 great sigil board: a central occult sigil between annunciator rails",
+  "14 data tapestry: stats woven into a brocade of sigils",
+  "15 the throne: the vessel enthroned in ascii, chrome to the wings",
+];
+
+const n=Math.min(DS.length,Math.max(1,parseInt(new URLSearchParams(location.search).get("d")||"1",10)));
+document.getElementById("stage").innerHTML=DS[n-1]();
+document.getElementById("tag").textContent=NM[n-1];
+</script>
+</body>
+</html>
