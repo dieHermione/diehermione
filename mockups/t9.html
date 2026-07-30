@@ -2,14 +2,23 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>t9 mockups v3</title>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=Major+Mono+Display&display=swap" rel="stylesheet" />
+<title>t9 mockups v4</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
 <style>
-  /* Third attempt. The first two batches were rejected for looking like
-     calculators: flat grey rectangles with a grid of keys. Every design here is
-     a specific real handset silhouette instead, built from moulded plastic and
-     metal rather than boxes, and most sit at a slight angle so they read as an
-     object in a room. Non-photorealistic, but unmistakably that phone. */
+  /* Fourth attempt.
+     The first three were rejected for reading as calculators, and they did:
+     every one was an upright rectangle with a screen at the top and a 3x4 grid
+     of identical keys below it, which is exactly a calculator no matter what
+     colour the plastic is. Skinning it harder did not help, because the problem
+     was the shape.
+
+     So this batch throws away the div grid. Every handset is drawn as one SVG:
+     the outline is a real path with curves, a waist and a chin, the body has
+     visible thickness so you are looking at an object rather than a rectangle,
+     and no two keypads use the same geometry. Fanned rows, arcs following the
+     body, split rockers, staggered blocks, a landscape two-column pad. If any
+     of these still reads as a calculator it is the wrong shape, not the wrong
+     paint, and I want to know which one. */
   *{box-sizing:border-box;margin:0;padding:0}
   :root{--c:#aee3ff;--dim:#4f7ea0;--dim2:#2c4a5e;--bright:#eafaff;--red:#ff3b2f}
   html,body{height:100%}
@@ -17,18 +26,14 @@
   .stage{position:absolute;inset:0;padding:3vh 3vw;overflow:hidden}
   .tag{position:fixed;right:8px;bottom:6px;z-index:300;color:#444;font-size:10px;letter-spacing:.2em}
   .hdr{display:flex;justify-content:space-between;font-size:10px;letter-spacing:.35em;color:var(--dim);margin-bottom:1rem}
-
-  /* the desk the handset sits on: a pool of light, so it reads as an object */
   .room{position:absolute;inset:0;z-index:-1;
-    background:radial-gradient(58% 62% at 32% 52%,rgba(150,190,220,.13),transparent 72%)}
+    background:radial-gradient(58% 62% at 34% 54%,rgba(150,190,220,.13),transparent 72%)}
 
-  /* the penance line the player is copying, always beside the phone */
-  .w{height:calc(100% - 2.6rem);display:flex;align-items:center;gap:4rem;padding-left:2vw}
-  /* the handset is the game, so let it fill its half of the frame */
-  .w > :first-child{zoom:1.38}
-  .side{width:min(460px,36%)}
+  .w{height:calc(100% - 2.6rem);display:flex;align-items:center;gap:3rem;padding-left:1vw}
+  .w > svg{flex:0 0 auto;filter:drop-shadow(24px 38px 40px rgba(0,0,0,.85))}
+  .side{width:min(430px,34%)}
   .side .lbl{font-size:9px;letter-spacing:.3em;color:var(--dim);margin-bottom:.6rem}
-  .side .line{font-size:1.7rem;line-height:1.6;color:var(--dim2)}
+  .side .line{font-size:1.6rem;line-height:1.6;color:var(--dim2)}
   .side .line b{color:var(--bright);font-weight:400}
   .side .cur{display:inline-block;width:.5em;height:1.05em;background:var(--red);vertical-align:-3px}
   .side .kv{display:flex;justify-content:space-between;font-size:11px;padding:.24rem 0;
@@ -37,6 +42,7 @@
   .side .cyc{display:flex;gap:.4rem;align-items:center;margin-top:1.1rem}
   .side .cyc i{border:1px solid var(--dim2);padding:.26rem .6rem;font-style:normal;font-size:1rem;color:var(--dim)}
   .side .cyc i.on{border-color:var(--red);color:#fff;background:rgba(255,59,47,.16)}
+  .side .why{font-size:10px;line-height:1.9;color:var(--dim2);margin-top:1.4rem;border-left:1px solid var(--dim2);padding-left:.9rem}
 </style></head>
 <body>
 <div class="room"></div>
@@ -45,381 +51,307 @@
 const LINE="i belong to hermione", TYPED="i belong to herm";
 const K=[["1",".,?!"],["2","abc"],["3","def"],["4","ghi"],["5","jkl"],["6","mno"],
          ["7","pqrs"],["8","tuv"],["9","wxyz"],["*",""],["0","space"],["#",""]];
-const side = () => `<div class="side">
+const side = (why) => `<div class="side">
   <div class="lbl">LINE 3 OF 20</div>
   <div class="line"><b>${TYPED}</b><span class="cur"></span>${LINE.slice(TYPED.length)}</div>
   <div class="cyc"><span style="font-size:9px;letter-spacing:.3em;color:var(--dim)">KEY 6</span>
     <i class="on">m</i><i>n</i><i>o</i>
     <span style="font-size:9px;color:var(--dim2)">TAP AGAIN WITHIN 800ms</span></div>
-  <div style="margin-top:1.5rem">
+  <div style="margin-top:1.4rem">
     <div class="kv"><span>keypresses</span><b>412</b></div>
     <div class="kv"><span>mistakes</span><b style="color:var(--red)">6</b></div>
     <div class="kv"><span>0</span><b>space</b></div>
     <div class="kv"><span>Back</span><b>delete</b></div>
-  </div></div>`;
+  </div>
+  <div class="why">${why}</div></div>`;
 const hdr = (t) => `<div class="hdr"><span>ANGELDOM // T9 &nbsp;&mdash;&nbsp; ${t}</span>
   <span>PRESS 1-9 TO CYCLE</span><span>LINE 3 / 20</span></div>`;
 
-/* ============================================================
-   1. RAZR V3, open. Anodised aluminium, a real hinge with two
-   barrels, and the flat electroluminescent keypad sheet cut by
-   diagonal etched lines. Blue backlight bleeding through.
-   ============================================================ */
-function d1(){return `<style>
- .razr{width:296px;transform:perspective(1500px) rotateX(6deg) rotateY(-9deg);transform-style:preserve-3d;
-   filter:drop-shadow(26px 40px 42px rgba(0,0,0,.85))}
- .razr .half{background:
-     linear-gradient(96deg,#6e767c 0%,#c2cad0 14%,#9aa3aa 38%,#c8d0d6 62%,#7d868c 88%,#585f65 100%);
-   border:1px solid #4a5157;position:relative}
- .razr .lid{border-radius:12px 12px 4px 4px;padding:14px 13px 16px}
- .razr .base{border-radius:4px 4px 15px 15px;padding:12px 13px 16px;margin-top:8px}
- /* the hinge: two knuckles either side of a recessed barrel */
- .razr .hinge{height:11px;display:flex;align-items:center;gap:4px;margin:-4px 16px -4px}
- .razr .hinge .barrel{flex:1;height:11px;border-radius:6px;
-   background:linear-gradient(180deg,#e6ecf0,#8b949b 45%,#3b4147);box-shadow:inset 0 -1px 2px rgba(0,0,0,.6)}
- .razr .hinge .knob{width:16px;height:13px;border-radius:7px;
-   background:linear-gradient(180deg,#d4dbe0,#6a7278);box-shadow:0 1px 3px rgba(0,0,0,.6)}
- .razr .glass{background:#0c1013;border-radius:5px;padding:9px 9px 11px;
-   box-shadow:inset 0 2px 7px rgba(0,0,0,.95),0 1px 0 rgba(255,255,255,.35)}
- .razr .brandrow{display:flex;justify-content:space-between;font-family:Inter,sans-serif;font-size:6.5px;
-   letter-spacing:.34em;color:#7c8790;margin-bottom:7px}
- .lcd{background:linear-gradient(180deg,#0d2b1c,#08170f);border:1px solid #16311f;padding:9px 8px;min-height:118px;
-   box-shadow:inset 0 0 20px rgba(0,255,150,.07)}
- .lcd .st{display:flex;justify-content:space-between;font-size:7px;color:#3f8a5d;letter-spacing:.14em;margin-bottom:6px}
- .lcd .tgt{font-size:8.5px;color:#2f6e48;line-height:1.65}
- .lcd .txt{font-size:12px;color:#8dffbd;line-height:1.5;text-shadow:0 0 8px rgba(90,255,160,.5);word-break:break-word}
- .lcd .cur{display:inline-block;width:5px;height:12px;background:#8dffbd;vertical-align:-2px}
- /* nav cluster: the Razr's flat oval rocker with a chrome ring */
- .razr .nav{display:flex;align-items:center;justify-content:center;gap:14px;margin:11px 0 12px}
- .razr .soft{font-family:Inter,sans-serif;font-size:7px;letter-spacing:.2em;color:#3f464c}
- .razr .rocker{width:82px;height:30px;border-radius:16px;
-   background:linear-gradient(180deg,#e9eff3,#9aa3aa 40%,#6c757c);
-   box-shadow:0 1px 0 rgba(255,255,255,.7),inset 0 -2px 3px rgba(0,0,0,.35),0 3px 6px rgba(0,0,0,.5);
-   display:grid;place-items:center}
- .razr .rocker .ok{width:26px;height:16px;border-radius:9px;background:linear-gradient(180deg,#5b646b,#2f363b);
-   box-shadow:inset 0 1px 2px rgba(0,0,0,.7)}
- /* the pad is ONE etched sheet: no gaps between keys, only hairline cuts */
- .sheet{position:relative;border-radius:4px;overflow:hidden;
-   background:linear-gradient(180deg,#dfe6eb,#b3bcc3 55%,#8f989f);
-   box-shadow:inset 0 1px 0 rgba(255,255,255,.85),0 2px 5px rgba(0,0,0,.45)}
- .sheet::after{content:"";position:absolute;inset:0;pointer-events:none;
-   background:repeating-linear-gradient(72deg,rgba(60,70,78,.55) 0 1px,transparent 1px 44px)}
- .sheet .grid{display:grid;grid-template-columns:repeat(3,1fr)}
- .sheet .k{padding:9px 2px 8px;text-align:center;position:relative;
-   border-right:1px solid rgba(70,80,88,.45);border-bottom:1px solid rgba(70,80,88,.45)}
- .sheet .k:nth-child(3n){border-right:none}
- .sheet .k:nth-child(n+10){border-bottom:none}
- .sheet .k .n{font-family:Inter,sans-serif;font-size:15px;font-weight:600;color:#2a3138;line-height:1}
- .sheet .k .l{font-family:Inter,sans-serif;font-size:6px;font-weight:600;color:#5d6870;
-   letter-spacing:.16em;margin-top:2px;text-transform:uppercase}
- .sheet .k.lit{background:radial-gradient(circle at 50% 45%,rgba(120,200,255,.85),rgba(120,200,255,.15) 70%)}
- .sheet .k.lit .n,.sheet .k.lit .l{color:#06222f}
- </style>${hdr("MOTOROLA RAZR V3")}<div class="w">
-  <div class="razr">
-   <div class="half lid"><div class="glass">
-     <div class="brandrow"><span>ANGELCOM</span><span>V3</span></div>
-     <div class="lcd"><div class="st"><span>&#9646;&#9646;&#9646;&#9647;</span><span>03/20</span></div>
-       <div class="tgt">${LINE}</div><div class="txt">${TYPED}<span class="cur"></span></div></div>
-   </div></div>
-   <div class="hinge"><span class="knob"></span><span class="barrel"></span><span class="knob"></span></div>
-   <div class="half base">
-     <div class="nav"><span class="soft">BACK</span><span class="rocker"><span class="ok"></span></span><span class="soft">MENU</span></div>
-     <div class="sheet"><div class="grid">${K.map(([n,l],i)=>
-       `<div class="k ${n==="6"?"lit":""}"><div class="n">${n}</div><div class="l">${l||"&nbsp;"}</div></div>`).join("")}</div></div>
-   </div>
-  </div>${side()}</div>`;}
+/* ---------- shared svg helpers ---------- */
+// a key as a path, so it can be any shape at all
+const keyTxt = (x, y, n, l, fill, sub, size) => `
+  <text x="${x}" y="${y}" text-anchor="middle" font-family="Inter,sans-serif"
+        font-size="${size || 15}" font-weight="600" fill="${fill}">${n}</text>
+  ${l ? `<text x="${x}" y="${y + 9}" text-anchor="middle" font-family="Inter,sans-serif"
+        font-size="6" font-weight="700" letter-spacing="1.1" fill="${sub}">${l.toUpperCase()}</text>` : ""}`;
+
+const lcd = (x, y, w, h, bg, dim, txt, tgt, glow) => `
+  <rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${bg}"/>
+  <text x="${x + 7}" y="${y + 13}" font-family="IBM Plex Mono,monospace" font-size="7" fill="${dim}">ANGELCOM</text>
+  <text x="${x + w - 7}" y="${y + 13}" text-anchor="end" font-family="IBM Plex Mono,monospace" font-size="7" fill="${dim}">03/20</text>
+  <text x="${x + 7}" y="${y + 28}" font-family="IBM Plex Mono,monospace" font-size="7.5" fill="${dim}">${tgt}</text>
+  <text x="${x + 7}" y="${y + 44}" font-family="IBM Plex Mono,monospace" font-size="11" fill="${txt}"
+        style="filter:drop-shadow(0 0 5px ${glow})">${TYPED}</text>
+  <rect x="${x + 7 + 6.6 * TYPED.length}" y="${y + 35}" width="5" height="11" fill="${txt}"/>`;
 
 /* ============================================================
-   2. NOKIA 3310. A brick with shoulders: the body tapers, the
-   keys sit in curved rows, and the navi-key is the big soft
-   rounded lozenge everyone remembers.
+   1. RAZR V3, three-quarter, open. Both halves are slabs with a
+   visible edge, and you can see the hinge barrel end-on.
    ============================================================ */
-function d2(){return `<style>
- .n33{width:250px;padding:16px 15px 22px;position:relative;
-   border-radius:44px 44px 30px 30px / 30px 30px 22px 22px;
-   background:linear-gradient(150deg,#5d6a78,#39434e 30%,#2a323b 62%,#454f5b);
-   box-shadow:0 34px 54px rgba(0,0,0,.85),inset 0 2px 0 rgba(255,255,255,.16),
-     inset 0 -3px 8px rgba(0,0,0,.6);
-   transform:perspective(1400px) rotateX(7deg) rotateY(7deg)}
- .n33 .earpiece{width:56px;height:6px;border-radius:4px;margin:0 auto 12px;
-   background:#171c22;box-shadow:inset 0 1px 2px rgba(0,0,0,.9)}
- .n33 .brand{font-family:Inter,sans-serif;font-size:8px;font-weight:700;letter-spacing:.42em;
-   color:#9fb0c1;text-align:center;margin-bottom:9px}
- .n33 .screen{background:#9fb08a;border-radius:5px;padding:8px 8px 9px;
-   border:2px solid #1b2128;box-shadow:inset 0 2px 6px rgba(0,0,0,.45)}
- .n33 .screen .st{display:flex;justify-content:space-between;font-size:7px;color:#4a5540;letter-spacing:.12em}
- .n33 .screen .tgt{font-size:8.5px;color:#68724f;line-height:1.6;margin-top:4px}
- .n33 .screen .txt{font-size:12px;color:#1d2418;line-height:1.5;word-break:break-word}
- .n33 .screen .cur{display:inline-block;width:5px;height:11px;background:#1d2418;vertical-align:-2px}
- /* the navi row: two soft keys flanking the lozenge */
- .n33 .navrow{display:flex;align-items:center;justify-content:space-between;margin:13px 2px 12px}
- .n33 .sk{width:44px;height:17px;border-radius:9px 9px 3px 3px;
-   background:linear-gradient(180deg,#748496,#3c4550);box-shadow:0 2px 3px rgba(0,0,0,.55)}
- .n33 .navi{width:86px;height:26px;border-radius:14px;
-   background:linear-gradient(180deg,#8b9bad,#4d5764 60%,#39424c);
-   box-shadow:0 3px 5px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.35);
-   display:grid;place-items:center;font-family:Inter,sans-serif;font-size:8px;
-   font-weight:700;letter-spacing:.2em;color:#cbd7e2}
- /* key rows arc outward, the way the 3310's rubber mat does */
- .n33 .rows{display:flex;flex-direction:column;gap:6px}
- .n33 .row{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
- .n33 .row:nth-child(1){transform:rotate(-.6deg)}
- .n33 .row:nth-child(3){transform:rotate(.4deg)}
- .n33 .row:nth-child(4){transform:rotate(.9deg)}
- .n33 .kk{padding:7px 0 6px;text-align:center;border-radius:14px/9px;
-   background:linear-gradient(180deg,#8090a2,#4a5460 55%,#39424c);
-   box-shadow:0 3px 4px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.4)}
- .n33 .kk .n{font-family:Inter,sans-serif;font-size:14px;font-weight:700;color:#e8eff5;line-height:1}
- .n33 .kk .l{font-family:Inter,sans-serif;font-size:6px;font-weight:600;letter-spacing:.14em;
-   color:#aebbc8;margin-top:1px;text-transform:uppercase}
- .n33 .kk.lit{background:linear-gradient(180deg,#cfe4f6,#7fa9cc);box-shadow:0 0 16px rgba(140,200,255,.6)}
- .n33 .kk.lit .n,.n33 .kk.lit .l{color:#16222c}
- </style>${hdr("NOKIA-STYLE BRICK")}<div class="w">
-  <div class="n33">
-   <div class="earpiece"></div>
-   <div class="brand">ANGELCOM</div>
-   <div class="screen"><div class="st"><span>&#9646;&#9646;&#9646;</span><span>03/20</span></div>
-     <div class="tgt">${LINE}</div><div class="txt">${TYPED}<span class="cur"></span></div></div>
-   <div class="navrow"><span class="sk"></span><span class="navi">MENU</span><span class="sk"></span></div>
-   <div class="rows">
-    ${[0,3,6,9].map(o=>`<div class="row">${K.slice(o,o+3).map(([n,l])=>
-      `<div class="kk ${n==="6"?"lit":""}"><div class="n">${n}</div><div class="l">${l||"&nbsp;"}</div></div>`).join("")}</div>`).join("")}
-   </div>
-  </div>${side()}</div>`;}
+function d1(){return hdr("MOTOROLA RAZR V3, THREE-QUARTER")+`<div class="w">
+<svg width="470" height="620" viewBox="0 0 470 620">
+ <defs>
+  <linearGradient id="alu" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0" stop-color="#6a7278"/><stop offset=".16" stop-color="#c6ced4"/>
+    <stop offset=".45" stop-color="#98a1a8"/><stop offset=".72" stop-color="#cfd6db"/>
+    <stop offset="1" stop-color="#5c646a"/></linearGradient>
+  <linearGradient id="aluEdge" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#8d959c"/><stop offset="1" stop-color="#333a3f"/></linearGradient>
+  <linearGradient id="pad" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#e2e9ee"/><stop offset=".55" stop-color="#b4bdc4"/>
+    <stop offset="1" stop-color="#8f979e"/></linearGradient>
+ </defs>
+ <!-- lid: a slab seen at an angle, with its right edge showing -->
+ <g transform="translate(58,26) skewY(5)">
+   <path d="M0 22 Q0 0 22 0 L236 0 Q258 0 258 22 L258 246 L0 246 Z" fill="url(#alu)" stroke="#464d53"/>
+   <path d="M258 22 L272 34 L272 254 L258 246 Z" fill="url(#aluEdge)"/>
+   <rect x="14" y="14" width="230" height="212" rx="4" fill="#0c1013"/>
+   ${lcd(24,26,210,190,"#0d2b1c","#3f8a5d","#8dffbd",LINE,"rgba(90,255,160,.6)")}
+ </g>
+ <!-- hinge: two knuckles and a barrel you see the end of -->
+ <g transform="translate(58,288) skewY(5)">
+   <rect x="10" y="0" width="20" height="16" rx="8" fill="url(#aluEdge)"/>
+   <rect x="34" y="3" width="190" height="11" rx="5.5" fill="url(#alu)"/>
+   <rect x="228" y="0" width="20" height="16" rx="8" fill="url(#aluEdge)"/>
+   <ellipse cx="252" cy="9" rx="7" ry="8.5" fill="#5f676d" stroke="#8d959c"/>
+ </g>
+ <!-- base -->
+ <g transform="translate(58,312) skewY(5)">
+   <path d="M0 0 L258 0 L258 250 Q258 274 236 274 L22 274 Q0 274 0 250 Z" fill="url(#alu)" stroke="#464d53"/>
+   <path d="M258 0 L272 12 L272 250 Q272 274 258 274 Z" fill="url(#aluEdge)"/>
+   <!-- flat oval rocker, chrome ring -->
+   <rect x="88" y="16" width="82" height="30" rx="15" fill="url(#pad)" stroke="#7b848b"/>
+   <rect x="114" y="24" width="30" height="14" rx="7" fill="#4d555b"/>
+   <text x="26" y="36" font-family="Inter,sans-serif" font-size="7" letter-spacing="1.6" fill="#3f464c">BACK</text>
+   <text x="232" y="36" text-anchor="end" font-family="Inter,sans-serif" font-size="7" letter-spacing="1.6" fill="#3f464c">MENU</text>
+   <!-- the pad is ONE etched sheet: only hairline cuts, and they run diagonally -->
+   <rect x="14" y="58" width="230" height="200" rx="3" fill="url(#pad)" stroke="#79828a"/>
+   ${[0,1,2,3].map(r=>`<line x1="14" y1="${58+50*(r+1)}" x2="244" y2="${58+50*(r+1)-16}" stroke="#7d868d" stroke-width=".8"/>`).join("")}
+   ${[1,2].map(c=>`<line x1="${14+76.6*c}" y1="58" x2="${14+76.6*c-14}" y2="258" stroke="#7d868d" stroke-width=".8"/>`).join("")}
+   ${K.map(([n,l],i)=>{const c=i%3,r=Math.floor(i/3);
+     const x=52+76.6*c-(r*4), y=90+50*r-(c*5);
+     const lit=n==="6";
+     return (lit?`<ellipse cx="${x}" cy="${y-4}" rx="30" ry="19" fill="rgba(120,200,255,.75)"/>`:"")+
+       keyTxt(x,y,n,l,lit?"#06222f":"#2a3138",lit?"#0d3a52":"#5d6870");}).join("")}
+ </g>
+</svg>${side("The rejected batches were a rectangle with a key grid. This is a slab seen at an angle: both halves have a visible edge, the hinge barrel shows its end, and the pad is one etched sheet cut by diagonals rather than twelve separate keys.")}</div>`;}
 
 /* ============================================================
-   3. Y2K GLOSS FLIP, half-folded and shot from above so the two
-   halves sit at different angles. Bubblegum lacquer, chrome
-   trim, a charm on a strap.
+   2. CURVED SLIDER. A concave "banana" body, cover slid down,
+   keys arced along the curve instead of ruled into rows.
    ============================================================ */
-function d3(){return `<style>
- .flipwrap{width:330px;perspective:1200px;filter:drop-shadow(20px 44px 40px rgba(0,0,0,.8))}
- .flip{transform-style:preserve-3d;transform:rotateX(16deg) rotateZ(-7deg)}
- .lidp,.basep{border-radius:22px;position:relative;
-   background:linear-gradient(140deg,#ffd7ea 0%,#ff8fc0 26%,#e55a97 60%,#ff9fc8 88%);
-   box-shadow:inset 0 2px 0 rgba(255,255,255,.85),inset 0 -6px 14px rgba(150,20,80,.4),
-     0 6px 14px rgba(0,0,0,.5)}
- /* the lacquer highlight that makes it read as glossy plastic */
- .lidp::before,.basep::before{content:"";position:absolute;left:8%;right:34%;top:5%;height:34%;
-   border-radius:50%;background:linear-gradient(180deg,rgba(255,255,255,.65),transparent);
-   filter:blur(5px);pointer-events:none}
- .lidp{padding:16px 15px 20px;transform:rotateX(-24deg);transform-origin:bottom center}
- .basep{padding:16px 15px 20px;margin-top:9px}
- .chrome{height:9px;margin:0 26px;border-radius:5px;
-   background:linear-gradient(180deg,#ffffff,#c9ced6 40%,#7f858d);box-shadow:0 2px 4px rgba(0,0,0,.55)}
- .lidp .glass{background:#101014;border-radius:12px;padding:10px 10px 12px;
-   box-shadow:inset 0 3px 9px rgba(0,0,0,.95),0 1px 0 rgba(255,255,255,.6)}
- .lcd3{background:linear-gradient(180deg,#1a1030,#0d0819);border-radius:6px;padding:9px 8px;min-height:104px;
-   box-shadow:inset 0 0 22px rgba(200,120,255,.16)}
- .lcd3 .st{display:flex;justify-content:space-between;font-size:7px;color:#a06fd8;letter-spacing:.14em;margin-bottom:6px}
- .lcd3 .tgt{font-size:8.5px;color:#7a5aa8;line-height:1.65}
- .lcd3 .txt{font-size:12px;color:#f3d4ff;line-height:1.5;text-shadow:0 0 9px rgba(220,150,255,.7);word-break:break-word}
- .lcd3 .cur{display:inline-block;width:5px;height:12px;background:#f3d4ff;vertical-align:-2px}
- .dpad{width:74px;height:74px;border-radius:50%;margin:10px auto 12px;position:relative;
-   background:conic-gradient(from 45deg,#fff0f7,#f0a8cd,#fff0f7,#e78ab8,#fff0f7);
-   box-shadow:0 4px 8px rgba(0,0,0,.5),inset 0 -3px 6px rgba(160,40,100,.45)}
- .dpad::after{content:"";position:absolute;inset:24px;border-radius:50%;
-   background:linear-gradient(180deg,#fff,#d5dbe2);box-shadow:inset 0 1px 3px rgba(0,0,0,.35)}
- .padg{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
- .padg .kk{border-radius:11px;padding:8px 0 7px;text-align:center;
-   background:linear-gradient(180deg,#fffdfe,#ffe2ef 55%,#f6bcd8);
-   box-shadow:0 3px 5px rgba(140,20,80,.45),inset 0 1px 0 #fff}
- .padg .kk .n{font-family:Inter,sans-serif;font-size:15px;font-weight:600;color:#8d2559;line-height:1}
- .padg .kk .l{font-family:Inter,sans-serif;font-size:6px;font-weight:600;letter-spacing:.14em;
-   color:#c06192;margin-top:1px;text-transform:uppercase}
- .padg .kk.lit{background:linear-gradient(180deg,#fff,#b9e4ff);box-shadow:0 0 18px rgba(140,210,255,.85)}
- .padg .kk.lit .n{color:#0d3a55}.padg .kk.lit .l{color:#3d6f8c}
- /* a charm on a wrist strap, hanging off the hinge corner */
- .charm{position:absolute;right:-30px;top:150px;width:2px;height:56px;
-   background:linear-gradient(180deg,#d9dee4,#8d949c);transform:rotate(9deg)}
- .charm::after{content:"";position:absolute;left:-9px;bottom:-17px;width:20px;height:20px;
-   border-radius:50% 50% 50% 0;transform:rotate(-45deg);
-   background:radial-gradient(circle at 34% 30%,#fff,#ff5fa2 55%,#c01d68);
-   box-shadow:0 3px 6px rgba(0,0,0,.6)}
- </style>${hdr("Y2K GLOSS FLIP")}<div class="w">
-  <div class="flipwrap"><div class="flip">
-   <div class="lidp"><div class="glass">
-     <div class="lcd3"><div class="st"><span>ANGELCOM</span><span>03/20</span></div>
-       <div class="tgt">${LINE}</div><div class="txt">${TYPED}<span class="cur"></span></div></div>
-   </div></div>
-   <div class="chrome"></div>
-   <div class="basep">
-     <div class="dpad"></div>
-     <div class="padg">${K.map(([n,l])=>
-       `<div class="kk ${n==="6"?"lit":""}"><div class="n">${n}</div><div class="l">${l||"&nbsp;"}</div></div>`).join("")}</div>
-     <div class="charm"></div>
-   </div>
-  </div></div>${side()}</div>`;}
+function d2(){
+ // keys follow the inside of the curve
+ const arc = K.map((k,i)=>{const c=i%3,r=Math.floor(i/3);
+   const t=(c-1)*0.34, y=214+r*52;
+   return {x:150+t*96, y:y+Math.abs(t)*13, k};});
+ return hdr("CURVED SLIDER")+`<div class="w">
+<svg width="330" height="640" viewBox="0 0 330 640">
+ <defs>
+  <linearGradient id="bananaBody" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0" stop-color="#2b2f36"/><stop offset=".22" stop-color="#5d646d"/>
+    <stop offset=".55" stop-color="#3a3f46"/><stop offset=".85" stop-color="#666e77"/>
+    <stop offset="1" stop-color="#23272d"/></linearGradient>
+  <linearGradient id="coverG" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0" stop-color="#8e979f"/><stop offset=".4" stop-color="#d3dae0"/>
+    <stop offset="1" stop-color="#79828a"/></linearGradient>
+ </defs>
+ <!-- the body curves: a waist on the left, a belly on the right -->
+ <path d="M96 20 Q150 6 204 20 L226 120 Q244 300 214 470 Q206 560 150 574 Q94 560 86 470
+          Q56 300 74 120 Z" fill="url(#bananaBody)" stroke="#767e86" stroke-width="1.4"/>
+ <!-- earpiece slot -->
+ <rect x="128" y="34" width="44" height="6" rx="3" fill="#101317"/>
+ <rect x="86" y="52" width="128" height="112" rx="6" fill="#05070a"/>
+ ${lcd(94,60,112,96,"#071c26","#3d8fb0","#a9ecff",LINE,"rgba(90,210,255,.6)")}
+ <!-- soft keys and a ring, following the taper -->
+ <path d="M92 178 q20 -10 40 -6 l0 14 q-20 -4 -40 6 z" fill="#4b525a"/>
+ <path d="M208 178 q-20 -10 -40 -6 l0 14 q20 -4 40 6 z" fill="#4b525a"/>
+ <circle cx="150" cy="186" r="17" fill="#5c646d" stroke="#aab3bc" stroke-width="2"/>
+ <circle cx="150" cy="186" r="7" fill="#1b1f24"/>
+ <!-- keys arced along the belly -->
+ ${arc.map(({x,y,k})=>{const lit=k[0]==="6";
+   return `<ellipse cx="${x}" cy="${y}" rx="31" ry="15" fill="${lit?"url(#coverG)":"#414851"}"
+      stroke="${lit?"#8fd6ff":"#5b636c"}"/>`+
+      keyTxt(x,y+3,k[0],k[1],lit?"#0b2b3c":"#e7edf3",lit?"#2b5f7d":"#8d97a1",13);}).join("")}
+ <!-- the slide cover, pushed down over the bottom of the pad -->
+ <path d="M78 470 Q150 452 222 470 L214 500 Q206 560 150 574 Q94 560 86 500 Z"
+       fill="url(#coverG)" stroke="#6d757d" stroke-width="1.2" opacity=".97"/>
+ <rect x="120" y="486" width="60" height="4" rx="2" fill="#8d959c"/>
+ <text x="150" y="536" text-anchor="middle" font-family="Inter,sans-serif" font-size="7"
+       letter-spacing="3" fill="#5b636c">ANGELCOM</text>
+</svg>${side("No straight edges anywhere: the shell has a waist and a belly, and the keys are ellipses arced along the inside of that curve. The slide cover sits over the bottom of the pad.")}</div>`;}
 
 /* ============================================================
-   4. VERTICAL SLIDER, pushed open. Two shells with a visible
-   slide seam and a shadow where the top half overhangs the pad.
-   Gunmetal with a piano-black fascia.
+   3. PEBBLE. A soap-bar handset: no corners at all, keys in
+   concentric arcs around the navigation button.
    ============================================================ */
-function d4(){return `<style>
- .sl{width:268px;position:relative;transform:perspective(1500px) rotateX(8deg) rotateY(-11deg);
-   filter:drop-shadow(28px 42px 40px rgba(0,0,0,.85))}
- .sl .top{position:relative;z-index:3;border-radius:20px 20px 8px 8px;padding:15px 14px 17px;
-   background:linear-gradient(120deg,#31363c,#14181c 40%,#23282e 70%,#0e1114);
-   border:1px solid #454b52;
-   box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 12px 22px rgba(0,0,0,.75)}
- .sl .grille{width:48px;height:5px;border-radius:3px;margin:0 auto 11px;background:#05070a;
-   box-shadow:inset 0 1px 2px rgba(0,0,0,.9),0 1px 0 rgba(255,255,255,.12)}
- .sl .glass{background:#05070a;border-radius:8px;padding:9px 9px 11px;
-   box-shadow:inset 0 2px 8px #000,0 1px 0 rgba(255,255,255,.18)}
- .lcd4{background:linear-gradient(180deg,#071c26,#030d13);border-radius:4px;padding:9px 8px;min-height:112px;
-   box-shadow:inset 0 0 24px rgba(0,190,255,.12)}
- .lcd4 .st{display:flex;justify-content:space-between;font-size:7px;color:#3d8fb0;letter-spacing:.14em;margin-bottom:6px}
- .lcd4 .tgt{font-size:8.5px;color:#2b6b85;line-height:1.65}
- .lcd4 .txt{font-size:12px;color:#a9ecff;line-height:1.5;text-shadow:0 0 9px rgba(90,210,255,.6);word-break:break-word}
- .lcd4 .cur{display:inline-block;width:5px;height:12px;background:#a9ecff;vertical-align:-2px}
- .sl .navs{display:flex;align-items:center;justify-content:space-between;margin-top:12px}
- .sl .navs .sk{width:38px;height:12px;border-radius:6px;background:linear-gradient(180deg,#4b525a,#22272c)}
- .sl .ring{width:52px;height:52px;border-radius:50%;
-   background:conic-gradient(from 210deg,#5c646d,#aab3bc,#4a5158,#98a1aa,#5c646d);
-   box-shadow:0 3px 7px rgba(0,0,0,.7);display:grid;place-items:center}
- .sl .ring::after{content:"";width:24px;height:24px;border-radius:50%;
-   background:linear-gradient(180deg,#2b3137,#13171b);box-shadow:inset 0 1px 3px rgba(0,0,0,.9)}
- /* the lower shell peeks out below and is overhung by the top */
- .sl .bot{position:relative;z-index:1;margin-top:-8px;padding:20px 12px 15px;
-   border-radius:0 0 22px 22px;
-   background:linear-gradient(120deg,#2a2f35,#171b20 55%,#0c0f12);border:1px solid #3c4249;border-top:none}
- .sl .bot::before{content:"";position:absolute;left:0;right:0;top:0;height:16px;
-   background:linear-gradient(180deg,rgba(0,0,0,.85),transparent)}
- .sl .padg{display:grid;grid-template-columns:repeat(3,1fr);gap:5px 6px}
- .sl .kk{padding:7px 0 6px;text-align:center;border-radius:3px;
-   background:linear-gradient(180deg,#3a4048,#1e2328);box-shadow:0 2px 3px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.14)}
- .sl .kk .n{font-family:Inter,sans-serif;font-size:14px;font-weight:500;color:#e7edf3;line-height:1}
- .sl .kk .l{font-family:Inter,sans-serif;font-size:6px;letter-spacing:.16em;color:#8d97a1;margin-top:2px;text-transform:uppercase}
- .sl .kk.lit{background:linear-gradient(180deg,#8fd6ff,#3c93c9);box-shadow:0 0 18px rgba(120,200,255,.8)}
- .sl .kk.lit .n,.sl .kk.lit .l{color:#04202e}
- </style>${hdr("SLIDER, PUSHED OPEN")}<div class="w">
-  <div class="sl">
-   <div class="top">
-    <div class="grille"></div>
-    <div class="glass"><div class="lcd4"><div class="st"><span>ANGELCOM</span><span>03/20</span></div>
-      <div class="tgt">${LINE}</div><div class="txt">${TYPED}<span class="cur"></span></div></div></div>
-    <div class="navs"><span class="sk"></span><span class="ring"></span><span class="sk"></span></div>
-   </div>
-   <div class="bot"><div class="padg">${K.map(([n,l])=>
-     `<div class="kk ${n==="6"?"lit":""}"><div class="n">${n}</div><div class="l">${l||"&nbsp;"}</div></div>`).join("")}</div></div>
-  </div>${side()}</div>`;}
+function d3(){
+ const rows=[[0,1,2],[3,4,5],[6,7,8],[9,10,11]];
+ return hdr("PEBBLE CANDYBAR")+`<div class="w">
+<svg width="360" height="620" viewBox="0 0 360 620">
+ <defs>
+  <radialGradient id="peb" cx=".34" cy=".22" r=".9">
+    <stop offset="0" stop-color="#fdfefe"/><stop offset=".42" stop-color="#cdd5db"/>
+    <stop offset=".78" stop-color="#98a2aa"/><stop offset="1" stop-color="#6c757d"/></radialGradient>
+  <linearGradient id="pebKey" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#ffffff"/><stop offset=".6" stop-color="#dbe2e8"/>
+    <stop offset="1" stop-color="#adb6be"/></linearGradient>
+ </defs>
+ <!-- one closed blob: wide at the ear, narrow at the waist, round at the chin -->
+ <path d="M180 14 Q272 14 286 108 Q302 220 292 330 Q284 470 254 540 Q232 596 180 598
+          Q128 596 106 540 Q76 470 68 330 Q58 220 74 108 Q88 14 180 14 Z"
+       fill="url(#peb)" stroke="#7b848c" stroke-width="1.5"/>
+ <rect x="150" y="40" width="60" height="7" rx="3.5" fill="#5c646b"/>
+ <rect x="88" y="62" width="184" height="122" rx="14" fill="#0b0e11"/>
+ ${lcd(98,72,164,102,"#12203a","#5f86c4","#cfe0ff",LINE,"rgba(140,180,255,.6)")}
+ <!-- one big round navigation button, keys arc around it -->
+ <circle cx="180" cy="228" r="30" fill="url(#pebKey)" stroke="#98a2aa" stroke-width="1.4"/>
+ <circle cx="180" cy="228" r="12" fill="#5f676e"/>
+ <path d="M96 214 q22 -14 44 -8 l4 20 q-22 -4 -42 10 z" fill="#c3ccd3" stroke="#98a2aa"/>
+ <path d="M264 214 q-22 -14 -44 -8 l-4 20 q22 -4 42 10 z" fill="#c3ccd3" stroke="#98a2aa"/>
+ <!-- concentric arcs: each row bows further out than the last -->
+ ${rows.map((row,r)=>{
+   const cy=300+r*58, bow=8+r*5;
+   return row.map((idx,c)=>{
+     const t=c-1, x=180+t*80, y=cy+Math.abs(t)*bow;
+     const k=K[idx], lit=k[0]==="6";
+     return `<path d="M${x-34} ${y-2} q34 -22 68 0 q-34 22 -68 0 z"
+        fill="${lit?"#bfe6ff":"url(#pebKey)"}" stroke="${lit?"#6bb6e2":"#a5aeb6"}"/>`+
+       keyTxt(x,y+4,k[0],k[1],lit?"#0c3550":"#2f363d",lit?"#3d6f8c":"#767f88",13);
+   }).join("");}).join("")}
+</svg>${side("A soap bar: one closed outline with no straight edge and no corner. The keys are lens shapes in concentric arcs bowing out around the navigation button, so there is no row and no column to read as a grid.")}</div>`;}
 
 /* ============================================================
-   5. SONY-ERICSSON-STYLE CANDYBAR. Small, silver, a joystick
-   instead of a D-pad, and the keys splayed in a fan so the
-   thumb reaches the far corners.
+   4. LANDSCAPE SWIVEL. Wide body, screen left, pad right in two
+   columns. Nothing about it is portrait.
    ============================================================ */
-function d5(){return `<style>
- .se{width:224px;padding:14px 13px 20px;position:relative;
-   border-radius:26px 26px 34px 34px / 22px 22px 40px 40px;
-   background:linear-gradient(155deg,#f2f5f7,#c3cbd2 30%,#98a1a9 58%,#dfe5ea 80%,#8d959d);
-   box-shadow:0 32px 50px rgba(0,0,0,.85),inset 0 2px 0 #fff,inset 0 -4px 10px rgba(0,0,0,.35);
-   transform:perspective(1300px) rotateX(9deg) rotateY(8deg)}
- .se .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
- .se .spk{width:40px;height:5px;border-radius:3px;background:#5c646b;box-shadow:inset 0 1px 2px rgba(0,0,0,.7)}
- .se .lg{font-family:Inter,sans-serif;font-size:7px;font-weight:700;letter-spacing:.34em;color:#69727a}
- .se .glass{background:#0b0e11;border-radius:6px;padding:8px;box-shadow:inset 0 2px 6px #000,0 1px 0 #fff}
- .lcd5{background:linear-gradient(180deg,#12203a,#080e1c);border-radius:3px;padding:8px 7px;min-height:96px;
-   box-shadow:inset 0 0 18px rgba(90,150,255,.14)}
- .lcd5 .st{display:flex;justify-content:space-between;font-size:6.5px;color:#5f86c4;letter-spacing:.14em;margin-bottom:5px}
- .lcd5 .tgt{font-size:8px;color:#4a68a0;line-height:1.6}
- .lcd5 .txt{font-size:11.5px;color:#cfe0ff;line-height:1.5;text-shadow:0 0 8px rgba(140,180,255,.6);word-break:break-word}
- .lcd5 .cur{display:inline-block;width:5px;height:11px;background:#cfe0ff;vertical-align:-2px}
- /* joystick nub with two crescent soft keys either side */
- .se .jsrow{display:flex;align-items:center;justify-content:center;gap:12px;margin:12px 0 11px}
- .se .cres{width:44px;height:20px;border-radius:22px 22px 6px 6px;
-   background:linear-gradient(180deg,#e9eef2,#9099a1);box-shadow:0 2px 4px rgba(0,0,0,.5)}
- .se .cres.r{border-radius:22px 22px 6px 6px;transform:scaleX(-1)}
- .se .js{width:26px;height:26px;border-radius:50%;
-   background:radial-gradient(circle at 36% 30%,#ffffff,#aeb7bf 45%,#565e66 100%);
-   box-shadow:0 3px 6px rgba(0,0,0,.7),inset 0 -2px 3px rgba(0,0,0,.4)}
- /* fanned rows: each row is rotated a touch more than the last */
- .se .fan{display:flex;flex-direction:column;gap:5px}
- .se .row{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
- .se .row:nth-child(1){transform:rotate(-1.6deg)}
- .se .row:nth-child(2){transform:rotate(-.5deg)}
- .se .row:nth-child(3){transform:rotate(.6deg)}
- .se .row:nth-child(4){transform:rotate(1.7deg)}
- .se .kk{padding:6px 0 5px;text-align:center;border-radius:9px 9px 5px 5px;
-   background:linear-gradient(180deg,#fbfdfe,#d3dae0 60%,#aab3bb);
-   box-shadow:0 2px 3px rgba(0,0,0,.45),inset 0 1px 0 #fff}
- .se .kk .n{font-family:Inter,sans-serif;font-size:13px;font-weight:600;color:#2f363d;line-height:1}
- .se .kk .l{font-family:Inter,sans-serif;font-size:5.5px;font-weight:600;letter-spacing:.14em;
-   color:#767f88;margin-top:1px;text-transform:uppercase}
- .se .kk.lit{background:linear-gradient(180deg,#e6f5ff,#8cc4ea);box-shadow:0 0 16px rgba(130,200,250,.85)}
- .se .kk.lit .n,.se .kk.lit .l{color:#0b3247}
- </style>${hdr("POCKET CANDYBAR, JOYSTICK")}<div class="w">
-  <div class="se">
-   <div class="top"><span class="spk"></span><span class="lg">ANGELCOM</span></div>
-   <div class="glass"><div class="lcd5"><div class="st"><span>&#9646;&#9646;&#9647;&#9647;</span><span>03/20</span></div>
-     <div class="tgt">${LINE}</div><div class="txt">${TYPED}<span class="cur"></span></div></div></div>
-   <div class="jsrow"><span class="cres"></span><span class="js"></span><span class="cres r"></span></div>
-   <div class="fan">${[0,3,6,9].map(o=>`<div class="row">${K.slice(o,o+3).map(([n,l])=>
-     `<div class="kk ${n==="6"?"lit":""}"><div class="n">${n}</div><div class="l">${l||"&nbsp;"}</div></div>`).join("")}</div>`).join("")}</div>
-  </div>${side()}</div>`;}
+function d4(){
+ return hdr("LANDSCAPE SWIVEL")+`<div class="w">
+<svg width="660" height="380" viewBox="0 0 660 380">
+ <defs>
+  <linearGradient id="swiv" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#3d434b"/><stop offset=".5" stop-color="#22272d"/>
+    <stop offset="1" stop-color="#12161a"/></linearGradient>
+  <linearGradient id="swivKey" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#4e565f"/><stop offset="1" stop-color="#272c33"/></linearGradient>
+ </defs>
+ <!-- lower body, visible behind the swivelled top -->
+ <rect x="26" y="96" width="600" height="212" rx="34" fill="#0d1013" stroke="#3a4047"/>
+ <!-- the top half, swivelled a few degrees off square -->
+ <g transform="rotate(-3 330 190)">
+  <rect x="34" y="60" width="590" height="236" rx="30" fill="url(#swiv)" stroke="#535b64" stroke-width="1.4"/>
+  <rect x="56" y="82" width="292" height="192" rx="10" fill="#05070a"/>
+  ${lcd(68,94,268,168,"#071c26","#3d8fb0","#a9ecff",LINE,"rgba(90,210,255,.6)")}
+  <!-- d-pad ring on the right shoulder -->
+  <circle cx="586" cy="118" r="26" fill="none" stroke="#5c646d" stroke-width="9"/>
+  <circle cx="586" cy="118" r="10" fill="#333a41"/>
+  <!-- pad in two columns of six, staggered, nothing like a 3x4 -->
+  ${K.map(([n,l],i)=>{const col=i<6?0:1, row=i%6;
+    const x=402+col*104, y=104+row*30+(col?15:0);
+    const lit=n==="6";
+    return `<rect x="${x-44}" y="${y-13}" width="88" height="25" rx="12"
+        fill="${lit?"#8fd6ff":"url(#swivKey)"}" stroke="${lit?"#bfe6ff":"#5b636c"}"/>`+
+      keyTxt(x-14,y+5,n,"",lit?"#04202e":"#e7edf3","",13)+
+      `<text x="${x+34}" y="${y+5}" text-anchor="end" font-family="Inter,sans-serif" font-size="6.5"
+         font-weight="700" letter-spacing="1" fill="${lit?"#2b5f7d":"#8d97a1"}">${(l||"").toUpperCase()}</text>`;
+  }).join("")}
+ </g>
+ <text x="330" y="352" text-anchor="middle" font-family="Inter,sans-serif" font-size="8"
+       letter-spacing="4" fill="#4a525a">ANGELCOM</text>
+</svg>${side("Landscape, and swivelled a few degrees off square so the lower shell shows behind it. The pad is two columns of six wide keys with the letters set to the right of the digit, which is the layout a thumb on each side wants.")}</div>`;}
 
 /* ============================================================
-   6. RUGGED SITE PHONE. Rubber over-mould in hazard orange,
-   recessed screen behind a scratched bezel, oversized gloved
-   keys with deep travel.
+   5. RUGGED. A bumpy silhouette: rubber corner blocks, a screwed
+   bezel, an antenna stub, and oversized staggered keys.
    ============================================================ */
-function d6(){return `<style>
- .rg{width:274px;position:relative;padding:20px 18px 24px;
-   border-radius:30px 30px 26px 26px;
-   background:linear-gradient(150deg,#ff9c2e,#d9741a 34%,#8d4a10 66%,#e08425);
-   box-shadow:0 34px 52px rgba(0,0,0,.88),inset 0 3px 0 rgba(255,220,170,.5),
-     inset 0 -6px 14px rgba(70,30,0,.65);
-   transform:perspective(1400px) rotateX(8deg) rotateY(-8deg)}
- /* the rubber bumpers that wrap the corners */
- .rg::before,.rg::after{content:"";position:absolute;top:14px;bottom:14px;width:13px;
-   background:linear-gradient(180deg,#2a2c30,#111316 45%,#2a2c30);border-radius:8px;
-   box-shadow:inset 0 0 5px rgba(0,0,0,.9)}
- .rg::before{left:-6px}.rg::after{right:-6px}
- .rg .plate{background:linear-gradient(180deg,#1b1d21,#0c0e10);border-radius:16px;padding:13px 12px 15px;
-   box-shadow:inset 0 3px 10px rgba(0,0,0,.95),0 1px 0 rgba(255,190,120,.45)}
- .rg .screws{position:absolute;inset:0;pointer-events:none}
- .rg .screws i{position:absolute;width:9px;height:9px;border-radius:50%;
-   background:radial-gradient(circle at 35% 30%,#e6e9ec,#6f757b);box-shadow:0 1px 2px rgba(0,0,0,.8)}
- .rg .screws i:nth-child(1){left:9px;top:9px}
- .rg .screws i:nth-child(2){right:9px;top:9px}
- .rg .screws i:nth-child(3){left:9px;bottom:9px}
- .rg .screws i:nth-child(4){right:9px;bottom:9px}
- .lcd6{background:linear-gradient(180deg,#231c05,#120e03);border:2px solid #3b3208;border-radius:4px;
-   padding:9px 8px;min-height:110px;box-shadow:inset 0 0 22px rgba(255,190,40,.14)}
- .lcd6 .st{display:flex;justify-content:space-between;font-size:7px;color:#a58a2e;letter-spacing:.14em;margin-bottom:6px}
- .lcd6 .tgt{font-size:8.5px;color:#7d6820;line-height:1.65}
- .lcd6 .txt{font-size:12px;color:#ffd75e;line-height:1.5;text-shadow:0 0 9px rgba(255,200,60,.6);word-break:break-word}
- .lcd6 .cur{display:inline-block;width:5px;height:12px;background:#ffd75e;vertical-align:-2px}
- .rg .bigrow{display:flex;justify-content:space-between;margin:13px 2px 12px}
- .rg .bigrow .sk{width:58px;height:22px;border-radius:6px;
-   background:linear-gradient(180deg,#3a3d42,#17191c);box-shadow:0 3px 0 #0a0b0d,inset 0 1px 0 rgba(255,255,255,.2)}
- .rg .bigrow .ok{width:58px;height:22px;border-radius:6px;
-   background:linear-gradient(180deg,#ffc06a,#c37d19);box-shadow:0 3px 0 #7c4d09,inset 0 1px 0 rgba(255,255,255,.5)}
- .rg .padg{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
- .rg .kk{padding:9px 0 8px;text-align:center;border-radius:7px;
-   background:linear-gradient(180deg,#43474d,#1c1f23);
-   box-shadow:0 4px 0 #0b0c0e,inset 0 1px 0 rgba(255,255,255,.22)}
- .rg .kk .n{font-family:Inter,sans-serif;font-size:16px;font-weight:700;color:#f4f7fa;line-height:1}
- .rg .kk .l{font-family:Inter,sans-serif;font-size:6px;font-weight:700;letter-spacing:.16em;
-   color:#ffb44d;margin-top:2px;text-transform:uppercase}
- .rg .kk.lit{background:linear-gradient(180deg,#ffd88a,#e8901c);box-shadow:0 2px 0 #7c4d09,0 0 20px rgba(255,180,60,.75)}
- .rg .kk.lit .n{color:#2a1700}.rg .kk.lit .l{color:#5a3300}
- </style>${hdr("RUGGED SITE PHONE")}<div class="w">
-  <div class="rg">
-   <div class="screws"><i></i><i></i><i></i><i></i></div>
-   <div class="plate">
-     <div class="lcd6"><div class="st"><span>ANGELCOM IP68</span><span>03/20</span></div>
-       <div class="tgt">${LINE}</div><div class="txt">${TYPED}<span class="cur"></span></div></div>
-     <div class="bigrow"><span class="sk"></span><span class="ok"></span><span class="sk"></span></div>
-     <div class="padg">${K.map(([n,l])=>
-       `<div class="kk ${n==="6"?"lit":""}"><div class="n">${n}</div><div class="l">${l||"&nbsp;"}</div></div>`).join("")}</div>
-   </div>
-  </div>${side()}</div>`;}
+function d5(){
+ return hdr("RUGGED SITE HANDSET")+`<div class="w">
+<svg width="380" height="640" viewBox="0 0 380 640">
+ <defs>
+  <linearGradient id="rub" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#ffa63a"/><stop offset=".38" stop-color="#d9741a"/>
+    <stop offset=".7" stop-color="#8d4a10"/><stop offset="1" stop-color="#e08425"/></linearGradient>
+  <linearGradient id="rubKey" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#4b5058"/><stop offset="1" stop-color="#1b1e22"/></linearGradient>
+ </defs>
+ <!-- antenna stub, off-centre -->
+ <rect x="286" y="8" width="20" height="46" rx="10" fill="#26292e"/>
+ <!-- the body is not a rectangle: four rubber lobes push out of the corners -->
+ <path d="M74 58 q-34 6 -34 44 l0 54 q-22 10 -22 40 l0 260 q0 30 22 40 l0 54
+          q0 44 34 44 l232 0 q34 0 34 -44 l0 -54 q22 -10 22 -40 l0 -260
+          q0 -30 -22 -40 l0 -54 q0 -38 -34 -44 z"
+       fill="url(#rub)" stroke="#5c3208" stroke-width="1.6"/>
+ <!-- side grips -->
+ ${[0,1,2,3,4].map(i=>`<rect x="14" y="${190+i*44}" width="14" height="30" rx="7" fill="#23262a"/>
+   <rect x="352" y="${190+i*44}" width="14" height="30" rx="7" fill="#23262a"/>`).join("")}
+ <!-- screwed-down bezel -->
+ <rect x="62" y="78" width="256" height="486" rx="20" fill="#15181c" stroke="#e2a95e" stroke-width="1.2"/>
+ ${[[78,94],[302,94],[78,548],[302,548]].map(([x,y])=>
+   `<circle cx="${x}" cy="${y}" r="5.5" fill="#c9ced3"/><path d="M${x-3} ${y} h6" stroke="#5f666c" stroke-width="1.4"/>`).join("")}
+ <rect x="84" y="110" width="212" height="128" rx="4" fill="#231c05" stroke="#3b3208" stroke-width="2"/>
+ ${lcd(92,118,196,112,"#231c05","#a58a2e","#ffd75e",LINE,"rgba(255,200,60,.6)")}
+ <!-- three big function keys, then staggered oversized number keys -->
+ <rect x="88" y="256" width="62" height="26" rx="6" fill="url(#rubKey)"/>
+ <rect x="158" y="252" width="64" height="30" rx="6" fill="#e8a33a" stroke="#7c4d09"/>
+ <rect x="230" y="256" width="62" height="26" rx="6" fill="url(#rubKey)"/>
+ ${K.map(([n,l],i)=>{const c=i%3,r=Math.floor(i/3);
+   // every other row is nudged sideways, so no clean column forms
+   const x=126+c*64+(r%2?14:0), y=320+r*56;
+   const lit=n==="6";
+   return `<rect x="${x-29}" y="${y-21}" width="58" height="42" rx="9"
+      fill="${lit?"#ffd88a":"url(#rubKey)"}" stroke="${lit?"#e8901c":"#0b0c0e"}" stroke-width="1.4"/>`+
+     keyTxt(x,y+2,n,l,lit?"#2a1700":"#f4f7fa",lit?"#6b4405":"#ffb44d",17);}).join("")}
+</svg>${side("The outline itself is the point: four rubber lobes push out of the corners, grips step along both sides, and an antenna stub sits off-centre. Alternate key rows are nudged sideways so no clean column ever forms.")}</div>`;}
+
+/* ============================================================
+   6. CLAMSHELL FROM ABOVE. Both halves in perspective, seen from
+   over the shoulder, key rows fanning with the foreshortening.
+   ============================================================ */
+function d6(){
+ return hdr("CLAMSHELL, FROM ABOVE")+`<div class="w">
+<svg width="470" height="620" viewBox="0 0 470 620">
+ <defs>
+  <linearGradient id="lac" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0" stop-color="#ffd7ea"/><stop offset=".3" stop-color="#ff8fc0"/>
+    <stop offset=".64" stop-color="#e0568f"/><stop offset="1" stop-color="#ffa0c9"/></linearGradient>
+  <linearGradient id="lacKey" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#fffdfe"/><stop offset=".55" stop-color="#ffe2ef"/>
+    <stop offset="1" stop-color="#f3b6d3"/></linearGradient>
+ </defs>
+ <!-- upper half: a trapezoid, narrower at the top because it leans away -->
+ <path d="M136 28 L334 28 Q352 28 354 46 L372 250 L98 250 L116 46 Q118 28 136 28 Z"
+       fill="url(#lac)" stroke="#c25a89" stroke-width="1.3"/>
+ <path d="M128 44 L342 44 L358 236 L112 236 Z" fill="#121016" opacity=".92"/>
+ ${lcd(126,54,218,170,"#1a1030","#a06fd8","#f3d4ff",LINE,"rgba(220,150,255,.6)")}
+ <!-- chrome hinge, wider than both halves -->
+ <rect x="86" y="252" width="298" height="14" rx="7" fill="#e6ebf0"/>
+ <rect x="86" y="258" width="298" height="8" rx="4" fill="#9aa1a9"/>
+ <!-- lower half: the near edge is wider, so the pad foreshortens -->
+ <path d="M98 270 L372 270 L392 540 Q394 566 368 566 L102 566 Q76 566 78 540 Z"
+       fill="url(#lac)" stroke="#c25a89" stroke-width="1.3"/>
+ <!-- gloss along the near edge -->
+ <path d="M96 286 q136 -14 278 0 l-6 34 q-134 -14 -266 0 z" fill="rgba(255,255,255,.5)"/>
+ <circle cx="235" cy="318" r="30" fill="url(#lacKey)" stroke="#d886ac" stroke-width="1.4"/>
+ <circle cx="235" cy="318" r="12" fill="#fff" stroke="#cfd6dd"/>
+ <!-- rows fan outward as they come toward the viewer -->
+ ${[0,1,2,3].map(r=>{
+   const y=376+r*46, spread=52+r*7, w=42+r*4, h=17+r*1.6;
+   return [0,1,2].map(c=>{
+     const idx=r*3+c, k=K[idx], t=c-1;
+     const x=235+t*spread;
+     const lit=k[0]==="6";
+     return `<rect x="${x-w/2}" y="${y-h/2}" width="${w}" height="${h}" rx="${h/2}"
+        fill="${lit?"#bfe4ff":"url(#lacKey)"}" stroke="${lit?"#7fbde0":"#e19bbb"}"/>`+
+       keyTxt(x,y+4,k[0],k[1],lit?"#0d3a55":"#8d2559",lit?"#3d6f8c":"#c06192",13+r*0.7);
+   }).join("");}).join("")}
+ <!-- strap and charm off the hinge corner -->
+ <path d="M384 258 q22 26 16 62" stroke="#d9dee4" stroke-width="2" fill="none"/>
+ <path d="M400 324 a11 11 0 1 1 -0.1 0 z" fill="#ff5fa2" stroke="#c01d68"/>
+</svg>${side("Seen from over the shoulder rather than flat on. Both halves are trapezoids, the near edge of the lower shell is wider than the far one, and the key rows fan and grow as they come toward the viewer.")}</div>`;}
 
 const DS=[d1,d2,d3,d4,d5,d6];
-const NM=["1 · motorola razr v3","2 · nokia brick","3 · y2k gloss flip",
-  "4 · slider, pushed open","5 · pocket candybar","6 · rugged site phone"];
+const NM=["1 · razr, three-quarter","2 · curved slider","3 · pebble candybar",
+  "4 · landscape swivel","5 · rugged site handset","6 · clamshell from above"];
 const n=Math.min(DS.length,Math.max(1,parseInt(new URLSearchParams(location.search).get("d")||"1",10)));
 document.getElementById("stage").innerHTML=DS[n-1]();
 document.getElementById("tag").textContent=NM[n-1];

@@ -31,14 +31,14 @@ That writes `mockups/out/<batch>-<NN>.png` at 1500x900. One batch only:
 | Batch | File | Designs | Status |
 |---|---|---|---|
 | Profile | `profile.html` | 10 | **CHOSEN: 10** (man page), and **built** |
-| Wheel | `wheel.html` | 5 | **CHOSEN: 5** (unrolled cylinder) |
-| Game select | `select.html` | 4 | **CHOSEN: 2** (paste-up) |
-| Chess | `chess.html` | 10 | **awaiting a pick** (third attempt, no theme restriction) |
-| T9 phone | `t9.html` | 6 | **awaiting a pick** (third attempt, real handset forms) |
-| Slots | `slots.html` | 6 | **awaiting a pick** (third attempt, no theme restriction) |
+| Wheel | `wheel.html` | 5 | **CHOSEN: 5** (unrolled cylinder), and **built** |
+| Game select | `select.html` | 4 | **CHOSEN: 2** (paste-up), and **built** |
+| Chess | `chess.html` | 10 | **CHOSEN: 9** (ink wash), and **built** |
+| T9 phone | `t9.html` | 6 | **awaiting a pick** (fourth attempt, drawn in SVG) |
+| Slots | `slots.html` | 6 | **awaiting a pick** (fourth attempt, six different ideas) |
 | Dummy Parse | `dummyparse.html` | 20 | **CHOSEN: 10** (big ability cards) + the 11 timeline, both **built** |
-| Skill check | *(not kept)* | n/a | **CHOSEN: 1** (pure dial) |
-| Summary | *(not kept)* | n/a | **CHOSEN: 1** (source + entry) |
+| Skill check | *(not kept)* | n/a | **CHOSEN: 1** (pure dial), and **built** |
+| Summary | *(not kept)* | n/a | **CHOSEN: 1** (source + entry), and **built** |
 
 Skill check and Summary were picked from a batch that also held T9 and Slots in
 one file. That file is deleted: **the four minigames must not share a page in
@@ -80,3 +80,25 @@ Resolved at build time:
   reports angelcoins plus lines completed and penance/devotion series.
 - **Dummy Parse** design 11 implied a rotation *planner*. There is no planner, so
   the built timeline draws the rotation actually cast instead.
+
+## What the two rejections were actually about
+
+Both rejected batches failed the same way, and it is worth writing down because
+it is easy to repeat.
+
+**T9** was rejected three times as "calculator designs". Each attempt changed
+the paint and kept the shape: an upright rectangle, a screen at the top, a 3x4
+grid of identical keys below. That *is* a calculator, whatever colour it is.
+The fourth attempt draws every handset as one SVG so the outline can be a real
+path with curves, a waist and a chin, the body can show its thickness, and no
+two keypads share a geometry.
+
+**Slots** was rejected with no reason given, and looking back the third attempt
+was six paint jobs on one idea: a cabinet in the middle with three reels in a
+window. The fourth varies the idea instead. Only one of the six is a cabinet;
+the others drop the machine entirely, run one reel horizontally, deal cards,
+look down into the drum, or print a scratch card. Each design carries a one-line
+caption saying what its idea is, bottom left.
+
+The general lesson: when a batch comes back as "the same design again", the
+thing to change is the organising idea, not the palette.
