@@ -194,7 +194,8 @@
         res = await fetch("/api/" + mode, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
         data = await res.json().catch(() => ({}));
       } catch (e2) { err("connection lost. try again."); return; }
-      if (res.ok && data.pending) { showPending(); }
+      if (res.ok && data.onboarding) { window.location.href = "/onboarding"; }
+      else if (res.ok && data.pending) { showPending(); }
       else if (res.ok) {
         // decrypt/bootstrap loading, then land on the dashboard
         if (window.Boot) Boot.play({ navigateTo: "/dashboard" });

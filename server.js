@@ -166,6 +166,13 @@ app.post("/api/register", async (req, res) => {
   }
   saveUsers(users);
   // deliberately no req.session.username here
+  // A "disciple" (the Sub signup) fills out the onboarding questionnaire before
+  // Hermione reviews them. Grant a limited onboarding credential (not a login) so
+  // the still-pending account can reach and submit the questionnaire once.
+  if (signupChoice === "Sub") {
+    req.session.onboarding = key;
+    return res.json({ ok: true, pending: true, onboarding: true });
+  }
   res.json({ ok: true, pending: true });
 });
 
@@ -175,6 +182,74 @@ const INTRO_MAX = 500;
 function isPending(user) {
   return Boolean(user) && user.status === "pending";
 }
+
+// --- disciple onboarding questionnaire ---
+// A Sub ("disciple") signup is handed a one-shot onboarding credential at
+// registration (req.session.onboarding = key) and sent to /onboarding to fill
+// this out. The answers are stored on the account for Hermione to read before
+// she approves. Feet and Tasks/Chores are load-bearing: if either is rated below
+// 4, the pending account's approval card is flagged red.
+const ONBOARDING_KINKS = ["feet", "tasks", "degradation", "humiliation",
+  "masochism", "exhibitionism", "worship", "petplay"];
+const ONBOARDING_PUNISHMENTS = ["lines_physical", "lines_typing", "voice_memos",
+  "ignoring", "onsite_games_hard"];
+const ONBOARDING_PETNAMES = ["dog", "good", "doll", "pet", "bitch", "loser", "dummy"];
+const LIMITS_MAX = 1000;
+
+function onboardingCtx(req) {
+  const key = req.session.onboarding;
+  if (!key) return null;
+  const users = loadUsers();
+  const user = users[key];
+  if (!user || !isPending(user)) return null;
+  return { key, user, users };
+}
+
+app.get("/onboarding", (req, res) => {
+  if (!onboardingCtx(req)) return res.redirect("/");
+  res.sendFile(path.join(__dirname, "views", "onboarding.html"));
+});
+
+app.get("/api/onboarding", (req, res) => {
+  const ctx = onboardingCtx(req);
+  if (!ctx) return res.status(401).json({ error: "No onboarding in progress." });
+  res.json({ username: ctx.user.username });
+});
+
+app.post("/api/onboarding", (req, res) => {
+  const ctx = onboardingCtx(req);
+  if (!ctx) return res.status(401).json({ error: "No onboarding in progress." });
+  const body = req.body || {};
+  const kinks = {};
+  for (const k of ONBOARDING_KINKS) {
+    const v = Math.round(Number((body.kinks || {})[k]));
+    if (!(v >= 1 && v <= 5)) return res.status(400).json({ error: "Answer every interest question." });
+    kinks[k] = v;
+  }
+  const punishments = {};
+  for (const p of ONBOARDING_PUNISHMENTS) {
+    const v = String((body.punishments || {})[p] || "");
+    if (v !== "acceptable" && v !== "hate") return res.status(400).json({ error: "Answer every punishment." });
+    punishments[p] = v;
+  }
+  const petnames = {};
+  for (const p of ONBOARDING_PETNAMES) {
+    const v = String((body.petnames || {})[p] || "");
+    if (v !== "like" && v !== "hate") return res.status(400).json({ error: "Answer every petname." });
+    petnames[p] = v;
+  }
+  const limits = String(body.limits || "").trim().slice(0, LIMITS_MAX);
+  const petnamesOther = String(body.petnamesOther || "").trim().slice(0, 120);
+  const flagged = kinks.feet < 4 || kinks.tasks < 4;
+  ctx.user.onboarding = {
+    kinks, limits, punishments, petnames, petnamesOther,
+    submittedAt: new Date().toISOString(),
+  };
+  ctx.user.onboardingFlag = flagged;
+  saveUsers(ctx.users);
+  delete req.session.onboarding;   // one shot
+  res.json({ ok: true });
+});
 
 // --- currency ---
 // Points are the only currency. They used to be admin-granted only, with a
@@ -535,6 +610,9 @@ app.get("/api/users", (req, res) => {
       pending: isPending(u),
       pronouns: canonical(u.pronouns, PRONOUN_OPTIONS),
       intro: u.intro || "",
+      // the disciple onboarding answers, for Hermione's review before approval
+      onboarding: u.onboarding || null,
+      onboardingFlag: !!u.onboardingFlag,
     })),
   });
 });

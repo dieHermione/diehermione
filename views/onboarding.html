@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Onboarding - angeldom.me</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Major+Mono+Display&display=swap" rel="stylesheet" />
+  <style>
+    /* The disciple onboarding questionnaire. A pending Sub is sent here straight
+       after registering, before Hermione reviews them; the answers are stored on
+       the account for her to read. One question at a time, terminal skin to match
+       the writing game. Self-contained, no site.css, no login (a one-shot
+       onboarding session gates it server-side). */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    [hidden] { display: none !important; }
+    :root {
+      --c: #aee3ff; --dim: #4f7ea0; --dim2: #2c4a5e; --bright: #eafaff;
+      --accent: #8fd0ff; --glow: rgba(120,190,255,.32); --red: #ff3b2f; --gold: #ffd27a;
+      --ok: #7dffb0; --panel: #0a1720; --line: #173040;
+    }
+    html, body { height: 100%; }
+    body {
+      background: #000; color: var(--c);
+      font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 15px;
+      overflow-x: hidden;
+    }
+    .scan { position: fixed; inset: 0; z-index: 200; pointer-events: none;
+      background: repeating-linear-gradient(0deg, rgba(0,0,0,.26) 0 1px, transparent 1px 3px); }
+    .vig { position: fixed; inset: 0; z-index: 199; pointer-events: none;
+      box-shadow: inset 0 0 26vh 9vh rgba(0,0,0,.7); }
+
+    .shell { position: relative; z-index: 5; max-width: 760px; margin: 0 auto;
+      min-height: 100%; display: flex; flex-direction: column; padding: 4vh 5vw 3vh; }
+    .top { display: flex; justify-content: space-between; align-items: baseline;
+      font-size: 11px; letter-spacing: .3em; color: var(--dim); text-transform: uppercase; }
+    .top b { color: var(--bright); font-weight: 400; }
+
+    .prog { margin: 1.4rem 0 0; }
+    .prog .bar { height: 3px; background: var(--dim2); position: relative; overflow: hidden; }
+    .prog .bar i { position: absolute; inset: 0; width: 0; background: var(--accent);
+      box-shadow: 0 0 10px var(--glow); transition: width .3s ease; }
+    .prog .lab { display: flex; justify-content: space-between; margin-top: .4rem;
+      font-size: 10px; letter-spacing: .2em; color: var(--dim); text-transform: uppercase; }
+
+    .stage { flex: 1; display: flex; flex-direction: column; justify-content: center;
+      padding: 3vh 0; }
+    .step { animation: rise .35s ease; }
+    @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+    .eyebrow { color: var(--dim); letter-spacing: .3em; text-transform: uppercase; font-size: 11px; }
+    h1 { font-family: "Major Mono Display", monospace; font-weight: 400; text-transform: lowercase;
+      font-size: clamp(1.8rem, 5vw, 3rem); color: var(--bright); text-shadow: 0 0 26px var(--glow);
+      letter-spacing: .04em; margin: .5rem 0 .2rem; line-height: 1.05; }
+    .lede { color: var(--dim); font-size: 1rem; line-height: 1.7; margin-top: 1rem; max-width: 60ch; }
+    .lede.body { color: var(--c); }
+
+    /* the 1..5 interest scale */
+    .qsub { color: var(--dim); font-size: .95rem; margin: .5rem 0 1.8rem; }
+    .scale { display: grid; grid-template-columns: repeat(5, 1fr); gap: .6rem; }
+    .scale button { position: relative; background: var(--panel); border: 1px solid var(--line);
+      color: var(--c); font-family: inherit; font-size: 1.5rem; padding: 1.3rem 0 .6rem;
+      cursor: pointer; transition: border-color .12s, box-shadow .12s, background .12s; }
+    .scale button:hover { border-color: var(--dim); }
+    .scale button.on { border-color: var(--c); color: var(--bright);
+      box-shadow: 0 0 16px var(--glow); background: rgba(120,190,255,.08); }
+    .scale button .num { display: block; font-size: 1.5rem; line-height: 1; }
+    .scale button .cap { display: block; font-size: 10px; letter-spacing: .04em; color: var(--dim);
+      text-transform: uppercase; margin-top: .7rem; min-height: 2.2em; padding: 0 .2rem; }
+    .scale button.on .cap { color: var(--accent); }
+
+    /* label with a hover hint */
+    .hinted { border-bottom: 1px dotted var(--dim2); cursor: help; }
+    .hint-tip { position: relative; }
+    .hint-tip .tip { position: absolute; left: 0; top: 100%; margin-top: .5rem; z-index: 30;
+      background: #04101a; border: 1px solid var(--line); color: var(--dim); padding: .5rem .7rem;
+      font-size: 12px; letter-spacing: .02em; max-width: 40ch; opacity: 0; pointer-events: none;
+      transition: opacity .12s; text-transform: none; }
+    .hint-tip:hover .tip, .hinted:hover + .tip { opacity: 1; }
+
+    /* two-choice rows (punishments, petnames) */
+    .rows { display: flex; flex-direction: column; gap: .5rem; }
+    .row2 { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: .6rem;
+      border: 1px solid var(--line); background: var(--panel); padding: .7rem .9rem; }
+    .row2 .name { color: var(--c); }
+    .row2 button { background: transparent; border: 1px solid var(--dim2); color: var(--dim);
+      font-family: inherit; font-size: 12px; letter-spacing: .08em; text-transform: uppercase;
+      padding: .4rem .8rem; cursor: pointer; white-space: nowrap; transition: all .12s; }
+    .row2 button:hover { color: var(--c); border-color: var(--dim); }
+    .row2 button.yes.on { border-color: var(--ok); color: var(--ok); box-shadow: 0 0 12px rgba(125,255,176,.25); }
+    .row2 button.no.on { border-color: var(--red); color: var(--red); box-shadow: 0 0 12px rgba(255,59,47,.22); }
+
+    textarea, input[type="text"] {
+      width: 100%; background: rgba(120,190,255,.05); border: 1px solid var(--line);
+      color: var(--bright); font-family: inherit; font-size: 15px; padding: .8rem;
+      resize: vertical; }
+    textarea { min-height: 8rem; }
+    textarea:focus, input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 14px var(--glow); }
+    .other { margin-top: .8rem; display: flex; gap: .6rem; align-items: center; }
+    .other label { color: var(--dim); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; white-space: nowrap; }
+
+    /* review */
+    .review { display: flex; flex-direction: column; gap: 1.2rem; }
+    .rgroup h3 { color: var(--dim); letter-spacing: .2em; text-transform: uppercase; font-size: 11px;
+      font-weight: 400; margin-bottom: .5rem; border-bottom: 1px solid var(--line); padding-bottom: .3rem; }
+    .ritem { display: flex; justify-content: space-between; padding: .18rem 0; font-size: 13px; }
+    .ritem .k { color: var(--c); } .ritem .v { color: var(--accent); }
+    .ritem .v.warn { color: var(--gold); }
+
+    .nav { display: flex; justify-content: space-between; align-items: center; gap: 1rem;
+      margin-top: 2rem; padding-top: 1.2rem; border-top: 1px solid var(--line); }
+    .btn { background: transparent; border: 1px solid var(--dim2); color: var(--c);
+      font-family: inherit; font-size: 13px; letter-spacing: .16em; text-transform: uppercase;
+      padding: .7rem 1.6rem; cursor: pointer; transition: all .14s; }
+    .btn:hover:not(:disabled) { border-color: var(--c); box-shadow: 0 0 14px var(--glow); color: var(--bright); }
+    .btn:disabled { opacity: .35; cursor: default; }
+    .btn.primary { border-color: var(--accent); color: var(--bright); }
+    .btn.ghost { border-color: transparent; color: var(--dim); }
+    .btn.ghost:hover:not(:disabled) { color: var(--c); box-shadow: none; }
+    .err { color: var(--red); font-size: 13px; min-height: 1.2em; }
+
+    .done { text-align: center; }
+    .done .mark { font-size: 3rem; color: var(--ok); text-shadow: 0 0 26px rgba(125,255,176,.4); }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="top"><span>angelOS v0.2 // onboarding</span><span>vessel <b id="who">—</b></span></div>
+    <div class="prog" id="prog">
+      <div class="bar"><i id="progfill"></i></div>
+      <div class="lab"><span id="proglabel">intro</span><span id="progcount">1 / 1</span></div>
+    </div>
+    <div class="stage"><div id="stage"></div></div>
+    <div class="err" id="err"></div>
+    <div class="nav">
+      <button class="btn ghost" id="back" type="button">&larr; back</button>
+      <button class="btn primary" id="next" type="button">next &rarr;</button>
+    </div>
+  </div>
+  <div class="vig"></div><div class="scan"></div>
+
+  <script>
+    // ---- content ----
+    // Kink hover hints are deliberately "placeholder" for now; the real copy will
+    // be written later. What each item covers, for reference:
+    //   feet   - Feet, socks, shoes, anything adjacent. The biggest thing.
+    //   tasks  - Research / Essays / Games / Other.
+    const KINK_SCALE_A = ["I hate them", "", "I like them", "", "I am obsessed"];
+    const KINK_SCALE_B = ["I hate this", "", "I like this", "", "I need it"];
+    const KINKS = [
+      { id: "feet",         label: "Feet",         sub: "Feet, socks, shoes, anything adjacent to them.", hint: "placeholder", scale: KINK_SCALE_A },
+      { id: "tasks",        label: "Tasks / Chores", sub: "Research / Essays / Games / Other.",            hint: "placeholder", scale: KINK_SCALE_B },
+      { id: "degradation",  label: "Degradation",  sub: "", hint: "placeholder", scale: KINK_SCALE_B },
+      { id: "humiliation",  label: "Humiliation",  sub: "", hint: "placeholder", scale: KINK_SCALE_B },
+      { id: "masochism",    label: "Masochism",    sub: "", hint: "placeholder", scale: KINK_SCALE_B },
+      { id: "exhibitionism",label: "Exhibitionism",sub: "", hint: "placeholder", scale: KINK_SCALE_B },
+      { id: "worship",      label: "Worship",      sub: "", hint: "placeholder", scale: KINK_SCALE_B },
+      { id: "petplay",      label: "Petplay",      sub: "", hint: "placeholder", scale: KINK_SCALE_B },
+    ];
+    const PUNISHMENTS = [
+      { id: "lines_physical",   label: "Lines (physical)" },
+      { id: "lines_typing",     label: "Lines (typing)" },
+      { id: "voice_memos",      label: "Voice memos" },
+      { id: "ignoring",         label: "Ignoring" },
+      { id: "onsite_games_hard",label: "On-site games (hard)" },
+    ];
+    const PETNAMES = [
+      { id: "dog",   label: "Dog / doggy / puppy" },
+      { id: "good",  label: "Good boy / girl" },
+      { id: "doll",  label: "Doll" },
+      { id: "pet",   label: "Pet" },
+      { id: "bitch", label: "Bitch" },
+      { id: "loser", label: "Loser" },
+      { id: "dummy", label: "Dummy" },
+    ];
+
+    // ---- answers ----
+    const A = { kinks: {}, limits: "", punishments: {}, petnames: {}, petnamesOther: "" };
+
+    // ---- step plan ----
+    // intro x2, then one kink per step, then limits, punishments, petnames, review.
+    const STEPS = [];
+    STEPS.push({ kind: "intro", key: "about" });
+    STEPS.push({ kind: "intro", key: "purpose" });
+    KINKS.forEach((k) => STEPS.push({ kind: "kink", k }));
+    STEPS.push({ kind: "limits" });
+    STEPS.push({ kind: "punishments" });
+    STEPS.push({ kind: "petnames" });
+    STEPS.push({ kind: "review" });
+    let i = 0;
+    let submitted = false;
+
+    const $ = (id) => document.getElementById(id);
+    const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+    // ---- section renderers ----
+    function introAbout() {
+      return `<div class="step">
+        <div class="eyebrow">about me</div>
+        <h1>about me</h1>
+        <p class="lede body">placeholder. This is where Hermione introduces herself: who she is, how
+          she runs things, and what a disciple can expect. Editable later.</p>
+        <p class="lede">Read it, then continue when you are ready.</p>
+      </div>`;
+    }
+    function introPurpose() {
+      return `<div class="step">
+        <div class="eyebrow">site purpose</div>
+        <h1>site purpose</h1>
+        <p class="lede body">placeholder. What angeldom.me is for, what the account gives you, and what
+          this questionnaire is used for. Editable later.</p>
+        <p class="lede">Your answers below are sent to Hermione. She reviews them before your account is
+          approved. Answer honestly.</p>
+      </div>`;
+    }
+    function kinkStep(k) {
+      const cur = A.kinks[k.id];
+      const btns = k.scale.map((cap, idx) => {
+        const val = idx + 1;
+        return `<button type="button" data-val="${val}" class="${cur === val ? "on" : ""}">
+          <span class="num">${val}</span><span class="cap">${cap ? esc(cap) : ""}</span></button>`;
+      }).join("");
+      return `<div class="step">
+        <div class="eyebrow">interest &middot; rate 1 to 5</div>
+        <span class="hint-tip"><h1><span class="hinted">${esc(k.label)}</span></h1>
+          <span class="tip">${esc(k.hint)}</span></span>
+        ${k.sub ? `<div class="qsub">${esc(k.sub)}</div>` : `<div class="qsub">&nbsp;</div>`}
+        <div class="scale" id="scale">${btns}</div>
+      </div>`;
+    }
+    function limitsStep() {
+      return `<div class="step">
+        <div class="eyebrow">limits</div>
+        <h1>hard limits</h1>
+        <p class="lede">Anything that is off the table, full stop. Free text. Leave it blank only if you
+          truly have none.</p>
+        <textarea id="limits" placeholder="write your limits here" maxlength="1000">${esc(A.limits)}</textarea>
+      </div>`;
+    }
+    function twoChoiceStep(title, eyebrow, list, store, yesLabel, noLabel, yesVal, noVal, extraOther) {
+      const rows = list.map((it) => {
+        const v = store[it.id];
+        return `<div class="row2" data-id="${it.id}">
+          <span class="name">${esc(it.label)}</span>
+          <button type="button" class="yes ${v === yesVal ? "on" : ""}" data-v="${yesVal}">${esc(yesLabel)}</button>
+          <button type="button" class="no ${v === noVal ? "on" : ""}" data-v="${noVal}">${esc(noLabel)}</button>
+        </div>`;
+      }).join("");
+      const other = extraOther ? `<div class="other"><label>other</label>
+        <input type="text" id="petother" maxlength="120" placeholder="another name, optional"
+          value="${esc(A.petnamesOther)}" /></div>` : "";
+      return `<div class="step">
+        <div class="eyebrow">${esc(eyebrow)}</div>
+        <h1>${esc(title)}</h1>
+        <div class="rows">${rows}</div>
+        ${other}
+      </div>`;
+    }
+    function reviewStep() {
+      const krows = KINKS.map((k) => {
+        const v = A.kinks[k.id];
+        const warn = (k.id === "feet" || k.id === "tasks") && v < 4;
+        return `<div class="ritem"><span class="k">${esc(k.label)}</span>
+          <span class="v ${warn ? "warn" : ""}">${v} / 5${warn ? " &middot; below 4" : ""}</span></div>`;
+      }).join("");
+      const prows = PUNISHMENTS.map((p) =>
+        `<div class="ritem"><span class="k">${esc(p.label)}</span>
+          <span class="v">${A.punishments[p.id] === "acceptable" ? "acceptable" : "hard no"}</span></div>`).join("");
+      const nrows = PETNAMES.map((p) =>
+        `<div class="ritem"><span class="k">${esc(p.label)}</span>
+          <span class="v">${A.petnames[p.id] === "like" ? "like" : "hate"}</span></div>`).join("");
+      return `<div class="step review">
+        <div class="eyebrow">review</div>
+        <h1>before you send</h1>
+        <p class="lede">This goes to Hermione as it is. She reviews it before approving your account.</p>
+        <div class="rgroup"><h3>interests</h3>${krows}</div>
+        <div class="rgroup"><h3>limits</h3><div class="ritem"><span class="k" style="white-space:pre-wrap">${esc(A.limits) || "<span style='color:var(--dim2)'>none given</span>"}</span></div></div>
+        <div class="rgroup"><h3>punishments</h3>${prows}</div>
+        <div class="rgroup"><h3>petnames</h3>${nrows}${A.petnamesOther ? `<div class="ritem"><span class="k">Other</span><span class="v">${esc(A.petnamesOther)}</span></div>` : ""}</div>
+      </div>`;
+    }
+    function doneStep() {
+      return `<div class="step done">
+        <div class="mark">✓</div>
+        <h1>sent</h1>
+        <p class="lede" style="margin-left:auto;margin-right:auto">Your answers are with Hermione. She will
+          review them and approve your account. You can close this, or return to the entrance to sign in
+          once you are approved.</p>
+        <div style="margin-top:1.6rem"><a class="btn primary" href="/">to the entrance</a></div>
+      </div>`;
+    }
+
+    // ---- wiring per step ----
+    function bindStep(step) {
+      if (step.kind === "kink") {
+        $("scale").addEventListener("click", (e) => {
+          const b = e.target.closest("button[data-val]"); if (!b) return;
+          A.kinks[step.k.id] = Number(b.dataset.val);
+          [...$("scale").children].forEach((c) => c.classList.toggle("on", c === b));
+          refreshNav();
+        });
+      } else if (step.kind === "limits") {
+        $("limits").addEventListener("input", (e) => { A.limits = e.target.value; });
+      } else if (step.kind === "punishments" || step.kind === "petnames") {
+        document.querySelectorAll(".row2").forEach((row) => {
+          const store = step.kind === "punishments" ? A.punishments : A.petnames;
+          const id = row.dataset.id;
+          row.querySelectorAll("button").forEach((btn) => {
+            btn.addEventListener("click", () => {
+              store[id] = btn.dataset.v;
+              row.querySelector(".yes").classList.toggle("on", btn.classList.contains("yes"));
+              row.querySelector(".no").classList.toggle("on", btn.classList.contains("no"));
+              refreshNav();
+            });
+          });
+        });
+        const other = $("petother");
+        if (other) other.addEventListener("input", (e) => { A.petnamesOther = e.target.value; });
+      }
+    }
+
+    // ---- completeness gate ----
+    function stepComplete(step) {
+      if (step.kind === "kink") return !!A.kinks[step.k.id];
+      if (step.kind === "punishments") return PUNISHMENTS.every((p) => A.punishments[p.id]);
+      if (step.kind === "petnames") return PETNAMES.every((p) => A.petnames[p.id]);
+      return true; // intro, limits (optional), review
+    }
+
+    function render() {
+      const step = STEPS[i];
+      let html = "";
+      if (step.kind === "intro") html = step.key === "about" ? introAbout() : introPurpose();
+      else if (step.kind === "kink") html = kinkStep(step.k);
+      else if (step.kind === "limits") html = limitsStep();
+      else if (step.kind === "punishments") html = twoChoiceStep("Punishments", "acceptable, or not", PUNISHMENTS, A.punishments, "Acceptable", "I hate this", "acceptable", "hate", false);
+      else if (step.kind === "petnames") html = twoChoiceStep("Petnames", "like, or hate", PETNAMES, A.petnames, "Like", "Hate", "like", "hate", true);
+      else if (step.kind === "review") html = reviewStep();
+      $("stage").innerHTML = html;
+      bindStep(step);
+
+      // progress
+      const labels = { intro: "intro", kink: "interests", limits: "limits", punishments: "punishments", petnames: "petnames", review: "review" };
+      $("proglabel").textContent = labels[step.kind] || "";
+      $("progcount").textContent = (i + 1) + " / " + STEPS.length;
+      $("progfill").style.width = ((i) / (STEPS.length - 1) * 100) + "%";
+
+      $("back").disabled = i === 0;
+      $("next").textContent = step.kind === "review" ? "send →" : "next →";
+      $("next").classList.toggle("primary", true);
+      $("err").textContent = "";
+      refreshNav();
+    }
+    function refreshNav() {
+      const step = STEPS[i];
+      $("next").disabled = !stepComplete(step);
+    }
+
+    async function submit() {
+      $("next").disabled = true;
+      $("err").textContent = "";
+      try {
+        const res = await fetch("/api/onboarding", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ kinks: A.kinks, limits: A.limits, punishments: A.punishments, petnames: A.petnames, petnamesOther: A.petnamesOther }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) { $("err").textContent = data.error || "Could not send. Check your answers."; $("next").disabled = false; return; }
+        submitted = true;
+        $("prog").hidden = true;
+        $("stage").innerHTML = doneStep();
+        document.querySelector(".nav").hidden = true;
+      } catch (e) {
+        $("err").textContent = "Network trouble. Try again."; $("next").disabled = false;
+      }
+    }
+
+    $("back").addEventListener("click", () => { if (i > 0) { i--; render(); } });
+    $("next").addEventListener("click", () => {
+      const step = STEPS[i];
+      if (!stepComplete(step)) return;
+      if (step.kind === "review") { submit(); return; }
+      if (i < STEPS.length - 1) { i++; render(); }
+    });
+
+    // ---- boot: confirm the onboarding session, get the username ----
+    fetch("/api/onboarding")
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((d) => { $("who").textContent = d.username || "—"; render(); })
+      .catch(() => { window.location.href = "/"; });
+  </script>
+</body>
+</html>

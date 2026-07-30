@@ -222,9 +222,21 @@
     .adm-empty { color: var(--dim2); font-size: 0.85rem; }
     .adm-row { display: flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0.5rem; border: 1px solid var(--dim2); margin-bottom: 0.45rem; }
     .adm-row.pending { border-color: var(--accent); flex-wrap: wrap; background: rgba(120,190,255,0.05); }
+    /* a disciple who rated Feet or Tasks/Chores below 4 is flagged red for review */
+    .adm-row.pending.flagged { border-color: var(--err); background: rgba(255,122,109,0.09); }
+    .adm-row.pending.flagged .nm::after { content: " ⚑"; color: var(--err); }
     .adm-row .nm { color: var(--bright); white-space: nowrap; } .adm-row .grow { flex: 1; min-width: 0; }
     .adm-row .pts { color: var(--accent); font-size: 0.85rem; }
     .adm-row .intro { flex-basis: 100%; color: var(--dim); font-size: 0.8rem; }
+    /* the onboarding questionnaire answers, folded under a pending disciple */
+    .adm-row .qz { flex-basis: 100%; margin-top: 0.4rem; border-top: 1px solid var(--dim2); padding-top: 0.45rem; font-size: 0.76rem; color: var(--dim); }
+    .adm-row .qz .qtoggle { background: none; border: none; color: var(--accent); font-family: inherit; font-size: 0.74rem; cursor: pointer; padding: 0; letter-spacing: 0.06em; }
+    .adm-row .qz .qbody { margin-top: 0.5rem; display: grid; gap: 0.5rem; }
+    .adm-row .qz .qgrp > b { display: block; color: var(--dim); font-weight: 400; letter-spacing: 0.14em; text-transform: uppercase; font-size: 0.68rem; margin-bottom: 0.15rem; }
+    .adm-row .qz .qline b { color: var(--bright); font-weight: 400; }
+    .adm-row .qz .qline { color: var(--c); }
+    .adm-row .qz .qline .warn { color: var(--err); }
+    .adm-row .qz .qline .no { color: var(--err); } .adm-row .qz .qline .yes { color: #7dffb0; }
     .adm-chip { border: 1px solid var(--c); background: transparent; color: var(--c); font-family: inherit; font-size: 0.76rem; padding: 0.24rem 0.7rem; cursor: pointer; text-transform: uppercase; letter-spacing: 0.08em; }
     .adm-chip:hover { background: var(--c); color: var(--bg); }
     .adm-chip.ghost { border-color: var(--dim2); color: var(--dim); }
@@ -555,6 +567,49 @@
 
 
     // --- admin controls, rendered into the panel on Hermione's account ---
+    // A pending disciple's onboarding answers, folded under their approval row.
+    const ONB_KINKS = { feet: "Feet", tasks: "Tasks / Chores", degradation: "Degradation",
+      humiliation: "Humiliation", masochism: "Masochism", exhibitionism: "Exhibitionism",
+      worship: "Worship", petplay: "Petplay" };
+    const ONB_PUN = { lines_physical: "Lines (physical)", lines_typing: "Lines (typing)",
+      voice_memos: "Voice memos", ignoring: "Ignoring", onsite_games_hard: "On-site games (hard)" };
+    const ONB_PET = { dog: "Dog / doggy / puppy", good: "Good boy / girl", doll: "Doll",
+      pet: "Pet", bitch: "Bitch", loser: "Loser", dummy: "Dummy" };
+    function onboardingBlock(o) {
+      const esc = (s) => String(s == null ? "" : s).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+      const kinks = Object.keys(ONB_KINKS).map((k) => {
+        const v = (o.kinks || {})[k];
+        const warn = (k === "feet" || k === "tasks") && v < 4;
+        return `<span class="qline">${esc(ONB_KINKS[k])} <b class="${warn ? "warn" : ""}">${v}/5</b></span>`;
+      }).join(" &nbsp;·&nbsp; ");
+      const pun = Object.keys(ONB_PUN).map((k) => {
+        const v = (o.punishments || {})[k];
+        return `<span class="qline">${esc(ONB_PUN[k])}: <span class="${v === "acceptable" ? "yes" : "no"}">${v === "acceptable" ? "acceptable" : "hard no"}</span></span>`;
+      }).join(" &nbsp;·&nbsp; ");
+      const pet = Object.keys(ONB_PET).map((k) => {
+        const v = (o.petnames || {})[k];
+        return `<span class="qline">${esc(ONB_PET[k])}: <span class="${v === "like" ? "yes" : "no"}">${v}</span></span>`;
+      }).join(" &nbsp;·&nbsp; ");
+      const wrap = document.createElement("div");
+      wrap.className = "qz";
+      const toggle = document.createElement("button");
+      toggle.className = "qtoggle";
+      toggle.textContent = "▸ questionnaire";
+      const bodyEl = document.createElement("div");
+      bodyEl.className = "qbody"; bodyEl.hidden = true;
+      bodyEl.innerHTML =
+        `<div class="qgrp"><b>interests</b><div class="qline">${kinks}</div></div>` +
+        `<div class="qgrp"><b>limits</b><div class="qline">${o.limits ? esc(o.limits) : "<span style='color:var(--dim2)'>none given</span>"}</div></div>` +
+        `<div class="qgrp"><b>punishments</b><div>${pun}</div></div>` +
+        `<div class="qgrp"><b>petnames</b><div>${pet}${o.petnamesOther ? ` &nbsp;·&nbsp; <span class="qline">Other: <b>${esc(o.petnamesOther)}</b></span>` : ""}</div></div>`;
+      toggle.addEventListener("click", () => {
+        bodyEl.hidden = !bodyEl.hidden;
+        toggle.textContent = (bodyEl.hidden ? "▸" : "▾") + " questionnaire";
+      });
+      wrap.append(toggle, bodyEl);
+      return wrap;
+    }
+
     async function buildAdminPanel() {
       const body = document.getElementById("panel-body");
       body.replaceChildren();
@@ -604,7 +659,7 @@
       } else {
         for (const u of pending) {
           const row = document.createElement("div");
-          row.className = "adm-row pending";
+          row.className = "adm-row pending" + (u.onboardingFlag ? " flagged" : "");
           const nm = document.createElement("span"); nm.className = "nm grow"; nm.textContent = u.username;
           row.append(nm);
           row.append(mkChip("Approve", "", async () => {
@@ -617,6 +672,7 @@
             if (r.ok) buildAdminPanel();
           }));
           if (u.intro) { const i = document.createElement("div"); i.className = "intro"; i.textContent = u.intro; row.append(i); }
+          if (u.onboarding) row.append(onboardingBlock(u.onboarding));
           appSec.append(row);
         }
       }
