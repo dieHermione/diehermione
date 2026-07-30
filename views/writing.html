@@ -265,13 +265,13 @@
     for (let i = 0; i < size; i++) d[i] = Math.random() * 2 - 1;
     const n = a.createBufferSource(); n.buffer = buf; n.loop = true;
     ambFilt = a.createBiquadFilter(); ambFilt.type = "lowpass"; ambFilt.frequency.value = 360;
-    ambGain = a.createGain(); ambGain.gain.value = DEVOTION ? 0.012 : 0.0055;
+    ambGain = a.createGain(); ambGain.gain.value = DEVOTION ? 0.012 : 0.0018;
     n.connect(ambFilt).connect(ambGain).connect(a.destination); n.start();
   }
   function setAmbience(t) {
     if (!ambGain || !actx) return; const now = actx.currentTime;
-    // Penance static is a quarter of what it was; the ramp scales with it
-    ambGain.gain.setTargetAtTime((DEVOTION ? 0.012 : 0.0055) + t * 0.0125, now, 0.3);
+    // Penance static has been cut twice now; it sits under everything else
+    ambGain.gain.setTargetAtTime((DEVOTION ? 0.012 : 0.0018) + t * 0.004, now, 0.3);
     ambFilt.frequency.setTargetAtTime(360 + t * 2800, now, 0.3);
     ambFilt.type = t > 0.6 ? "highpass" : "lowpass";
   }
@@ -293,8 +293,9 @@
   function updateGlitch(t) {
     const on = t > 0.5 && $("play").classList.contains("on") && !state.done;
     $("play").classList.toggle("glitch", on);
-    if (on && !glitchTimer) glitchTimer = setInterval(() => { glitchTick++; renderTarget(); }, 110);
-    else if (!on && glitchTimer) { clearInterval(glitchTimer); glitchTimer = null; }
+    // nothing left to reshuffle now the glyphs are gone; the class alone
+    // drives the chromatic split in CSS
+    if (!on && glitchTimer) { clearInterval(glitchTimer); glitchTimer = null; }
   }
   let hexSeed = 0x51;
   function hexline() {
@@ -302,8 +303,6 @@
     for (let j = 0; j < 12; j++) { hexSeed = (hexSeed * 1103515245 + 12345) & 0x7fffffff; s += (hexSeed % 256).toString(16).padStart(2, "0").toUpperCase() + " "; }
     return s;
   }
-  const GLYPH = "▓▒░█▚▞#%&@";
-  function corruptGlyph(i) { return GLYPH[(i * 7 + state.mistakes + glitchTick) % GLYPH.length]; }
 
   /* ---------- state ---------- */
   const state = { reps: 50, diff: "exacting", category: "devotion", lines: [], idx: 0, typed: 0, mistakes: 0, correct: 0, startedAt: 0, done: false };
@@ -446,12 +445,10 @@
     const rest = text.slice(state.typed + 1);
     let restHtml = "";
     for (let i = 0; i < rest.length; i++) {
-      const ch = rest[i];
-      // at higher corruption, some upcoming glyphs are visually scrambled (you
-      // still type the real character)
-      if (ch !== " " && t > 0.45 && ((i * 13 + state.mistakes) % 7) === 0) {
-        restHtml += '<span class="err">' + corruptGlyph(i) + "</span>";
-      } else restHtml += escapeHtml(ch);
+      // Upcoming letters used to be scrambled into block glyphs at high
+      // corruption. It made the line genuinely hard to read rather than
+      // atmospheric, so the text is always legible now.
+      restHtml += escapeHtml(rest[i]);
     }
     el.className = "target" + (t > 0.55 ? " split" : "");
     el.setAttribute("data-t", text);

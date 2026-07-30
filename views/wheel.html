@@ -98,7 +98,7 @@
 <body class="has-top-nav">
   <div class="cy">
     <div class="chd">
-      <span>ANGELDOM // CYLINDER, UNROLLED</span>
+      <span>angelOS v0.2</span>
       <span id="rule">ONE TURN PER DAY</span>
       <span>VAULT <b id="vault">…</b> &#10022;</span>
     </div>
@@ -226,7 +226,7 @@
       await turnTo(data.index);
       turning = false;
       document.getElementById("vault").textContent = Number(data.angelcoins).toLocaleString();
-      showPay("+" + data.won + " ✦", "PAID TO YOUR VAULT");
+      showPay("+" + data.won + " ✦", "");
       turnBtn.disabled = !data.canSpin;
       if (!data.canSpin) document.getElementById("rule").textContent = "COME BACK TOMORROW";
     }
@@ -259,8 +259,7 @@
         buildFaces();
         document.getElementById("odds").innerHTML = oddsLine();
         turnBtn.disabled = !state.canSpin;
-        if (state.unlimited) document.getElementById("rule").textContent = "TURN AS OFTEN AS YOU LIKE";
-        else if (!state.canSpin) document.getElementById("rule").textContent = "COME BACK TOMORROW";
+        if (!state.canSpin) document.getElementById("rule").textContent = "COME BACK TOMORROW";
         showPay(null, state.canSpin ? "READY" : "SPUN TODAY");
       })
       .catch(() => (window.location.href = "/"));

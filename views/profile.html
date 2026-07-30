@@ -10,7 +10,7 @@
   <script src="/me.js"></script>
   <style>
     /* The profile is the "man page" design: the account rendered as its own
-       entry in the angelic records. Self-contained, no site.css. */
+       entry in the angelOS database. Self-contained, no site.css. */
     * { box-sizing: border-box; margin: 0; padding: 0; }
     /* site.css normally carries this; the fix has to come with us */
     [hidden] { display: none !important; }
@@ -196,7 +196,7 @@
 </head>
 <body class="has-top-nav">
   <main class="mp">
-    <div class="top"><span id="hd-l">…</span><span>angelic records</span><span id="hd-r">…</span></div>
+    <div class="top"><span id="hd-l">…</span><span>angelOS database</span><span id="hd-r">…</span></div>
 
     <div id="view-mode">
       <input type="file" id="quick-icon" accept="image/*" hidden />
@@ -214,12 +214,6 @@
         </div>
       </div>
 
-      <div class="sec" id="sec-synopsis">
-        <h4>SYNOPSIS</h4>
-        <div class="body"><b id="p-synopsis-name">…</b>
-          <span class="d">[--penance] [--devotion] [--snake] [--wheel] [--elysium] [--obey]</span></div>
-      </div>
-
       <div class="sec">
         <h4>DESCRIPTION</h4>
         <div class="body"><span id="p-bio"></span><br>
@@ -231,17 +225,12 @@
         <div class="opt" id="p-counters"></div>
       </div>
 
-      <div class="sec" id="sec-exit">
-        <h4>EXIT STATUS</h4>
-        <div class="body"><span class="d">0 on obedience. 1 on a slip. Every count on this page is
-          kept by </span><b>angelOS</b><span class="d"> and cannot be reset by the subject.</span></div>
-      </div>
-
       <div class="sec">
         <h4>SEE ALSO</h4>
-        <div class="also">
-          <button type="button" id="edit-btn" hidden>edit<span class="n">(1)</span></button>
-          <a href="/dashboard">dashboard<span class="n">(1)</span></a>
+        <div class="also" id="also">
+          <button type="button" id="edit-btn" data-key="1" hidden>edit<span class="n">(1)</span></button>
+          <a href="/games" data-key="2">games<span class="n">(2)</span></a>
+          <a href="/dashboard" data-key="3">dashboard<span class="n">(3)</span></a>
         </div>
       </div>
     </div>
@@ -350,7 +339,6 @@
       slot.replaceChildren(pic);
 
       document.getElementById("p-username").textContent = name;
-      document.getElementById("p-synopsis-name").textContent = name;
 
       const rank = profile.rank || "unranked";
       const rankEl = document.getElementById("p-rank");
@@ -387,12 +375,9 @@
         counters.append(key, val);
       }
 
-      // Hermione's page carries no counters, so the two sections written
-      // about counting come off hers as well
-      const princess = profile.points === null;
-      document.getElementById("sec-synopsis").hidden = princess;
-      document.getElementById("sec-exit").hidden = princess;
+      // nothing left that is conditional on who is being looked at
       document.getElementById("edit-btn").hidden = !profile.canEdit;
+      renumber();
       document.title = name + " - Profile";
     }
 
@@ -476,6 +461,27 @@
       }
       await loadProfile();
       setEditing(false);
+    });
+
+    /* The numbers beside the SEE ALSO entries are the keys that fire them, so
+       the manual's section numbers became real shortcuts. Renumbered on every
+       paint, because "edit" is only there on your own page. */
+    function renumber() {
+      const items = [...document.querySelectorAll("#also > *")].filter((el) => !el.hidden);
+      items.forEach((el, i) => {
+        const key = String(i + 1);
+        el.dataset.key = key;
+        el.querySelector(".n").textContent = "(" + key + ")";
+      });
+    }
+    document.addEventListener("keydown", (e) => {
+      const tag = (e.target && e.target.tagName || "").toLowerCase();
+      if (tag === "input" || tag === "textarea" || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (document.getElementById("edit-form").classList.contains("open")) return;
+      const hit = document.querySelector('#also > [data-key="' + e.key + '"]:not([hidden])');
+      if (!hit) return;
+      e.preventDefault();
+      hit.click();
     });
 
     window.siteMe()

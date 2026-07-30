@@ -212,7 +212,7 @@ function step(state, now) {
     state.growth += GROWTH_RATE * (season === "Winter" ? 0.4 : 1);
     while (state.stageIndex < STAGES.length - 1 && state.growth >= STAGE_GROWTH[state.stageIndex + 1]) {
       state.stageIndex += 1;
-      logJournal(state, null, "Grew", `The tree became a ${STAGES[state.stageIndex]}.`, now);
+      logJournal(state, null, "Grew", `The tree became ${STAGES[state.stageIndex].toLowerCase()}.`, now);
     }
   }
 
@@ -429,7 +429,18 @@ function readClues(state) {
   if (state.woundLoad > 45) lines.push("Recent cuts have not yet sealed.");
 
   // disease-specific observations, vaguer until inspection builds confidence
-  let headline = "The tree looks settled for now.";
+  // a little variety, so a quiet week does not read as the same sentence
+  const SETTLED = [
+    "The tree looks settled for now.",
+    "Nothing needs doing today.",
+    "It is holding its own.",
+    "Quiet. The soil smells right.",
+    "No complaints from it this morning.",
+    "Steady. Leave it be.",
+    "It has what it needs.",
+    "Growing, slowly, the way it should.",
+  ];
+  let headline = SETTLED[Math.floor((state.tick || 0) / 6) % SETTLED.length];
   const worst = [...state.diseases].sort((a, b) => b.stage - a.stage)[0];
   if (worst && worst.stage >= 1) {
     const d = DISEASES[worst.type];

@@ -98,6 +98,8 @@
     wheel: "/wheel", deathroll: "/deathroll", elysium: "/elysium",
     chess: "/chess", parse: "/dummyparse", dummyparse: "/dummyparse",
     skillcheck: "/skillcheck", summary: "/summary",
+    // not games, but the two places people most want to get back to
+    dashboard: "/dashboard", profile: "/profile", games: "/games",
   };
 
   var PRAY = {

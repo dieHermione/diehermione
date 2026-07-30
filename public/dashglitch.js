@@ -238,7 +238,8 @@ window.DashGlitch = (function () {
   /* Tear bands run on their own clock as well as being one of the six. They
      are the cheapest and least disruptive of the set, so they can happen often
      without the page feeling broken; the full glitch rotation stays rare. */
-  var TEAR_MIN = 9000, TEAR_MAX = 34000;
+  // three times as often as the first pass
+  var TEAR_MIN = 3000, TEAR_MAX = 11000;
   var tearTimer = null;
   // same setup play() does: without ensure() there is no layer to draw into
   function playTear() {
