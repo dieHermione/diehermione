@@ -30,6 +30,8 @@
     document.head.appendChild(s);
   }
 
+  /* The pool is server-stored and Hermione-editable; these are the fallback if
+     the fetch has not landed yet or fails. Fetched once, on load. */
   var DEVOTIONALS = [
     "Her will is Divine. I will obey.",
     "My soul is damaged. Only obedience will bring salvation.",
@@ -39,8 +41,16 @@
   ];
 
   /* Sound for the decrypt sequence, on the AudioBus "typing" channel with the
-     rest of the interface noise. A drone climbs while the text resolves, each
-     newly settled glyph ticks, and a low pair of tones lands when it finishes.
+     rest of the interface noise.
+
+     Second pass. The first was a sawtooth drone that just climbed, which read
+     as a generic riser. This one is a signal being tuned in: two carriers start
+     badly detuned and converge to unison, so the audible beating slows and
+     stops exactly as the text resolves, and a noise bed narrows from wide hiss
+     to a thin band and fades as the static clears. Glyphs tick as quiet data
+     blips that step up in pitch with progress. The lock is a clean fifth over
+     a low thump, with a soft attack rather than a click.
+
      All of it degrades to silence if the bus is missing or audio is blocked. */
   function bootAudio() {
     var bus = window.AudioBus;
@@ -49,51 +59,101 @@
     var out = bus.channel("typing");
     if (!a || !out) return null;
 
-    var drone = null, droneGain = null, sub = null;
+    var nodes = [];
+    var total = 5, t0 = 0;
+    function keep(n) { nodes.push(n); return n; }
+
     return {
       start: function (seconds) {
         var now = a.currentTime;
-        droneGain = a.createGain();
-        droneGain.gain.setValueAtTime(0.0001, now);
-        droneGain.gain.exponentialRampToValueAtTime(0.05, now + 0.6);
-        droneGain.connect(out);
-        drone = a.createOscillator();
-        drone.type = "sawtooth";
-        drone.frequency.setValueAtTime(52, now);
-        drone.frequency.linearRampToValueAtTime(96, now + seconds);
-        var lp = a.createBiquadFilter();
-        lp.type = "lowpass";
-        lp.frequency.setValueAtTime(240, now);
-        lp.frequency.linearRampToValueAtTime(1400, now + seconds);
-        drone.connect(lp).connect(droneGain);
-        drone.start(now);
-        sub = a.createOscillator();
-        sub.type = "sine"; sub.frequency.value = 41;
-        var sg = a.createGain(); sg.gain.value = 0.03;
-        sub.connect(sg).connect(out); sub.start(now);
+        total = Math.max(0.5, seconds || 5);
+        t0 = now;
+
+        // --- the two carriers, converging from a wide beat into unison ---
+        var carrierGain = keep(a.createGain());
+        carrierGain.gain.setValueAtTime(0.0001, now);
+        carrierGain.gain.exponentialRampToValueAtTime(0.045, now + 0.8);
+        carrierGain.connect(out);
+        [0, 1].forEach(function (i) {
+          var o = keep(a.createOscillator());
+          o.type = "triangle";
+          // 14Hz apart at the start, dead in tune by the end
+          o.frequency.setValueAtTime(110 + (i ? 14 : -14), now);
+          o.frequency.linearRampToValueAtTime(110, now + total * 0.92);
+          o.connect(carrierGain);
+          o.start(now);
+        });
+
+        // --- the static bed, narrowing and clearing ---
+        var len = Math.floor(a.sampleRate * 2);
+        var buf = a.createBuffer(1, len, a.sampleRate), d = buf.getChannelData(0);
+        for (var i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+        var noise = keep(a.createBufferSource());
+        noise.buffer = buf; noise.loop = true;
+        var band = keep(a.createBiquadFilter());
+        band.type = "bandpass";
+        band.frequency.setValueAtTime(900, now);
+        band.frequency.linearRampToValueAtTime(2100, now + total);
+        band.Q.setValueAtTime(0.7, now);
+        band.Q.linearRampToValueAtTime(9, now + total);       // wide hiss to a thin whistle
+        var nGain = keep(a.createGain());
+        nGain.gain.setValueAtTime(0.0001, now);
+        nGain.gain.exponentialRampToValueAtTime(0.055, now + 0.5);
+        nGain.gain.exponentialRampToValueAtTime(0.006, now + total);
+        noise.connect(band).connect(nGain).connect(out);
+        noise.start(now);
       },
+
+      // one quiet data blip per settled glyph, stepping up as the text resolves
       tick: function () {
         var now = a.currentTime;
-        var len = Math.floor(a.sampleRate * 0.012);
-        var buf = a.createBuffer(1, len, a.sampleRate), d = buf.getChannelData(0);
-        for (var i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2);
-        var n = a.createBufferSource(); n.buffer = buf;
-        var f = a.createBiquadFilter(); f.type = "bandpass"; f.frequency.value = 3200; f.Q.value = 1.4;
-        var g = a.createGain(); g.gain.value = 0.06;
-        n.connect(f).connect(g).connect(out); n.start(now); n.stop(now + 0.015);
+        var p = total ? Math.min(1, (now - t0) / total) : 0;
+        var o = a.createOscillator();
+        o.type = "square";
+        o.frequency.value = 620 + p * 900 + Math.random() * 90;
+        var g = a.createGain();
+        g.gain.setValueAtTime(0.0001, now);
+        g.gain.exponentialRampToValueAtTime(0.022, now + 0.004);
+        g.gain.exponentialRampToValueAtTime(0.0001, now + 0.05);
+        o.connect(g).connect(out);
+        o.start(now); o.stop(now + 0.06);
       },
+
       resolve: function () {
         var now = a.currentTime;
-        if (droneGain) droneGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.35);
-        try { if (drone) drone.stop(now + 0.4); if (sub) sub.stop(now + 0.4); } catch (e) {}
+        // everything running stops together: the static does not trail the lock
+        nodes.forEach(function (n) {
+          try {
+            if (n.gain) {
+              n.gain.cancelScheduledValues(now);
+              n.gain.setValueAtTime(Math.max(0.0001, n.gain.value), now);
+              n.gain.exponentialRampToValueAtTime(0.0001, now + 0.25);
+            }
+            if (n.stop) n.stop(now + 0.3);
+          } catch (e) {}
+        });
+        nodes = [];
+
+        // the lock: a fifth with a soft attack, over a low thump
         [220, 330].forEach(function (hz, i) {
           var o = a.createOscillator(); o.type = "sine"; o.frequency.value = hz;
           var g = a.createGain();
-          g.gain.setValueAtTime(0.0001, now + i * 0.06);
-          g.gain.exponentialRampToValueAtTime(0.10, now + i * 0.06 + 0.02);
-          g.gain.exponentialRampToValueAtTime(0.0001, now + i * 0.06 + 0.9);
-          o.connect(g).connect(out); o.start(now + i * 0.06); o.stop(now + i * 0.06 + 0.95);
+          var at = now + i * 0.05;
+          g.gain.setValueAtTime(0.0001, at);
+          g.gain.exponentialRampToValueAtTime(0.085, at + 0.09);   // soft, not a click
+          g.gain.exponentialRampToValueAtTime(0.0001, at + 1.2);
+          o.connect(g).connect(out); o.start(at); o.stop(at + 1.25);
         });
+        var thump = a.createOscillator();
+        thump.type = "sine";
+        thump.frequency.setValueAtTime(150, now);
+        thump.frequency.exponentialRampToValueAtTime(46, now + 0.28);
+        var tg = a.createGain();
+        tg.gain.setValueAtTime(0.0001, now);
+        tg.gain.exponentialRampToValueAtTime(0.12, now + 0.015);
+        tg.gain.exponentialRampToValueAtTime(0.0001, now + 0.5);
+        thump.connect(tg).connect(out);
+        thump.start(now); thump.stop(now + 0.55);
       },
     };
   }
@@ -145,7 +205,15 @@
     requestAnimationFrame(frame);
   }
 
-  window.Boot = { play: play };
+  // pull the editable pool; a failure just leaves the built-in lines in place
+  try {
+    fetch("/api/decrypt")
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) { if (d && d.lines && d.lines.length) DEVOTIONALS = d.lines; })
+      .catch(function () {});
+  } catch (e) {}
+
+  window.Boot = { play: play, setLines: function (l) { if (l && l.length) DEVOTIONALS = l; } };
 
   // Standalone: a page can set <body data-boot data-boot-to="/dashboard"> to just play it.
   document.addEventListener("DOMContentLoaded", function () {

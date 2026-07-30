@@ -20,3 +20,4 @@ parses.json
 # regenerated mockup screenshots (large, rebuild with mockups/capture.sh)
 mockups/out/
 summaries.json
+decrypt.json

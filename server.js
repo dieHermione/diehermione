@@ -21,6 +21,7 @@ const SITE_FILE = path.join(process.env.DATA_DIR || __dirname, "site.json");
 const ELYSIUM_FILE = path.join(process.env.DATA_DIR || __dirname, "elysium.json");
 const DEVOTION_FILE = path.join(process.env.DATA_DIR || __dirname, "devotion.json");
 const SUBLIMINAL_FILE = path.join(process.env.DATA_DIR || __dirname, "subliminal.json");
+const DECRYPT_FILE = path.join(process.env.DATA_DIR || __dirname, "decrypt.json");
 const PARSE_FILE = path.join(process.env.DATA_DIR || __dirname, "parses.json");
 const SUMMARY_FILE = path.join(process.env.DATA_DIR || __dirname, "summaries.json");
 
@@ -1807,6 +1808,39 @@ function saveSubliminal(data) {
 }
 
 // Any player may read them; the overlay needs them to say anything.
+/* The lines the login decrypt animation resolves into. Stored and edited the
+   same way the subliminals and the Devotion presets are; the login page reads
+   them before anyone is signed in, so the GET is deliberately open. */
+const DECRYPT_DEFAULTS = {
+  lines: [
+    "Her will is Divine. I will obey.",
+    "My soul is damaged. Only obedience will bring salvation.",
+    "There is nothing except for Her.",
+    "Her happiness is all that matters.",
+    "Hermione knows best.",
+  ],
+};
+function loadDecrypt() {
+  try {
+    const data = JSON.parse(fs.readFileSync(DECRYPT_FILE, "utf8"));
+    if (data && Array.isArray(data.lines) && data.lines.length) return data;
+  } catch {}
+  return JSON.parse(JSON.stringify(DECRYPT_DEFAULTS));
+}
+app.get("/api/decrypt", (req, res) => {
+  res.json({ lines: loadDecrypt().lines });
+});
+app.post("/api/decrypt", (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });
+  const incoming = Array.isArray(req.body.lines) ? req.body.lines : null;
+  if (!incoming) return res.status(400).json({ error: "lines must be an array." });
+  const lines = incoming.map((m) => String(m).trim().slice(0, 160)).filter(Boolean).slice(0, 60);
+  if (!lines.length) return res.status(400).json({ error: "Add at least one line." });
+  fs.writeFileSync(DECRYPT_FILE, JSON.stringify({ lines }, null, 2));
+  res.json({ ok: true, lines });
+});
+
 app.get("/api/subliminal", (req, res) => {
   if (!req.session.username && !req.session.guest) return res.status(401).json({ error: "Not logged in." });
   res.json({ messages: loadSubliminal().messages });

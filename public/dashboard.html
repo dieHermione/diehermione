@@ -10,6 +10,8 @@
   <script src="/me.js"></script>
   <script src="/glitch.js"></script>
   <script src="/dashglitch.js"></script>
+  <!-- for the admin panel's decrypt-line preview; the login page uses it for real -->
+  <script src="/boot.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Major+Mono+Display&display=swap" rel="stylesheet" />
   <style>
     /* Big-Type terminal dashboard (black / baby-blue). Self-contained; overrides
@@ -262,16 +264,6 @@
       <div class="stitle">enter</div>
       <div class="controls">
         <a href="/games" class="ctl-btn" data-tip="Every game, on one wall.">Games</a>
-        <a href="/snake" data-tip="Chase the food. Classic Snake clone.">Snake</a>
-        <a href="/writing" data-tip="A writeforme clone for punishments.">Penance</a>
-        <a href="/writing?mode=devotion" data-tip="A calmer writeforme clone for mantras.">Devotion</a>
-        <a href="/deathroll" data-tip="A two-player dice game. The first player to roll a 1 loses.">Deathroll</a>
-        <a href="/elysium" data-tip="A simple game about caring for a tree.">Elysium</a>
-        <a href="/dummyparse" data-tip="Beat on a target dummy. Optimise stats and rotation for damage.">Dummy Parse</a>
-        <a href="/wheel" data-tip="One turn a day. Pays angelcoins.">Wheel</a>
-        <a href="/chess" data-tip="Chess against Hermione. You play white.">Chess</a>
-        <a href="/skillcheck" data-tip="Hit the key while the needle is in the red.">Skill Check</a>
-        <a href="/summary" data-tip="Read a real article, then say it back inside a word limit.">Summary</a>
         <a id="profile-link" class="ctl-btn" href="/profile">Profile</a>
         <a id="hermione-link" class="ctl-btn" href="/profile?user=hermione" hidden>Hermione</a>
         <button id="settings-toggle" class="ctl-btn" type="button" aria-expanded="false">Settings</button>
@@ -774,6 +766,41 @@
         setTimeout(() => { subSave.textContent = "Save messages"; }, 1500);
       });
       subBar.append(subSave); subSec.append(subBar); wrap.append(foldable(subSec));
+
+      // decrypt lines: what the login animation resolves into, one per row
+      const decSec = document.createElement("div"); decSec.className = "adm-sec";
+      decSec.append(mk("h3", "Decrypt lines"));
+      const decHint = mk("p", "One line per row. The login animation picks one at random and decrypts it out of scrambled glyphs.");
+      decHint.className = "adm-empty"; decSec.append(decHint);
+      const decTa = document.createElement("textarea"); decTa.rows = 5;
+      decTa.value = "loading...";
+      decTa.disabled = true;
+      fetch("/api/decrypt").then((r) => (r.ok ? r.json() : null)).then((d) => {
+        decTa.value = d && d.lines ? d.lines.join("\n") : "";
+        decTa.disabled = false;
+      }).catch(() => { decTa.value = ""; decTa.disabled = false; });
+      const decBox = document.createElement("div"); decBox.className = "adm-preset";
+      decBox.append(decTa); decSec.append(decBox);
+      const decBar = document.createElement("div"); decBar.className = "adm-preset-bar";
+      decBar.append(mkChip("Preview", "ghost", () => {
+        const lines = decTa.value.split("\n").map((x) => x.trim()).filter(Boolean);
+        if (window.Boot) {
+          window.Boot.setLines(lines);
+          window.Boot.play({ duration: 5200 });
+        }
+      }));
+      const decSave = mkChip("Save lines", "", async () => {
+        const lines = decTa.value.split("\n").map((x) => x.trim()).filter(Boolean);
+        decSave.textContent = "Saving...";
+        const r = await fetch("/api/decrypt", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ lines }),
+        });
+        decSave.textContent = r.ok ? "Saved" : "Error";
+        if (r.ok && window.Boot) window.Boot.setLines(lines);
+        setTimeout(() => { decSave.textContent = "Save lines"; }, 1500);
+      });
+      decBar.append(decSave); decSec.append(decBar); wrap.append(foldable(decSec));
 
       // screen glitch: fires on its own every 40 to 180 seconds, testable here
       const glSec = document.createElement("div"); glSec.className = "adm-sec";
