@@ -175,8 +175,8 @@ window.DashGlitch = (function () {
      otherwise, cannot avoid the background; swapping the variables the page
      draws its text, rules and buttons from leaves the background alone. */
   var CRUSH = {
-    "--c": "#c11208", "--bright": "#ff6a5c", "--dim": "#7a1109",
-    "--dim2": "#4a0d06", "--accent": "#ff3b2f", "--glow": "rgba(193,18,8,0.45)",
+    "--c": "#7a0b04", "--bright": "#b83226", "--dim": "#4a0a04",
+    "--dim2": "#2c0602", "--accent": "#9c1810", "--glow": "rgba(120,10,4,0.4)",
   };
   function crush() {
     var t = 0, hits = Math.round(rnd(3, 6));
@@ -244,37 +244,46 @@ window.DashGlitch = (function () {
   }
   function glitch() { play(Math.floor(Math.random() * EFFECTS.length)); }
 
-  /* Tear bands run on their own clock as well as being one of the six. They
-     are the cheapest and least disruptive of the set, so they can happen often
-     without the page feeling broken; the full glitch rotation stays rare. */
-  // three times as often as the first pass
-  var TEAR_MIN = 3000, TEAR_MAX = 11000;
-  var tearTimer = null;
-  // same setup play() does: without ensure() there is no layer to draw into
-  function playTear() {
+  /* One scheduler drives the automatic glitches. Rather than a rare uniform pick
+     plus a separate tear clock, every effect carries a weight, so the relative
+     frequency is set here: tear bands are frequent, dropout is fairly common, and
+     bloom and the palette effects are rare. Bloom is held off chess and elysium. */
+  var AUTO_MIN = 2500, AUTO_MAX = 8000;
+  function bloomAllowed() { return !/^\/(chess|elysium)\b/.test(location.pathname); }
+  var WEIGHTED = [
+    { run: tearBands, w: 60 },
+    { run: dropout,   w: 26 },
+    { run: bloom,     w: 3, guard: bloomAllowed },
+    { run: crush,     w: 4 },
+    { run: comb,      w: 4 },
+    { run: edgeBurn,  w: 3 },
+  ];
+  function playRun(runFn) {
     if (!enabled) return 0;
-    ensure();
-    var total = tearBands() || 900;
+    ensure(); clearFx();
+    var total = runFn() || 900;
     at(total, clearFx);
     return total;
   }
-  function scheduleTear() {
-    tearTimer = setTimeout(function () {
-      if (enabled && !document.hidden) playTear();
-      scheduleTear();
-    }, rnd(TEAR_MIN, TEAR_MAX));
+  // kept for the console codes and manual triggers
+  function playTear() { return playRun(tearBands); }
+  function pickWeighted() {
+    var pool = WEIGHTED.filter(function (e) { return !e.guard || e.guard(); });
+    var total = pool.reduce(function (s, e) { return s + e.w; }, 0);
+    var r = Math.random() * total;
+    for (var i = 0; i < pool.length; i++) { r -= pool[i].w; if (r < 0) return pool[i]; }
+    return pool[0];
   }
-  function startTears() { if (!enabled || tearTimer) return; scheduleTear(); }
-  function stopTears() { clearTimeout(tearTimer); tearTimer = null; }
-
   function scheduleNext() {
     randomTimer = setTimeout(function () {
-      if (!document.hidden) glitch();
+      if (enabled && !document.hidden) playRun(pickWeighted().run);
       scheduleNext();
-    }, rnd(MIN_GAP, MAX_GAP));
+    }, rnd(AUTO_MIN, AUTO_MAX));
   }
-  function startRandom() { if (!enabled || randomTimer) return; scheduleNext(); startTears(); }
-  function stopRandom() { clearTimeout(randomTimer); randomTimer = null; stopTears(); }
+  function startTears() {}   // folded into the weighted scheduler; kept for the API
+  function stopTears() {}
+  function startRandom() { if (!enabled || randomTimer) return; scheduleNext(); }
+  function stopRandom() { clearTimeout(randomTimer); randomTimer = null; }
   function setEnabled(v) {
     enabled = Boolean(v);
     if (!enabled) { stopRandom(); clearFx(); }
