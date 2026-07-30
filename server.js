@@ -2091,6 +2091,10 @@ app.get("/deathroll", requirePlayer, (req, res) => {
   res.sendFile(path.join(__dirname, "views", "deathroll.html"));
 });
 
+app.get("/games", requirePlayer, (req, res) => {
+  res.sendFile(path.join(__dirname, "views", "games.html"));
+});
+
 app.get("/skillcheck", requirePlayer, (req, res) => {
   res.sendFile(path.join(__dirname, "views", "skillcheck.html"));
 });

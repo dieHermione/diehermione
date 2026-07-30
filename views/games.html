@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Games - angeldom.me</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Major+Mono+Display&display=swap" rel="stylesheet" />
+  <script src="/me.js"></script>
+  <script src="/audio.js"></script>
+  <style>
+    /* Game selection, "paste-up" (mockup 2): posters pasted crooked onto a
+       board, each one wearing its own game's skin. Self-contained, no site.css. */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    [hidden] { display: none !important; }
+
+    :root {
+      --c: #aee3ff; --dim: #4f7ea0; --dim2: #2c4a5e; --bright: #eafaff;
+      --accent: #8fd0ff; --glow: rgba(120,190,255,.32);
+      --red: #ff3b2f; --deep: #c11208; --err: #ff5a4a;
+    }
+    html, body { height: 100%; }
+    body {
+      background: #000; color: var(--c);
+      font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 14px;
+      overflow: hidden;
+    }
+    .scan { position: fixed; inset: 0; z-index: 200; pointer-events: none;
+      background: repeating-linear-gradient(0deg, rgba(0,0,0,.30) 0 1px, transparent 1px 3px); }
+    .vig { position: fixed; inset: 0; z-index: 199; pointer-events: none;
+      box-shadow: inset 0 0 24vh 8vh rgba(0,0,0,.7); }
+
+    .stage { position: absolute; inset: 0; padding: 3vh 3vw; display: flex; flex-direction: column; }
+    .hdr { display: flex; justify-content: space-between; font-size: 10px;
+      letter-spacing: .35em; color: var(--dim); flex-shrink: 0; }
+    .hdr > span:first-child { padding-left: 2.8rem; }   /* room for the back chevron */
+    .hdr b { color: var(--bright); font-weight: 400; }
+
+    /* the board the posters are pasted onto */
+    .board {
+      position: relative; flex: 1; min-height: 0; margin-top: 1.2rem;
+      background: repeating-linear-gradient(90deg, rgba(120,190,255,.02) 0 1px, transparent 1px 46px),
+                  repeating-linear-gradient(0deg, rgba(120,190,255,.02) 0 1px, transparent 1px 46px);
+    }
+
+    .p {
+      position: absolute; width: 230px; height: 290px;
+      border: 1px solid var(--dim2); padding: 1rem .9rem;
+      display: flex; flex-direction: column; justify-content: space-between;
+      overflow: hidden; background: #000; text-decoration: none; cursor: pointer;
+      box-shadow: 0 18px 40px rgba(0,0,0,.85);
+      transition: transform .16s ease, box-shadow .16s ease;
+    }
+    .p .glyph { font-family: "Major Mono Display", monospace; font-size: 4.6rem;
+      line-height: 1; color: var(--dim); opacity: .5; }
+    .p .nm { font-size: 1.35rem; color: var(--bright); letter-spacing: .04em; line-height: 1.1; }
+    .p .tg { font-size: 9px; letter-spacing: .24em; color: var(--dim);
+      text-transform: uppercase; margin-top: .3rem; }
+    .p .sb { font-size: 10px; color: var(--dim2); margin-top: .15rem; }
+    .p .strip { position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--dim2); }
+    .p .num { position: absolute; bottom: .7rem; right: .8rem; font-size: 9px;
+      letter-spacing: .24em; color: var(--dim2); }
+    .p .tape { position: absolute; top: -9px; left: 50%;
+      transform: translateX(-50%) rotate(-2deg); width: 64px; height: 18px;
+      background: rgba(174,227,255,.14); border: 1px solid rgba(174,227,255,.22); }
+    .p::after { content: ""; position: absolute; inset: 0; pointer-events: none;
+      background: repeating-linear-gradient(0deg, rgba(255,255,255,.02) 0 1px, transparent 1px 4px); }
+
+    /* each poster wears the skin of the game it opens */
+    .p.red { border-color: rgba(193,18,8,.55); background: linear-gradient(180deg, rgba(255,20,10,.09), #000 55%); }
+    .p.red .strip { background: var(--red); box-shadow: 0 0 16px rgba(255,59,47,.7); }
+    .p.red .glyph { color: var(--red); } .p.red .nm { color: #ffe9e6; }
+    .p.red .tg { color: rgba(255,150,140,.75); }
+    .p.blue { border-color: rgba(120,190,255,.4); background: linear-gradient(180deg, rgba(120,190,255,.08), #000 55%); }
+    .p.blue .strip { background: var(--accent); box-shadow: 0 0 16px var(--glow); }
+    .p.blue .glyph { color: var(--accent); }
+    .p.green { border-color: rgba(120,200,150,.4); background: linear-gradient(180deg, rgba(90,200,140,.07), #000 55%); }
+    .p.green .strip { background: #6fe0a6; box-shadow: 0 0 16px rgba(111,224,166,.5); }
+    .p.green .glyph { color: #6fe0a6; } .p.green .nm { color: #e6fff2; }
+    .p.green .tg { color: rgba(150,220,185,.7); }
+    /* chess is rice paper now, so its poster is too */
+    .p.paper { border-color: #9c9384; background: linear-gradient(180deg, #efe9dd, #ddd6c6 60%); }
+    .p.paper .strip { background: #a4322a; box-shadow: 0 0 14px rgba(164,50,42,.5); }
+    .p.paper .glyph { color: #a4322a; opacity: .55; }
+    .p.paper .nm { color: #2b2723; } .p.paper .tg { color: #6d6459; }
+    .p.paper .sb { color: #857b6f; } .p.paper .num { color: #9c9384; }
+    .p.paper .tape { background: rgba(60,50,40,.10); border-color: rgba(60,50,40,.18); }
+    .p.paper::after { background: none; }
+
+    .p.sel { z-index: 20; box-shadow: 0 0 40px var(--glow), 0 18px 40px rgba(0,0,0,.85);
+      outline: 1px solid var(--c); outline-offset: 3px; }
+    .p.red.sel { box-shadow: 0 0 40px rgba(255,59,47,.4), 0 18px 40px rgba(0,0,0,.85); outline-color: var(--red); }
+    .p.green.sel { box-shadow: 0 0 40px rgba(111,224,166,.35), 0 18px 40px rgba(0,0,0,.85); outline-color: #6fe0a6; }
+    .p.paper.sel { box-shadow: 0 0 40px rgba(164,50,42,.35), 0 18px 40px rgba(0,0,0,.85); outline-color: #a4322a; }
+    .p:focus-visible { outline: 2px solid var(--bright); outline-offset: 3px; }
+
+    /* a locked poster is pasted over, not removed */
+    .p.locked { filter: grayscale(.7) brightness(.55); cursor: not-allowed; }
+    .p.locked .locknote {
+      position: absolute; left: 0; right: 0; top: 46%;
+      background: rgba(0,0,0,.82); border-top: 1px solid var(--dim2); border-bottom: 1px solid var(--dim2);
+      padding: .35rem 0; text-align: center; font-size: 9px; letter-spacing: .28em;
+      text-transform: uppercase; color: var(--c);
+    }
+
+    .foot { flex-shrink: 0; font-size: 10px; letter-spacing: .3em; color: var(--dim2);
+      margin-top: .8rem; text-align: center; }
+
+    /* on a narrow screen the paste-up gives up and becomes a list */
+    @media (max-width: 900px) {
+      body { overflow: auto; }
+      .stage { position: static; min-height: 100%; }
+      .board { position: static; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 1rem; margin-top: 1rem; }
+      .p { position: static !important; width: auto; height: 250px; transform: none !important; }
+    }
+  </style>
+</head>
+<body class="has-top-nav">
+  <div class="stage">
+    <div class="hdr">
+      <span>ANGELDOM // SELECT</span>
+      <span>PASTE-UP</span>
+      <span><b id="count">0</b> TITLES</span>
+    </div>
+    <div class="board" id="board"></div>
+    <div class="foot">ARROWS TO MOVE &nbsp;·&nbsp; ENTER TO OPEN</div>
+  </div>
+  <div class="vig"></div><div class="scan"></div>
+
+  <script>
+    /* One poster per game, pasted at a slight angle. The grid is computed from
+       the list rather than written out, so adding a game here is one line. */
+    const GAMES = [
+      { n: "snake",      t: "red",   g: "S", href: "/snake",
+        tag: "chase the food",     sub: "it runs when you get close" },
+      { n: "penance",    t: "red",   g: "P", href: "/writing",
+        tag: "lines, for punishment", sub: "the screen corrupts as you slip" },
+      { n: "devotion",   t: "blue",  g: "D", href: "/writing?mode=devotion",
+        tag: "lines, for mantras",  sub: "the gentle sibling" },
+      { n: "deathroll",  t: "red",   g: "X", href: "/deathroll",
+        tag: "two-player dice",     sub: "first to roll a 1 loses", multi: true },
+      { n: "elysium",    t: "green", g: "E", href: "/elysium",
+        tag: "care for a tree",     sub: "slow, and it remembers" },
+      { n: "wheel",      t: "blue",  g: "W", href: "/wheel",
+        tag: "one turn a day",      sub: "pays angelcoins" },
+      { n: "chess",      t: "paper", g: "C", href: "/chess",
+        tag: "against hermione",    sub: "she plays black", multi: true },
+      { n: "dummy parse", t: "blue", g: "M", href: "/dummyparse",
+        tag: "a damage sim",        sub: "stats, rotation, leaderboard" },
+      { n: "skill check", t: "red",  g: "K", href: "/skillcheck",
+        tag: "hit it in the red",   sub: "early and late both fail" },
+    ];
+
+    const board = document.getElementById("board");
+    let sel = 0;
+    let cards = [];
+    let guest = false;
+
+    // a stable but arbitrary lean per poster, so the wall looks pasted by hand
+    const LEAN = [-3, 2, -1.5, 3, -2.5, 1.5, -2, 2.5, -1.8, 2.2];
+
+    function layout() {
+      // five across, as many rows as it takes
+      const cols = 5;
+      const rows = Math.ceil(GAMES.length / cols);
+      const stepX = 96 / cols;
+      const stepY = rows > 1 ? 92 / rows : 0;
+      cards.forEach((el, i) => {
+        const col = i % cols, row = Math.floor(i / cols);
+        // nudge alternate rows sideways so the columns do not read as a grid
+        const left = col * stepX + 1 + (row % 2 ? 2.4 : 0);
+        const top = row * stepY + 2;
+        el.style.left = left + "%";
+        el.style.top = top + "%";
+        el.style.transform = "rotate(" + LEAN[i % LEAN.length] + "deg)";
+      });
+    }
+
+    function build() {
+      board.replaceChildren();
+      cards = GAMES.map((g, i) => {
+        const a = document.createElement("a");
+        a.className = "p " + g.t;
+        a.href = g.href;
+        a.tabIndex = 0;
+        // multiplayer needs an account, so a guest sees it pasted over
+        const locked = guest && g.multi;
+        if (locked) {
+          a.classList.add("locked");
+          a.removeAttribute("href");
+          a.setAttribute("aria-disabled", "true");
+        }
+        a.innerHTML =
+          '<div class="strip"></div><div class="tape"></div>' +
+          '<div class="glyph"></div>' +
+          '<div><div class="nm"></div><div class="tg"></div><div class="sb"></div></div>' +
+          '<div class="num">' + String(i + 1).padStart(2, "0") + "</div>" +
+          (locked ? '<div class="locknote">sign in to play</div>' : "");
+        a.querySelector(".glyph").textContent = g.g;
+        a.querySelector(".nm").textContent = g.n;
+        a.querySelector(".tg").textContent = g.tag;
+        a.querySelector(".sb").textContent = g.sub;
+        a.addEventListener("mouseenter", () => setSel(i));
+        a.addEventListener("focus", () => setSel(i));
+        a.addEventListener("click", (e) => { if (locked) e.preventDefault(); });
+        board.append(a);
+        return a;
+      });
+      document.getElementById("count").textContent = GAMES.length;
+      layout();
+      setSel(0);
+    }
+
+    function setSel(i) {
+      sel = (i + GAMES.length) % GAMES.length;
+      cards.forEach((el, n) => el.classList.toggle("sel", n === sel));
+    }
+
+    function open() {
+      const g = GAMES[sel];
+      if (guest && g.multi) return;
+      window.location.href = g.href;
+    }
+
+    document.addEventListener("keydown", (e) => {
+      const tag = (e.target && e.target.tagName || "").toLowerCase();
+      if (tag === "input" || tag === "textarea") return;
+      const cols = 5;
+      if (e.key === "ArrowRight") { e.preventDefault(); setSel(sel + 1); cards[sel].focus(); }
+      else if (e.key === "ArrowLeft") { e.preventDefault(); setSel(sel - 1); cards[sel].focus(); }
+      else if (e.key === "ArrowDown") { e.preventDefault(); setSel(sel + cols); cards[sel].focus(); }
+      else if (e.key === "ArrowUp") { e.preventDefault(); setSel(sel - cols); cards[sel].focus(); }
+      else if (e.key === "Enter") { e.preventDefault(); open(); }
+    });
+
+    window.addEventListener("resize", layout);
+
+    window.siteMe()
+      .then((d) => { guest = Boolean(d.guest); build(); })
+      .catch(() => (window.location.href = "/"));
+  </script>
+  <script src="/nav.js" defer></script>
+  <script src="/updatecheck.js" defer></script>
+  <script src="/console.js" defer></script>
+  <script src="/ambience.js" defer></script>
+</body>
+</html>

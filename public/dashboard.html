@@ -131,9 +131,21 @@
        positioning means a fold changes nothing but the folded card.
        The left border is the divider to this card's left, so it goes too. */
     .fold-right.collapsed { position: relative; padding-left: 0; border-left: none; overflow: hidden; }
-    .fold-right.collapsed h2 { position: absolute; top: 0; left: 0.3rem;
+    /* Out of flow, and centred both ways. In vertical-rl the flex main axis is
+       the vertical one, so justify-content centres down the line and
+       align-items centres across it. */
+    .fold-right.collapsed h2 { position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
       writing-mode: vertical-rl; transform: rotate(180deg);
       white-space: nowrap; margin: 0; height: 100%; }
+    /* With the admin panel folded, its own column is a 3rem sliver and the only
+       rule near it is the leaderboard's left border, one grid gap away. The
+       label rides that line, punching a gap in it with the page background. */
+    #dailies-card.collapsed { overflow: visible; }
+    #dailies-card.collapsed h2 {
+      inset: 0 auto 0 calc(100% + 3vw); width: 1px;
+      background: var(--bg); padding: 0.7rem 0;
+    }
     .fold-right.collapsed h2 .chev { transform: rotate(90deg); }
     /* the column has to give the space back, or the card just leaves a hole */
     /* --board-w is pinned in JS to the leaderboard's live width before a fold,
@@ -249,6 +261,7 @@
     <section class="control-card">
       <div class="stitle">enter</div>
       <div class="controls">
+        <a href="/games" class="ctl-btn" data-tip="Every game, on one wall.">Games</a>
         <a href="/snake" data-tip="Chase the food. Classic Snake clone.">Snake</a>
         <a href="/writing" data-tip="A writeforme clone for punishments.">Penance</a>
         <a href="/writing?mode=devotion" data-tip="A calmer writeforme clone for mantras.">Devotion</a>
