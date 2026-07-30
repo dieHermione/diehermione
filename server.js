@@ -569,6 +569,23 @@ app.get("/api/leaderboard", (req, res) => {
   res.json({ users: board });
 });
 
+// Set a balance outright, rather than nudging it. Used by `pray set_points`.
+app.put("/api/users/:username/points", (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });
+  const value = Number(req.body.value);
+  if (!Number.isInteger(value) || value < 0) {
+    return res.status(400).json({ error: "Value must be a whole number, zero or more." });
+  }
+  const key = req.params.username.toLowerCase();
+  if (key === "hermione") return res.status(400).json({ error: "Hermione doesn't collect points." });
+  const users = loadUsers();
+  if (!users[key]) return res.status(404).json({ error: "No such account." });
+  users[key].points = value;
+  saveUsers(users);
+  res.json({ ok: true, points: value });
+});
+
 app.post("/api/users/:username/points", (req, res) => {
   if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
   if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });

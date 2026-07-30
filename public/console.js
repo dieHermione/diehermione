@@ -90,14 +90,23 @@
       .catch(function () { return null; });
   }
 
-  /* ---- wing commands: wing <command> [username] [quantity] ---- */
-  var WING = {
+  /* ---- pray commands: pray <command> [args] ----
+     "pray" is the prefix for everything from here on; it replaced "wing".
+     Bare `pray` with no command is itself a command: it flashes a subliminal. */
+  var GAMES = {
+    snake: "/snake", penance: "/writing", devotion: "/writing?mode=devotion",
+    wheel: "/wheel", deathroll: "/deathroll", elysium: "/elysium",
+    chess: "/chess", parse: "/dummyparse", dummyparse: "/dummyparse",
+    skillcheck: "/skillcheck", summary: "/summary",
+  };
+
+  var PRAY = {
     add_points: {
       admin: true,
-      usage: "wing add_points <username> <amount>",
+      usage: "pray add_points <username> <amount>",
       run: function (args) {
         var user = args[0], n = parseInt(args[1], 10);
-        if (!user || !Number.isInteger(n)) return Promise.resolve(WING.add_points.usage);
+        if (!user || !Number.isInteger(n)) return Promise.resolve(PRAY.add_points.usage);
         return fetch("/api/users/" + encodeURIComponent(user) + "/points", {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ amount: n }),
@@ -110,11 +119,63 @@
         });
       },
     },
+    set_points: {
+      admin: true,
+      usage: "pray set_points <username> <value>",
+      run: function (args) {
+        var user = args[0], n = parseInt(args[1], 10);
+        if (!user || !Number.isInteger(n)) return Promise.resolve(PRAY.set_points.usage);
+        return fetch("/api/users/" + encodeURIComponent(user) + "/points", {
+          method: "PUT", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ value: n }),
+        }).then(function (r) {
+          return r.json().catch(function () { return {}; }).then(function (d) {
+            if (!r.ok) return d.error || "That didn't work.";
+            return user + " now has " + d.points + " points.";
+          });
+        });
+      },
+    },
+    launch: {
+      usage: "pray launch <" + Object.keys(GAMES).join("|") + ">",
+      run: function (args) {
+        var name = String(args[0] || "").toLowerCase();
+        var href = GAMES[name];
+        if (!href) return Promise.resolve(PRAY.launch.usage);
+        setTimeout(function () { window.location.href = href; }, 220);
+        return Promise.resolve("opening " + name + ".");
+      },
+    },
+    quit: {
+      usage: "pray quit",
+      run: function () {
+        // only a tab this script opened can be closed outright; try anyway and
+        // say so plainly when the browser refuses
+        setTimeout(function () {
+          window.close();
+          setTimeout(function () { say("the browser would not close this tab.", "no"); }, 250);
+        }, 200);
+        return Promise.resolve("closing.");
+      },
+    },
+    reload: {
+      usage: "pray reload",
+      run: function () {
+        setTimeout(function () { window.location.reload(); }, 220);
+        return Promise.resolve("reloading.");
+      },
+    },
   };
 
-  function runWing(parts) {
+  function runPray(parts) {
+    // bare "pray" is an invocation, not a mistake
+    if (parts.length === 1) {
+      if (window.Subliminal) window.Subliminal.flashRandom();
+      say("she hears you.", "ok");
+      return;
+    }
     var name = (parts[1] || "").toLowerCase();
-    var cmd = WING[name];
+    var cmd = PRAY[name];
     if (!cmd) { say("Command not recognized.", "no"); return; }
     who().then(function (d) {
       // "Rejected." is reserved for a real command the caller may not run
@@ -139,12 +200,20 @@
     "listen": function () { if (window.AudioBus) window.AudioBus.set("ambience", { muted: false }); return "the lights start humming."; },
   };
 
+  var history = [];
+  var histAt = -1;      // -1 means "at the live line, not browsing"
+
   function submit(raw) {
     var line = String(raw || "").trim();
     if (!line) return;
+    if (history[0] !== line) history.unshift(line);
+    history = history.slice(0, 50);
+    histAt = -1;
     say("> " + line, "in");
     var parts = line.split(/\s+/);
-    if (parts[0].toLowerCase() === "wing") { runWing(parts); return; }
+    var head = parts[0].toLowerCase();
+    if (head === "pray") { runPray(parts); return; }
+    if (head === "wing") { say("wing is now pray.", "no"); return; }
     var fn = CODES[line.toLowerCase()];
     if (!fn) { say("Command not recognized.", "no"); return; }
     var out;
@@ -187,7 +256,19 @@
       if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); hide(); return; }
       if (e.target === input) {
         e.stopPropagation();
-        if (e.key === "Enter") { e.preventDefault(); submit(input.value); input.value = ""; }
+        if (e.key === "Enter") { e.preventDefault(); submit(input.value); input.value = ""; return; }
+        if (e.key === "ArrowUp") {
+          e.preventDefault();
+          if (histAt + 1 < history.length) { histAt++; input.value = history[histAt]; }
+          setTimeout(function () { input.setSelectionRange(input.value.length, input.value.length); }, 0);
+          return;
+        }
+        if (e.key === "ArrowDown") {
+          e.preventDefault();
+          if (histAt > 0) { histAt--; input.value = history[histAt]; }
+          else { histAt = -1; input.value = ""; }
+          return;
+        }
       }
     }, true);
 
