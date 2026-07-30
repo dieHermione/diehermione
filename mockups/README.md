@@ -38,6 +38,7 @@ That writes `mockups/out/<batch>-<NN>.png` at 1500x900. One batch only:
 | Slots | `slots.html` | 6 | **CHOSEN: 5** (scratch card), not built yet |
 | Dummy Parse | `dummyparse.html` | 20 | **CHOSEN: 10** (big ability cards) + the 11 timeline, both **built** |
 | Decrypt anim | `decrypt.html` | 5 | **awaiting a pick** (CLI-startup theme; animated) |
+| Dashboard | `dashboard.html` | 15 | **awaiting a pick** (terminal theme, 15 organising ideas) |
 | Skill check | *(not kept)* | n/a | **CHOSEN: 1** (pure dial), and **built** |
 | Summary | *(not kept)* | n/a | **CHOSEN: 1** (source + entry), and **built** |
 

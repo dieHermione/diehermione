@@ -19,7 +19,7 @@ CHROME="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 mkdir -p "$OUT"
 
 # batch:count — the number of ?d= variants each file carries
-BATCHES="profile:10 wheel:5 select:4 chess:10 t9:6 slots:6 dummyparse:20 decrypt:5"
+BATCHES="profile:10 wheel:5 select:4 chess:10 t9:6 slots:6 dummyparse:20 decrypt:5 dashboard:15"
 
 for entry in $BATCHES; do
   name="${entry%%:*}"; count="${entry##*:}"
