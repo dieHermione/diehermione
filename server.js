@@ -1204,7 +1204,7 @@ function pickSegment() {
 function wheelState(user, key) {
   const unlimited = key === "hermione";
   return {
-    segments: WHEEL_SEGMENTS.map((s) => ({ label: s.label, coins: s.coins })),
+    segments: WHEEL_SEGMENTS.map((s) => ({ label: s.label, coins: s.coins, weight: s.weight })),
     unlimited,
     spunToday: user.wheelDay === todayKey(),
     canSpin: unlimited || user.wheelDay !== todayKey(),

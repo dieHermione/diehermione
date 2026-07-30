@@ -6,221 +6,266 @@
   <title>Wheel - angeldom.me</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cause:wght@400..700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/site.css" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
   <script src="/me.js"></script>
-  <style>    :root {
-      --wedge-a: #ffffff;
-      --wedge-b: #24c5ed;
-      --wedge-line: #1aa9d1;
-      --wedge-text: #147a94;
-    }    body[data-theme="dark"] {
-      --wedge-a: #dcdcdc;
-      --wedge-b: #6a6a6a;
-      --wedge-line: #8a8a8a;
-      --wedge-text: #1f1f1f;
+  <style>
+    /* The wheel, unrolled (mockup 5). The faces are not on a disc any more:
+       they run past on a cylinder seen edge-on, and the one under the pin is
+       the one that pays. Self-contained, no site.css. */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    [hidden] { display: none !important; }
+
+    :root {
+      --c: #aee3ff; --dim: #4f7ea0; --dim2: #2c4a5e; --bright: #eafaff;
+      --accent: #8fd0ff; --glow: rgba(120, 190, 255, .32); --red: #ff3b2f;
+      --err: #ff5a4a;
     }
-    .site-header {
-      font-family: "Cause", sans-serif;
-      font-size: 3rem;
-      font-weight: 700;
-      color: var(--header-color);
-      text-shadow: 0 2px 12px rgba(255, 255, 255, 0.6);
-      text-align: center;
-      margin-bottom: 1.25rem;
-      padding: 20px 0;
+    html, body { height: 100%; }
+    body {
+      background: #000; color: var(--c);
+      font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 14px;
+      overflow: hidden;
     }
-    .bow { display: inline-block; }
-    .bow.flip { transform: scaleX(-1); }
-    .card {
-      background: var(--panel-bg);
-      border-radius: 12px;
-      box-shadow: 0 10px 40px var(--shadow);
-      width: 100%;
-      max-width: 572px;
-      padding: 2.2rem;
-      text-align: center;
-      color: var(--text-color);
+    .scan {
+      position: fixed; inset: 0; z-index: 200; pointer-events: none;
+      background: repeating-linear-gradient(0deg, rgba(0,0,0,.30) 0 1px, transparent 1px 3px);
     }
-    .status { font-weight: 600; min-height: 1.4em; margin-bottom: 1.25rem; }
-    .status.win { color: var(--heading-color); font-size: 1.1rem; }
-    .wheel-wrap {
-      position: relative;
-      width: min(340px, 82vw);
-      margin: 0 auto 1.5rem;
+    .vig {
+      position: fixed; inset: 0; z-index: 199; pointer-events: none;
+      box-shadow: inset 0 0 24vh 8vh rgba(0,0,0,.7);
     }
-    /* the marker the winning wedge stops under */
-    .pointer {
-      position: absolute;
-      top: -2px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 0;
-      height: 0;
-      border-left: 13px solid transparent;
-      border-right: 13px solid transparent;
-      border-top: 22px solid var(--button-bg);
-      filter: drop-shadow(0 2px 3px var(--shadow));
-      z-index: 2;
+
+    .cy {
+      position: absolute; inset: 0; padding: 3vh 3vw;
+      display: flex; flex-direction: column; justify-content: center; gap: 2rem;
+      perspective: 900px;
     }
-    #wheel {
-      width: 100%;
-      height: auto;
-      display: block;
-      border-radius: 50%;
-      box-shadow: 0 8px 30px var(--shadow);
-      transform: rotate(0deg);
+    .chd {
+      display: flex; justify-content: space-between;
+      font-size: 10px; letter-spacing: .35em; color: var(--dim);
     }
-    #wheel.spinning { transition: transform 14.2s cubic-bezier(0.15, 0.85, 0.2, 1); }
-    .hub {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 3.2rem;
-      height: 3.2rem;
-      border-radius: 50%;
-      background: var(--button-bg);
-      box-shadow: 0 3px 10px var(--shadow);
-      z-index: 1;
+    .chd b { color: var(--bright); font-weight: 400; }
+
+    /* ---- the band ---- */
+    .band {
+      position: relative; height: 280px;
+      display: flex; align-items: center; justify-content: center;
+      transform-style: preserve-3d;
     }
-    button.pill {
-      padding: 0.7rem 1.75rem;
-      background: var(--button-bg);
-      color: var(--button-text);
-      border: none;
-      border-radius: 8px;
-      font-family: inherit;
-      font-size: 1rem;
-      font-weight: 700;
-      cursor: pointer;
+    .rails {
+      position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%);
+      height: 230px; border-top: 1px solid var(--dim2); border-bottom: 1px solid var(--dim2);
     }
-    button.pill:hover:not(:disabled) { background: var(--button-hover-bg); }
-    button.pill:disabled { opacity: 0.5; cursor: not-allowed; }
-    .note { color: var(--muted-color); font-size: 0.85rem; margin-top: 1rem; }
+    /* the pin sits on the top edge of the centre face, not up in the header */
+    .pin {
+      position: absolute; left: 50%; top: 22px; transform: translateX(-50%);
+      border: 12px solid transparent; border-top-color: var(--red);
+      filter: drop-shadow(0 0 12px rgba(255,59,47,.8)); z-index: 40;
+    }
+    .seg {
+      position: absolute; width: 170px; height: 190px;
+      border: 1px solid var(--dim2);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      background: #000;
+      background-image: repeating-linear-gradient(0deg, rgba(120,190,255,.05) 0 2px, transparent 2px 6px);
+      will-change: transform, opacity;
+    }
+    .seg .v { font-size: 2.6rem; color: var(--dim); line-height: 1; }
+    .seg .u { font-size: 8px; letter-spacing: .3em; color: var(--dim2); margin-top: .4rem; }
+    .seg.c { border-color: var(--c); box-shadow: 0 0 50px var(--glow), inset 0 0 40px rgba(120,190,255,.1); }
+    .seg.c .v { font-size: 4.4rem; color: var(--bright); text-shadow: 0 0 36px var(--glow); }
+    .seg.c .u { color: var(--accent); }
+
+    /* ---- foot ---- */
+    .cyf { display: grid; grid-template-columns: 1fr auto 1fr; gap: 2rem; align-items: center; }
+    .odds { font-size: 10px; line-height: 2; color: var(--dim); }
+    .odds b { color: var(--bright); font-weight: 400; }
+    .pay { text-align: center; min-height: 5rem; }
+    .pay .n { font-size: 3.6rem; color: var(--bright); text-shadow: 0 0 30px var(--glow); line-height: 1; }
+    .pay .k { font-size: 9px; letter-spacing: .4em; color: var(--dim); margin-top: .4rem; }
+    .pay.bad .n { font-size: 1.2rem; color: var(--err); text-shadow: none; }
+    .turn {
+      justify-self: end; border: 1.5px solid var(--c); background: transparent;
+      font-family: inherit; font-size: .82rem; letter-spacing: .34em; text-transform: uppercase;
+      color: var(--bright); padding: .85rem 2.6rem; cursor: pointer;
+      box-shadow: 0 0 22px var(--glow);
+    }
+    .turn:hover:not(:disabled) { background: rgba(120,190,255,.12); }
+    .turn:disabled { opacity: .35; cursor: not-allowed; box-shadow: none; }
   </style>
   <script src="/audio.js"></script>
 </head>
 <body class="has-top-nav">
-  <main class="card">
-    <p class="status" id="status">Loading…</p>
-    <div class="wheel-wrap">
-      <div class="pointer"></div>
-      <svg id="wheel" viewBox="0 0 200 200" aria-label="Prize wheel"></svg>
-      <div class="hub"></div>
+  <div class="cy">
+    <div class="chd">
+      <span>ANGELDOM // CYLINDER, UNROLLED</span>
+      <span id="rule">ONE TURN PER DAY</span>
+      <span>VAULT <b id="vault">…</b> &#10022;</span>
     </div>
-    <button class="pill" id="spin" type="button" disabled>Spin</button>
-    <p class="note" id="note"></p>
-  </main>
+
+    <div class="band" id="band">
+      <div class="rails"></div>
+      <div class="pin"></div>
+    </div>
+
+    <div class="cyf">
+      <div class="odds" id="odds">&nbsp;</div>
+      <div class="pay" id="pay"><div class="k" id="paykey">READY</div></div>
+      <button class="turn" id="turn" type="button" disabled>turn</button>
+    </div>
+  </div>
+  <div class="vig"></div><div class="scan"></div>
 
   <script>
+    /* The faces sit on a cylinder. `pos` is a continuous index into the face
+       list, so turning is a matter of easing `pos` up to the face the server
+       picked; each frame re-places every visible face around it. */
 
+    const SPACING = 150;       // px between face centres
+    const VISIBLE = 5;         // faces either side of the pin
+    const TURN_MS = 13500;     // the long turn the wheel is meant to have
 
-    const SVG_NS = "http://www.w3.org/2000/svg";
-    const wheelEl = document.getElementById("wheel");
-    const statusEl = document.getElementById("status");
-    const noteEl = document.getElementById("note");
-    const spinBtn = document.getElementById("spin");
+    const bandEl = document.getElementById("band");
+    const payEl = document.getElementById("pay");
+    const turnBtn = document.getElementById("turn");
 
     let segments = [];
-    let segAngle = 0;
-    let rotation = 0;       // keeps climbing so the wheel always turns forwards
-    let spinning = false;
+    let faces = [];            // one element per segment, reused every frame
+    let pos = 0;               // continuous index under the pin
+    let turning = false;
 
-    // angles run clockwise from 12 o'clock, which is where the pointer sits
-    function pointOnCircle(cx, cy, r, angleDeg) {
-      const a = (angleDeg * Math.PI) / 180;
-      return [cx + r * Math.sin(a), cy - r * Math.cos(a)];
+    function buildFaces() {
+      faces.forEach((f) => f.remove());
+      faces = segments.map((seg) => {
+        const el = document.createElement("div");
+        el.className = "seg";
+        const v = document.createElement("div");
+        v.className = "v";
+        v.textContent = seg.label;
+        const u = document.createElement("div");
+        u.className = "u";
+        u.textContent = "angelcoins";
+        el.append(v, u);
+        bandEl.append(el);
+        return el;
+      });
+      place();
     }
 
-    function drawWheel() {
-      wheelEl.replaceChildren();
-      segAngle = 360 / segments.length;
-      segments.forEach((seg, i) => {
-        const start = i * segAngle;
-        const end = start + segAngle;
-        const [x1, y1] = pointOnCircle(100, 100, 100, start);
-        const [x2, y2] = pointOnCircle(100, 100, 100, end);
-        const path = document.createElementNS(SVG_NS, "path");
-        path.setAttribute("d",
-          "M 100 100 L " + x1 + " " + y1 +
-          " A 100 100 0 " + (segAngle > 180 ? 1 : 0) + " 1 " + x2 + " " + y2 + " Z");
-        path.setAttribute("fill", i % 2 === 0 ? "var(--wedge-a)" : "var(--wedge-b)");
-        path.setAttribute("stroke", "var(--wedge-line)");
-        path.setAttribute("stroke-width", "0.8");
-        wheelEl.append(path);
+    // signed distance from the pin, wrapped, so the strip has no ends
+    function offsetOf(i) {
+      const n = segments.length;
+      return ((i - pos + n / 2) % n + n) % n - n / 2;
+    }
 
-        const mid = start + segAngle / 2;
-        const [tx, ty] = pointOnCircle(100, 100, 66, mid);
-        const label = document.createElementNS(SVG_NS, "text");
-        label.setAttribute("x", tx);
-        label.setAttribute("y", ty);
-        label.setAttribute("text-anchor", "middle");
-        label.setAttribute("dominant-baseline", "central");
-        label.setAttribute("font-size", "15");
-        label.setAttribute("font-weight", "700");
-        label.setAttribute("font-family", "Cause, sans-serif");
-        label.setAttribute("fill", "var(--wedge-text)");
-        // flip labels past the halfway mark so they never read upside-down
-        const spin = mid > 90 && mid < 270 ? mid + 180 : mid;
-        label.setAttribute("transform", "rotate(" + spin + " " + tx + " " + ty + ")");
-        label.textContent = seg.label;
-        wheelEl.append(label);
+    function place() {
+      faces.forEach((el, i) => {
+        const off = offsetOf(i);
+        const mag = Math.abs(off);
+        if (mag > VISIBLE) { el.hidden = true; return; }
+        el.hidden = false;
+        el.style.transform =
+          "translateX(" + (off * SPACING) + "px) translateZ(" + (-mag * 90) + "px) " +
+          "rotateY(" + (off * -26) + "deg)";
+        el.style.opacity = Math.max(.12, 1 - mag * .22);
+        el.style.zIndex = String(30 - Math.round(mag));
+        el.classList.toggle("c", mag < .5);
       });
     }
 
-    function setLocked(state) {
-      spinBtn.disabled = !state.canSpin || spinning;
-      noteEl.textContent = "";
+    const easeOut = (t) => 1 - Math.pow(1 - t, 3);
+
+    function turnTo(index) {
+      return new Promise((resolve) => {
+        const n = segments.length;
+        const from = pos;
+        // three whole revolutions, then forward onto the winning face
+        const ahead = ((index - from) % n + n) % n;
+        const to = from + n * 3 + ahead;
+        const start = performance.now();
+        function step(now) {
+          const t = Math.min(1, (now - start) / TURN_MS);
+          pos = from + (to - from) * easeOut(t);
+          place();
+          if (t < 1) requestAnimationFrame(step);
+          else { pos = ((to % n) + n) % n; place(); resolve(); }
+        }
+        requestAnimationFrame(step);
+      });
     }
 
-    async function spin() {
-      if (spinning) return;
-      spinning = true;
-      spinBtn.disabled = true;
-      statusEl.textContent = "";
-      statusEl.classList.remove("win");
+    function showPay(html, key, bad) {
+      payEl.className = "pay" + (bad ? " bad" : "");
+      payEl.replaceChildren();
+      if (html !== null) {
+        const n = document.createElement("div");
+        n.className = "n";
+        n.textContent = html;
+        payEl.append(n);
+      }
+      const k = document.createElement("div");
+      k.className = "k";
+      k.textContent = key;
+      payEl.append(k);
+    }
+
+    async function turn() {
+      if (turning) return;
+      turning = true;
+      turnBtn.disabled = true;
+      showPay(null, "TURNING");
 
       const res = await fetch("/api/wheel/spin", { method: "POST" });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        spinning = false;
-        statusEl.textContent = data.error || "That didn't work.";
+        turning = false;
+        showPay(data.error || "That didn't work.", "", true);
         return;
       }
 
-      // land the winning wedge's centre under the pointer, after a few turns
-      const target = 360 - (data.index * segAngle + segAngle / 2);
-      const current = ((rotation % 360) + 360) % 360;
-      rotation += (5 * 360) + (((target - current) % 360) + 360) % 360;
-      wheelEl.classList.add("spinning");
-      wheelEl.style.transform = "rotate(" + rotation + "deg)";
-
-      wheelEl.addEventListener("transitionend", () => {
-        spinning = false;
-        statusEl.textContent = "You won " + data.won + " angelcoins! You now have " + data.angelcoins + ".";
-        statusEl.classList.add("win");
-        setLocked({ canSpin: data.canSpin, unlimited: data.canSpin, spunToday: !data.canSpin });
-      }, { once: true });
+      await turnTo(data.index);
+      turning = false;
+      document.getElementById("vault").textContent = Number(data.angelcoins).toLocaleString();
+      showPay("+" + data.won + " ✦", "PAID TO YOUR VAULT");
+      turnBtn.disabled = !data.canSpin;
+      if (!data.canSpin) document.getElementById("rule").textContent = "COME BACK TOMORROW";
     }
 
-    spinBtn.addEventListener("click", spin);
+    turnBtn.addEventListener("click", turn);
+
+    // real odds, off the server's own weights, rather than counting faces
+    function oddsLine() {
+      const coins = segments.map((s) => s.coins);
+      const total = segments.reduce((a, s) => a + (s.weight || 1), 0);
+      const share = (test) => segments.reduce((a, s) => a + (test(s.coins) ? (s.weight || 1) : 0), 0) / total;
+      const mean = segments.reduce((a, s) => a + s.coins * (s.weight || 1), 0) / total;
+      return [
+        segments.length + " FACES &nbsp; " + Math.min(...coins) + " &ndash; " +
+          Math.max(...coins) + " &#10022;",
+        "P(&le;5) <b>" + Math.round(share((c) => c <= 5) * 100) + "%</b> &nbsp; " +
+          "P(&ge;100) <b>" + (share((c) => c >= 100) * 100).toFixed(1) + "%</b>",
+        "MEAN <b>" + mean.toFixed(1) + " &#10022;</b>",
+      ].join("<br>");
+    }
 
     window.siteMe()
       .then((d) => {
+        document.getElementById("vault").textContent = Number(d.angelcoins || 0).toLocaleString();
         return fetch("/api/wheel");
       })
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((state) => {
         segments = state.segments;
-        drawWheel();
-        setLocked(state);
-        statusEl.textContent = state.canSpin ? "" : "Come back tomorrow.";
+        buildFaces();
+        document.getElementById("odds").innerHTML = oddsLine();
+        turnBtn.disabled = !state.canSpin;
+        if (state.unlimited) document.getElementById("rule").textContent = "TURN AS OFTEN AS YOU LIKE";
+        else if (!state.canSpin) document.getElementById("rule").textContent = "COME BACK TOMORROW";
+        showPay(null, state.canSpin ? "READY" : "SPUN TODAY");
       })
       .catch(() => (window.location.href = "/"));
   </script>
   <script src="/nav.js" defer></script>
-  <script src="/notifications.js" defer></script>
   <script src="/updatecheck.js" defer></script>
   <script src="/console.js" defer></script>
   <script src="/ambience.js" defer></script>
