@@ -1186,7 +1186,10 @@ app.get("/api/parses/leaderboard", (req, res) => {
     if (p.mode !== mode) continue;
     const prev = best.get(p.player);
     if (!prev || p.dps > prev.dps) {
-      best.set(p.player, { player: p.player, guest: p.guest, dps: p.dps, total: p.total, at: p.at });
+      best.set(p.player, {
+        player: p.player, guest: p.guest, dps: p.dps, total: p.total, at: p.at,
+        duration: p.duration, build: p.build || {}, byAbility: p.byAbility || {},
+      });
     }
   }
   const parses = [...best.values()].sort((a, b) => b.dps - a.dps).slice(0, 50);

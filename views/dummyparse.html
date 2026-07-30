@@ -119,11 +119,28 @@
     to{opacity:0;transform:rotate(var(--a)) translateY(var(--d)) scaleY(1)}}
 
   /* ---- leaderboard ---- */
-  .lbrow{display:grid;grid-template-columns:2.4rem 1fr 5rem 5rem 4rem;gap:.5rem;
-    font-size:12px;padding:.34rem .2rem;border-bottom:1px solid rgba(44,74,94,.5)}
+  .lbrow{display:grid;grid-template-columns:2.2rem 1fr 5rem 5.5rem 3.6rem 5rem;gap:.5rem;
+    font-size:12px;padding:.34rem .2rem;border-bottom:1px solid rgba(44,74,94,.5);align-items:center}
   .lbrow.head{color:var(--dim);font-size:9px;letter-spacing:.26em;text-transform:uppercase;border-color:var(--dim2)}
   .lbrow b{color:var(--bright);font-weight:400}
   .lbrow.me{background:rgba(120,190,255,.09)}
+  .lbrow.data{cursor:pointer} .lbrow.data:hover{background:rgba(120,190,255,.06)}
+  .lbrow .rk{color:var(--dim)} .lbrow .rk.top{color:var(--gold)}
+  .lbrow .pl::before{content:"▸ ";color:var(--dim2);font-size:10px}
+  .lbrow.open .pl::before{content:"▾ ";color:var(--accent)}
+  /* the expandable per-parse detail */
+  .lbdetail{padding:.5rem .2rem .7rem 2.2rem;border-bottom:1px solid rgba(44,74,94,.5);
+    display:grid;grid-template-columns:1fr 1.3fr;gap:1.4rem;animation:fadein .18s ease}
+  @keyframes fadein{from{opacity:0}to{opacity:1}}
+  .lbdetail .gh{display:block;color:var(--dim);font-size:9px;letter-spacing:.2em;text-transform:uppercase;margin-bottom:.4rem}
+  .lbdetail .stats{display:flex;flex-wrap:wrap;gap:.3rem}
+  .lbdetail .stat{border:1px solid var(--dim2);padding:.1rem .45rem;font-size:10px;color:var(--dim);letter-spacing:.04em}
+  .lbdetail .stat b{color:var(--bright)}
+  .lbdetail .abil{position:relative;font-size:11px;display:grid;grid-template-columns:1fr auto;
+    padding:.16rem .3rem;color:var(--c)}
+  .lbdetail .abil i{position:absolute;left:0;top:0;bottom:0;background:rgba(255,59,47,.16);z-index:0}
+  .lbdetail .abil span{position:relative;z-index:1}
+  .lbdetail .abil .av{color:var(--bright)}
   .lbwrap{height:100%;display:flex;flex-direction:column;border:1px solid var(--dim2);padding:1rem 1.2rem;min-height:0}
   .lbtabs{display:flex;gap:.4rem;margin-bottom:.8rem}
   .modesel{display:flex;gap:.4rem;align-items:center}
@@ -234,11 +251,32 @@
   .tlrow{display:grid;grid-template-columns:var(--gut) 1fr;align-items:stretch;gap:0;
     flex:1 1 0;min-height:22px;max-height:54px}
   .tlrow.gcdrow{flex:0 0 16px}
-  .tlname{font-size:9.5px;letter-spacing:.1em;color:var(--dim);text-align:right;padding-right:.7rem;
+  .tlname{font-size:9.5px;letter-spacing:.1em;color:var(--dim);padding-right:.7rem;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;
-    justify-content:flex-end}
+    justify-content:flex-end;gap:.4rem}
+  .tlname .ic{width:14px;height:14px;flex:none;color:var(--dim);display:inline-grid;place-items:center}
+  .tlname .ic svg{width:100%;height:100%}
   .tlrow.gcdrow .tlname{color:var(--dim2)}
-  .lane{position:relative;height:100%;background:rgba(120,190,255,.03);border:1px solid rgba(44,74,94,.5)}
+  /* vertical gridlines every 20% line up with the axis ticks below */
+  .lane{position:relative;height:100%;border:1px solid rgba(44,74,94,.5);
+    background:linear-gradient(90deg,rgba(44,74,94,.35) 1px,transparent 1px) -1px 0/20% 100%,
+      rgba(120,190,255,.03)}
+  /* the pre-pull region: everything before the first damage, dimmed */
+  .prepull{position:absolute;top:0;bottom:0;left:0;background:rgba(0,0,0,.4);z-index:0;pointer-events:none}
+  .cstart{position:absolute;top:0;bottom:0;width:1px;background:var(--ok);
+    box-shadow:0 0 8px rgba(125,255,176,.7);z-index:5;pointer-events:none}
+  .tllegend{display:flex;gap:1.1rem;font-size:9px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--dim);margin-top:.5rem;flex-shrink:0;flex-wrap:wrap}
+  .tllegend span{display:inline-flex;align-items:center;gap:.35rem}
+  /* position:static and box-shadow:none override the .cstart/.now marker rules,
+     whose class names the swatches share */
+  .tllegend i{width:14px;height:9px;display:inline-block;position:static;box-shadow:none}
+  .tllegend i.cast{border:1px solid var(--c);background:rgba(120,190,255,.14)}
+  .tllegend i.chan{border:1px solid var(--gold);background:rgba(255,210,122,.14)}
+  .tllegend i.inst{background:var(--c)}
+  .tllegend i.cool{background:repeating-linear-gradient(45deg,rgba(120,190,255,.2) 0 3px,transparent 3px 6px);border:1px solid rgba(44,74,94,.6)}
+  .tllegend i.cstart{background:var(--ok)}
+  .tllegend i.now{background:var(--red)}
   .cdbar{position:absolute;top:0;bottom:0;border-bottom:3px solid rgba(79,126,160,.85);
     background:repeating-linear-gradient(45deg,rgba(120,190,255,.13) 0 4px,transparent 4px 9px)}
   .blk{position:absolute;top:2px;bottom:2px;border:1px solid var(--c);background:rgba(120,190,255,.14);
@@ -360,6 +398,14 @@
       </div>
       <div class="tlbody" id="tlbody"></div>
       <div class="axis"><span></span><div class="ticks" id="tlticks"></div></div>
+      <div class="tllegend">
+        <span><i class="cast"></i>cast</span>
+        <span><i class="chan"></i>channel</span>
+        <span><i class="inst"></i>instant</span>
+        <span><i class="cool"></i>cooldown</span>
+        <span><i class="cstart"></i>combat start</span>
+        <span><i class="now"></i>now</span>
+      </div>
       <div class="tlnote">This is the rotation you actually cast, drawn live. A bordered block is a
         cast (channels in gold, instants filled solid). The hatching behind it is that
         ability's cooldown, and it visibly shortens when Timeturn, Temporal Mark or
@@ -990,7 +1036,7 @@ function renderTimeline() {
       const label = c[1] > 6 ? cst.name : "";
       lane += `<span class="${cls}" style="left:${c[0]}%;width:${c[1]}%">${label}</span>`;
     }
-    html += `<div class="tlrow"><span class="tlname">${a.name.toLowerCase()}</span>
+    html += `<div class="tlrow"><span class="tlname"><i class="ic">${ICONS[a.id] || ""}</i>${a.name.toLowerCase()}</span>
       <div class="lane">${lane}</div></div>`;
   }
 
@@ -998,11 +1044,25 @@ function renderTimeline() {
   // than running down the empty space beneath it
   const body = document.getElementById("tlbody");
   body.innerHTML = `<div class="tllanes">${html}</div>`;
+  const lanes = body.firstChild;
+  // shade the pre-pull region and mark where combat (the first damage) began
+  if (S && S.combatStart != null && S.combatStart >= w0 && S.combatStart <= w1) {
+    const cs = (pct(S.combatStart) / 100).toFixed(4);
+    const pre = document.createElement("div");
+    pre.className = "prepull";
+    pre.style.left = "var(--gut)";
+    pre.style.width = `calc((100% - var(--gut)) * ${cs})`;
+    lanes.appendChild(pre);
+    const cm = document.createElement("div");
+    cm.className = "cstart";
+    cm.style.left = `calc(var(--gut) + (100% - var(--gut)) * ${cs})`;
+    lanes.appendChild(cm);
+  }
   if (S && S.t >= w0 && S.t <= w1) {
     const marker = document.createElement("div");
     marker.className = "now";
     marker.style.left = `calc(var(--gut) + (100% - var(--gut)) * ${(pct(S.t) / 100).toFixed(4)})`;
-    body.firstChild.appendChild(marker);
+    lanes.appendChild(marker);
   }
 
   const ticks = document.getElementById("tlticks");
@@ -1272,7 +1332,7 @@ async function loadBoard() {
   rows.replaceChildren();
   const head = document.createElement("div");
   head.className = "lbrow head";
-  ["#", "player", "dps", "damage", "when"].forEach((t) => {
+  ["#", "player", "dps", "damage", "dur", "when"].forEach((t) => {
     const s = document.createElement("span"); s.textContent = t; head.append(s);
   });
   rows.append(head);
@@ -1285,21 +1345,44 @@ async function loadBoard() {
   }
   data.parses.forEach((p, i) => {
     const row = document.createElement("div");
-    row.className = "lbrow" + (p.player === window.__me ? " me" : "");
-    const cells = [
-      String(i + 1),
-      p.player,
-      Number(p.dps).toLocaleString(),
-      Number(p.total).toLocaleString(),
-      new Date(p.at).toLocaleDateString(),
-    ];
-    cells.forEach((t, n) => {
-      const el = document.createElement(n === 2 ? "b" : "span");
-      el.textContent = t;
-      row.append(el);
+    row.className = "lbrow data" + (p.player === window.__me ? " me" : "");
+    row.innerHTML =
+      `<span class="rk ${i < 3 ? "top" : ""}">${i + 1}</span>` +
+      `<span class="pl">${escapeHtml(p.player)}</span>` +
+      `<b>${Number(p.dps).toLocaleString()}</b>` +
+      `<span>${Number(p.total).toLocaleString()}</span>` +
+      `<span>${p.duration != null ? Number(p.duration).toFixed(0) + "s" : lbMode + "s"}</span>` +
+      `<span>${new Date(p.at).toLocaleDateString()}</span>`;
+    const detail = document.createElement("div");
+    detail.className = "lbdetail"; detail.hidden = true;
+    detail.innerHTML = parseDetail(p);
+    row.addEventListener("click", () => {
+      const open = detail.hidden;
+      detail.hidden = !open;
+      row.classList.toggle("open", open);
     });
-    rows.append(row);
+    rows.append(row); rows.append(detail);
   });
+}
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+}
+// The build spread and per-ability damage breakdown behind a leaderboard row.
+function parseDetail(p) {
+  const b = p.build || {};
+  const stats = Object.keys(STATS).filter((k) => b[k] > 0)
+    .map((k) => `<span class="stat">${STATS[k].short} <b>${b[k]}</b></span>`).join("");
+  const buildHtml = stats || `<span class="stat" style="color:var(--dim2)">nothing spent</span>`;
+  const rowsA = Object.entries(p.byAbility || {}).sort((a, c) => c[1] - a[1]);
+  const tot = rowsA.reduce((s, [, v]) => s + v, 0) || 1;
+  const abil = rowsA.length
+    ? rowsA.slice(0, 6).map(([n, v]) =>
+        `<div class="abil"><i style="width:${(v / tot * 100).toFixed(0)}%"></i>
+          <span class="an">${escapeHtml(n)}</span>
+          <span class="av">${Number(v).toLocaleString()} &nbsp; ${Math.round(v / tot * 100)}%</span></div>`).join("")
+    : `<div class="abil"><span>no breakdown stored</span></div>`;
+  return `<div class="grp"><span class="gh">build</span><div class="stats">${buildHtml}</div></div>
+    <div class="grp"><span class="gh">damage by ability</span>${abil}</div>`;
 }
 
 /* ---------- boot ---------- */
