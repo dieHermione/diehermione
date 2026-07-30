@@ -10,6 +10,10 @@ keep this project cheap to work on.
 > rank, "Spinning" wheel text, etc). Trust this file and the code for anything
 > UI-related. A full docs pass is owed once the redesign settles.
 
+> **The site is called angeldomme.** The `.me` is part of the word, not just
+> the TLD: it reads "angel domme". Never write it as "angeldom" in anything a
+> visitor sees. (Internal identifiers and the domain string itself are fine.)
+
 Live at **angeldom.me** (Railway, auto-deploys on push to `main`). Single Express
 server (`server.js`), no DB, JSON files on disk, no build step. One admin
 identity: `hermione`. Push after each task; the user likes frequent pushes.
