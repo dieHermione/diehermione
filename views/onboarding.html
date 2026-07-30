@@ -194,23 +194,20 @@
     const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
     // ---- section renderers ----
+    // The two intro slides are written by Hermione from the admin panel.
+    const INTRO = { about: "", purpose: "" };
     function introAbout() {
       return `<div class="step">
         <div class="eyebrow">about me</div>
         <h1>about me</h1>
-        <p class="lede body">placeholder. This is where Hermione introduces herself: who she is, how
-          she runs things, and what a disciple can expect. Editable later.</p>
-        <p class="lede">Read it, then continue when you are ready.</p>
+        <p class="lede body" style="white-space:pre-wrap">${esc(INTRO.about)}</p>
       </div>`;
     }
     function introPurpose() {
       return `<div class="step">
         <div class="eyebrow">site purpose</div>
         <h1>site purpose</h1>
-        <p class="lede body">placeholder. What angeldom.me is for, what the account gives you, and what
-          this questionnaire is used for. Editable later.</p>
-        <p class="lede">Your answers below are sent to Hermione. She reviews them before your account is
-          approved. Answer honestly.</p>
+        <p class="lede body" style="white-space:pre-wrap">${esc(INTRO.purpose)}</p>
       </div>`;
     }
     function kinkStep(k) {
@@ -381,7 +378,11 @@
     // ---- boot: confirm the onboarding session, get the username ----
     fetch("/api/onboarding")
       .then((r) => (r.ok ? r.json() : Promise.reject()))
-      .then((d) => { $("who").textContent = d.username || "—"; render(); })
+      .then((d) => {
+        $("who").textContent = d.username || "—";
+        INTRO.about = d.about || ""; INTRO.purpose = d.purpose || "";
+        render();
+      })
       .catch(() => { window.location.href = "/"; });
   </script>
 </body>

@@ -220,6 +220,9 @@
     .adm h3 { color: var(--dim); font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 400; margin: 0.4rem 0 0.6rem; }
     .adm-sec { margin-bottom: 1.1rem; }
     .adm-empty { color: var(--dim2); font-size: 0.85rem; }
+    .adm-lbl { display: block; font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); margin: 0.55rem 0 0.2rem; }
+    .adm-area { width: 100%; background: rgba(120,190,255,0.05); border: 1px solid var(--dim2); color: var(--bright); font-family: inherit; font-size: 0.8rem; line-height: 1.5; padding: 0.45rem 0.55rem; resize: vertical; }
+    .adm-area:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 12px var(--glow); }
     .adm-row { display: flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0.5rem; border: 1px solid var(--dim2); margin-bottom: 0.45rem; }
     .adm-row.pending { border-color: var(--accent); flex-wrap: wrap; background: rgba(120,190,255,0.05); }
     /* a disciple who rated Feet or Tasks/Chores below 4 is flagged red for review */
@@ -677,6 +680,34 @@
         }
       }
       wrap.append(foldable(appSec));
+
+      // onboarding intro slides (About me / Site Purpose), editable copy that a
+      // disciple reads at the top of the questionnaire
+      const onbSec = document.createElement("div"); onbSec.className = "adm-sec";
+      onbSec.append(mk("h3", "Onboarding intro"));
+      const onbHint = mk("p", "The two slides a disciple reads before the questionnaire.");
+      onbHint.className = "adm-empty"; onbSec.append(onbHint);
+      const mkArea = (labelText) => {
+        const lab = mk("label", labelText); lab.className = "adm-lbl";
+        const ta = document.createElement("textarea"); ta.className = "adm-area"; ta.rows = 4;
+        onbSec.append(lab, ta); return ta;
+      };
+      const aboutTa = mkArea("About me");
+      const purposeTa = mkArea("Site Purpose");
+      const onbSave = mkChip("Save intro", "", async () => {
+        const r = await fetch("/api/site", {
+          method: "PUT", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ onboardingAbout: aboutTa.value, onboardingPurpose: purposeTa.value }),
+        });
+        onbSave.textContent = r.ok ? "Saved" : "Error";
+        setTimeout(() => { onbSave.textContent = "Save intro"; }, 1400);
+      });
+      const onbRow = document.createElement("div"); onbRow.style.marginTop = ".5rem"; onbRow.append(onbSave);
+      onbSec.append(onbRow);
+      fetch("/api/site").then((r) => r.json()).then((d) => {
+        if (d && d.raw) { aboutTa.value = d.raw.onboardingAbout || ""; purposeTa.value = d.raw.onboardingPurpose || ""; }
+      }).catch(() => {});
+      wrap.append(foldable(onbSec));
 
       // accounts: points + leaderboard listing
       const accSec = document.createElement("div");

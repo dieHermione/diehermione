@@ -213,7 +213,12 @@ app.get("/onboarding", (req, res) => {
 app.get("/api/onboarding", (req, res) => {
   const ctx = onboardingCtx(req);
   if (!ctx) return res.status(401).json({ error: "No onboarding in progress." });
-  res.json({ username: ctx.user.username });
+  const site = loadSite();
+  res.json({
+    username: ctx.user.username,
+    about: site.onboardingAbout,
+    purpose: site.onboardingPurpose,
+  });
 });
 
 app.post("/api/onboarding", (req, res) => {
@@ -1835,6 +1840,9 @@ const SITE_DEFAULTS = {
   welcomeUser: "Welcome, {name}!",
   messageAdmin: "mirror mirror on the wall.",
   messageUser: "There is no text here yet.",
+  // the two intro slides a disciple reads at the top of the onboarding questionnaire
+  onboardingAbout: "placeholder. This is where Hermione introduces herself: who she is, how she runs things, and what a disciple can expect. Editable from the admin panel.",
+  onboardingPurpose: "placeholder. What angeldom.me is for, what the account gives you, and what this questionnaire is used for. Your answers are sent to Hermione, who reviews them before your account is approved.",
 };
 
 function loadSite() {
@@ -1868,7 +1876,9 @@ app.put("/api/site", (req, res) => {
     if (req.body[key] === undefined) continue;
     const value = String(req.body[key]).trim();
     if (!value) return res.status(400).json({ error: "Text can't be empty." });
-    if (value.length > 200) return res.status(400).json({ error: "Keep it under 200 characters." });
+    // the onboarding intros are paragraphs; the hero copy stays a short line
+    const max = key.startsWith("onboarding") ? 2000 : 200;
+    if (value.length > max) return res.status(400).json({ error: "Keep it under " + max + " characters." });
     site[key] = value;
   }
   saveSite(site);
