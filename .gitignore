@@ -17,6 +17,9 @@ mail.json
 public/_*.html
 parses.json
 
+# throwaway per-session tooling (shot.js, seed.js, sandbox data, screenshots)
+scratchpad/
+
 # regenerated mockup screenshots (large, rebuild with mockups/capture.sh)
 mockups/out/
 summaries.json
