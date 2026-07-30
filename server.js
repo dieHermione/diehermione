@@ -378,7 +378,7 @@ const PRONOUN_OPTIONS = ["She/Her", "He/Him", "They/Them"];
 // value covers both. Princess is hermione's alone and isn't offered at signup.
 // The ladder, highest first. Rank 2 is deliberately unnamed for now.
 const RANK_LADDER = [
-  { name: "Archangel", note: "" },
+  { name: "Angel", note: "" },
   { name: "??", note: "", unassignable: true },
   { name: "Disciple", note: "" },
   { name: "Worshipper", note: "" },
@@ -395,7 +395,7 @@ const LEGACY_RANKS = { domme: "Visitor", sub: "Servant", citizen: "Servant" };
 
 // what hermione may hand out: everything except Princess and the unnamed rank
 const ASSIGNABLE_RANKS = [
-  ...RANK_LADDER.filter((r) => r.name !== "Archangel" && !r.unassignable).map((r) => r.name),
+  ...RANK_LADDER.filter((r) => r.name !== "Angel" && !r.unassignable).map((r) => r.name),
   RANK_ASIDE.name,
 ];
 
@@ -415,7 +415,7 @@ function canonical(value, options) {
 }
 
 function rankFor(user, key) {
-  if (key === "hermione") return "Archangel";
+  if (key === "hermione") return "Angel";
   const raw = String((user && (user.rank || user.role)) || "").trim();
   return canonical(raw, RANK_OPTIONS) || LEGACY_RANKS[raw.toLowerCase()] || "";
 }
@@ -1561,7 +1561,7 @@ function clearTitheLeftovers(users, key) {
 // Two audiences, so hermione can word her own dashboard differently from
 // everyone else's. {name} stands in for the viewer's username.
 const SITE_DEFAULTS = {
-  welcomeAdmin: "Welcome, Archangel!",
+  welcomeAdmin: "Welcome, Angel!",
   welcomeUser: "Welcome, {name}!",
   messageAdmin: "mirror mirror on the wall.",
   messageUser: "There is no text here yet.",

@@ -10,7 +10,7 @@
   <script src="/me.js"></script>
   <style>
     /* The profile is the "man page" design: the account rendered as its own
-       entry in the angeldom manual. Self-contained, no site.css. */
+       entry in the angelic records. Self-contained, no site.css. */
     * { box-sizing: border-box; margin: 0; padding: 0; }
     /* site.css normally carries this; the fix has to come with us */
     [hidden] { display: none !important; }
@@ -112,7 +112,7 @@
     .opt .o { color: var(--bright); }
     .opt .t { color: var(--dim); }
 
-    /* SEE ALSO entries are the real controls: edit, log out, Hermione */
+    /* SEE ALSO entries are the real controls */
     .also { display: flex; gap: 1.4rem; padding-left: 2.2rem; font-size: 13px; }
     .also a, .also button {
       background: none; border: none; padding: 0;
@@ -196,7 +196,7 @@
 </head>
 <body class="has-top-nav">
   <main class="mp">
-    <div class="top"><span id="hd-l">…</span><span>angeldom manual</span><span id="hd-r">…</span></div>
+    <div class="top"><span id="hd-l">…</span><span>angelic records</span><span id="hd-r">…</span></div>
 
     <div id="view-mode">
       <input type="file" id="quick-icon" accept="image/*" hidden />
@@ -214,7 +214,7 @@
         </div>
       </div>
 
-      <div class="sec">
+      <div class="sec" id="sec-synopsis">
         <h4>SYNOPSIS</h4>
         <div class="body"><b id="p-synopsis-name">…</b>
           <span class="d">[--penance] [--devotion] [--snake] [--wheel] [--elysium] [--obey]</span></div>
@@ -231,7 +231,7 @@
         <div class="opt" id="p-counters"></div>
       </div>
 
-      <div class="sec">
+      <div class="sec" id="sec-exit">
         <h4>EXIT STATUS</h4>
         <div class="body"><span class="d">0 on obedience. 1 on a slip. Every count on this page is
           kept by </span><b>angelOS</b><span class="d"> and cannot be reset by the subject.</span></div>
@@ -241,8 +241,6 @@
         <h4>SEE ALSO</h4>
         <div class="also">
           <button type="button" id="edit-btn" hidden>edit<span class="n">(1)</span></button>
-          <button type="button" id="logout-btn">logout<span class="n">(1)</span></button>
-          <a href="/profile?user=hermione" id="hermione-link">hermione<span class="n">(8)</span></a>
           <a href="/dashboard">dashboard<span class="n">(1)</span></a>
         </div>
       </div>
@@ -284,7 +282,7 @@
       </div>
     </form>
 
-    <div class="bottom"><span>angeldom 0.2</span><span id="ft-mid">…</span><span id="ft-r">…</span></div>
+    <div class="bottom"><span>angelOS v0.2</span><span id="ft-mid">…</span><span id="ft-r">…</span></div>
   </main>
 
   <div class="vig"></div>
@@ -365,10 +363,8 @@
         onChange: () => loadProfile(),
       }));
 
-      const days = daysKept(profile.createdAt);
       document.getElementById("p-nameline-rest").textContent =
-        ", " + (profile.pronouns || "no pronouns set").toLowerCase() +
-        ", retained " + days + (days === 1 ? " day" : " days");
+        ", " + (profile.pronouns || "no pronouns set").toLowerCase();
 
       const bio = document.getElementById("p-bio");
       bio.textContent = profile.bio || "No description has been written for this account.";
@@ -376,8 +372,7 @@
 
       const joined = new Date(profile.createdAt);
       const joinedText = joined.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
-      document.getElementById("p-service").textContent =
-        "In service since " + joinedText + ". Counted continuously.";
+      document.getElementById("p-service").textContent = "In service since " + joinedText + ".";
       document.getElementById("ft-mid").textContent = joinedText.toLowerCase();
 
       const counters = document.getElementById("p-counters");
@@ -392,8 +387,11 @@
         counters.append(key, val);
       }
 
-      // no point linking Hermione to her own page
-      document.getElementById("hermione-link").hidden = name.toLowerCase() === "hermione";
+      // Hermione's page carries no counters, so the two sections written
+      // about counting come off hers as well
+      const princess = profile.points === null;
+      document.getElementById("sec-synopsis").hidden = princess;
+      document.getElementById("sec-exit").hidden = princess;
       document.getElementById("edit-btn").hidden = !profile.canEdit;
       document.title = name + " - Profile";
     }
@@ -438,10 +436,6 @@
     });
 
     document.getElementById("edit-btn").addEventListener("click", () => setEditing(true));
-    document.getElementById("logout-btn").addEventListener("click", async () => {
-      await fetch("/api/logout", { method: "POST" });
-      window.location.href = "/";
-    });
     document.getElementById("cancel-btn").addEventListener("click", () => setEditing(false));
 
     // downscale the chosen image to a 256px square so uploads stay tiny

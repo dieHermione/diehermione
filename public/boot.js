@@ -105,7 +105,7 @@
     ensureStyle();
     var ov = document.createElement("div"); ov.id = "boot-overlay";
     ov.innerHTML = '<div class="glow"></div><div class="scan"></div><div class="vig"></div>' +
-      '<div class="wrap"><div class="lead">decrypting devotion</div>' +
+      '<div class="wrap"><div class="lead">decrypting signal</div>' +
       '<div class="glyphs" id="boot-glyphs"></div>' +
       '<div class="pct" id="boot-pct">resolving &middot; 0%<span class="cur"></span></div></div>';
     document.body.appendChild(ov);

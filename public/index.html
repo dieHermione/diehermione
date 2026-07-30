@@ -99,7 +99,7 @@
           <div class="fl"><span class="lab">account type:</span>
             <div class="roles" id="roles">
               <button type="button" class="role" data-role="Sub" data-tip="Worship your virtual angel. Point tracking and daily commitments enabled.">disciple</button>
-              <button type="button" class="role" data-role="Visitor" data-tip="A persistent account for testing. Intended for friends and other dommes.">visitor</button>
+              <button type="button" class="role" data-role="Visitor" data-tip="A persistent account for testing. Intended for choresubs and other dommes.">visitor</button>
               <button type="button" class="role" data-role="Guest" data-tip="An ephemeral session for testing.">guest</button>
             </div>
           </div>
@@ -120,7 +120,7 @@
         </div>
       </form>
 
-      <div class="row dim" id="toggle-line" style="margin-top:1.7rem">no vessel yet? &nbsp;<span class="link" id="to-register">&gt; <b>register</b></span></div>
+      <div class="row dim" id="toggle-line" style="margin-top:1.7rem">no account? &nbsp;<span class="link" id="to-register">&gt; <b>register</b></span></div>
 
       <div id="pending" hidden>
         <div class="br" style="font-size:1.3rem; margin-bottom:0.6rem">// petition received</div>
@@ -142,11 +142,11 @@
       const login = mode === "login";
       $("register-fields").hidden = login;
       $("lab-user").textContent = login ? "login:" : "username:";
-      $("statusline").innerHTML = login ? "&gt; awaiting credentials" : "&gt; petitioning for a new vessel";
+      $("statusline").innerHTML = login ? "&gt; awaiting credentials" : "&gt; petitioning for a new account";
       $("password").autocomplete = login ? "current-password" : "new-password";
       $("enter-hint").hidden = !login;   // "↵ sign in" only makes sense when signing in
       $("toggle-line").innerHTML = login
-        ? 'no vessel yet? &nbsp;<span class="link" id="to-register">&gt; <b>register</b></span>'
+        ? 'no account? &nbsp;<span class="link" id="to-register">&gt; <b>register</b></span>'
         : 'already a disciple? &nbsp;<span class="link" id="to-login">&gt; <b>sign in</b></span>';
       $(login ? "to-register" : "to-login").addEventListener("click", () => setMode(login ? "register" : "login"));
       applyRoleState();
