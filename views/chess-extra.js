@@ -190,7 +190,9 @@
       const opt = document.createElement("option");
       opt.value = g.key;
       opt.textContent = g.opponent +
-        (g.gameOver ? " (finished)" : g.turn === "b" ? " (your move)" : "");
+        (!g.started ? " (no game yet)"
+          : g.gameOver ? " (finished)"
+          : g.turn === "b" ? " (your move)" : "");
       whoSel.append(opt);
     }
     if (data.games.length === 0) {

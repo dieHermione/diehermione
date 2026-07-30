@@ -672,8 +672,9 @@ app.get("/api/chess/game", (req, res) => {
   const key = chessKeyFor(req, req.query.opponent);
   if (!key) return res.status(400).json({ error: "A valid opponent is required." });
   const games = loadGames();
+  // the picker lists every player now, so choosing one she has never played
+  // opens the board rather than erroring
   if (!games[key]) {
-    if (isAdmin(req)) return res.status(404).json({ error: "No game with that player yet." });
     games[key] = { fen: new Chess().fen(), history: [], updatedAt: new Date().toISOString() };
     saveGames(games);
   }
@@ -786,18 +787,36 @@ app.get("/api/chess/games", (req, res) => {
   if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });
   const games = loadGames();
   const users = loadUsers();
-  res.json({
-    games: Object.entries(games).map(([key, entry]) => {
-      const chess = new Chess(entry.fen);
-      return {
-        opponent: users[key] ? users[key].username : key,
-        key,
-        turn: chess.turn(),
-        gameOver: chess.isGameOver(),
-        updatedAt: entry.updatedAt,
-      };
-    }),
+  // Every approved account belongs in the list, not just the ones that happen
+  // to have opened /chess already: a game is only created lazily on that first
+  // visit, so listing games alone hid everyone who had never been.
+  const keys = new Set(Object.keys(games));
+  for (const [key, u] of Object.entries(users)) {
+    if (key === "hermione" || isPending(u)) continue;
+    keys.add(key);
+  }
+  const describe = (key) => {
+    const entry = games[key];
+    const name = users[key] ? users[key].username : key;
+    if (!entry) return { opponent: name, key, turn: null, gameOver: false, started: false };
+    const chess = new Chess(entry.fen);
+    return {
+      opponent: name,
+      key,
+      turn: chess.turn(),
+      gameOver: chess.isGameOver(),
+      updatedAt: entry.updatedAt,
+      started: true,
+    };
+  };
+  const list = [...keys].map(describe);
+  // waiting on her first, then the rest alphabetically
+  list.sort((a, b) => {
+    const aWait = a.started && !a.gameOver && a.turn === "b" ? 0 : 1;
+    const bWait = b.started && !b.gameOver && b.turn === "b" ? 0 : 1;
+    return aWait - bWait || a.opponent.localeCompare(b.opponent);
   });
+  res.json({ games: list });
 });
 
 // kept out of public/ so the static middleware can't serve it unauthenticated
