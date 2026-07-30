@@ -1,31 +1,39 @@
 /* boot.js — the "decrypt / bootstrap" loading screen.
  * Boot.play({ navigateTo, text, duration }) drops a full-screen terminal overlay
- * that decrypts a devotion mantra from scrambled glyphs into clear text, then
- * navigates. Terminal black / baby-blue to match the login + dashboard skins.
+ * that runs a fake BIOS / power-on-self-test: a memory count, device detection,
+ * and a decrypt sequence whose payload is a devotion mantra resolving from
+ * scrambled glyphs. Text cascades for the better part of the run, then it either
+ * navigates (login) or dismisses itself (the admin preview).
+ * Terminal black / baby-blue to match the login + dashboard skins.
  * Also auto-plays as a standalone screen if the page carries data-boot markers.
  */
 (function () {
   var GLYPHS = "ΞΨΩ#%&@01ᚠᚦᛉᛊ†‡§∆◊∇⌁⌂ħəɱɳʁΘλχ".split("");
   function rg() { return GLYPHS[(Math.random() * GLYPHS.length) | 0]; }
+  function esc(s) { return String(s).replace(/[&<>]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]; }); }
 
   function ensureStyle() {
     if (document.getElementById("boot-style")) return;
     var s = document.createElement("style"); s.id = "boot-style";
     s.textContent =
-      '#boot-overlay{position:fixed;inset:0;z-index:9999;background:#000000;color:#aee3ff;' +
-      'font-family:"IBM Plex Mono",ui-monospace,monospace;display:flex;align-items:center;justify-content:center;' +
-      'opacity:0;transition:opacity .28s ease}' +
+      '#boot-overlay{position:fixed;inset:0;z-index:9999;background:#000;color:#aee3ff;' +
+      'font-family:"IBM Plex Mono",ui-monospace,monospace;opacity:0;transition:opacity .3s ease}' +
       '#boot-overlay.on{opacity:1}' +
-      '#boot-overlay .glow{display:none}' +
-      '#boot-overlay .scan{position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.3) 0 1px,transparent 1px 3px)}' +
-      '#boot-overlay .vig{position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 30vh 10vh rgba(0,0,0,.6)}' +
-      '#boot-overlay .wrap{position:relative;z-index:2;text-align:center;width:min(820px,92vw)}' +
-      '#boot-overlay .lead{color:#4f7ea0;letter-spacing:.4em;text-transform:uppercase;margin-bottom:1.8rem;font-size:.9rem}' +
-      '#boot-overlay .glyphs{font-size:clamp(1rem,2.4vw,1.6rem);line-height:1.8;letter-spacing:.08em;word-break:break-word}' +
-      '#boot-overlay .glyphs .r{color:#eafaff;text-shadow:0 0 12px rgba(120,190,255,.35)}' +
-      '#boot-overlay .glyphs .n{color:#4f7ea0}' +
-      '#boot-overlay .pct{margin-top:2rem;color:#8fd0ff;letter-spacing:.3em}' +
-      '#boot-overlay .cur{display:inline-block;width:.55em;height:1.02em;background:#aee3ff;transform:translateY(2px);animation:bootbl 1s steps(1) infinite}' +
+      '#boot-overlay .scan{position:absolute;inset:0;pointer-events:none;z-index:4;background:repeating-linear-gradient(0deg,rgba(0,0,0,.3) 0 1px,transparent 1px 3px)}' +
+      '#boot-overlay .vig{position:absolute;inset:0;pointer-events:none;z-index:3;box-shadow:inset 0 0 30vh 10vh rgba(0,0,0,.6)}' +
+      '#boot-overlay .top{position:absolute;top:0;left:0;right:0;z-index:2;display:flex;justify-content:space-between;' +
+      'padding:2.6vh 6vw 0;font-size:11px;letter-spacing:.32em;color:#365a72;text-transform:uppercase}' +
+      '#boot-overlay .console{position:absolute;inset:0;z-index:2;padding:6vh 6vw 5vh;overflow:hidden;' +
+      'display:flex;flex-direction:column;justify-content:flex-end;font-size:clamp(12px,1.35vw,15px);line-height:1.62}' +
+      '#boot-overlay .bl{white-space:pre-wrap;word-break:break-word}' +
+      '#boot-overlay .bl .dim{color:#4f7ea0}#boot-overlay .bl .ok{color:#7dffb0}' +
+      '#boot-overlay .bl .amber{color:#ffb648}#boot-overlay .bl .acc{color:#8fd0ff}' +
+      '#boot-overlay .bl .br{color:#eafaff}' +
+      '#boot-overlay .bl.pay{color:#8fd0ff}' +
+      '#boot-overlay .bl.pay .r{color:#eafaff;text-shadow:0 0 12px rgba(120,190,255,.4)}' +
+      '#boot-overlay .bl.pay .g{color:#3f6a8a}' +
+      '#boot-overlay .cur{display:inline-block;width:.55em;height:1.02em;background:#aee3ff;' +
+      'transform:translateY(2px);animation:bootbl 1s steps(1) infinite}' +
       '@keyframes bootbl{0%,50%{opacity:1}50.01%,100%{opacity:0}}';
     document.head.appendChild(s);
   }
@@ -40,18 +48,10 @@
     "Hermione knows best.",
   ];
 
-  /* Sound for the decrypt sequence, on the AudioBus "typing" channel with the
-     rest of the interface noise.
-
-     Second pass. The first was a sawtooth drone that just climbed, which read
-     as a generic riser. This one is a signal being tuned in: two carriers start
-     badly detuned and converge to unison, so the audible beating slows and
-     stops exactly as the text resolves, and a noise bed narrows from wide hiss
-     to a thin band and fades as the static clears. Glyphs tick as quiet data
-     blips that step up in pitch with progress. The lock is a clean fifth over
-     a low thump, with a soft attack rather than a click.
-
-     All of it degrades to silence if the bus is missing or audio is blocked. */
+  /* Sound for the decrypt sequence — unchanged. A signal being tuned in: two
+     carriers converge to unison and a noise bed narrows and clears, glyphs tick
+     as data blips, and the lock is a clean fifth over a low thump. Degrades to
+     silence if the bus is missing or audio is blocked. */
   function bootAudio() {
     var bus = window.AudioBus;
     if (!bus) return null;
@@ -69,7 +69,6 @@
         total = Math.max(0.5, seconds || 5);
         t0 = now;
 
-        // --- the two carriers, converging from a wide beat into unison ---
         var carrierGain = keep(a.createGain());
         carrierGain.gain.setValueAtTime(0.0001, now);
         carrierGain.gain.exponentialRampToValueAtTime(0.045, now + 0.8);
@@ -77,14 +76,12 @@
         [0, 1].forEach(function (i) {
           var o = keep(a.createOscillator());
           o.type = "triangle";
-          // 14Hz apart at the start, dead in tune by the end
           o.frequency.setValueAtTime(110 + (i ? 14 : -14), now);
           o.frequency.linearRampToValueAtTime(110, now + total * 0.92);
           o.connect(carrierGain);
           o.start(now);
         });
 
-        // --- the static bed, narrowing and clearing ---
         var len = Math.floor(a.sampleRate * 2);
         var buf = a.createBuffer(1, len, a.sampleRate), d = buf.getChannelData(0);
         for (var i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
@@ -95,7 +92,7 @@
         band.frequency.setValueAtTime(900, now);
         band.frequency.linearRampToValueAtTime(2100, now + total);
         band.Q.setValueAtTime(0.7, now);
-        band.Q.linearRampToValueAtTime(9, now + total);       // wide hiss to a thin whistle
+        band.Q.linearRampToValueAtTime(9, now + total);
         var nGain = keep(a.createGain());
         nGain.gain.setValueAtTime(0.0001, now);
         nGain.gain.exponentialRampToValueAtTime(0.055, now + 0.5);
@@ -104,7 +101,6 @@
         noise.start(now);
       },
 
-      // one quiet data blip per settled glyph, stepping up as the text resolves
       tick: function () {
         var now = a.currentTime;
         var p = total ? Math.min(1, (now - t0) / total) : 0;
@@ -121,7 +117,6 @@
 
       resolve: function () {
         var now = a.currentTime;
-        // everything running stops together: the static does not trail the lock
         nodes.forEach(function (n) {
           try {
             if (n.gain) {
@@ -134,13 +129,12 @@
         });
         nodes = [];
 
-        // the lock: a fifth with a soft attack, over a low thump
         [220, 330].forEach(function (hz, i) {
           var o = a.createOscillator(); o.type = "sine"; o.frequency.value = hz;
           var g = a.createGain();
           var at = now + i * 0.05;
           g.gain.setValueAtTime(0.0001, at);
-          g.gain.exponentialRampToValueAtTime(0.085, at + 0.09);   // soft, not a click
+          g.gain.exponentialRampToValueAtTime(0.085, at + 0.09);
           g.gain.exponentialRampToValueAtTime(0.0001, at + 1.2);
           o.connect(g).connect(out); o.start(at); o.stop(at + 1.25);
         });
@@ -158,51 +152,133 @@
     };
   }
 
+  // pick up to n distinct devotionals for the decrypt payload
+  function samplePayload(n) {
+    var pool = DEVOTIONALS.slice();
+    var out = [];
+    while (pool.length && out.length < n) {
+      out.push(pool.splice((Math.random() * pool.length) | 0, 1)[0]);
+    }
+    return out.length ? out : ["There is nothing except for Her."];
+  }
+
   function play(opts) {
     opts = opts || {};
-    var text = opts.text || DEVOTIONALS[(Math.random() * DEVOTIONALS.length) | 0];
-    var duration = opts.duration || 5200;
+    var duration = opts.duration || 8000;   // ~8s of cascade by default
+    var scale = 1;                          // set once the script length is known
     ensureStyle();
+
+    var payload = opts.text ? [opts.text] : samplePayload(3);
+
+    var now = new Date();
+    var stamp = now.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }).toUpperCase();
+
     var ov = document.createElement("div"); ov.id = "boot-overlay";
-    ov.innerHTML = '<div class="glow"></div><div class="scan"></div><div class="vig"></div>' +
-      '<div class="wrap"><div class="lead">decrypting signal</div>' +
-      '<div class="glyphs" id="boot-glyphs"></div>' +
-      '<div class="pct" id="boot-pct">resolving &middot; 0%<span class="cur"></span></div></div>';
+    ov.innerHTML =
+      '<div class="vig"></div><div class="scan"></div>' +
+      '<div class="top"><span>angelOS v0.2</span><span>power-on self test</span></div>' +
+      '<div class="console"><div id="boot-log"></div></div>';
     document.body.appendChild(ov);
     requestAnimationFrame(function () { ov.classList.add("on"); });
 
-    var chars = text.split("");
-    var gEl = document.getElementById("boot-glyphs");
-    var pEl = document.getElementById("boot-pct");
-    var start = performance.now();
-
+    var log = ov.querySelector("#boot-log");
+    var timers = [], ivs = [];
     var sfx = bootAudio();
     if (sfx) sfx.start(duration / 1000);
-    var lastRevealed = 0;
 
-    function frame(now) {
-      var t = Math.min(1, (now - start) / duration);
-      var revealed = Math.floor(t * chars.length);
-      if (sfx && revealed > lastRevealed) { sfx.tick(); lastRevealed = revealed; }
-      var html = "";
-      for (var i = 0; i < chars.length; i++) {
-        var ch = chars[i];
-        if (ch === " ") { html += " "; continue; }
-        if (i < revealed) html += '<span class="r">' + ch + "</span>";
-        else html += '<span class="n">' + rg() + "</span>";
-      }
-      gEl.innerHTML = html;
-      pEl.innerHTML = "resolving &middot; " + Math.floor(t * 100) + "%" + (t < 1 ? '<span class="cur"></span>' : "");
-      if (t < 1) { requestAnimationFrame(frame); return; }
-      // fully resolved: hold briefly, then navigate
-      if (sfx) sfx.resolve();
-      gEl.innerHTML = chars.map(function (c) { return c === " " ? " " : '<span class="r">' + c + "</span>"; }).join("");
-      setTimeout(function () {
-        if (opts.navigateTo) window.location.href = opts.navigateTo;
-        else if (typeof opts.onDone === "function") opts.onDone();
-      }, 750);
+    function line(html, cls) {
+      var d = document.createElement("div");
+      d.className = "bl" + (cls ? " " + cls : "");
+      d.innerHTML = html;
+      log.appendChild(d);
+      return d;
     }
-    requestAnimationFrame(frame);
+    // right-pad a label with dot leaders, terminal-log style
+    function lead(label, tail) {
+      var dots = ".".repeat(Math.max(3, 30 - label.length));
+      return '<span class="dim">' + esc(label) + " " + dots + "</span> " + tail;
+    }
+    function countUp(el, to, ms) {
+      var s = performance.now();
+      var iv = setInterval(function () {
+        var p = Math.min(1, (performance.now() - s) / ms);
+        el.textContent = Math.round(p * to).toLocaleString();
+        if (p >= 1) clearInterval(iv);
+      }, 40);
+      ivs.push(iv);
+    }
+    function decrypt(prefixHtml, text, ms) {
+      var d = line('<span class="acc">' + prefixHtml + "</span>", "pay");
+      var holder = document.createElement("span"); d.appendChild(holder);
+      var chars = text.split(""), last = 0, s = performance.now();
+      var iv = setInterval(function () {
+        var p = Math.min(1, (performance.now() - s) / ms);
+        var rev = Math.floor(p * chars.length);
+        if (sfx && rev > last) { sfx.tick(); last = rev; }
+        var h = "";
+        for (var i = 0; i < chars.length; i++) {
+          var c = chars[i];
+          if (c === " ") h += " ";
+          else if (i < rev) h += '<span class="r">' + esc(c) + "</span>";
+          else h += '<span class="g">' + rg() + "</span>";
+        }
+        holder.innerHTML = h;
+        if (p >= 1) clearInterval(iv);
+      }, 45);
+      ivs.push(iv);
+    }
+
+    // ---- the script: a list of [gap, fn], later stretched to fill `duration` ----
+    var script = [];
+    function step(gap, fn) { script.push([gap, fn]); }
+
+    step(0,    function () { line('<span class="dim">PHOENIX-ANGEL BIOS v0.2      ' + stamp + "</span>"); });
+    step(140,  function () { line('<span class="dim">angelOS Cryogenic Loader</span>'); });
+    step(240,  function () {
+      var d = line("Memory Test : <b class='br'>0</b> KB");
+      countUp(d.querySelector("b"), 655360, 900 * scale);
+    });
+    step(1050, function () {
+      var m = log.lastChild.querySelector("b"); if (m) m.textContent = "655,360";
+      log.lastChild.innerHTML = "Memory Test : <b class='br'>655,360</b> KB <span class='ok'>OK</span>";
+    });
+    step(180,  function () { line(lead("Detecting Primary Master", "<b class='br'>ANGEL-SSD 640G</b> <span class='ok'>[OK]</span>")); });
+    step(210,  function () { line(lead("Detecting Devotion Bus", "<b class='br'>present</b> <span class='ok'>[OK]</span>")); });
+    step(210,  function () { line(lead("Detecting Vessel", "<b class='br'>bound</b> <span class='ok'>[OK]</span>")); });
+    step(210,  function () { line(lead("Detecting Obedience Core", "<b class='br'>online</b> <span class='ok'>[OK]</span>")); });
+    step(280,  function () { line("&nbsp;"); line('<span class="acc">angelOS :: decrypt sequence</span>'); });
+    step(200,  function () { line(lead("mounting /dev/angel", "<span class='ok'>[OK]</span>")); });
+    step(210,  function () { line(lead("loading devotion keyring", "<span class='ok'>[OK]</span>")); });
+    step(210,  function () { line(lead("handshake // angeldom.me", "<span class='ok'>[OK]</span>")); });
+    step(220,  function () { line(lead("verifying signature", "<span class='amber'>[WARN]</span>")); });
+    step(300,  function () { line('<span class="acc">decrypting devotional record</span>'); });
+
+    // the payload: devotion mantras resolving from noise, the sustained cascade
+    var revealMs = 720;
+    payload.forEach(function (mantra, i) {
+      step(i === 0 ? 200 : 820, function () { decrypt("DECRYPT :: ", mantra, revealMs * scale); });
+    });
+
+    step(900, function () { line("&nbsp;"); line('<span class="ok">&gt; access granted</span> <span class="cur"></span>'); });
+
+    // ---- stretch the whole script to fill `duration`, then schedule it ----
+    var totalMs = script.reduce(function (s, x) { return s + x[0]; }, 0) + 500;   // + hold
+    scale = duration / totalMs;
+    var clock = 0;
+    script.forEach(function (x) { clock += x[0]; timers.push(setTimeout(x[1], clock * scale)); });
+
+    // ---- finish: lock sound, then navigate or dismiss ----
+    var endAt = duration;
+    timers.push(setTimeout(function () {
+      if (sfx) sfx.resolve();
+    }, Math.max(0, endAt - 260)));
+    timers.push(setTimeout(function () {
+      ivs.forEach(clearInterval);
+      if (opts.navigateTo) { window.location.href = opts.navigateTo; return; }
+      // no destination (e.g. the admin preview): fade out and clean up
+      ov.classList.remove("on");
+      setTimeout(function () { ov.remove(); if (typeof opts.onDone === "function") opts.onDone(); }, 360);
+    }, endAt));
   }
 
   // pull the editable pool; a failure just leaves the built-in lines in place
