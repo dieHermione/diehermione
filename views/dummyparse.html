@@ -146,24 +146,40 @@
     background:rgba(120,190,255,.09);letter-spacing:.1em}
   .bf.gold{border-color:var(--gold);color:var(--gold);background:rgba(255,210,122,.1)}
 
-  /* ---- the card deck ---- */
+  /* ---- the card deck: an icon per ability, keybind on it, detail on hover ---- */
   .cards{display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(2,1fr);
     gap:.6rem;height:214px;flex-shrink:0}
-  .card{border:1px solid var(--dim2);padding:.5rem .6rem;position:relative;overflow:hidden;cursor:pointer;
-    display:flex;flex-direction:column;justify-content:space-between;
+  .card{border:1px solid var(--dim2);position:relative;overflow:visible;cursor:pointer;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.3rem;
     background:linear-gradient(180deg,rgba(120,190,255,.05),transparent 60%)}
-  .card .k{font-size:1.4rem;color:var(--dim);line-height:1}
-  .card .n{font-size:.95rem;color:var(--bright);line-height:1.15}
-  .card .tx{font-size:8.5px;line-height:1.5;color:var(--dim);margin-top:.2rem;
-    display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
-  .card .cost{position:absolute;top:.5rem;right:.6rem;font-size:8.5px;letter-spacing:.1em;color:var(--dim2)}
-  .card .cd{position:absolute;inset:0;background:rgba(0,0,0,.74);display:grid;place-items:center;
-    font-size:2rem;color:var(--bright)}
+  .card .k{position:absolute;top:.28rem;left:.42rem;font-size:.9rem;font-weight:600;line-height:1;
+    color:var(--dim)}
+  .card .icon{width:40px;height:40px;color:var(--c);display:grid;place-items:center}
+  .card .icon svg{width:100%;height:100%;display:block}
+  .card .nm2{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+  .card .cd{position:absolute;inset:0;background:rgba(0,0,0,.76);display:grid;place-items:center;
+    font-size:1.9rem;color:var(--bright);z-index:3}
   .card .cd i{position:absolute;left:0;bottom:0;height:2px;background:var(--accent);width:0}
   .card.ready{border-color:var(--c);box-shadow:0 0 16px var(--glow)}
-  .card.ready .k{color:var(--c)}
-  .card.nomana{border-color:var(--deep)}
+  .card.ready .icon{color:var(--bright)} .card.ready .k{color:var(--c)}
+  .card.nomana{border-color:var(--deep);opacity:.72}
   .card.active{border-color:var(--gold);box-shadow:0 0 20px rgba(255,210,122,.5)}
+  .card.active .icon{color:var(--gold)}
+  /* hover detail, floated above the tile */
+  .card .tip{position:absolute;bottom:calc(100% + 7px);left:50%;transform:translateX(-50%);
+    width:210px;background:#04101a;border:1px solid var(--accent);box-shadow:0 0 22px var(--glow);
+    padding:.5rem .6rem;z-index:60;opacity:0;pointer-events:none;transition:opacity .12s}
+  .card:hover .tip{opacity:1}
+  .card .tip b{color:var(--bright);font-weight:400;font-size:.85rem}
+  .card .tip .tk{float:right;color:var(--dim);border:1px solid var(--dim2);padding:0 .34rem;
+    font-size:9px;line-height:1.5}
+  .card .tip .cc{display:block;color:var(--accent);font-size:9px;letter-spacing:.08em;margin:.25rem 0 .35rem}
+  .card .tip p{font-size:10px;line-height:1.55;color:var(--dim);margin:0}
+  /* a card whose empowerment is live (Whitefire under Embracing Divinity, Smite
+     under Holy Precision) pulses gold so the payoff window is unmissable */
+  .card.buffed{border-color:var(--gold);animation:buffpulse 1.1s ease-in-out infinite}
+  .card.buffed .k{color:var(--gold)}
+  @keyframes buffpulse{0%,100%{box-shadow:0 0 10px rgba(255,210,122,.35)}50%{box-shadow:0 0 26px rgba(255,210,122,.85)}}
 
   /* ---- meter ---- */
   .mrow{display:grid;grid-template-columns:1fr auto;gap:.4rem;font-size:11px;padding:.16rem 0;position:relative}
@@ -425,9 +441,9 @@ const ABILITIES = [
   { id:"rewind", key:"g", name:"Rewind", cast:0, cd:60, mana:500, dmg:0, travel:0,
     fx:"clock", tone:294,
     text:"Instant. Resets the cooldown of the last ability you used." },
-  { id:"melody", key:"f", name:"Melody", cast:0, cd:35, mana:400, dmg:0, travel:0,
-    fx:"note", tone:494,
-    text:"Instant. +20% Haste and +20% Fracture Chance for 15s." },
+  { id:"whitefire", key:"f", name:"Whitefire", cast:3.0, cd:8, mana:1200, dmg:0, travel:0,
+    channel:true, tick:0.5, tickDmg:520, fx:"burst", tone:494,
+    text:"Channel, 3s. Sears the target every 0.5s; cancel with Escape. Under Embracing Divinity it deals +300%. Channel it fully while Embracing Divinity is up to gain Holy Precision: your next two Smites deal +200%." },
   { id:"vigil", key:"r", name:"Vigil", cast:1.5, cd:30, mana:1000, dmg:300, travel:0,
     vigil:18, fx:"halo", tone:440,
     text:"Applies a DoT that raises your Critical Damage while it runs." },
@@ -435,15 +451,33 @@ const ABILITIES = [
 const BY_KEY = {}; ABILITIES.forEach(a => BY_KEY[a.key] = a);
 const BY_ID  = {}; ABILITIES.forEach(a => BY_ID[a.id] = a);
 
+/* one drawn glyph per ability, so the deck reads as icons rather than text */
+const ICONS = {
+  smite:      `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 L5 13 h5 l-2 9 L19 10 h-6 z"/></svg>`,
+  decree:     `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2v20M2 12h20M4.9 4.9l14.2 14.2M19.1 4.9L4.9 19.1"/></svg>`,
+  judgement:  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2v20M8 5v14M16 5v14M6 21h12"/></svg>`,
+  lightspear: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 20 L20 4M20 4h-6M20 4v6M9 15l-3 3"/></svg>`,
+  timeturn:   `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>`,
+  brand:      `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2l10 10-10 10L2 12z"/><path d="M12 8v8M8 12h8"/></svg>`,
+  mark:       `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="8"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="1.8" fill="currentColor" stroke="none"/></svg>`,
+  rewind:     `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 12a7 7 0 1 0 2-5"/><path d="M4 5v4h4"/></svg>`,
+  whitefire:  `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2s6 5 6 11a6 6 0 0 1-12 0c0-2 1-4 2-5 0 2 1 3 2 3 1 0 2-1 2-3 0-3-2-5-2-7z"/></svg>`,
+  vigil:      `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><ellipse cx="12" cy="7" rx="7" ry="2.6"/><path d="M12 10v11M7 12l-2 8M17 12l2 8"/></svg>`,
+};
+
 /* ---------- combat state ---------- */
 let S = null;
 function freshState() {
   return {
     running:false, t:0, mana:MANA_MAX, lastPrev:null,
+    // The timer that a timed run and the dps are measured against does not start
+    // on Pull; it starts on the FIRST damage dealt, so buffs can be pre-cast.
+    combatStart:null,
     gcdUntil:0, cast:null, lastAbility:null,
     cd:{},                       // id -> time it becomes ready
     flame:0, flameNext:0, flameUntil:0,
     fracture:0,
+    holyPrecision:0,             // Smite charges left from Holy Precision (+200% each)
     buffs:{},                    // name -> {until, ...}
     mark:0,                      // temporal mark expiry
     vigilUntil:0, vigilNext:0,
@@ -535,15 +569,17 @@ function impactFx(kind) {
 }
 
 /* ---------- derived numbers ---------- */
-const haste      = () => curve("haste") + (S && S.buffs.melody ? 0.20 : 0);
+const haste      = () => curve("haste");
 const critChance = () => Math.min(0.95, curve("crit"));
 const critMult   = () => 2 + curve("critDmg") + (S && S.t < S.vigilUntil ? 0.30 : 0);
-const fractureCh = () => curve("fracture") + (S && S.buffs.melody ? 0.20 : 0);
+const fractureCh = () => curve("fracture");
 const intel      = () => curve("intellect");
 const dotBonus   = () => curve("dot");
 const manaRegen  = () => MANA_REGEN * (1 + curve("focus"));
 const gcdLen     = () => BASE_GCD / (1 + haste());
 const castLen    = (a) => a.cast / (1 + haste());
+// Combat time is measured from the first damage, not from Pull.
+const combatElapsed = () => (S && S.combatStart != null) ? Math.max(0, S.t - S.combatStart) : 0;
 
 /* ---------- damage ---------- */
 function rollDamage(base, opts) {
@@ -562,6 +598,13 @@ function rollDamage(base, opts) {
 
 function dealDamage(base, label, kind, opts) {
   const { amount, crit } = rollDamage(base, opts);
+  // The clock starts on the first damage, so a timed run's window and the dps
+  // only begin here rather than on Pull.
+  if (S.combatStart === null) {
+    S.combatStart = S.t; pushLog(`<b>combat begins</b>`);
+    const sl = document.getElementById("statusline");
+    if (sl) sl.textContent = S.limit ? "in combat, " + S.limit + "s" : "in combat";
+  }
   S.total += amount;
   S.byAbility[label] = (S.byAbility[label] || 0) + amount;
   S.events.push({ t:+S.t.toFixed(3), ability:label, amount, crit, kind });
@@ -584,6 +627,19 @@ function reduceCooldowns(pct) {
     const left = S.cd[id] - S.t;
     if (left > 0) S.cd[id] = S.t + left * (1 - pct);
   });
+}
+
+// Per-channel tick. Timeturn shaves cooldowns; Whitefire sears the target, and
+// hits +300% (x4) while Embracing Divinity is up.
+function channelTick(a) {
+  if (a.id === "timeturn") {
+    reduceCooldowns(a.cdrPct);
+    impactFx("clock");
+    pushLog(`<b>Timeturn</b> tick: cooldowns cut ${Math.round(a.cdrPct*100)}%`);
+  } else if (a.id === "whitefire") {
+    const mult = S.buffs.embracing ? 4 : 1;
+    dealDamage(a.tickDmg * mult, "Whitefire", "hit", { fx: a.fx });
+  }
 }
 
 /* ---------- casting ---------- */
@@ -669,9 +725,24 @@ function applyEffect(a) {
       addFlame(a.flame);
       pushLog(`<b>Judgement</b> begins, ${a.over}s`);
       break;
-    case "smite":
-      dealDamage(a.dmg + a.perFlame * S.flame, a.name, "hit", { fx: a.fx });
+    case "smite": {
+      let base = a.dmg + a.perFlame * S.flame;
+      // Holy Precision empowers the next two Smites by +200% (x3)
+      if (S.holyPrecision > 0) {
+        base *= 3;
+        S.holyPrecision--;
+        if (S.holyPrecision <= 0) delete S.buffs.holy;
+        else if (S.buffs.holy) S.buffs.holy.stacks = S.holyPrecision;
+      }
+      dealDamage(base, a.name, "hit", { fx: a.fx });
+      // 20% chance to light Embracing Divinity, empowering Whitefire
+      if (Math.random() < 0.20) {
+        S.buffs.embracing = { until: S.t + 12, label: "Embracing Divinity", gold: true };
+        impactFx("halo");
+        pushLog(`<b>Embracing Divinity</b> ignites &mdash; Whitefire +300%`);
+      }
       break;
+    }
     case "lightspear": {
       const used = Math.min(a.consume, S.flame);
       S.flame -= used;
@@ -684,9 +755,19 @@ function applyEffect(a) {
       S.buffs.brand = { until:S.brandUntil, label:"Brand +50%" };
       pushLog(`<b>Brand</b> up for 15s`);
       break;
-    case "melody":
-      S.buffs.melody = { until:S.t + 15, label:"Melody +haste/fracture" };
-      pushLog(`<b>Melody</b> up for 15s`);
+    case "whitefire":
+      // Reaching here means the channel finished in full (Escape would have
+      // cancelled it instead). A full channel under Embracing Divinity converts
+      // it into Holy Precision and consumes the empowerment.
+      if (S.buffs.embracing) {
+        delete S.buffs.embracing;
+        S.holyPrecision = 2;
+        S.buffs.holy = { until:S.t + 30, label:"Holy Precision", stacks:2, gold:true };
+        impactFx("halo");
+        pushLog(`<b>Holy Precision</b> &mdash; your next two Smites deal +200%`);
+      } else {
+        pushLog(`<b>Whitefire</b> channel complete`);
+      }
       break;
     case "mark":
       S.mark = S.t + 20;
@@ -705,7 +786,7 @@ function applyEffect(a) {
       break;
   }
   // the buff-only casts land nothing, so give them their own flourish
-  if (["brand", "melody", "mark", "rewind"].includes(a.id)) impactFx(a.fx);
+  if (["brand", "mark", "rewind"].includes(a.id)) impactFx(a.fx);
   // Rewind targets the ability used before Rewind itself
   if (a.id !== "rewind") S.lastPrev = a.id;
 }
@@ -758,17 +839,17 @@ function frame(now) {
     if (ot.left <= 0) S.overTime.splice(i, 1);
   }
 
-  // a timed run stops itself
-  if (S.limit && S.t >= S.limit && !S.ended) { S.t = S.limit; end(); return; }
+  // a timed run stops itself once the combat window (from first damage) is up
+  if (S.limit && S.combatStart != null && combatElapsed() >= S.limit && !S.ended) {
+    S.t = S.combatStart + S.limit; end(); return;
+  }
 
   // cast / channel
   if (S.cast) {
     const c = S.cast;
     if (c.a.channel && S.t >= c.nextTick && S.t < c.end) {
       c.nextTick += c.a.tick / (1 + haste());
-      reduceCooldowns(c.a.cdrPct);
-      impactFx("clock");
-      pushLog(`<b>Timeturn</b> tick: cooldowns cut ${Math.round(c.a.cdrPct*100)}%`);
+      channelTick(c.a);
     }
     if (S.t >= c.end) finishCast(c.a);
   }
@@ -812,8 +893,10 @@ function frame(now) {
     }
     S.brandBank = 0;
   }
-  // expire buffs
-  Object.keys(S.buffs).forEach(k => { if (S.t >= S.buffs[k].until) delete S.buffs[k]; });
+  // expire buffs; Holy Precision's charge count expires with its buff
+  Object.keys(S.buffs).forEach(k => {
+    if (S.t >= S.buffs[k].until) { if (k === "holy") S.holyPrecision = 0; delete S.buffs[k]; }
+  });
 
   syncCooldownBars();
   render();
@@ -941,14 +1024,21 @@ document.getElementById("tlmode").addEventListener("click", () => {
 
 /* ---------- render ---------- */
 function render() {
-  const t = S.t || 0.001;
-  const shown = S.limit && S.running ? Math.max(0, S.limit - t) : t;
-  document.getElementById("clock").textContent =
-    (S.limit && S.running ? "-" : "") +
-    String(Math.floor(shown/60)).padStart(2,"0") + ":" +
-    String(Math.floor(shown%60)).padStart(2,"0");
-  document.getElementById("parsetime").textContent = t.toFixed(1) + "s";
-  document.getElementById("dps").textContent = Math.round(S.total / t).toLocaleString();
+  const ct = combatElapsed();
+  const pre = S.running && S.combatStart == null;
+  let clockTxt;
+  if (pre) {
+    // pre-pull: the timer has not started; show the buff window ticking up
+    clockTxt = "PRE " + S.t.toFixed(1);
+  } else if (S.limit && S.running) {
+    const rem = Math.max(0, S.limit - ct);
+    clockTxt = "-" + String(Math.floor(rem/60)).padStart(2,"0") + ":" + String(Math.floor(rem%60)).padStart(2,"0");
+  } else {
+    clockTxt = String(Math.floor(ct/60)).padStart(2,"0") + ":" + String(Math.floor(ct%60)).padStart(2,"0");
+  }
+  document.getElementById("clock").textContent = clockTxt;
+  document.getElementById("parsetime").textContent = ct.toFixed(1) + "s";
+  document.getElementById("dps").textContent = Math.round(ct > 0 ? S.total / ct : 0).toLocaleString();
   document.getElementById("taken").textContent = S.total.toLocaleString();
 
   // mana
@@ -977,7 +1067,7 @@ function render() {
 
   // player buffs
   document.getElementById("buffs").innerHTML = Object.values(S.buffs)
-    .map(b => `<span class="bf ${b.gold?"gold":""}">${b.label} ${(b.until-S.t).toFixed(0)}s</span>`).join("");
+    .map(b => `<span class="bf ${b.gold?"gold":""}">${b.label}${b.stacks?" &times;"+b.stacks:""} ${(b.until-S.t).toFixed(0)}s</span>`).join("");
   document.getElementById("buffline").textContent =
     "fracture " + S.fracture + "/" + FRACTURE_MAX;
 
@@ -997,6 +1087,10 @@ function render() {
     el.classList.toggle("ready", ready(a));
     el.classList.toggle("nomana", S.mana < a.mana);
     el.classList.toggle("active", !!(S.cast && S.cast.a.id === a.id));
+    // Whitefire glows under Embracing Divinity; Smite glows under Holy Precision.
+    const buffed = (a.id === "whitefire" && !!S.buffs.embracing) ||
+                   (a.id === "smite" && S.holyPrecision > 0);
+    el.classList.toggle("buffed", buffed);
   });
 
   // breakdown
@@ -1073,15 +1167,13 @@ function loadBuild(){
 /* ---------- the card deck ---------- */
 document.getElementById("actionbar").innerHTML = ABILITIES.map(a =>
   `<div class="card" id="ab-${a.id}" data-id="${a.id}">
-     <div>
-       <div class="k">${a.key.toUpperCase()}</div>
-       <span class="cost">${a.cd}s &nbsp; ${a.mana}</span>
-     </div>
-     <div>
-       <div class="n">${a.name}</div>
-       <div class="tx">${a.text}</div>
-     </div>
+     <div class="k">${a.key.toUpperCase()}</div>
+     <div class="icon">${ICONS[a.id] || ""}</div>
+     <div class="nm2">${a.name}</div>
      <div class="cd" hidden><span></span><i></i></div>
+     <div class="tip"><b>${a.name}</b><span class="tk">${a.key.toUpperCase()}</span>
+       <span class="cc">${a.cd ? a.cd + "s cd" : "no cd"} &middot; ${a.mana} mana${a.channel ? " &middot; channel" : ""}</span>
+       <p>${a.text}</p></div>
    </div>`).join("");
 document.getElementById("actionbar").addEventListener("click", (e) => {
   const box = e.target.closest(".card"); if (!box) return;
@@ -1113,7 +1205,8 @@ function pull() {
   document.getElementById("stop").disabled = false;
   document.getElementById("livedot").hidden = false;
   document.getElementById("statusline").textContent =
-    S.limit ? "in combat, " + S.limit + "s" : "in combat";
+    S.limit ? "pre-pull · buffs now, the " + S.limit + "s clock starts on first damage"
+            : "pre-pull · buffs now, the clock starts on first damage";
   document.getElementById("mode").disabled = true;
   renderStats();                               // greys the +/- out
   if (!raf) raf = requestAnimationFrame(frame);
@@ -1129,9 +1222,10 @@ async function end() {
   document.getElementById("pull").disabled = false;
   document.getElementById("stop").disabled = true;
   document.getElementById("livedot").hidden = true;
-  const dps = Math.round(S.total / Math.max(0.001, S.t));
+  const ct = combatElapsed();
+  const dps = Math.round(S.total / Math.max(0.001, ct));
   document.getElementById("statusline").textContent =
-    `parse ended · ${S.total.toLocaleString()} damage in ${S.t.toFixed(1)}s · ${dps.toLocaleString()} dps`;
+    `parse ended · ${S.total.toLocaleString()} damage in ${ct.toFixed(1)}s · ${dps.toLocaleString()} dps`;
   renderStats();
   // save the parse so a leaderboard can be built from it later
   try {
@@ -1139,7 +1233,7 @@ async function end() {
       method:"POST", headers:{ "Content-Type":"application/json" },
       body: JSON.stringify({
         cls:"priest", mode:String(S.limit || "free"),
-        duration:+S.t.toFixed(2), total:S.total, dps,
+        duration:+ct.toFixed(2), total:S.total, dps,
         build: Object.assign({}, points),
         byAbility: S.byAbility,
         events: S.events.slice(0, 4000),
