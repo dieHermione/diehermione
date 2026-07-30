@@ -171,6 +171,23 @@
       mask-image: linear-gradient(180deg, transparent 12%, #000 20% 62%, transparent 74%);
     }
 
+    /* slots: the printed scratch card, cream stock with a red banner and a
+       half-rubbed foil panel. The odd one out on the wall: it is paper, not glass. */
+    .art-card { border-color: #9c9384; background: linear-gradient(168deg, #fffdf6, #ece5d5); }
+    .art-card .art {
+      background:
+        linear-gradient(90deg, #a3202b 0 100%) 8% 14% / 58% 7px no-repeat,
+        linear-gradient(126deg, #b9bcc2, #8d9299 45%, #cfd3d8 66%, #7e838a) 66% 62% / 26% 40% no-repeat,
+        repeating-linear-gradient(58deg, rgba(255,255,255,.4) 0 2px, transparent 2px 6px) 66% 62% / 26% 40% no-repeat,
+        linear-gradient(0deg, rgba(0,0,0,.06) 0 100%) 8% 60% / 30% 34% no-repeat,
+        linear-gradient(0deg, rgba(0,0,0,.06) 0 100%) 38% 60% / 22% 34% no-repeat;
+    }
+    .art-card .glyph { color: #a3202b; text-shadow: none; opacity: .32; }
+    .art-card .nm { color: #2b2820; }
+    .art-card .num { color: #a49b83; }
+    .art-card .tape { background: rgba(60,50,40,.1); border-color: rgba(60,50,40,.18); }
+    .art-card.sel { box-shadow: 0 0 40px rgba(163,32,43,.4), 0 18px 40px rgba(0,0,0,.85); outline-color: #a3202b; }
+
     .p.sel { z-index: 20; box-shadow: 0 0 40px var(--glow), 0 18px 40px rgba(0,0,0,.85);
       outline: 1px solid var(--c); outline-offset: 3px; }
     .art-trail.sel, .art-lines.sel, .art-pips.sel, .art-dial.sel {
@@ -228,6 +245,7 @@
       { n: "dummy parse", g: "M", href: "/dummyparse",         art: "bars" },
       { n: "skill check", g: "K", href: "/skillcheck",         art: "dial" },
       { n: "summary",     g: "R", href: "/summary",            art: "column" },
+      { n: "slots",       g: "L", href: "/slots",              art: "card", multi: true },
     ];
 
     const board = document.getElementById("board");

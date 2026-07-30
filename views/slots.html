@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Slots - angeldom.me</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script src="/me.js"></script>
+  <style>
+    /* ANGELCOIN INSTANT: the printed scratch card (slots mockup 5). The odd game
+       out, paper rather than glass, so it drops the terminal skin entirely. Three
+       panels, match three; the outcome is decided by the server the moment a card
+       is bought, and scratching only uncovers what is already sealed inside.
+       Self-contained, no site.css. */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    [hidden] { display: none !important; }
+    html, body { height: 100%; }
+    body {
+      background: #c8c1b2; color: #2b2820;
+      font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 15px;
+      overflow: hidden;
+    }
+    /* the desk the card sits on */
+    .desk {
+      position: fixed; inset: 0; z-index: 0;
+      background: linear-gradient(160deg, #d9d3c6, #b3ab99);
+    }
+    .desk::after {
+      content: ""; position: absolute; inset: 0;
+      background: repeating-linear-gradient(94deg, rgba(0,0,0,.035) 0 2px, transparent 2px 9px);
+    }
+    .wrap {
+      position: relative; z-index: 2; height: 100%;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 3vh 4vw; gap: 1.4rem;
+    }
+    .card {
+      position: relative; width: min(820px, 92vw);
+      padding: 2.1rem 2.3rem 1.7rem;
+      background: linear-gradient(170deg, #fffdf6, #efeadb);
+      border-radius: 7px; box-shadow: 0 30px 60px rgba(60,50,35,.45);
+      transform: rotate(-1deg);
+    }
+    .card::before {
+      content: ""; position: absolute; inset: 11px;
+      border: 1px dashed #c6bda3; border-radius: 4px; pointer-events: none;
+    }
+    h1 {
+      font-family: "Bebas Neue", Impact, sans-serif; font-weight: 400;
+      font-size: clamp(2rem, 5vw, 3rem); letter-spacing: .06em; color: #a3202b; line-height: 1;
+    }
+    .sub {
+      font-size: 10px; font-weight: 800; letter-spacing: .3em; text-transform: uppercase;
+      color: #8a8270; margin: .3rem 0 1.4rem;
+    }
+    .panels { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.3rem; }
+    .panel {
+      position: relative; aspect-ratio: 1; border-radius: 5px; overflow: hidden;
+      background: #fffdf6; box-shadow: inset 0 0 0 2px #ddd4bb;
+    }
+    .panel .sym {
+      position: absolute; inset: 0; display: grid; place-items: center;
+      font-size: clamp(2.4rem, 9vw, 5rem); color: #2b2820;
+      font-family: "IBM Plex Mono", monospace;
+    }
+    .panel.win .sym { color: #a3202b; text-shadow: 0 0 22px rgba(163,32,43,.35); }
+    .panel canvas {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      touch-action: none; cursor: grab;
+    }
+    .panel canvas:active { cursor: grabbing; }
+    .panel canvas.gone { display: none; }
+
+    .ft {
+      display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; gap: 1.2rem;
+      margin-top: 1.5rem;
+    }
+    .k { font-size: 8px; font-weight: 800; letter-spacing: .28em; text-transform: uppercase; color: #8a8270; }
+    .pays .v {
+      font-family: "Bebas Neue", Impact, sans-serif; font-size: clamp(1.6rem, 4vw, 2.3rem);
+      line-height: 1; color: #2b2820; min-height: 1.5rem;
+    }
+    .pays .v.hit { color: #a3202b; }
+    .serial { font-family: "IBM Plex Mono", monospace; font-size: 8.5px; letter-spacing: .18em; color: #a49b83; margin-top: .5rem; }
+    .paytable { font-size: 10px; line-height: 1.85; color: #6c6555; white-space: nowrap; }
+    .paytable b { color: #a3202b; font-weight: 600; }
+    .right { text-align: right; }
+    .buy {
+      font-family: "Bebas Neue", Impact, sans-serif; font-size: clamp(1.1rem, 3vw, 1.4rem);
+      letter-spacing: .12em; border: none; background: #a3202b; color: #fffdf6;
+      padding: .55rem 1.8rem; cursor: pointer; border-radius: 3px; margin-top: .55rem;
+      transition: background .15s ease, transform .1s ease;
+    }
+    .buy:hover:not(:disabled) { background: #b8272f; }
+    .buy:active:not(:disabled) { transform: translateY(1px); }
+    .buy:disabled { background: #b4ab99; color: #efeadb; cursor: default; }
+
+    .msg { min-height: 1.2rem; font-size: 12px; letter-spacing: .04em; color: #6c6555; text-shadow: 0 1px 0 rgba(255,255,255,.4); }
+    .msg.err { color: #a3202b; }
+
+    /* the back chevron injected by nav.js sits on a light page here */
+    .dash-back { color: #6c6555 !important; }
+  </style>
+</head>
+<body class="has-top-nav">
+  <div class="desk"></div>
+  <div class="wrap">
+    <div class="card" id="card">
+      <h1>ANGELCOIN INSTANT</h1>
+      <div class="sub">match three &middot; one card, one chance</div>
+      <div class="panels" id="panels">
+        <div class="panel"><span class="sym"></span><canvas></canvas></div>
+        <div class="panel"><span class="sym"></span><canvas></canvas></div>
+        <div class="panel"><span class="sym"></span><canvas></canvas></div>
+      </div>
+      <div class="ft">
+        <div class="pays">
+          <div class="k">this card pays</div>
+          <div class="v" id="result">&mdash;</div>
+          <div class="serial" id="serial">NO. 0000-0000 &nbsp; VOID IF DEFACED</div>
+        </div>
+        <div class="paytable" id="paytable"></div>
+        <div class="right">
+          <div class="k" id="balline">balance &mdash;</div>
+          <button class="buy" id="buy" disabled>&mdash;</button>
+        </div>
+      </div>
+    </div>
+    <div class="msg" id="msg">Scratch a card to play. Match three symbols to win.</div>
+  </div>
+
+  <script>
+    const panels = [...document.querySelectorAll("#panels .panel")];
+    const buyBtn = document.getElementById("buy");
+    const resultEl = document.getElementById("result");
+    const balEl = document.getElementById("balline");
+    const msgEl = document.getElementById("msg");
+    const serialEl = document.getElementById("serial");
+    const paytableEl = document.getElementById("paytable");
+
+    let stake = 10;
+    let canPlay = false;
+    let unlimited = false;
+    let active = false;          // a card is bought and being scratched
+    let pending = null;          // { panels, won, net, balance, canPlay }
+    let revealedCount = 0;
+
+    const fmt = (n) => (n == null ? "∞" : Number(n).toLocaleString());
+    function setMsg(t, err) { msgEl.textContent = t; msgEl.classList.toggle("err", !!err); }
+
+    function setBuyLabel() {
+      if (active) { buyBtn.textContent = "scratch to reveal"; buyBtn.disabled = true; return; }
+      buyBtn.textContent = "scratch a card · " + stake;
+      buyBtn.disabled = !canPlay;
+    }
+
+    function renderPaytable(pt) {
+      paytableEl.innerHTML = pt.map((r) =>
+        r.combo + " <b>" + r.pays + "</b>").join("<br>");
+    }
+
+    // ---- the foil overlay: fill each canvas so the symbol is hidden ----
+    function sizeCanvas(cv) {
+      const r = cv.getBoundingClientRect();
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      cv.width = Math.max(1, Math.round(r.width * dpr));
+      cv.height = Math.max(1, Math.round(r.height * dpr));
+      cv._dpr = dpr;
+    }
+    function drawFoil(cv) {
+      sizeCanvas(cv);
+      const ctx = cv.getContext("2d");
+      ctx.globalCompositeOperation = "source-over";
+      const g = ctx.createLinearGradient(0, 0, cv.width, cv.height);
+      g.addColorStop(0, "#b9bcc2"); g.addColorStop(0.4, "#8d9299");
+      g.addColorStop(0.62, "#cfd3d8"); g.addColorStop(1, "#7e838a");
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, cv.width, cv.height);
+      // hatch sheen
+      ctx.strokeStyle = "rgba(255,255,255,.28)"; ctx.lineWidth = 1.5 * cv._dpr;
+      for (let x = -cv.height; x < cv.width; x += 6 * cv._dpr) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x + cv.height, cv.height); ctx.stroke();
+      }
+      ctx.fillStyle = "rgba(43,40,32,.5)";
+      ctx.font = (11 * cv._dpr) + "px 'IBM Plex Mono', monospace";
+      ctx.textAlign = "center";
+      ctx.fillText("SCRATCH", cv.width / 2, cv.height / 2 + 4 * cv._dpr);
+      cv.classList.remove("gone");
+      cv._done = false;
+    }
+
+    // destination-out subtracts the SOURCE alpha from what is already there, so the
+    // erase brush must be fully opaque. drawFoil leaves fillStyle/strokeStyle
+    // translucent (the hatch and label), so set them opaque here or the foil only
+    // ever half-lifts and a panel never clears.
+    function scratchAt(cv, x, y) {
+      const ctx = cv.getContext("2d");
+      const dpr = cv._dpr || 1;
+      ctx.globalCompositeOperation = "destination-out";
+      ctx.fillStyle = "#000";
+      ctx.beginPath();
+      ctx.arc(x * dpr, y * dpr, 17 * dpr, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    function scratchLine(cv, x0, y0, x1, y1) {
+      const ctx = cv.getContext("2d");
+      const dpr = cv._dpr || 1;
+      ctx.globalCompositeOperation = "destination-out";
+      ctx.strokeStyle = "#000";
+      ctx.lineWidth = 34 * dpr; ctx.lineCap = "round"; ctx.lineJoin = "round";
+      ctx.beginPath();
+      ctx.moveTo(x0 * dpr, y0 * dpr); ctx.lineTo(x1 * dpr, y1 * dpr); ctx.stroke();
+    }
+    function clearedFraction(cv) {
+      const ctx = cv.getContext("2d");
+      const data = ctx.getImageData(0, 0, cv.width, cv.height).data;
+      let clear = 0, total = 0;
+      // sample every 16th pixel for speed
+      for (let i = 3; i < data.length; i += 4 * 16) { total++; if (data[i] === 0) clear++; }
+      return total ? clear / total : 1;
+    }
+    function revealPanel(panel, cv) {
+      if (cv._done) return;
+      cv._done = true;
+      cv.classList.add("gone");
+      revealedCount++;
+      if (revealedCount >= panels.length) finish();
+    }
+
+    // ---- wiring the scratch gestures ----
+    panels.forEach((panel) => {
+      const cv = panel.querySelector("canvas");
+      let drawing = false, last = null;
+      const local = (e) => {
+        const r = cv.getBoundingClientRect();
+        return { x: e.clientX - r.left, y: e.clientY - r.top };
+      };
+      const start = (e) => {
+        if (!active || cv._done) return;
+        drawing = true; last = local(e); scratchAt(cv, last.x, last.y);
+        cv.setPointerCapture && cv.setPointerCapture(e.pointerId);
+        e.preventDefault();
+      };
+      const move = (e) => {
+        if (!drawing || cv._done) return;
+        const p = local(e);
+        scratchLine(cv, last.x, last.y, p.x, p.y);
+        last = p;
+        // once past halfway, rub the rest off for them
+        if (clearedFraction(cv) > 0.5) revealPanel(panel, cv);
+        e.preventDefault();
+      };
+      const end = () => {
+        if (!drawing) return;
+        drawing = false;
+        if (!cv._done && clearedFraction(cv) > 0.4) revealPanel(panel, cv);
+      };
+      cv.addEventListener("pointerdown", start);
+      cv.addEventListener("pointermove", move);
+      cv.addEventListener("pointerup", end);
+      cv.addEventListener("pointercancel", end);
+    });
+
+    // ---- buying and settling ----
+    async function buy() {
+      if (active || !canPlay) return;
+      buyBtn.disabled = true;
+      setMsg("Printing your card…");
+      try {
+        const res = await fetch("/api/slots/buy", { method: "POST" });
+        const data = await res.json();
+        if (!res.ok) { setMsg(data.error || "Could not buy a card.", true); setBuyLabel(); return; }
+        startCard(data);
+      } catch (e) {
+        setMsg("Network trouble. Try again.", true); setBuyLabel();
+      }
+    }
+
+    function startCard(data) {
+      pending = data;
+      active = true;
+      revealedCount = 0;
+      resultEl.textContent = "—";
+      resultEl.classList.remove("hit");
+      serialEl.textContent = "NO. " + serial() + " · VOID IF DEFACED";
+      panels.forEach((panel, i) => {
+        panel.classList.remove("win");
+        panel.querySelector(".sym").textContent = data.panels[i];
+        drawFoil(panel.querySelector("canvas"));
+      });
+      setBuyLabel();
+      setMsg("Scratch all three panels.");
+    }
+
+    function finish() {
+      active = false;
+      const d = pending; pending = null;
+      if (d.balance !== undefined) balEl.textContent = "balance " + fmt(d.balance);
+      // highlight only the symbols that form the winning match, so a losing card
+      // (three different symbols) reads as neutral rather than all-red.
+      const counts = {};
+      d.panels.forEach((s) => { counts[s] = (counts[s] || 0) + 1; });
+      panels.forEach((panel, i) => {
+        panel.classList.toggle("win", d.won > 0 && counts[d.panels[i]] >= 2);
+      });
+      if (d.won > 0) {
+        resultEl.textContent = fmt(d.won) + " ANGELCOINS";
+        resultEl.classList.add("hit");
+        const net = d.net;
+        setMsg(net > 0 ? ("A winner. Up " + fmt(net) + " on the card.")
+                       : ("Paid " + fmt(d.won) + ", but the card cost " + stake + "."));
+      } else {
+        resultEl.textContent = "NO WIN";
+        resultEl.classList.remove("hit");
+        setMsg("No match. Try another card.");
+      }
+      canPlay = d.canPlay;
+      setBuyLabel();
+      if (!canPlay && !unlimited) setMsg("Not enough angelcoins for another card.", true);
+    }
+
+    function serial() {
+      const a = String(Math.floor(1000 + Math.random() * 8999));
+      const b = String(Math.floor(1000 + Math.random() * 8999));
+      return a + "-" + b;
+    }
+
+    buyBtn.addEventListener("click", buy);
+
+    // ---- boot ----
+    window.siteMe()
+      .then((me) => {
+        if (!me || (!me.username && !me.guest)) { window.location.href = "/"; return; }
+        return fetch("/api/slots").then((r) => r.json());
+      })
+      .then((state) => {
+        if (!state) return;
+        stake = state.stake;
+        canPlay = state.canPlay;
+        unlimited = state.unlimited;
+        balEl.textContent = "balance " + fmt(state.balance);
+        renderPaytable(state.paytable);
+        setBuyLabel();
+        if (!canPlay && !unlimited) {
+          setMsg("You need at least " + stake + " angelcoins to play. Win some on the wheel.", true);
+        }
+      })
+      .catch(() => { window.location.href = "/"; });
+  </script>
+  <script src="/nav.js" defer></script>
+  <script src="/updatecheck.js" defer></script>
+  <script src="/console.js" defer></script>
+  <script src="/ambience.js" defer></script>
+</body>
+</html>

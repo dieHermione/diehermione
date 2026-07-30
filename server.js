@@ -1414,6 +1414,118 @@ app.post("/api/wheel/spin", (req, res) => {
   });
 });
 
+// --- slots: the ANGELCOIN INSTANT scratch card ---
+// One card, three panels, match three. A card costs SLOTS_STAKE angelcoins; the
+// outcome is rolled here (never on the client) so the panels the player scratches
+// off only reveal a result that is already decided. Symbols carry a three-of-a-
+// kind payout; any two matching pays a small consolation. Weights are out of 1000
+// and tuned to about a 76% return, so it is a gentle coin sink with wins frequent
+// enough to be worth the scratch.
+const SLOTS_STAKE = 10;
+const SLOTS_SYMBOLS = ["✦", "☾", "✚", "❖", "♛", "♣"];
+const SLOTS_TWO_PAYS = 6;
+// outcome table: three-of-a-kind tiers, any-two, and lose. weights sum to 1000.
+const SLOTS_OUTCOMES = [
+  { kind: "three", symbol: "✦", pays: 250, weight: 2 },
+  { kind: "three", symbol: "☾", pays: 120, weight: 5 },
+  { kind: "three", symbol: "✚", pays: 80, weight: 10 },
+  { kind: "three", symbol: "❖", pays: 60, weight: 18 },
+  { kind: "three", symbol: "♛", pays: 40, weight: 30 },
+  { kind: "three", symbol: "♣", pays: 25, weight: 55 },
+  { kind: "two", pays: SLOTS_TWO_PAYS, weight: 340 },
+  { kind: "lose", pays: 0, weight: 540 },
+];
+const SLOTS_PAYTABLE = SLOTS_SYMBOLS
+  .map((s) => {
+    const o = SLOTS_OUTCOMES.find((x) => x.kind === "three" && x.symbol === s);
+    return { combo: s + " " + s + " " + s, pays: o ? o.pays : 0 };
+  })
+  .concat([{ combo: "any two", pays: SLOTS_TWO_PAYS }]);
+
+function pickSlotsOutcome() {
+  const total = SLOTS_OUTCOMES.reduce((sum, o) => sum + o.weight, 0);
+  let roll = Math.random() * total;
+  for (const o of SLOTS_OUTCOMES) {
+    roll -= o.weight;
+    if (roll < 0) return o;
+  }
+  return SLOTS_OUTCOMES[SLOTS_OUTCOMES.length - 1];
+}
+
+// Turn a decided outcome into the three panel symbols the player will uncover.
+function slotsPanels(outcome) {
+  const other = (not) => {
+    const pool = SLOTS_SYMBOLS.filter((s) => !not.includes(s));
+    return pool[Math.floor(Math.random() * pool.length)];
+  };
+  if (outcome.kind === "three") return [outcome.symbol, outcome.symbol, outcome.symbol];
+  if (outcome.kind === "two") {
+    const pair = SLOTS_SYMBOLS[Math.floor(Math.random() * SLOTS_SYMBOLS.length)];
+    const odd = other([pair]);
+    // place the odd one out in a random position
+    const cells = [pair, pair, odd];
+    for (let i = cells.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [cells[i], cells[j]] = [cells[j], cells[i]];
+    }
+    return cells;
+  }
+  // lose: three distinct symbols, so no two match
+  const a = SLOTS_SYMBOLS[Math.floor(Math.random() * SLOTS_SYMBOLS.length)];
+  const b = other([a]);
+  const c = other([a, b]);
+  return [a, b, c];
+}
+
+function slotsState(user, key) {
+  const unlimited = key === "hermione";
+  return {
+    stake: SLOTS_STAKE,
+    paytable: SLOTS_PAYTABLE,
+    balance: unlimited ? null : user.angelcoins || 0,
+    unlimited,
+    canPlay: unlimited || (user.angelcoins || 0) >= SLOTS_STAKE,
+  };
+}
+
+app.get("/api/slots", requirePlayer, (req, res) => {
+  const users = loadUsers();
+  const key = req.session.username && req.session.username.toLowerCase();
+  const user = (key && users[key]) || {};
+  res.json(slotsState(user, key));
+});
+
+app.post("/api/slots/buy", requirePlayer, (req, res) => {
+  const users = loadUsers();
+  const key = req.session.username && req.session.username.toLowerCase();
+  const user = key && users[key];
+  const unlimited = key === "hermione";
+  // A guest or Visitor has no wallet to stake from, so they cannot play for keeps.
+  if (!user || (!unlimited && rankFor(user, key) === "Visitor")) {
+    return res.status(403).json({ error: "This game needs an account with angelcoins." });
+  }
+  const balance = user.angelcoins || 0;
+  if (!unlimited && balance < SLOTS_STAKE) {
+    return res.status(402).json({ error: "Not enough angelcoins for a card." });
+  }
+  const outcome = pickSlotsOutcome();
+  const panels = slotsPanels(outcome);
+  const won = outcome.pays;
+  if (!unlimited) {
+    user.angelcoins = balance - SLOTS_STAKE + won;
+    saveUsers(users);
+  }
+  res.json({
+    ok: true,
+    panels,
+    won,
+    stake: SLOTS_STAKE,
+    net: won - SLOTS_STAKE,
+    balance: unlimited ? null : user.angelcoins,
+    canPlay: unlimited || (user.angelcoins || 0) >= SLOTS_STAKE,
+  });
+});
+
 // The dailies panel and its API were removed: the objectives were busywork.
 // The payouts they used to advertise (the Snake completion bonus, the
 // Devotion 50-line reward) still fire; they are just no longer presented
@@ -2251,6 +2363,10 @@ app.get("/skillcheck", requirePlayer, (req, res) => {
 
 app.get("/wheel", requirePlayer, (req, res) => {
   res.sendFile(path.join(__dirname, "views", "wheel.html"));
+});
+
+app.get("/slots", requirePlayer, (req, res) => {
+  res.sendFile(path.join(__dirname, "views", "slots.html"));
 });
 
 app.get("/writing", requirePlayer, (req, res) => {
