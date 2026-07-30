@@ -113,7 +113,7 @@
 </style>
   <script src="/audio.js"></script>
 </head>
-<body>
+<body class="has-top-nav">
   <div id="app">
     <!-- opening / boot -->
     <section class="screen on md" id="boot">
@@ -264,12 +264,13 @@
     for (let i = 0; i < size; i++) d[i] = Math.random() * 2 - 1;
     const n = a.createBufferSource(); n.buffer = buf; n.loop = true;
     ambFilt = a.createBiquadFilter(); ambFilt.type = "lowpass"; ambFilt.frequency.value = 360;
-    ambGain = a.createGain(); ambGain.gain.value = DEVOTION ? 0.012 : 0.022;
+    ambGain = a.createGain(); ambGain.gain.value = DEVOTION ? 0.012 : 0.0055;
     n.connect(ambFilt).connect(ambGain).connect(a.destination); n.start();
   }
   function setAmbience(t) {
     if (!ambGain || !actx) return; const now = actx.currentTime;
-    ambGain.gain.setTargetAtTime((DEVOTION ? 0.012 : 0.022) + t * 0.05, now, 0.3);
+    // Penance static is a quarter of what it was; the ramp scales with it
+    ambGain.gain.setTargetAtTime((DEVOTION ? 0.012 : 0.0055) + t * 0.0125, now, 0.3);
     ambFilt.frequency.setTargetAtTime(360 + t * 2800, now, 0.3);
     ambFilt.type = t > 0.6 ? "highpass" : "lowpass";
   }
@@ -508,6 +509,9 @@
 
   runBoot();
 </script>
+  <!-- nav.js gates the back button on siteMe(), so me.js has to come with it -->
+  <script src="/me.js"></script>
+  <script src="/nav.js" defer></script>
   <script src="/console.js" defer></script>
   <script src="/ambience.js" defer></script>
 </body>

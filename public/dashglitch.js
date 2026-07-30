@@ -44,7 +44,10 @@ window.DashGlitch = (function () {
       // retry set
       ".dg-drop{background:#000;}",
       ".dg-bloom{inset:0;backdrop-filter:brightness(2.6) saturate(0.4);-webkit-backdrop-filter:brightness(2.6) saturate(0.4);}",
-      ".dg-crush{inset:0;backdrop-filter:contrast(3.4) brightness(0.8);-webkit-backdrop-filter:contrast(3.4) brightness(0.8);}",
+      // crushed to a dark red, the same #c11208 Penance corrupts toward
+      ".dg-crush{inset:0;background:rgba(193,18,8,0.30);mix-blend-mode:multiply;" +
+        "backdrop-filter:contrast(3.4) brightness(0.62) sepia(0.5) hue-rotate(-28deg) saturate(4);" +
+        "-webkit-backdrop-filter:contrast(3.4) brightness(0.62) sepia(0.5) hue-rotate(-28deg) saturate(4);}",
       ".dg-comb{inset:0;background:repeating-linear-gradient(0deg,rgba(0,0,0,0.85) 0 2px,transparent 2px 4px);}",
       ".dg-edge{inset:0;box-shadow:inset 0 0 22vh 10vh rgba(0,0,0,0.92),inset 0 0 8vh 2vh rgba(255,42,26,0.55);}",
     ].join("");
@@ -232,14 +235,36 @@ window.DashGlitch = (function () {
   }
   function glitch() { play(Math.floor(Math.random() * EFFECTS.length)); }
 
+  /* Tear bands run on their own clock as well as being one of the six. They
+     are the cheapest and least disruptive of the set, so they can happen often
+     without the page feeling broken; the full glitch rotation stays rare. */
+  var TEAR_MIN = 9000, TEAR_MAX = 34000;
+  var tearTimer = null;
+  // same setup play() does: without ensure() there is no layer to draw into
+  function playTear() {
+    if (!enabled) return 0;
+    ensure();
+    var total = tearBands() || 900;
+    at(total, clearFx);
+    return total;
+  }
+  function scheduleTear() {
+    tearTimer = setTimeout(function () {
+      if (enabled && !document.hidden) playTear();
+      scheduleTear();
+    }, rnd(TEAR_MIN, TEAR_MAX));
+  }
+  function startTears() { if (!enabled || tearTimer) return; scheduleTear(); }
+  function stopTears() { clearTimeout(tearTimer); tearTimer = null; }
+
   function scheduleNext() {
     randomTimer = setTimeout(function () {
       if (!document.hidden) glitch();
       scheduleNext();
     }, rnd(MIN_GAP, MAX_GAP));
   }
-  function startRandom() { if (!enabled || randomTimer) return; scheduleNext(); }
-  function stopRandom() { clearTimeout(randomTimer); randomTimer = null; }
+  function startRandom() { if (!enabled || randomTimer) return; scheduleNext(); startTears(); }
+  function stopRandom() { clearTimeout(randomTimer); randomTimer = null; stopTears(); }
   function setEnabled(v) {
     enabled = Boolean(v);
     if (!enabled) { stopRandom(); clearFx(); }
@@ -249,6 +274,7 @@ window.DashGlitch = (function () {
     play: play, glitch: glitch,
     // the console codes name this directly
     burst: function () { return play(0); },
+    tear: playTear, startTears: startTears, stopTears: stopTears,
     startRandom: startRandom, stopRandom: stopRandom, setEnabled: setEnabled,
     effects: EFFECTS.map(function (e) { return e.name; }),
   };
