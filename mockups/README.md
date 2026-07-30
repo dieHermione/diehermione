@@ -34,8 +34,8 @@ That writes `mockups/out/<batch>-<NN>.png` at 1500x900. One batch only:
 | Wheel | `wheel.html` | 5 | **CHOSEN: 5** (unrolled cylinder), and **built** |
 | Game select | `select.html` | 4 | **CHOSEN: 2** (paste-up), and **built** |
 | Chess | `chess.html` | 10 | **CHOSEN: 9** (ink wash), and **built** |
-| T9 phone | `t9.html` | 6 | **awaiting a pick** (fourth attempt, drawn in SVG) |
-| Slots | `slots.html` | 6 | **awaiting a pick** (fourth attempt, six different ideas) |
+| T9 phone | `t9.html` | 6 | **awaiting a pick** (fifth attempt, the actual RAZR V3) |
+| Slots | `slots.html` | 6 | **CHOSEN: 5** (scratch card), not built yet |
 | Dummy Parse | `dummyparse.html` | 20 | **CHOSEN: 10** (big ability cards) + the 11 timeline, both **built** |
 | Skill check | *(not kept)* | n/a | **CHOSEN: 1** (pure dial), and **built** |
 | Summary | *(not kept)* | n/a | **CHOSEN: 1** (source + entry), and **built** |
@@ -102,3 +102,22 @@ caption saying what its idea is, bottom left.
 
 The general lesson: when a batch comes back as "the same design again", the
 thing to change is the organising idea, not the palette.
+
+## T9, fifth attempt
+
+Four batches were rejected. The first three repainted a rectangle with a key
+grid; the fourth changed the silhouettes but still invented the phones. The
+fifth was drawn from a reference photo of a Motorola RAZR V3 and copies it:
+the real proportions, the speaker slots and two screws above the wordmark, the
+black screen surround, the chrome hinge with its raised centre catch, the flat
+etched plate where keys are separated by engraved hairlines rather than gaps,
+the number left with the letters small to its right, the round D-pad with a
+green centre and four icon soft keys at its corners, and the slotted speaker in
+the chin.
+
+All six are that same phone, differing only in presentation: flat on, at an
+angle, closed, the three colourways it shipped in, and its blue
+electroluminescent backlight at night.
+
+**Lesson for any future batch of physical objects: work from a reference.**
+Three of the four rejections were spent inventing.
