@@ -44,10 +44,10 @@ window.DashGlitch = (function () {
       // retry set
       ".dg-drop{background:#000;}",
       ".dg-bloom{inset:0;backdrop-filter:brightness(2.6) saturate(0.4);-webkit-backdrop-filter:brightness(2.6) saturate(0.4);}",
-      // crushed to a dark red, the same #c11208 Penance corrupts toward
-      ".dg-crush{inset:0;background:rgba(193,18,8,0.30);mix-blend-mode:multiply;" +
-        "backdrop-filter:contrast(3.4) brightness(0.62) sepia(0.5) hue-rotate(-28deg) saturate(4);" +
-        "-webkit-backdrop-filter:contrast(3.4) brightness(0.62) sepia(0.5) hue-rotate(-28deg) saturate(4);}",
+      // crush draws nothing of its own: it swaps the palette variables, so only
+      // things coloured from them (text, rules, borders, buttons) change and
+      // the background is untouched. See crush() below.
+      ".dg-crush{display:none}",
       ".dg-comb{inset:0;background:repeating-linear-gradient(0deg,rgba(0,0,0,0.85) 0 2px,transparent 2px 4px);}",
       ".dg-edge{inset:0;box-shadow:inset 0 0 22vh 10vh rgba(0,0,0,0.92),inset 0 0 8vh 2vh rgba(255,42,26,0.55);}",
     ].join("");
@@ -170,13 +170,22 @@ window.DashGlitch = (function () {
     return t + 320;
   }
 
-  // 4. crush: contrast slams, the midtones disappear and come back
+  /* 4. crush: the palette slams to a dark red and back, several times.
+     This deliberately does NOT use an overlay. An overlay, backdrop-filter or
+     otherwise, cannot avoid the background; swapping the variables the page
+     draws its text, rules and buttons from leaves the background alone. */
+  var CRUSH = {
+    "--c": "#c11208", "--bright": "#ff6a5c", "--dim": "#7a1109",
+    "--dim2": "#4a0d06", "--accent": "#ff3b2f", "--glow": "rgba(193,18,8,0.45)",
+  };
   function crush() {
-    var v = el("dg-crush");
-    v.dataset.peak = "1";
     var t = 0, hits = Math.round(rnd(3, 6));
-    for (var i = 0; i < hits; i++) { flick(v, t, rnd(50, 110)); t += rnd(90, 260); }
-    sweep(v, t);
+    for (var i = 0; i < hits; i++) {
+      at(t, function () { applyVars(CRUSH); });
+      at(t + rnd(50, 110), restoreVars);
+      t += rnd(90, 260);
+    }
+    at(t + 40, restoreVars);
     return t + 300;
   }
 

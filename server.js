@@ -956,22 +956,50 @@ const KIND_LABEL = { event: "a historical event", object: "a real-world object",
 const summaryCache = new Map();
 const SUMMARY_TTL = 6 * 60 * 60 * 1000;
 
+// The REST summary endpoint returns one paragraph, which is already a summary
+// and leaves nothing to do. This pulls the article body instead, through the
+// action API's plain-text extract, and trims it to something a person will
+// actually read in one sitting.
+const SUMMARY_MAX_CHARS = 4200;
+
+function trimToParagraph(text, max) {
+  if (text.length <= max) return text;
+  const cut = text.slice(0, max);
+  // prefer a paragraph break, then a sentence, then wherever we are
+  const para = cut.lastIndexOf("\n\n");
+  if (para > max * 0.5) return cut.slice(0, para).trim();
+  const stop = Math.max(cut.lastIndexOf(". "), cut.lastIndexOf(".\n"));
+  return (stop > max * 0.5 ? cut.slice(0, stop + 1) : cut).trim();
+}
+
 async function fetchTopic(title) {
   const hit = summaryCache.get(title);
   if (hit && Date.now() - hit.at < SUMMARY_TTL) return hit.data;
-  const url = "https://en.wikipedia.org/api/rest_v1/page/summary/" + encodeURIComponent(title.replace(/ /g, "_"));
+  const url = "https://en.wikipedia.org/w/api.php?" + new URLSearchParams({
+    action: "query", prop: "extracts", explaintext: "1", redirects: "1",
+    format: "json", formatversion: "2", titles: title,
+  });
   const res = await fetch(url, {
     headers: { "accept": "application/json", "user-agent": "angeldomme/0.2 (summary game)" },
-    signal: AbortSignal.timeout(6000),
+    signal: AbortSignal.timeout(8000),
   });
   if (!res.ok) throw new Error("wikipedia " + res.status);
   const j = await res.json();
+  const page = j && j.query && j.query.pages && j.query.pages[0];
+  if (!page || page.missing) throw new Error("no page");
+  // drop the section headings the plain-text extract leaves in
+  const body = String(page.extract || "")
+    .split("\n")
+    .filter((line) => !/^=+ .* =+$/.test(line.trim()))
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
   const data = {
-    title: j.title || title,
-    text: String(j.extract || "").trim(),
-    url: (j.content_urls && j.content_urls.desktop && j.content_urls.desktop.page) || "",
+    title: page.title || title,
+    text: trimToParagraph(body, SUMMARY_MAX_CHARS),
+    url: "https://en.wikipedia.org/wiki/" + encodeURIComponent(String(page.title || title).replace(/ /g, "_")),
   };
-  if (!data.text) throw new Error("no extract");
+  if (data.text.split(/\s+/).length < 60) throw new Error("too short to summarise");
   summaryCache.set(title, { at: Date.now(), data });
   return data;
 }
@@ -991,7 +1019,7 @@ app.get("/api/summary/topic", async (req, res) => {
       const data = await fetchTopic(title);
       const words = data.text.split(/\s+/).filter(Boolean).length;
       // the limit scales with the source, rounded to something readable
-      const limit = Math.max(25, Math.min(60, Math.round(words / 4 / 5) * 5));
+      const limit = Math.max(35, Math.min(90, Math.round(words / 12 / 5) * 5));
       return res.json({ kind, kindLabel: KIND_LABEL[kind], ...data, sourceWords: words, limit });
     } catch (e) { /* try the next one */ }
   }
