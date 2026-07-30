@@ -54,11 +54,9 @@
     }
     .p .glyph { font-family: "Major Mono Display", monospace; font-size: 4.6rem;
       line-height: 1; color: var(--dim); opacity: .5; }
-    .p .nm { font-size: 1.35rem; color: var(--bright); letter-spacing: .04em; line-height: 1.1; }
-    .p .tg { font-size: 9px; letter-spacing: .24em; color: var(--dim);
-      text-transform: uppercase; margin-top: .3rem; }
-    .p .sb { font-size: 10px; color: var(--dim2); margin-top: .15rem; }
-    .p .strip { position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--dim2); }
+    .p .nm { position: relative; z-index: 2; font-size: 1.5rem; color: var(--bright);
+      letter-spacing: .04em; line-height: 1.1; }
+    .p .glyph { position: relative; z-index: 2; }
     .p .num { position: absolute; bottom: .7rem; right: .8rem; font-size: 9px;
       letter-spacing: .24em; color: var(--dim2); }
     .p .tape { position: absolute; top: -9px; left: 50%;
@@ -67,32 +65,118 @@
     .p::after { content: ""; position: absolute; inset: 0; pointer-events: none;
       background: repeating-linear-gradient(0deg, rgba(255,255,255,.02) 0 1px, transparent 1px 4px); }
 
-    /* each poster wears the skin of the game it opens */
-    .p.red { border-color: rgba(193,18,8,.55); background: linear-gradient(180deg, rgba(255,20,10,.09), #000 55%); }
-    .p.red .strip { background: var(--red); box-shadow: 0 0 16px rgba(255,59,47,.7); }
-    .p.red .glyph { color: var(--red); } .p.red .nm { color: #ffe9e6; }
-    .p.red .tg { color: rgba(255,150,140,.75); }
-    .p.blue { border-color: rgba(120,190,255,.4); background: linear-gradient(180deg, rgba(120,190,255,.08), #000 55%); }
-    .p.blue .strip { background: var(--accent); box-shadow: 0 0 16px var(--glow); }
-    .p.blue .glyph { color: var(--accent); }
-    .p.green { border-color: rgba(120,200,150,.4); background: linear-gradient(180deg, rgba(90,200,140,.07), #000 55%); }
-    .p.green .strip { background: #6fe0a6; box-shadow: 0 0 16px rgba(111,224,166,.5); }
-    .p.green .glyph { color: #6fe0a6; } .p.green .nm { color: #e6fff2; }
-    .p.green .tg { color: rgba(150,220,185,.7); }
-    /* chess is rice paper now, so its poster is too */
-    .p.paper { border-color: #9c9384; background: linear-gradient(180deg, #efe9dd, #ddd6c6 60%); }
-    .p.paper .strip { background: #a4322a; box-shadow: 0 0 14px rgba(164,50,42,.5); }
-    .p.paper .glyph { color: #a4322a; opacity: .55; }
-    .p.paper .nm { color: #2b2723; } .p.paper .tg { color: #6d6459; }
-    .p.paper .sb { color: #857b6f; } .p.paper .num { color: #9c9384; }
-    .p.paper .tape { background: rgba(60,50,40,.10); border-color: rgba(60,50,40,.18); }
-    .p.paper::after { background: none; }
+    /* Each poster is drawn rather than tinted: one motif per game, built from
+       gradients on a single .art layer, so no two read as the same card. */
+    .p .art { position: absolute; inset: 0; pointer-events: none; }
+
+    /* snake: the trail it leaves */
+    .art-trail { border-color: rgba(193,18,8,.5); background: #12070a; }
+    .art-trail .art {
+      background:
+        radial-gradient(circle 4px at 74% 22%, #ff3b2f 0 100%, transparent 0),
+        repeating-conic-gradient(from 0deg at 42% 58%, transparent 0 12deg, rgba(255,59,47,.5) 12deg 13deg);
+      -webkit-mask-image: radial-gradient(circle at 42% 58%, #000 0 42%, transparent 62%);
+      mask-image: radial-gradient(circle at 42% 58%, #000 0 42%, transparent 62%);
+    }
+    .art-trail .glyph { color: #ff3b2f; }
+
+    /* penance: line after line, breaking down */
+    .art-lines { border-color: rgba(193,18,8,.5); background: #100608; }
+    .art-lines .art {
+      background: repeating-linear-gradient(0deg,
+        rgba(255,59,47,.32) 0 1px, transparent 1px 9px);
+      -webkit-mask-image: linear-gradient(180deg, #000 20%, transparent 92%);
+      mask-image: linear-gradient(180deg, #000 20%, transparent 92%);
+    }
+    .art-lines .glyph { color: #ff3b2f; }
+
+    /* devotion: the same lines, neat and blue */
+    .art-ruled { border-color: rgba(120,190,255,.4); background: #050b12; }
+    .art-ruled .art {
+      background: repeating-linear-gradient(0deg, rgba(143,208,255,.22) 0 1px, transparent 1px 14px),
+                  linear-gradient(90deg, rgba(143,208,255,.35) 0 1px, transparent 1px);
+      background-position: 0 0, 2.2rem 0;
+    }
+
+    /* deathroll: falling pips */
+    .art-pips { border-color: rgba(193,18,8,.5); background: #0f0709; }
+    .art-pips .art {
+      background:
+        radial-gradient(circle 5px at 24% 18%, rgba(255,59,47,.9) 0 100%, transparent 0),
+        radial-gradient(circle 5px at 62% 34%, rgba(255,59,47,.7) 0 100%, transparent 0),
+        radial-gradient(circle 5px at 36% 52%, rgba(255,59,47,.5) 0 100%, transparent 0),
+        radial-gradient(circle 5px at 78% 66%, rgba(255,59,47,.35) 0 100%, transparent 0),
+        radial-gradient(circle 5px at 48% 80%, rgba(255,59,47,.2) 0 100%, transparent 0);
+    }
+    .art-pips .glyph { color: #ff3b2f; }
+
+    /* elysium: growth rings */
+    .art-rings { border-color: rgba(120,200,150,.42); background: #05100b; }
+    .art-rings .art {
+      background: repeating-radial-gradient(circle at 50% 74%,
+        transparent 0 9px, rgba(111,224,166,.28) 9px 10px);
+    }
+    .art-rings .glyph { color: #6fe0a6; } .art-rings .nm { color: #e6fff2; }
+
+    /* wheel: the faces fanning past */
+    .art-fan { border-color: rgba(120,190,255,.4); background: #050a11; }
+    .art-fan .art {
+      background: repeating-linear-gradient(90deg,
+        rgba(143,208,255,.30) 0 1px, transparent 1px 15px);
+      -webkit-mask-image: linear-gradient(90deg, transparent, #000 45%, transparent);
+      mask-image: linear-gradient(90deg, transparent, #000 45%, transparent);
+    }
+
+    /* chess: rice paper, and a corner of the board */
+    .art-board { border-color: #9c9384; background: linear-gradient(180deg, #efe9dd, #ddd6c6 62%); }
+    .art-board .art {
+      background:
+        repeating-conic-gradient(#c3bbab 0 25%, transparent 0 50%) 0 0 / 34px 34px;
+      -webkit-mask-image: linear-gradient(215deg, #000 0 32%, transparent 46%);
+      mask-image: linear-gradient(215deg, #000 0 32%, transparent 46%);
+    }
+    .art-board .glyph { color: #a4322a; opacity: .6; }
+    .art-board .nm { color: #2b2723; } .art-board .num { color: #9c9384; }
+    .art-board .tape { background: rgba(60,50,40,.1); border-color: rgba(60,50,40,.18); }
+
+    /* dummy parse: a damage breakdown */
+    .art-bars { border-color: rgba(120,190,255,.4); background: #04080e; }
+    .art-bars .art {
+      background:
+        linear-gradient(90deg, rgba(255,59,47,.30) 0 82%, transparent 82%) 0 58% / 100% 9px,
+        linear-gradient(90deg, rgba(255,59,47,.24) 0 61%, transparent 61%) 0 68% / 100% 9px,
+        linear-gradient(90deg, rgba(255,59,47,.18) 0 44%, transparent 44%) 0 78% / 100% 9px,
+        linear-gradient(90deg, rgba(255,59,47,.12) 0 27%, transparent 27%) 0 88% / 100% 9px;
+      background-repeat: no-repeat;
+    }
+
+    /* skill check: the dial and its good zone */
+    .art-dial { border-color: rgba(193,18,8,.5); background: #0d0709; }
+    .art-dial .art {
+      background:
+        conic-gradient(from 210deg at 50% 56%, #ff3b2f 0 42deg, transparent 42deg),
+        radial-gradient(circle at 50% 56%, transparent 0 52px, rgba(174,227,255,.22) 52px 54px, transparent 54px);
+      -webkit-mask-image: radial-gradient(circle at 50% 56%, transparent 0 48px, #000 48px 60px, transparent 60px);
+      mask-image: radial-gradient(circle at 50% 56%, transparent 0 48px, #000 48px 60px, transparent 60px);
+    }
+    .art-dial .glyph { color: #ff3b2f; }
+
+    /* summary: a justified column with a rule under the limit */
+    .art-column { border-color: rgba(120,190,255,.4); background: #050a10; }
+    .art-column .art {
+      background:
+        repeating-linear-gradient(0deg, rgba(174,227,255,.20) 0 2px, transparent 2px 8px),
+        linear-gradient(90deg, transparent 0 62%, rgba(255,59,47,.55) 62% 63%, transparent 63%);
+      -webkit-mask-image: linear-gradient(180deg, transparent 12%, #000 20% 62%, transparent 74%);
+      mask-image: linear-gradient(180deg, transparent 12%, #000 20% 62%, transparent 74%);
+    }
 
     .p.sel { z-index: 20; box-shadow: 0 0 40px var(--glow), 0 18px 40px rgba(0,0,0,.85);
       outline: 1px solid var(--c); outline-offset: 3px; }
-    .p.red.sel { box-shadow: 0 0 40px rgba(255,59,47,.4), 0 18px 40px rgba(0,0,0,.85); outline-color: var(--red); }
-    .p.green.sel { box-shadow: 0 0 40px rgba(111,224,166,.35), 0 18px 40px rgba(0,0,0,.85); outline-color: #6fe0a6; }
-    .p.paper.sel { box-shadow: 0 0 40px rgba(164,50,42,.35), 0 18px 40px rgba(0,0,0,.85); outline-color: #a4322a; }
+    .art-trail.sel, .art-lines.sel, .art-pips.sel, .art-dial.sel {
+      box-shadow: 0 0 40px rgba(255,59,47,.4), 0 18px 40px rgba(0,0,0,.85); outline-color: var(--red); }
+    .art-rings.sel { box-shadow: 0 0 40px rgba(111,224,166,.35), 0 18px 40px rgba(0,0,0,.85); outline-color: #6fe0a6; }
+    .art-board.sel { box-shadow: 0 0 40px rgba(164,50,42,.35), 0 18px 40px rgba(0,0,0,.85); outline-color: #a4322a; }
     .p:focus-visible { outline: 2px solid var(--bright); outline-offset: 3px; }
 
     /* a locked poster is pasted over, not removed */
@@ -133,27 +217,17 @@
     /* One poster per game, pasted at a slight angle. The grid is computed from
        the list rather than written out, so adding a game here is one line. */
     const GAMES = [
-      { n: "snake",      t: "red",   g: "S", href: "/snake",
-        tag: "chase the food",     sub: "it runs when you get close" },
-      { n: "penance",    t: "red",   g: "P", href: "/writing",
-        tag: "lines, for punishment", sub: "the screen corrupts as you slip" },
-      { n: "devotion",   t: "blue",  g: "D", href: "/writing?mode=devotion",
-        tag: "lines, for mantras",  sub: "the gentle sibling" },
-      { n: "deathroll",  t: "red",   g: "X", href: "/deathroll",
-        tag: "two-player dice",     sub: "first to roll a 1 loses", multi: true },
+      { n: "snake",       g: "S", href: "/snake",              art: "trail" },
+      { n: "penance",     g: "P", href: "/writing",            art: "lines" },
+      { n: "devotion",    g: "D", href: "/writing?mode=devotion", art: "ruled" },
+      { n: "deathroll",   g: "X", href: "/deathroll",          art: "pips",  multi: true },
       // Elysium is requireLogin, not requirePlayer: a tree has to be remembered
-      { n: "elysium",    t: "green", g: "E", href: "/elysium",
-        tag: "care for a tree",     sub: "slow, and it remembers", multi: true },
-      { n: "wheel",      t: "blue",  g: "W", href: "/wheel",
-        tag: "one turn a day",      sub: "pays angelcoins" },
-      { n: "chess",      t: "paper", g: "C", href: "/chess",
-        tag: "against hermione",    sub: "she plays black", multi: true },
-      { n: "dummy parse", t: "blue", g: "M", href: "/dummyparse",
-        tag: "a damage sim",        sub: "stats, rotation, leaderboard" },
-      { n: "skill check", t: "red",  g: "K", href: "/skillcheck",
-        tag: "hit it in the red",   sub: "early and late both fail" },
-      { n: "summary",    t: "blue",  g: "R", href: "/summary",
-        tag: "say it back, shorter", sub: "a real article, a word limit" },
+      { n: "elysium",     g: "E", href: "/elysium",            art: "rings", multi: true },
+      { n: "wheel",       g: "W", href: "/wheel",              art: "fan" },
+      { n: "chess",       g: "C", href: "/chess",              art: "board", multi: true },
+      { n: "dummy parse", g: "M", href: "/dummyparse",         art: "bars" },
+      { n: "skill check", g: "K", href: "/skillcheck",         art: "dial" },
+      { n: "summary",     g: "R", href: "/summary",            art: "column" },
     ];
 
     const board = document.getElementById("board");
@@ -185,7 +259,7 @@
       board.replaceChildren();
       cards = GAMES.map((g, i) => {
         const a = document.createElement("a");
-        a.className = "p " + g.t;
+        a.className = "p art-" + g.art;
         a.href = g.href;
         a.tabIndex = 0;
         // anything needing an account is pasted over for a guest
@@ -196,15 +270,13 @@
           a.setAttribute("aria-disabled", "true");
         }
         a.innerHTML =
-          '<div class="strip"></div><div class="tape"></div>' +
+          '<div class="tape"></div><div class="art"></div>' +
           '<div class="glyph"></div>' +
-          '<div><div class="nm"></div><div class="tg"></div><div class="sb"></div></div>' +
+          '<div class="nm"></div>' +
           '<div class="num">' + String(i + 1).padStart(2, "0") + "</div>" +
           (locked ? '<div class="locknote">sign in to play</div>' : "");
         a.querySelector(".glyph").textContent = g.g;
         a.querySelector(".nm").textContent = g.n;
-        a.querySelector(".tg").textContent = g.tag;
-        a.querySelector(".sb").textContent = g.sub;
         a.addEventListener("mouseenter", () => setSel(i));
         a.addEventListener("focus", () => setSel(i));
         a.addEventListener("click", (e) => { if (locked) e.preventDefault(); });
