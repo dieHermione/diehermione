@@ -4,95 +4,87 @@ Copy the block below into a fresh session.
 
 ---
 
-Hi Claude :3 New context window - this is the angeldom.me project (Railway
-auto-deploys on push to main; single Express `server.js`, JSON files on disk, no
-build step; admin identity is `hermione`).
+Hi Claude :3 New context window. This is the **angeldomme** project (the `.me` is
+part of the word, it reads "angel domme"). Railway auto-deploys on push to `main`;
+one Express `server.js`, JSON files on disk, no build step; the admin identity is
+`hermione`.
 
-**Read `HANDOFF.md` first.** The sections dated 2026-07-28 and 2026-07-29 are
-current truth; anything above them may be stale, and `README.md` + `/tech` are
-definitely stale (a docs pass is parked as *reskin the style only, do not rewrite
-the text*).
+**Read `HANDOFF.md` first** - it was rewritten on 2026-07-30 and is current, not a
+pile of layered session notes. Then `mockups/README.md` for which designs are
+chosen. `/guide` and `/tech` were also rewritten and are accurate; only
+`README.md` is still stale.
 
-**Then read `mockups/README.md`.** All design exploration lives in `mockups/` as
-parameterised single-file pages (one design per `?d=N`). They render off
-`file://` with no dev server: `open "mockups/chess.html?d=2"`. Regenerate every
-screenshot with `./mockups/capture.sh` (writes to the gitignored `mockups/out/`).
+## Before you touch anything
 
-Before coding: the test sandbox is wiped between sessions. Reseed it and run on
-:57999 - write a seed script that hashes with the repo's `node_modules/bcryptjs`,
-seed `hermione` (Princess, `sandboxpass123`) plus a couple of approved subs, a
-Visitor and one `status:"pending"` user, all needing `passwordHash`, `status`,
-`pronouns` and `createdAt`, then:
+Reseed the sandbox (it does not persist) and run it on :57999:
 
 ```
 DATA_DIR=<scratch>/sandbox PORT=57999 SESSION_SECRET=sandbox node server.js
 ```
 
-**Check for leftover servers before you trust any curl** - processes from earlier
-sessions keep running and hold :57999, so a new server dies with EADDRINUSE while
-curl still answers from stale data. Run
-`lsof -nP -iTCP:57999 -sTCP:LISTEN` and confirm the listener's `DATA_DIR` with
-`ps eww -p <pid>` first. Note that `pkill -f "PORT=57999"` kills the shell
-wrapper and leaves the node process holding the port; kill the PID from `lsof`.
+Write a seed script that hashes with the repo's own `node_modules/bcryptjs` and
+seeds `hermione` (Princess, `sandboxpass123`), two approved subs, a Visitor and one
+`status:"pending"` user, each with `passwordHash`, `status`, `pronouns` and
+`createdAt`.
 
-**Do not trust the Browser pane for layout.** It reported a 0x0 viewport for the
-whole of the last session, even after `tabs_select` and `resize_window`, and even
-when it was not hidden. DOM and JSON checks through `javascript_tool` still work,
-but every width, height and screenshot lied. Drive headless Chrome instead: the
-last session wrote a `shot.js` that talks the DevTools protocol, so it can log in,
-run arbitrary JS (click a tab, drive a parse with synthetic `KeyboardEvent`s) and
-*then* screenshot. Pair it with an untracked `public/_shot.html` that logs in and
-redirects, since `.gitignore` already covers `public/_*.html`. Both are worth
-rebuilding early; they paid for themselves several times over.
+**Check for a leftover server first.** One from an earlier session holds the port,
+your new one dies with EADDRINUSE, and curl answers from the stale data.
+`lsof -nP -iTCP:57999 -sTCP:LISTEN` and kill that PID; `pkill` only gets the shell
+wrapper and leaves node holding the socket.
 
-Other testing notes: `computer{type}` sends no keydown, so drive the typing games
-with synthetic `KeyboardEvent`s. `/writing` (Penance) and the games need a login
-or guest session, so hit `POST /api/guest` first when testing those. Only
-`server.js` changes need a restart; static files under `public/` and `views/`
-serve fresh. The repo may be edited via Replit, so pull/rebase before pushing.
-**No em dashes anywhere.**
+**Do not trust the Browser pane for layout.** It reported a 0x0 viewport for two
+entire sessions. DOM and JSON checks through `javascript_tool` are fine; every
+width, height and screenshot lied. Rebuild these two straight away, they pay for
+themselves within the hour:
 
-## What I need from you first
+- `scratchpad/shot.js` - drives headless Chrome over the DevTools protocol:
+  navigate, run arbitrary JS (click a tab, drive a game with synthetic
+  `KeyboardEvent`s, catch an animation mid-frame), then screenshot. Signature
+  `node shot.js <url> <out.png> [w] [h] ["<js>"] [settleBefore] [settleAfter]`.
+  `settleBefore` must outlast the login redirect or the eval is discarded with its
+  context.
+- `public/_shot.html` - logs in and redirects so authenticated pages can be shot.
+  `?u=seraph&p=testtest123&go=/chess`, or `?u=guest`. `.gitignore` already covers
+  `public/_*.html`.
 
-Pick a design per batch and I will build them. Awaiting a decision on the three
-third attempts:
+Only `server.js` changes need a restart. **No em dashes anywhere.** Push after each
+chunk of work rather than batching, and pull/rebase first: the repo may be edited
+via Replit.
 
-- **Chess** - 10 options. The terminal restriction is lifted for this batch, so
-  they are ten different material worlds (marble gallery, Victorian parlour, art
-  deco, brutalist concrete, the site's own Cirrus sky, stained glass, newspaper
-  column, neon arcade, ink wash, porcelain boudoir). All ten keep Hermione's
-  strike/rewind controls in a block that is never rendered for the opponent.
-- **T9 phone** - 6 options, each a specific real handset (Razr V3, Nokia-style
-  brick, Y2K gloss flip, slider, joystick candybar, rugged site phone).
-- **Slots** - 6 options, terminal restriction also lifted (Vegas cabinet, antique
-  fruit machine, pachislot, Cirrus, five-reel reliquary, gacha capsule).
+## What I want, in this order
 
-Already chosen and **built**: **Profile 10** (man page) and **Dummy Parse 10**
-(big ability cards) with the **11** rotation timeline as a tab.
-Already chosen, **not built yet**: **Wheel 5** (unrolled cylinder), **Game select
-2** (paste-up), **Skill check 1** (pure dial), **Summary 1** (source + entry).
-The last two came from a file that bundled four minigames together; that file is
-deleted and those games must stay separate.
+**1. Dummy Parse.** The biggest piece, all of it outstanding:
+- The timer starts on the **first damage**, not on Pull, so buffs can be pre-cast.
+- The leaderboard needs full detail, not just dps and total.
+- **Melody is replaced by Whitefire**: a channelled damaging ability, cancellable
+  with Escape. Casting **Smite** has a 20% chance to grant *Embracing Divinity*,
+  which boosts Whitefire's damage by 300%. Fully channelling Whitefire while it is
+  up applies *Holy Precision*, boosting the next two Smites by 200%.
+- Turn the abilities into **visual icons** carrying the keybind, with the
+  description on mouseover.
+- Whitefire's button glows while Embracing Divinity is up; Smite's glows while
+  Holy Precision is up.
+- Rework the rotation tab visually.
 
-## Also outstanding
+**2. Slots.** Build it. Design **5** is chosen: the printed scratch card
+(`mockups/slots.html?d=5`). Uses angelcoins. Symbols are still placeholder glyphs.
 
-- **Four picked designs are still unbuilt**: wheel, game select, skill check and
-  summary. Skill check and summary are new games with no page yet.
-- The **secret console codes** are placeholders (`her eyes`, `static`, `bleed`,
-  `collapse`, `quiet`, `listen`). The real codes still need inventing. `wing
-  add_points <user> <n>` works and is admin-gated; more `wing` commands were
-  planned.
-- **Photosensitivity has a first-visit gap**: the login page runs before we know
-  who the visitor is, so it trusts a flag cached in localStorage from the last
-  signed-in visit. A flagged account is unprotected on the very first visit from
-  a new browser. There is also no way to change the answer after registering.
-- **Elysium audio is per-visit**: a local unmute lasts the visit but does not
-  survive a reload, because the site-wide setting reseeds on open. That matches
-  the brief but is worth confirming.
-- **Hover sounds ride the Typing channel**, since the settings panel only has
-  three audio categories. Easy to split out.
-- `nav.js` still carries dead `buildNav()` and `applyGuestNav()` from the removed
-  pill nav; neither is called.
-- **Railway can lag badly.** One commit took ~90s and the next ~14 minutes. A
-  restarted server on the old image looks like a failed build but may just be
-  slow, so verify with a static-file marker before concluding anything.
+**3. Mockups: 5 decrypt animations**, themed as a command-line PC startup.
+
+**4. Mockups: 15 dashboards**, same terminal theme as now.
+
+## Things worth knowing before you start
+
+- Dailies, both daily bonuses, the tithe, tasks and the guestbook are all **gone**.
+  Do not reinstate them by accident.
+- Every game is reached from `/games`; the dashboard only links to the wall.
+- Console commands are prefixed **`pray`**, not `wing`.
+- Every page header reads `angelOS v0.2`. `ANGELDOM` is gone and should stay gone.
+- Chess is the pattern for anything only Hermione can do: the code lives in a file
+  behind a route that **404s** for everyone else so the other player's page has no
+  trace of it, *and* the endpoints check `isAdmin` on every call. The split is
+  about not spoiling the game; the server check is the actual boundary.
+- If I reject a mockup batch as "the same design again", change the organising
+  idea rather than the palette. If it is a physical object, **ask me for a
+  reference photo** instead of guessing: T9 took five attempts and the first four
+  were spent inventing a phone.
