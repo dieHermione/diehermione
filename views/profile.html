@@ -86,6 +86,17 @@
     .sec .body { padding-left: 2.2rem; color: var(--c); font-size: 13px; line-height: 1.95; }
     .sec .body b { color: var(--bright); font-weight: 400; }
     .sec .body .d { color: var(--dim); }
+    /* onboarding answers block (Hermione-only) */
+    #p-onboarding .onb-flag { color: var(--err); border: 1px solid var(--err); padding: 0.3rem 0.6rem; margin-bottom: 0.7rem; font-size: 12px; letter-spacing: 0.05em; display: inline-block; }
+    #p-onboarding .onb-grp { margin-bottom: 0.7rem; }
+    #p-onboarding .oh { color: var(--dim); font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; line-height: 1.4; }
+    #p-onboarding .ogrid { display: flex; flex-wrap: wrap; gap: 0.15rem 1.1rem; }
+    #p-onboarding .ol { display: inline-flex; gap: 0.4rem; font-size: 12.5px; line-height: 1.7; }
+    #p-onboarding .ok { color: var(--c); }
+    #p-onboarding .ov { color: var(--bright); }
+    #p-onboarding .ov.warn, #p-onboarding .ov.no { color: var(--err); }
+    #p-onboarding .ov.yes { color: #7dffb0; }
+    #p-onboarding .oline { color: var(--c); white-space: pre-wrap; font-size: 12.5px; line-height: 1.7; }
 
     /* NAME carries the picture, sized to sit on the same baseline block */
     .nameline { display: flex; align-items: center; gap: 1rem; }
@@ -225,6 +236,11 @@
         <div class="opt" id="p-counters"></div>
       </div>
 
+      <div class="sec" id="onb-sec" hidden>
+        <h4>ONBOARDING</h4>
+        <div class="body" id="p-onboarding"></div>
+      </div>
+
       <div class="sec">
         <h4>SEE ALSO</h4>
         <div class="also" id="also">
@@ -322,6 +338,37 @@
       ];
     }
 
+    // The disciple onboarding answers, laid out man-page style. Only ever reached
+    // when the server includes them, which it does for Hermione alone.
+    const ONB_KINKS = { feet: "Feet", tasks: "Tasks / Chores", degradation: "Degradation",
+      humiliation: "Humiliation", masochism: "Masochism", exhibitionism: "Exhibitionism",
+      worship: "Worship", petplay: "Petplay" };
+    const ONB_PUN = { lines_physical: "Lines (physical)", lines_typing: "Lines (typing)",
+      voice_memos: "Voice memos", ignoring: "Ignoring", onsite_games_hard: "On-site games (hard)" };
+    const ONB_PET = { dog: "Dog / doggy / puppy", good: "Good boy / girl", doll: "Doll",
+      pet: "Pet", bitch: "Bitch", loser: "Loser", dummy: "Dummy" };
+    function renderOnboarding(o, flag) {
+      const esc = (s) => String(s == null ? "" : s).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+      const item = (label, valueHtml) => `<span class="ol"><span class="ok">${esc(label)}</span><span class="ov-wrap">${valueHtml}</span></span>`;
+      const kinks = Object.keys(ONB_KINKS).map((k) => {
+        const v = (o.kinks || {})[k]; const warn = (k === "feet" || k === "tasks") && v < 4;
+        return item(ONB_KINKS[k], `<span class="ov ${warn ? "warn" : ""}">${v}/5</span>`);
+      }).join("");
+      const pun = Object.keys(ONB_PUN).map((k) => {
+        const v = (o.punishments || {})[k];
+        return item(ONB_PUN[k], `<span class="ov ${v === "acceptable" ? "yes" : "no"}">${v === "acceptable" ? "acceptable" : "hard no"}</span>`);
+      }).join("");
+      const pet = Object.keys(ONB_PET).map((k) => {
+        const v = (o.petnames || {})[k];
+        return item(ONB_PET[k], `<span class="ov ${v === "like" ? "yes" : "no"}">${esc(v)}</span>`);
+      }).join("");
+      return (flag ? `<div class="onb-flag">&#9873; flagged &mdash; Feet or Tasks/Chores rated below 4</div>` : "") +
+        `<div class="onb-grp"><div class="oh">interests</div><div class="ogrid">${kinks}</div></div>` +
+        `<div class="onb-grp"><div class="oh">limits</div><div class="oline">${o.limits ? esc(o.limits) : '<span class="d">none given</span>'}</div></div>` +
+        `<div class="onb-grp"><div class="oh">punishments</div><div class="ogrid">${pun}</div></div>` +
+        `<div class="onb-grp"><div class="oh">petnames</div><div class="ogrid">${pet}${o.petnamesOther ? item("Other", `<span class="ov">${esc(o.petnamesOther)}</span>`) : ""}</div></div>`;
+    }
+
     function renderProfile() {
       const name = profile.username;
       const manref = name.toUpperCase() + "(1)";
@@ -373,6 +420,16 @@
         val.className = "t";
         val.textContent = v;
         counters.append(key, val);
+      }
+
+      // onboarding answers: the server only sends these to Hermione
+      const onbSec = document.getElementById("onb-sec");
+      if (profile.onboarding) {
+        onbSec.hidden = false;
+        document.getElementById("p-onboarding").innerHTML =
+          renderOnboarding(profile.onboarding, profile.onboardingFlag);
+      } else {
+        onbSec.hidden = true;
       }
 
       // nothing left that is conditional on who is being looked at

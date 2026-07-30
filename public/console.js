@@ -148,6 +148,17 @@
         return Promise.resolve("opening " + name + ".");
       },
     },
+    open: {
+      usage: "pray open <username>",
+      run: function (args) {
+        var user = String(args[0] || "").trim();
+        if (!user) return Promise.resolve(PRAY.open.usage);
+        setTimeout(function () {
+          window.location.href = "/profile?user=" + encodeURIComponent(user);
+        }, 220);
+        return Promise.resolve("opening " + user + "'s profile.");
+      },
+    },
     quit: {
       usage: "pray quit",
       run: function () {

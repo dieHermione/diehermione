@@ -544,6 +544,9 @@ app.get("/api/profile/:username", (req, res) => {
       },
       createdAt: user.createdAt,
       canEdit: canEditProfile(req, key),
+      // the disciple's onboarding answers, only ever sent to Hermione
+      onboarding: isAdmin(req) ? (user.onboarding || null) : undefined,
+      onboardingFlag: isAdmin(req) ? !!user.onboardingFlag : undefined,
     },
   });
 });
