@@ -273,6 +273,7 @@
       const [x, y] = polar(cx, cy, r + 4, deg);
       c.needleEl.setAttribute("x2", x);
       c.needleEl.setAttribute("y2", y);
+      c.deg = deg;   // remember where the needle is actually drawn, for judging
     }
 
     /* ---------- a single check ---------- */
@@ -413,7 +414,9 @@
       if (!pressedOne) return;
       e.preventDefault();
       if (!check.key.match(e)) { resolve(false, "wrong key"); return; }
-      const deg = needleDeg();
+      // judge the needle where it is DRAWN (what the player sees), not a freshly
+      // recomputed live angle that runs ahead of the frame under any jank
+      const deg = (check.deg != null) ? check.deg : needleDeg();
       const inZone = deg >= check.zoneFrom && deg <= check.zoneFrom + check.zoneSize;
       resolve(inZone, inZone ? "hit" : deg < check.zoneFrom ? "early" : "late");
     });
