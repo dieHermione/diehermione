@@ -439,6 +439,16 @@ function readClues(state) {
     "Steady. Leave it be.",
     "It has what it needs.",
     "Growing, slowly, the way it should.",
+    "The bark is dry and firm.",
+    "It drank well overnight.",
+    "The roots are quiet under the soil.",
+    "The canopy sits easy in the light.",
+    "A good day. Nothing to tend.",
+    "It looks content.",
+    "The leaves hold their colour.",
+    "Birds have been at the higher branches.",
+    "The wood is sound to the touch.",
+    "Resting, and none the worse for it.",
   ];
   let headline = SETTLED[Math.floor((state.tick || 0) / 6) % SETTLED.length];
   const worst = [...state.diseases].sort((a, b) => b.stage - a.stage)[0];

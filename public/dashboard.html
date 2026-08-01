@@ -1055,12 +1055,7 @@
       document.getElementById("clk-date").textContent = new Intl.DateTimeFormat("en-US", {
         timeZone: "America/New_York", weekday: "long", month: "long", day: "numeric",
       }).format(now);
-      // countdown to the next 6am Eastern reset
-      const { h, m, s } = easternParts(now);
-      let rem = (RESET_HOUR * 3600 - (h * 3600 + m * 60 + s) + 86400) % 86400;
-      if (rem === 0) rem = 86400;
-      const rh = Math.floor(rem / 3600), rm = Math.floor((rem % 3600) / 60);
-      document.getElementById("clk-reset").textContent = "Daily reset in " + rh + "h " + rm + "m";
+      // (daily reset countdown removed: there are no dailies anymore)
     }
     tickClock();
     setInterval(tickClock, 1000);
