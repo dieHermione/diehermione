@@ -164,7 +164,8 @@
   .bf.gold{border-color:var(--gold);color:var(--gold);background:rgba(255,210,122,.1)}
 
   /* ---- the card deck: an icon per ability with its numbers shown inline ---- */
-  .cards{display:grid;grid-template-columns:repeat(2,1fr);gap:.5rem;height:214px;overflow-y:auto;
+  .cards{display:grid;grid-template-columns:repeat(2,1fr);gap:.5rem;height:clamp(320px,52vh,480px);
+    align-content:start;overflow-y:auto;
     flex-shrink:0;scrollbar-width:thin;scrollbar-color:rgba(120,190,255,.4) transparent;padding-right:.2rem}
   .cards::-webkit-scrollbar{width:7px}.cards::-webkit-scrollbar-thumb{background:rgba(120,190,255,.35);border-radius:999px}
   .card{border:1px solid var(--dim2);position:relative;overflow:hidden;cursor:pointer;
