@@ -419,6 +419,18 @@
       resolve(inZone, inZone ? "hit" : deg < check.zoneFrom ? "early" : "late");
     });
 
+    // Back button: mid-run it returns to the settings screen; from settings it goes home.
+    window.__navBack = function () {
+      if (!midEl.hidden) { window.location.href = "/dashboard"; return true; }
+      clearTimeout(gapTimer);
+      cancelAnimationFrame(raf);
+      if (check) check.done = true;
+      check = null; run = null;
+      wrap.hidden = true;
+      midEl.hidden = false;
+      return true;
+    };
+
     window.siteMe().catch(() => (window.location.href = "/"));
   </script>
   <script src="/nav.js" defer></script>

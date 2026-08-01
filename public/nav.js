@@ -167,6 +167,12 @@
     var back = el("a", { className: "dash-back", href: onWall ? "/dashboard" : "/games", "aria-label": label, title: label });
     back.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>';
     back.hidden = true;
+    // A game can intercept "back": while a run is going it returns you to the
+    // game's own settings screen, and from that screen it sends you home. If the
+    // hook returns true it handled it and the default navigation is suppressed.
+    back.addEventListener("click", function (e) {
+      if (typeof window.__navBack === "function" && window.__navBack()) e.preventDefault();
+    });
     document.body.insertBefore(back, document.body.firstChild);
     // gate: bounce signed-out visitors, and send a guest back to the guest page
     window.siteMe()

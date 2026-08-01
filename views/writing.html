@@ -535,6 +535,22 @@
     if ($("play").classList.contains("on")) e.preventDefault();
   }));
 
+  // Back button: from the play/results screen it returns to the selection screen;
+  // from selection (or boot) it goes to the dashboard.
+  window.__navBack = function () {
+    const atStart = $("select").classList.contains("on") || $("boot").classList.contains("on");
+    if (atStart) { window.location.href = "/dashboard"; return true; }
+    state.done = true;
+    if (glitchTimer) { clearInterval(glitchTimer); glitchTimer = null; }
+    $("play").classList.remove("glitch");
+    show("select");
+    document.body.style.setProperty("--c", PURE.c);
+    document.body.style.setProperty("--dim", PURE.dim);
+    $("scan").classList.remove("heavy");
+    refreshBegin();
+    return true;
+  };
+
   runBoot();
 </script>
   <!-- nav.js gates the back button on siteMe(), so me.js has to come with it -->
