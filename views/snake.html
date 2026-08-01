@@ -138,8 +138,13 @@
     // The food escaping is the game's whole tease, so it gets a subliminal of
     // its own: a single brief blip rather than the dashboard's full strobe.
     // It fires on every escape, with no rate limit.
-    const TAUNTS = ["keep trying", "so close", "not for you", "again", "almost",
-                    "try harder", "not yet", "reach", "further", "good servant"];
+    // Snake's own taunt pool, separate from the site-wide subliminals and
+    // Hermione-editable from the admin panel. Falls back to these defaults.
+    let TAUNTS = ["keep trying", "so close", "not for you", "again", "almost",
+                  "try harder", "not yet", "reach", "further", "good servant"];
+    fetch("/api/snake-subliminal").then((r) => (r.ok ? r.json() : null)).then((d) => {
+      if (d && Array.isArray(d.messages) && d.messages.length) TAUNTS = d.messages;
+    }).catch(() => {});
     function taunt() {
       if (window.Subliminal) window.Subliminal.blip(TAUNTS[Math.floor(Math.random() * TAUNTS.length)]);
     }

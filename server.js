@@ -22,6 +22,7 @@ const ELYSIUM_FILE = path.join(process.env.DATA_DIR || __dirname, "elysium.json"
 const DEVOTION_FILE = path.join(process.env.DATA_DIR || __dirname, "devotion.json");
 const PENANCE_FILE = path.join(process.env.DATA_DIR || __dirname, "penance.json");
 const SUBLIMINAL_FILE = path.join(process.env.DATA_DIR || __dirname, "subliminal.json");
+const SNAKE_SUB_FILE = path.join(process.env.DATA_DIR || __dirname, "snakesubliminal.json");
 const DECRYPT_FILE = path.join(process.env.DATA_DIR || __dirname, "decrypt.json");
 const PARSE_FILE = path.join(process.env.DATA_DIR || __dirname, "parses.json");
 const SUMMARY_FILE = path.join(process.env.DATA_DIR || __dirname, "summaries.json");
@@ -2262,6 +2263,34 @@ app.post("/api/subliminal", (req, res) => {
   const messages = incoming.map((m) => String(m).trim().slice(0, 80)).filter(Boolean).slice(0, 100);
   if (!messages.length) return res.status(400).json({ error: "Add at least one message." });
   saveSubliminal({ messages });
+  res.json({ ok: true, messages });
+});
+
+// --- snake taunts: a separate, smaller pool blipped when the food escapes ---
+// Distinct from the site-wide subliminals; Hermione edits these on their own.
+const SNAKE_SUB_DEFAULTS = {
+  messages: ["keep trying", "so close", "not for you", "again", "almost",
+             "try harder", "not yet", "reach", "further", "good servant"],
+};
+function loadSnakeSub() {
+  try {
+    const data = JSON.parse(fs.readFileSync(SNAKE_SUB_FILE, "utf8"));
+    if (data && Array.isArray(data.messages) && data.messages.length) return data;
+  } catch {}
+  return JSON.parse(JSON.stringify(SNAKE_SUB_DEFAULTS));
+}
+app.get("/api/snake-subliminal", (req, res) => {
+  if (!req.session.username && !req.session.guest) return res.status(401).json({ error: "Not logged in." });
+  res.json({ messages: loadSnakeSub().messages });
+});
+app.post("/api/snake-subliminal", (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });
+  const incoming = Array.isArray(req.body.messages) ? req.body.messages : null;
+  if (!incoming) return res.status(400).json({ error: "messages must be an array." });
+  const messages = incoming.map((m) => String(m).trim().slice(0, 80)).filter(Boolean).slice(0, 100);
+  if (!messages.length) return res.status(400).json({ error: "Add at least one message." });
+  fs.writeFileSync(SNAKE_SUB_FILE, JSON.stringify({ messages }, null, 2));
   res.json({ ok: true, messages });
 });
 

@@ -908,6 +908,24 @@
       });
       subBar.append(subSave); subSec.append(subBar); wrap.append(foldable(subSec));
 
+      // snake taunts: a separate pool blipped when the food escapes in Snake
+      const snkSec = document.createElement("div"); snkSec.className = "adm-sec";
+      snkSec.append(mk("h3", "Snake taunts"));
+      const snkHint = mk("p", "One per row. Blipped when the food escapes in Snake. Separate from the site-wide subliminals.");
+      snkHint.className = "adm-empty"; snkSec.append(snkHint);
+      const snkTa = document.createElement("textarea"); snkTa.rows = 6;
+      try { const sr = await fetch("/api/snake-subliminal"); if (sr.ok) snkTa.value = ((await sr.json()).messages || []).join("\n"); } catch (e) {}
+      const snkBox = document.createElement("div"); snkBox.className = "adm-preset"; snkBox.append(snkTa); snkSec.append(snkBox);
+      const snkBar = document.createElement("div"); snkBar.className = "adm-preset-bar";
+      const snkSave = mkChip("Save taunts", "", async () => {
+        const messages = snkTa.value.split("\n").map((s) => s.trim()).filter(Boolean);
+        snkSave.textContent = "Saving...";
+        const r = await fetch("/api/snake-subliminal", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ messages }) });
+        snkSave.textContent = r.ok ? "Saved" : "Error";
+        setTimeout(() => { snkSave.textContent = "Save taunts"; }, 1500);
+      });
+      snkBar.append(snkSave); snkSec.append(snkBar); wrap.append(foldable(snkSec));
+
       // decrypt lines: what the login animation resolves into, one per row
       const decSec = document.createElement("div"); decSec.className = "adm-sec";
       decSec.append(mk("h3", "Decrypt lines"));
