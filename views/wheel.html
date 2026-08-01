@@ -99,7 +99,7 @@
   <div class="cy">
     <div class="chd">
       <span>angelOS v0.2</span>
-      <span id="rule">ONE TURN PER DAY</span>
+      <span id="rule"></span>
       <span>VAULT <b id="vault">…</b> &#10022;</span>
     </div>
 
@@ -142,10 +142,7 @@
         const v = document.createElement("div");
         v.className = "v";
         v.textContent = seg.label;
-        const u = document.createElement("div");
-        u.className = "u";
-        u.textContent = "angelcoins";
-        el.append(v, u);
+        el.append(v);
         bandEl.append(el);
         return el;
       });
@@ -227,17 +224,15 @@
       turning = false;
       document.getElementById("vault").textContent = Number(data.angelcoins).toLocaleString();
       showPay("+" + data.won + " ✦", "");
-      // the turn is spent, so the button stops being a dead control and
-      // becomes the way out
-      if (!data.canSpin) {
-        document.getElementById("rule").textContent = "COME BACK TOMORROW";
-        becomeLeave();
-      }
+      // once there are no spins left (accounts, after their turn) the button
+      // stops being a dead control and becomes the way back. Guests keep spinning.
+      if (!data.canSpin) becomeReturn();
+      else turnBtn.disabled = false;
     }
 
-    function becomeLeave() {
+    function becomeReturn() {
       turnBtn.disabled = false;
-      turnBtn.textContent = "leave";
+      turnBtn.textContent = "return";
       turnBtn.dataset.leave = "1";
     }
 
@@ -272,8 +267,7 @@
         buildFaces();
         document.getElementById("odds").innerHTML = oddsLine();
         turnBtn.disabled = !state.canSpin;
-        if (!state.canSpin) becomeLeave();
-        if (!state.canSpin) document.getElementById("rule").textContent = "COME BACK TOMORROW";
+        if (!state.canSpin) becomeReturn();
         showPay(null, state.canSpin ? "READY" : "SPUN TODAY");
       })
       .catch(() => (window.location.href = "/"));

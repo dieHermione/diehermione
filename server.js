@@ -1466,8 +1466,16 @@ function wheelState(user, key) {
   };
 }
 
+// Guests get the wheel too, with unlimited spins: they keep no currency, and
+// the game is only for testers, so there is nothing to gate.
+const wheelSegmentsPayload = () => WHEEL_SEGMENTS.map((s) => ({ label: s.label, coins: s.coins, weight: s.weight }));
+
 app.get("/api/wheel", (req, res) => {
-  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  if (!playerId(req)) return res.status(401).json({ error: "Not logged in." });
+  if (req.session.guest && !req.session.username) {
+    touchGuest(req);
+    return res.json({ segments: wheelSegmentsPayload(), unlimited: true, spunToday: false, canSpin: true });
+  }
   const users = loadUsers();
   const key = req.session.username.toLowerCase();
   const user = users[key];
@@ -1476,7 +1484,14 @@ app.get("/api/wheel", (req, res) => {
 });
 
 app.post("/api/wheel/spin", (req, res) => {
-  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  if (!playerId(req)) return res.status(401).json({ error: "Not logged in." });
+  // guest: unlimited spins, no persistence, no currency kept
+  if (req.session.guest && !req.session.username) {
+    touchGuest(req);
+    const gi = pickSegment();
+    const gp = WHEEL_SEGMENTS[gi];
+    return res.json({ ok: true, index: gi, label: gp.label, won: gp.coins, angelcoins: 0, canSpin: true });
+  }
   const users = loadUsers();
   const key = req.session.username.toLowerCase();
   const user = users[key];
