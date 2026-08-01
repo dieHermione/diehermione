@@ -111,8 +111,8 @@
 <body class="has-top-nav">
   <div id="dialwrap" hidden><svg id="dial"></svg><div class="key" id="dialkey"></div></div>
 
-  <div class="rd tl">REPETITION<b id="r-rep">0 / 0</b></div>
-  <div class="rd tr">STREAK<b id="r-streak">0</b></div>
+  <div class="rd tl">IN A ROW<b id="r-rep">0 / 0</b></div>
+  <div class="rd tr">BEST<b id="r-streak">0</b></div>
   <div class="rd bl">FAILED<b id="r-failed">0</b></div>
   <div class="rd br">MODE<b id="r-mode">easy</b></div>
   <div class="pips" id="pips"></div>
@@ -121,7 +121,9 @@
     <div class="setup">
       <h1>SKILL CHECK</h1>
       <p>A needle runs around the dial. Press the key drawn in the middle while the
-        needle is inside the red arc. Too early, too late, or not at all: all three fail.</p>
+        needle is inside the red arc. Too early, too late, or not at all: all three fail.
+        Land your chosen number of checks <b>in a row</b> to finish; a single miss sends
+        the count back to zero.</p>
 
       <div class="opt">
         <span class="ok">KEYS</span>
@@ -146,7 +148,7 @@
           <button class="chip" type="button" data-reps="40">40</button>
         </div>
       </div>
-      <p class="hint" id="hint">Easy keeps whatever you have made. Demanding sends you back to zero on any failure.</p>
+      <p class="hint" id="hint">Demanding shrinks the good zone and speeds the needle up.</p>
 
       <p id="verdict" class="verdict"></p>
       <button class="btn" id="start" type="button">begin</button>
@@ -170,12 +172,12 @@
     let keyMode = "all";          // or "space"
 
     const GAP_MIN = 900, GAP_MAX = 10000;      // up to ten seconds, so you cannot settle
-    // half again as fast as the first pass
-    const SWEEP_MIN = 1000, SWEEP_MAX = 1733;  // ms for one trip around the dial
+    // a touch faster than before
+    const SWEEP_MIN = 850, SWEEP_MAX = 1450;   // ms for one trip around the dial
     // the needle starts at 0deg, so the zone has to begin far enough round that
     // there is time to react to it. Expressed in time, not degrees, because the
-    // sweep varies.
-    const MIN_LEAD_MS = 340;
+    // sweep varies. Larger now, so the zone opens farther ahead on average.
+    const MIN_LEAD_MS = 520;
 
     const dial = document.getElementById("dial");
     const wrap = document.getElementById("dialwrap");
@@ -246,7 +248,9 @@
       zone.setAttribute("stroke", "#ff3b2f");
       zone.setAttribute("stroke-width", "11");
       zone.setAttribute("stroke-linecap", "butt");
-      zone.setAttribute("filter", "drop-shadow(0 0 10px rgba(255,59,47,.8))");
+      // a crisp arc: a big blur made the visible red read several degrees wider
+      // than the judged bounds, so presses near the glow felt wrongly graded
+      zone.setAttribute("filter", "drop-shadow(0 0 3px rgba(255,59,47,.5))");
       dial.append(zone);
       c.zoneEl = zone;
 
@@ -283,8 +287,9 @@
       const size = Math.round(Math.min(vw, vh) * (0.30 + Math.random() * 0.26));
       const x = Math.round((vw - size) / 2 + (Math.random() - 0.5) * vw * 0.30);
       const y = Math.round((vh - size) / 2 + (Math.random() - 0.5) * vh * 0.26);
-      const zoneSize = 26 + Math.random() * 16;          // degrees of good zone
-      const sweep = SWEEP_MIN + Math.random() * (SWEEP_MAX - SWEEP_MIN);
+      const zoneSize = (mode === "demanding" ? 18 : 26) + Math.random() * (mode === "demanding" ? 12 : 16);
+      let sweep = SWEEP_MIN + Math.random() * (SWEEP_MAX - SWEEP_MIN);
+      if (mode === "demanding") sweep *= 0.85;           // faster dial on demanding
       // never on or just in front of the needle: leave at least MIN_LEAD_MS of
       // travel before the zone opens, and keep the whole arc on the dial
       const minFrom = (MIN_LEAD_MS / sweep) * 360;
@@ -323,19 +328,14 @@
       check.done = true;
       cancelAnimationFrame(raf);
       wrap.className = hit ? "good" : "bad";
-      if (hit) { run.hits++; run.streak++; sndHit(); }
+      // finishing means landing `reps` checks IN A ROW; any miss clears the run
+      if (hit) { run.streak++; run.best = Math.max(run.best, run.streak); sndHit(); }
       else { run.failed++; run.streak = 0; sndMiss(); }
-      run.results.push({ hit, why });
-      // demanding is all or nothing: one failure and the count starts again
-      if (!hit && mode === "demanding") { run.rep = -1; run.results = []; run.hits = 0; }
       paint();
       setTimeout(() => {
         wrap.hidden = true;
         check = null;
-        run.rep++;
-        if (run.rep >= reps) return finish();
-        // repaint here too, or a demanding reset keeps showing the old count
-        // until the next check happens to spawn
+        if (hit && run.streak >= reps) return finish();
         paint();
         schedule();
       }, 420);
@@ -349,21 +349,19 @@
 
     /* ---------- run control ---------- */
     function paint() {
-      document.getElementById("r-rep").textContent =
-        Math.min(Math.max(0, run.rep) + (check ? 1 : 0), reps) + " / " + reps;
-      document.getElementById("r-streak").textContent = run.streak;
+      document.getElementById("r-rep").textContent = Math.min(run.streak, reps) + " / " + reps;
+      document.getElementById("r-streak").textContent = run.best;
       document.getElementById("r-failed").textContent = run.failed;
       pipsEl.replaceChildren();
       for (let i = 0; i < reps; i++) {
         const p = document.createElement("i");
-        const r = run.results[i];
-        p.className = "pip" + (r ? (r.hit ? " hit" : " miss") : "");
+        p.className = "pip" + (i < run.streak ? " hit" : "");
         pipsEl.append(p);
       }
     }
 
     function begin() {
-      run = { rep: 0, hits: 0, failed: 0, streak: 0, results: [] };
+      run = { streak: 0, best: 0, failed: 0 };
       document.getElementById("r-mode").textContent = mode;
       midEl.hidden = true;
       paint();
@@ -374,8 +372,8 @@
       clearTimeout(gapTimer);
       midEl.hidden = false;
       const v = document.getElementById("verdict");
-      v.innerHTML = "<span class='g'>" + run.hits + " hit</span> &nbsp; " +
-        "<span class='b'>" + run.failed + " failed</span>";
+      v.innerHTML = "<span class='g'>" + reps + " in a row</span> &nbsp; " +
+        "<span class='b'>" + run.failed + " missed</span> along the way";
       document.getElementById("start").textContent = "again";
       paint();
     }
@@ -393,8 +391,8 @@
     chipGroup("opt-mode", (d) => {
       mode = d.mode;
       document.getElementById("hint").textContent = mode === "demanding"
-        ? "Demanding: one failure and the count starts again from zero."
-        : "Easy keeps whatever you have made. Demanding sends you back to zero on any failure.";
+        ? "Demanding: a smaller good zone and a faster needle."
+        : "Easy: a comfortable good zone. Demanding shrinks it and speeds up.";
     });
     chipGroup("opt-reps", (d) => { reps = Number(d.reps); });
 
