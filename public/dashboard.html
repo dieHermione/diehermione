@@ -979,7 +979,7 @@
       // documentation
       const docSec = document.createElement("div"); docSec.className = "adm-sec";
       docSec.append(mk("h3", "Documentation"));
-      [["Guide", "/guide"], ["Technical notes", "/tech"]].forEach(([t, h]) => {
+      [["Guide", "/guide"], ["Technical notes", "/tech"], ["Commands", "/commands"]].forEach(([t, h]) => {
         const a = document.createElement("a"); a.className = "adm-doc"; a.href = h; a.textContent = t; docSec.append(a);
       });
       wrap.append(foldable(docSec));

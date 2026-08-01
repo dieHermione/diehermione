@@ -340,6 +340,11 @@ app.get("/manage", (req, res) => {
   res.sendFile(path.join(__dirname, "views", "manage.html"));
 });
 
+app.get("/commands", (req, res) => {
+  if (!isAdmin(req)) return res.redirect("/dashboard");
+  res.sendFile(path.join(__dirname, "views", "commands.html"));
+});
+
 app.post("/api/admin/accounts", async (req, res) => {
   if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
   if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });

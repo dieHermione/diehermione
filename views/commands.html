@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Commands - angeldom.me</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <script src="/me.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --c:#aee3ff; --dim:#4f7ea0; --dim2:#2c4a5e; --bright:#eafaff; --accent:#8fd0ff; --line:#173040; --panel:#0a1720; }
+    html, body { height:100%; }
+    body { background:#000; color:var(--c); font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:14px; }
+    .scan { position:fixed; inset:0; z-index:200; pointer-events:none; background:repeating-linear-gradient(0deg,rgba(0,0,0,.26) 0 1px,transparent 1px 3px); }
+    .wrap { position:relative; z-index:5; max-width:820px; margin:0 auto; padding:4vh 5vw 6vh; }
+    .top { display:flex; justify-content:space-between; align-items:baseline; font-size:11px; letter-spacing:.3em; color:var(--dim); text-transform:uppercase; }
+    .top a { color:var(--dim); text-decoration:none; } .top a:hover { color:var(--c); }
+    h1 { font-size:1.4rem; color:var(--bright); letter-spacing:.06em; margin:1.4rem 0 0.3rem; font-weight:600; }
+    .sub { color:var(--dim); margin-bottom:1.6rem; line-height:1.6; }
+    h2 { font-size:.72rem; letter-spacing:.2em; text-transform:uppercase; color:var(--dim); font-weight:400; margin:1.6rem 0 .8rem; border-bottom:1px solid var(--line); padding-bottom:.3rem; }
+    .cmd { border:1px solid var(--line); background:var(--panel); padding:.7rem .9rem; margin-bottom:.6rem; }
+    .cmd .sig { color:var(--bright); }
+    .cmd .sig b { color:var(--accent); font-weight:400; }
+    .cmd .d { color:var(--dim); font-size:12px; margin-top:.35rem; line-height:1.5; }
+    .cmd .eg { color:var(--dim2); font-size:12px; margin-top:.25rem; }
+    .cmd .eg code { color:var(--c); }
+    .note { color:var(--dim2); font-size:12px; margin-top:1.4rem; line-height:1.6; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top"><span>angelOS v0.2 // console commands</span><a href="/dashboard">&larr; dashboard</a></div>
+    <h1>Console commands</h1>
+    <div class="sub">Open the console anywhere with <b>~</b> (or <b>`</b>). Every command is prefixed <b>pray</b>.
+      Up/down arrows walk your history. Admin-only commands are marked.</div>
+
+    <h2>Admin</h2>
+    <div class="cmd"><div class="sig">pray <b>points</b> &lt;username&gt; &lt;+n|-n&gt;</div>
+      <div class="d">Add or remove points. A signed number: <code>+5</code> grants, <code>-1</code> removes.</div>
+      <div class="eg">e.g. <code>pray points alice +5</code> &nbsp; <code>pray points alice -1</code></div></div>
+    <div class="cmd"><div class="sig">pray <b>set_points</b> &lt;username&gt; &lt;value&gt;</div>
+      <div class="d">Set an account's points to an exact value.</div>
+      <div class="eg">e.g. <code>pray set_points alice 100</code></div></div>
+    <div class="cmd"><div class="sig">pray <b>manage</b></div>
+      <div class="d">Open account management: create visitor/disciple accounts and review applications.</div></div>
+    <div class="cmd"><div class="sig">pray <b>open</b> &lt;username&gt;</div>
+      <div class="d">Open an account's profile.</div>
+      <div class="eg">e.g. <code>pray open alice</code></div></div>
+
+    <h2>Anyone</h2>
+    <div class="cmd"><div class="sig">pray <b>launch</b> &lt;game|page&gt;</div>
+      <div class="d">Jump to a game or page: snake, penance, devotion, wheel, deathroll, elysium, chess, parse,
+        skillcheck, summary, dashboard, profile, games.</div>
+      <div class="eg">e.g. <code>pray launch snake</code></div></div>
+    <div class="cmd"><div class="sig">pray <b>reload</b></div><div class="d">Reload the current page.</div></div>
+    <div class="cmd"><div class="sig">pray <b>quit</b></div><div class="d">Close the tab (if the browser allows it).</div></div>
+    <div class="cmd"><div class="sig">pray</div><div class="d">On its own, flashes a subliminal.</div></div>
+
+    <div class="note">This page is hand-maintained: when a new command is added to <code>public/console.js</code>,
+      add it here too.</div>
+  </div>
+  <div class="scan"></div>
+  <script>
+    window.siteMe().then(function (d) { if (!d || !d.isAdmin) window.location.href = "/dashboard"; })
+      .catch(function () { window.location.href = "/"; });
+  </script>
+  <script src="/console.js" defer></script>
+</body>
+</html>
