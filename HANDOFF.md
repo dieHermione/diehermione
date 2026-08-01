@@ -30,9 +30,12 @@ the dashboard no longer lists them individually.
 |---|---|
 | `/games` | the paste-up wall, one drawn poster per game |
 | `/profile` | the man page, `angelOS database` |
-| `/guest` | guest landing: points at the wall, names what needs an account |
+| `/guest` | redirects to `/dashboard`; guests see the full dashboard in a guest state (points/coins N/A, no Profile/admin, "Sign in or apply") |
+| `/apply` | account-less application questionnaire (was onboarding); stores to `applications.json` |
+| `/manage` | admin-only: create visitor/disciple accounts, review applications |
+| `/commands` | admin-only: the `pray` command reference |
 | `/guide`, `/tech` | the manual and the technical notes, both current |
-| `/snake` `/writing` `/wheel` `/deathroll` `/elysium` `/chess` `/dummyparse` `/skillcheck` `/summary` | the games |
+| `/snake` `/writing` `/wheel` `/deathroll` `/elysium` `/chess` `/dummyparse` `/skillcheck` `/summary` `/lottery` (`/slots` alias) | the games |
 
 ### Games
 - **Snake** free-swimming, no grid. Dies on its own tail (only reachable once
@@ -40,32 +43,49 @@ the dashboard no longer lists them individually.
 - **Penance / Devotion** (`/writing`, `?mode=devotion`). Both take editable
   preset line-sets; Penance also keeps its own-lines box. Penance corrupts, but
   the text stays legible: the scrambled-glyph effect was removed.
-- **Wheel** the unrolled cylinder. One turn a day; the spent button becomes Leave.
+- **Wheel** the unrolled cylinder. Accounts get one turn a day and the spent
+  button becomes **return**; guests get unlimited spins (they keep no currency).
+- **Lottery** (was Slots, `/lottery`, `/slots` alias) the ANGELCOIN INSTANT
+  scratch card; the scratch is deliberately fiddly (small brush, ~80% reveal).
 - **Deathroll**, **Chess**, **Elysium** need an account.
 - **Chess** is ink wash. Hermione has STRIKE and REWIND (see below).
-- **Dummy Parse** priest damage sim, three tabs, timed 30/60s modes ranked on a
-  leaderboard.
-- **Skill check** the pure dial, with a settings screen.
-- **Summary** a real Wikipedia article and a word limit.
+- **Dummy Parse** priest damage sim; **versioned** (`GAME_VERSION` in
+  dummyparse.html, leaderboard defaults to the current version). Divine Charges
+  (from Smite) feed **Discipline**; ability cards show damage/cast/cooldown inline.
+- **Skill check** the pure dial, with a settings screen. Finish = N checks **in a
+  row**; a miss resets the streak.
+- **Summary** a real Wikipedia article and a word limit (hand-picked topic list).
 
 ### Systems
 - **`audio.js`** one context, a gain node per channel (music/ambience/typing) and
   a **master** over them. One localStorage key, cross-tab via `storage`, and a
   BroadcastChannel lock so two visible tabs do not both play continuous sound.
 - **`console.js`** backtick opens it. Commands are prefixed **`pray`** (this
-  replaced `wing`): `add_points`, `set_points`, `launch <game|dashboard|profile|games>`,
-  `reload`, `quit`. Bare `pray` flashes a subliminal. Up/down walk history.
+  replaced `wing`): `points <user> <+n|-n>` (signed add), `set_points`, `manage`
+  (account admin), `open <user>` (their profile), `launch <game|page>`, `reload`,
+  `quit`. Bare `pray` flashes a subliminal. Up/down walk history. The `/commands`
+  page (admin-only, linked from the admin Documentation section) documents them
+  and must be kept in sync when a command is added.
 - **`glitch.js`** subliminal flashes. **`dashglitch.js`** screen distortion; tear
   bands also run on their own 3-11s clock, and contrast crush swaps palette
   variables rather than drawing an overlay, so it never touches the background.
 - **`boot.js`** the decrypt animation and its sound. Its lines are server-stored
   and editable in the admin panel.
-- **Editable text pools**, all following the same shape: `decrypt.json`,
-  `subliminal.json`, `devotion.json`, `penance.json`.
+- **Editable text pools**, all following the same shape (server-stored, admin
+  editor in the dashboard admin panel): `decrypt.json`, `subliminal.json`,
+  `snakesubliminal.json` (snake taunts, separate from site subliminals),
+  `devotion.json`, `penance.json`.
+- **Auth model (changed):** there is no self-serve registration. Applicants fill
+  `/apply` (Discord contact + questionnaire) -> `applications.json`. Hermione makes
+  accounts by hand in `/manage` with a dummy password and `mustChangePassword`;
+  first login forces a password change (dashboard gate), and accounts can change
+  their password anytime from their own profile. `POST /api/photosensitive` is a
+  one-way flag set from Settings.
 
 ### Removed, do not reinstate by accident
 Dailies and both daily bonuses; tithe; tasks and essays; the guestbook; the light
-/dark toggle; the top pill nav; guest as an account type.
+/dark toggle; the top pill nav; guest as an account type; **self-serve
+registration** (the login page is login-only; "apply here" -> `/apply`).
 
 ---
 
@@ -144,32 +164,61 @@ suspended) so verify the graph, not the sound.
 
 ## Outstanding
 
-### The Parse batch, requested and not started
-Largest single piece of work outstanding.
-- Timer starts on the **first damage**, not on Pull, so buffs can be pre-cast.
-- Leaderboard needs full detail rather than dps and total.
-- **Melody is replaced by Whitefire**: a channelled damaging ability, cancellable
-  with Escape. New loop: casting **Smite** has a 20% chance to grant *Embracing
-  Divinity*, which boosts Whitefire by 300%. Fully channelling Whitefire under it
-  applies *Holy Precision*, boosting the next two Smites by 200%.
-- Abilities become **visual icons** with the keybind on them and the description
-  on mouseover.
-- Whitefire's button glows under Embracing Divinity; Smite's under Holy Precision.
-- The rotation tab wants a visual rework.
+Big batches from the recent sessions (auth overhaul, Parse rework, guest
+dashboard, photosensitivity, slots->lottery, snake taunts, back-button behaviour,
+commands page, bloom) all landed and are pushed. What is left:
 
-### Also requested, not started
-- **Slots implementation.** Design **5** is chosen: the printed scratch card.
-- **Mockups: 5 decrypt animations** on a command-line-PC-startup theme.
-- **Mockups: 15 dashboards**, same terminal theme.
+### Requested, not yet done (pick up here)
+1. **Move all admin controls to their own page, off the dashboard.** The admin
+   panel is currently built into the dashboard: `buildAdminPanel()` at
+   `public/dashboard.html:694-1032`, `showResult()` + the `#pmodal` handlers just
+   below it, the `#pmodal` markup, and the `adm-*` CSS (~`dashboard.html:222+`).
+   The block is nearly self-contained (all of `mk`, `mkChip`, `foldable`,
+   `presetEditor` are local to `buildAdminPanel`); its only external deps are
+   `window.Subliminal` (glitch.js) and `window.DashGlitch` (dashglitch.js) for the
+   subliminal/screen-glitch editors, plus one `fitDash()` call to guard. Cleanest:
+   extract into a shared `public/adminpanel.js` exposing `build(container)` +
+   pmodal + injected CSS, used by a new `/admin` page. Then the dashboard's
+   Hermione branch (`dashboard.html:~500`) stops calling `buildAdminPanel()`,
+   hides the dailies/admin card, and the "Hermione" control becomes an **Admin**
+   link to `/admin`. The `/admin` route already exists and 302s today — repoint it
+   (admin-only, like `/manage` and `/commands`). Design goal: convenient and
+   legible for Hermione only, terminal theme, not visually fancy.
+2. **Game-selection cards: 10 fresh mockups** — do this LAST. Locked direction for
+   the eventual build: the **poster-wall** layout, but each poster styled like the
+   **login offline-mode game cards** (not the flat colour + name of the earlier
+   poster mockup). Render as parameterised `?d=N` files + headless Chrome, send the
+   images, delete after (see Testing + the mockup lesson below).
+3. **Onboarding contact step** (`views/onboarding.html`, `contactStep()`):
+   - Remove the "There are no accounts to make here..." paragraph.
+   - The Discord input is being treated as a login field (the browser offers saved
+     account names when it is focused). Stop that: `autocomplete="off"`, a
+     non-username `name`, `autocapitalize="off" autocorrect="off" spellcheck="false"`.
+   - Add a **back button on the contact step**. It is step 0, where `#back` is
+     disabled; let back on step 0 leave to `/` (login) instead.
+4. **Profile back button should go to the dashboard, not the games wall.** `nav.js`
+   sends every non-`/games` page's back button to `/games`. Give the profile page
+   a `window.__navBack` that navigates to `/dashboard` (same hook the skillcheck /
+   writing back buttons already use).
+5. **Confirm subliminals are OFF for photosensitive accounts** (the toggle being
+   "locked on" must mean the flashing/subliminals are disabled, not enabled).
+   Believed already correct — `applyEffects()` gates on `!photosensitive`, and
+   `applyPhotoLock()` also forces `AudioBus.setSubliminals(false)` and greys the
+   Subliminals box — but verify a flagged account never flashes on any page.
 
 ### Older open items
 - `README.md` is stale.
-- Photosensitivity has a first-visit gap: the login page reads a localStorage flag
+- Photosensitivity first-visit gap: the login page reads a localStorage flag
   because it runs before anyone is identified, so a flagged account is unprotected
-  on its first visit from a new browser. There is also no way to change the answer.
+  on its very first visit from a new browser. (There is now a one-way
+  Photosensitivity toggle in dashboard Settings, and account creation defaults the
+  flag to false; registration no longer asks the question.)
 - Hover sounds ride the *typing* channel; the settings panel only has three.
 - `nav.js` still carries dead `buildNav()` and `applyGuestNav()`.
 - Handed-in summaries are stored in `summaries.json` with no admin view.
+- Applications (`applications.json`) and Hermione-created accounts: the admin
+  reviews applications and makes accounts by hand in `/manage`; there is no
+  automated Discord check (by design).
 - Elysium: `docs/elysium-ideas.md` holds a brainstorm. Its headline point is that
   the game is short of *events*, not features.
 - Railway can lag badly (once ~14 minutes). Verify a deploy against a real marker
