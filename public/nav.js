@@ -176,7 +176,7 @@
     document.body.insertBefore(back, document.body.firstChild);
     // gate: bounce signed-out visitors, and send a guest back to the guest page
     window.siteMe()
-      .then(function (d) { back.hidden = false; if (d && d.guest) back.setAttribute("href", "/guest"); })
+      .then(function (d) { back.hidden = false; if (d && d.guest) back.setAttribute("href", "/dashboard"); })
       .catch(function () { window.location.href = "/"; });
   }
 

@@ -593,13 +593,14 @@ app.get("/api/me", (req, res) => {
 });
 
 // A guest's landing page: the games they can actually reach, nothing else.
+// The guest landing is now just the full dashboard in a guest-flavoured state.
 app.get("/guest", requirePlayer, (req, res) => {
-  if (req.session.username) return res.redirect("/dashboard");
-  touchGuest(req);
-  res.sendFile(path.join(__dirname, "views", "guest.html"));
+  if (req.session.guest) touchGuest(req);
+  res.redirect("/dashboard");
 });
 
-app.get("/dashboard", requireLogin, (req, res) => {
+app.get("/dashboard", requirePlayer, (req, res) => {
+  if (req.session.guest) touchGuest(req);
   res.sendFile(path.join(__dirname, "public", "dashboard.html"));
 });
 

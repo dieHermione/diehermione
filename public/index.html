@@ -114,7 +114,7 @@
     // Login only. Applying is a separate, account-less questionnaire at /apply;
     // Hermione reviews applications and makes accounts by hand.
     $("to-register").addEventListener("click", () => { window.location.href = "/apply"; });
-    $("to-guest").addEventListener("click", () => startGuest("/guest"));
+    $("to-guest").addEventListener("click", () => startGuest("/dashboard"));
 
     async function startGuest(path) {
       try { const r = await fetch("/api/guest", { method: "POST" }); if (r.ok) { window.location.href = path; return; } } catch (e) {}

@@ -433,6 +433,14 @@
       document.getElementById("bal-sub").textContent = "points · Angel";
       document.getElementById("coin-num").textContent = "∞";
     }
+    // Guests keep no currency, but the counters stay on the dashboard as N/A.
+    function setGuestBalance() {
+      const num = document.getElementById("bal-num");
+      num.hidden = false;
+      num.textContent = "N/A";
+      document.getElementById("bal-sub").textContent = "points · guest";
+      document.getElementById("coin-num").textContent = "N/A";
+    }
     // First-login password gate for hand-made accounts.
     function showPasswordGate() {
       const st = document.createElement("style");
@@ -497,7 +505,14 @@
         const age = d.createdAt ? Math.floor((Date.now() - new Date(d.createdAt)) / 86400000) : null;
         document.getElementById("acct-age").textContent = age != null ? "Member for " + age + (age === 1 ? " day" : " days") : "";
         document.getElementById("hermione-link").hidden = isHermione;
-        if (isHermione) {
+        if (d.guest) {
+          // Guests get the same dashboard, minus the account economy and the
+          // account-only pages; the games they cannot play are locked on /games.
+          document.querySelector(".dash").classList.add("no-panel");
+          setGuestBalance();
+          const pl = document.getElementById("profile-link"); if (pl) pl.hidden = true;
+          const lo = document.getElementById("logout"); if (lo) lo.textContent = "Sign in or apply";
+        } else if (isHermione) {
           setFakeBalance();
           // her panel holds the admin controls instead of dailies, and collapses
           const card = document.getElementById("dailies-card");
