@@ -253,7 +253,7 @@ window.DashGlitch = (function () {
   var WEIGHTED = [
     { run: tearBands, w: 60 },
     { run: dropout,   w: 26 },
-    { run: bloom,     w: 3, guard: bloomAllowed },
+    { run: bloom,     w: 4, guard: bloomAllowed },
     { run: crush,     w: 4 },
     { run: comb,      w: 4 },
     { run: edgeBurn,  w: 3 },
