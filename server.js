@@ -1303,6 +1303,7 @@ app.post("/api/parse", (req, res) => {
     cls: String(b.cls || "priest").slice(0, 20),
     // "free", "30" or "60"; only the timed ones are ever ranked
     mode: ["30", "60"].includes(String(b.mode)) ? String(b.mode) : "free",
+    version: String(b.version || "0").slice(0, 10),
     at: new Date().toISOString(),
     duration: +duration.toFixed(2),
     total: Math.round(total),
@@ -1323,19 +1324,24 @@ app.post("/api/parse", (req, res) => {
 app.get("/api/parses/leaderboard", (req, res) => {
   if (!playerId(req)) return res.status(401).json({ error: "Not logged in." });
   const mode = ["30", "60"].includes(String(req.query.mode)) ? String(req.query.mode) : "30";
+  // by default a leaderboard only shows runs made on the current game version, so
+  // balance changes do not make old runs sit alongside new ones
+  const version = req.query.version ? String(req.query.version) : null;
+  const allVersions = String(req.query.all || "") === "1";
   const best = new Map();
   for (const p of loadParses()) {
     if (p.mode !== mode) continue;
+    if (!allVersions && version && String(p.version || "0") !== version) continue;
     const prev = best.get(p.player);
     if (!prev || p.dps > prev.dps) {
       best.set(p.player, {
         player: p.player, guest: p.guest, dps: p.dps, total: p.total, at: p.at,
-        duration: p.duration, build: p.build || {}, byAbility: p.byAbility || {},
+        duration: p.duration, version: p.version || "0", build: p.build || {}, byAbility: p.byAbility || {},
       });
     }
   }
   const parses = [...best.values()].sort((a, b) => b.dps - a.dps).slice(0, 50);
-  res.json({ mode, parses });
+  res.json({ mode, version, allVersions, parses });
 });
 
 app.get("/api/parses", (req, res) => {
