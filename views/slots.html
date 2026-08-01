@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Slots - angeldom.me</title>
+  <title>Lottery - angeldom.me</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
@@ -201,7 +201,7 @@
       ctx.globalCompositeOperation = "destination-out";
       ctx.fillStyle = "#000";
       ctx.beginPath();
-      ctx.arc(x * dpr, y * dpr, 17 * dpr, 0, Math.PI * 2);
+      ctx.arc(x * dpr, y * dpr, 8 * dpr, 0, Math.PI * 2);
       ctx.fill();
     }
     function scratchLine(cv, x0, y0, x1, y1) {
@@ -209,7 +209,7 @@
       const dpr = cv._dpr || 1;
       ctx.globalCompositeOperation = "destination-out";
       ctx.strokeStyle = "#000";
-      ctx.lineWidth = 34 * dpr; ctx.lineCap = "round"; ctx.lineJoin = "round";
+      ctx.lineWidth = 16 * dpr; ctx.lineCap = "round"; ctx.lineJoin = "round";
       ctx.beginPath();
       ctx.moveTo(x0 * dpr, y0 * dpr); ctx.lineTo(x1 * dpr, y1 * dpr); ctx.stroke();
     }
@@ -248,14 +248,14 @@
         const p = local(e);
         scratchLine(cv, last.x, last.y, p.x, p.y);
         last = p;
-        // once past halfway, rub the rest off for them
-        if (clearedFraction(cv) > 0.5) revealPanel(panel, cv);
+        // only lift the rest once most of the foil is genuinely gone
+        if (clearedFraction(cv) > 0.8) revealPanel(panel, cv);
         e.preventDefault();
       };
       const end = () => {
         if (!drawing) return;
         drawing = false;
-        if (!cv._done && clearedFraction(cv) > 0.4) revealPanel(panel, cv);
+        if (!cv._done && clearedFraction(cv) > 0.8) revealPanel(panel, cv);
       };
       cv.addEventListener("pointerdown", start);
       cv.addEventListener("pointermove", move);

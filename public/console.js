@@ -97,7 +97,7 @@
     snake: "/snake", penance: "/writing", devotion: "/writing?mode=devotion",
     wheel: "/wheel", deathroll: "/deathroll", elysium: "/elysium",
     chess: "/chess", parse: "/dummyparse", dummyparse: "/dummyparse",
-    skillcheck: "/skillcheck", summary: "/summary",
+    skillcheck: "/skillcheck", summary: "/summary", lottery: "/lottery", slots: "/lottery",
     // not games, but the two places people most want to get back to
     dashboard: "/dashboard", profile: "/profile", games: "/games",
   };

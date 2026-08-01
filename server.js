@@ -2661,7 +2661,7 @@ app.get("/wheel", requirePlayer, (req, res) => {
   res.sendFile(path.join(__dirname, "views", "wheel.html"));
 });
 
-app.get("/slots", requirePlayer, (req, res) => {
+app.get(["/lottery", "/slots"], requirePlayer, (req, res) => {
   res.sendFile(path.join(__dirname, "views", "slots.html"));
 });
 
