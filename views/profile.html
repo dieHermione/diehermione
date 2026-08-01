@@ -252,7 +252,7 @@
         <h4>SEE ALSO</h4>
         <div class="also" id="also">
           <button type="button" id="edit-btn" data-key="1" hidden>edit<span class="n">(1)</span></button>
-          <button type="button" id="pw-btn" hidden>password</button>
+          <button type="button" id="pw-btn" hidden>password<span class="n"></span></button>
           <a href="/games" data-key="2">games<span class="n">(2)</span></a>
           <a href="/dashboard" data-key="3">dashboard<span class="n">(3)</span></a>
         </div>
@@ -600,12 +600,10 @@
     });
 
     window.siteMe()
-      .then(async (d) => {
-        me = d;
-        profileUser = params.get("user") || d.username;
-        await loadProfile();
-      })
-      .catch(() => (window.location.href = "/"));
+      .then((d) => { me = d; profileUser = params.get("user") || d.username; })
+      .catch(() => (window.location.href = "/"))   // only a genuine sign-out returns to login
+      .then(() => { if (me) return loadProfile(); })
+      .catch((e) => { console.error("profile failed to render", e); });
   </script>
   <script src="/ranks.js"></script>
   <script src="/nav.js" defer></script>
