@@ -37,7 +37,7 @@ window.AudioBus = (function () {
   var CHANNELS = ["music", "ambience", "typing"];
   var DEFAULTS = {
     // master scales the other three; it is not a channel of its own
-    master: { volume: 1, muted: false },
+    master: { volume: 0.3, muted: false },
     music: { volume: 0.5, muted: false },
     ambience: { volume: 0.5, muted: false },
     typing: { volume: 0.5, muted: false },
@@ -51,7 +51,9 @@ window.AudioBus = (function () {
     var out = JSON.parse(JSON.stringify(DEFAULTS));
     try {
       var raw = JSON.parse(localStorage.getItem(KEY) || "{}");
-      CHANNELS.forEach(function (c) {
+      // master must be restored too, or every fresh page resets it to the default
+      // (this is why the master slider "reset after leaving the dashboard")
+      ["master"].concat(CHANNELS).forEach(function (c) {
         if (raw[c] && typeof raw[c] === "object") {
           if (typeof raw[c].volume === "number") out[c].volume = Math.max(0, Math.min(1, raw[c].volume));
           if (typeof raw[c].muted === "boolean") out[c].muted = raw[c].muted;

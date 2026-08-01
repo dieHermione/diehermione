@@ -118,7 +118,8 @@ window.Ambience = (function () {
     o.frequency.exponentialRampToValueAtTime(2400, now + 0.03);
     var g = a.createGain();
     g.gain.setValueAtTime(0.0001, now);
-    g.gain.exponentialRampToValueAtTime(0.05, now + 0.006);
+    // the blip when the pointer lands on a button/game, cut by 80% (0.05 -> 0.01)
+    g.gain.exponentialRampToValueAtTime(0.01, now + 0.006);
     g.gain.exponentialRampToValueAtTime(0.0001, now + 0.07);
     o.connect(g).connect(out); o.start(now); o.stop(now + 0.09);
   }
