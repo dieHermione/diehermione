@@ -87,31 +87,6 @@
         <div class="fl"><span class="lab" id="lab-user">login:</span><input id="username" name="username" autocomplete="username" required minlength="3" maxlength="30" /></div>
         <div class="fl"><span class="lab">passphrase:</span><input id="password" name="password" type="password" autocomplete="current-password" required minlength="8" /></div>
 
-        <div id="register-fields" hidden>
-          <div class="fl"><span class="lab">pronouns:</span>
-            <select id="pronouns">
-              <option value="">choose…</option>
-              <option value="She/Her">She/Her</option>
-              <option value="He/Him">He/Him</option>
-              <option value="They/Them">They/Them</option>
-            </select>
-          </div>
-          <div class="fl"><span class="lab">account type:</span>
-            <div class="roles" id="roles">
-              <button type="button" class="role" data-role="Sub" data-tip="Worship your virtual angel. Point tracking and daily commitments enabled.">disciple</button>
-              <button type="button" class="role" data-role="Visitor" data-tip="A persistent account for testing. Intended for choresubs and other dommes.">visitor</button>
-            </div>
-          </div>
-          <div class="fl"><span class="lab">photosensitive?</span>
-            <div class="roles" id="photo">
-              <button type="button" class="role" data-photo="no" data-tip="This site flashes text and glitches the screen. Leave these on.">no</button>
-              <button type="button" class="role" data-photo="yes" data-tip="Turns off every flashing and strobing effect on your account.">yes</button>
-            </div>
-          </div>
-          <div class="fl"><span class="lab">who are you?</span><textarea id="intro" maxlength="500" rows="3" placeholder="tell Hermione who you are"></textarea></div>
-          <div class="row dim2" style="font-size:0.82rem; margin-top:0.2rem">// disciple accounts are invite only.</div>
-        </div>
-
         <div class="errline" id="error"></div>
         <div class="row" style="margin-top:1.3rem">
           <button class="btn solid" id="submit" type="submit">enter</button>
@@ -133,47 +108,13 @@
 
   <script>
     const $ = (id) => document.getElementById(id);
-    let mode = "login", selectedRole = "", photosensitive = null;
     const errorBox = $("error");
     function err(msg) { errorBox.textContent = msg ? "! " + msg : ""; }
 
-    function setMode(next) {
-      mode = next; err("");
-      const login = mode === "login";
-      $("register-fields").hidden = login;
-      $("lab-user").textContent = login ? "login:" : "username:";
-      $("statusline").innerHTML = login ? "&gt; awaiting credentials" : "&gt; petitioning for a new account";
-      $("password").autocomplete = login ? "current-password" : "new-password";
-      $("enter-hint").hidden = !login;   // "↵ sign in" only makes sense when signing in
-      $("toggle-line").innerHTML = login
-        ? 'invite-only login &nbsp;<span class="link" id="to-register">&gt; <b>apply here</b></span>'
-        : 'already a disciple? &nbsp;<span class="link" id="to-login">&gt; <b>sign in</b></span>';
-      $(login ? "to-register" : "to-login").addEventListener("click", () => setMode(login ? "register" : "login"));
-      applyRoleState();
-    }
-
-    // Guest is a way in, not an account type, so the register form no longer
-    // has a state where its own fields are meaningless.
-    function applyRoleState() {
-      $("submit").textContent = mode === "login" ? "enter" : "register";
-    }
-    document.querySelectorAll("#roles .role").forEach((btn) => btn.addEventListener("click", () => {
-      selectedRole = btn.dataset.role;
-      document.querySelectorAll("#roles .role").forEach((b) => b.classList.toggle("sel", b === btn));
-      applyRoleState();
-    }));
-    document.querySelectorAll("#photo .role").forEach((btn) => btn.addEventListener("click", () => {
-      photosensitive = btn.dataset.photo === "yes";
-      document.querySelectorAll("#photo .role").forEach((b) => b.classList.toggle("sel", b === btn));
-    }));
-    $("to-register").addEventListener("click", () => setMode("register"));
+    // Login only. Applying is a separate, account-less questionnaire at /apply;
+    // Hermione reviews applications and makes accounts by hand.
+    $("to-register").addEventListener("click", () => { window.location.href = "/apply"; });
     $("to-guest").addEventListener("click", () => startGuest("/guest"));
-    $("back-signin").addEventListener("click", () => window.location.reload());
-
-    function showPending() {
-      $("form").hidden = true; $("toggle-line").hidden = true;
-      $("guest-line").hidden = true; $("pending").hidden = false;
-    }
 
     async function startGuest(path) {
       try { const r = await fetch("/api/guest", { method: "POST" }); if (r.ok) { window.location.href = path; return; } } catch (e) {}
@@ -182,28 +123,18 @@
 
     $("form").addEventListener("submit", async (e) => {
       e.preventDefault(); err("");
-
       const payload = { username: $("username").value.trim(), password: $("password").value };
-      if (mode === "register") {
-        if (photosensitive === null) { err("answer the photosensitivity question."); return; }
-        payload.pronouns = $("pronouns").value; payload.rank = selectedRole;
-        payload.intro = $("intro").value.trim(); payload.photosensitive = photosensitive;
-      }
       let res, data;
       try {
-        res = await fetch("/api/" + mode, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+        res = await fetch("/api/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
         data = await res.json().catch(() => ({}));
       } catch (e2) { err("connection lost. try again."); return; }
-      if (res.ok && data.onboarding) { window.location.href = "/onboarding"; }
-      else if (res.ok && data.pending) { showPending(); }
-      else if (res.ok) {
-        // decrypt/bootstrap loading, then land on the dashboard
+      if (res.ok) {
+        // the dashboard forces a first-login password change when needed
         if (window.Boot) Boot.play({ navigateTo: "/dashboard" });
         else window.location.href = "/dashboard";
       } else { err(data.error || "something went wrong."); }
     });
-
-    setMode("login");
 
     // Ambient glitch. We cannot ask the server who this is yet, so we trust the
     // flag cached by the dashboard on the last signed-in visit. A photosensitive

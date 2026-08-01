@@ -125,7 +125,7 @@
 </head>
 <body>
   <div class="shell">
-    <div class="top"><span>angelOS v0.2 // onboarding</span><span>vessel <b id="who">—</b></span></div>
+    <div class="top"><span>angelOS v0.2 // application</span><span><b id="who">apply to join</b></span></div>
     <div class="prog" id="prog">
       <div class="bar"><i id="progfill"></i></div>
       <div class="lab"><span id="proglabel">intro</span><span id="progcount">1 / 1</span></div>
@@ -175,11 +175,12 @@
     ];
 
     // ---- answers ----
-    const A = { kinks: {}, limits: "", punishments: {}, petnames: {}, petnamesOther: "" };
+    const A = { contact: { discord: "" }, kinks: {}, limits: "", punishments: {}, petnames: {}, petnamesOther: "" };
 
     // ---- step plan ----
-    // intro x2, then one kink per step, then limits, punishments, petnames, review.
+    // contact, intro x2, then one kink per step, then limits, punishments, petnames, review.
     const STEPS = [];
+    STEPS.push({ kind: "contact" });
     STEPS.push({ kind: "intro", key: "about" });
     STEPS.push({ kind: "intro", key: "purpose" });
     KINKS.forEach((k) => STEPS.push({ kind: "kink", k }));
@@ -196,6 +197,17 @@
     // ---- section renderers ----
     // The two intro slides are written by Hermione from the admin panel.
     const INTRO = { about: "", purpose: "" };
+    function contactStep() {
+      return `<div class="step">
+        <div class="eyebrow">contact</div>
+        <h1>contact</h1>
+        <p class="lede">There are no accounts to make here. Hermione reads every application by
+          hand and, if she is interested, reaches out and sets up your account herself. Leave a
+          Discord username she can contact you at.</p>
+        <div class="fl" style="margin-top:1.4rem"><input type="text" id="discord" maxlength="80"
+          placeholder="your Discord username" value="${esc(A.contact.discord)}" /></div>
+      </div>`;
+    }
     function introAbout() {
       return `<div class="step">
         <div class="eyebrow">about me</div>
@@ -284,7 +296,9 @@
 
     // ---- wiring per step ----
     function bindStep(step) {
-      if (step.kind === "kink") {
+      if (step.kind === "contact") {
+        $("discord").addEventListener("input", (e) => { A.contact.discord = e.target.value; refreshNav(); });
+      } else if (step.kind === "kink") {
         $("scale").addEventListener("click", (e) => {
           const b = e.target.closest("button[data-val]"); if (!b) return;
           A.kinks[step.k.id] = Number(b.dataset.val);
@@ -313,6 +327,7 @@
 
     // ---- completeness gate ----
     function stepComplete(step) {
+      if (step.kind === "contact") return !!A.contact.discord.trim();
       if (step.kind === "kink") return !!A.kinks[step.k.id];
       if (step.kind === "punishments") return PUNISHMENTS.every((p) => A.punishments[p.id]);
       if (step.kind === "petnames") return PETNAMES.every((p) => A.petnames[p.id]);
@@ -322,7 +337,8 @@
     function render() {
       const step = STEPS[i];
       let html = "";
-      if (step.kind === "intro") html = step.key === "about" ? introAbout() : introPurpose();
+      if (step.kind === "contact") html = contactStep();
+      else if (step.kind === "intro") html = step.key === "about" ? introAbout() : introPurpose();
       else if (step.kind === "kink") html = kinkStep(step.k);
       else if (step.kind === "limits") html = limitsStep();
       else if (step.kind === "punishments") html = twoChoiceStep("Punishments", "acceptable, or not", PUNISHMENTS, A.punishments, "Acceptable", "I hate this", "acceptable", "hate", false);
@@ -332,7 +348,7 @@
       bindStep(step);
 
       // progress
-      const labels = { intro: "intro", kink: "interests", limits: "limits", punishments: "punishments", petnames: "petnames", review: "review" };
+      const labels = { contact: "contact", intro: "intro", kink: "interests", limits: "limits", punishments: "punishments", petnames: "petnames", review: "review" };
       $("proglabel").textContent = labels[step.kind] || "";
       $("progcount").textContent = (i + 1) + " / " + STEPS.length;
       $("progfill").style.width = ((i) / (STEPS.length - 1) * 100) + "%";
@@ -352,9 +368,9 @@
       $("next").disabled = true;
       $("err").textContent = "";
       try {
-        const res = await fetch("/api/onboarding", {
+        const res = await fetch("/api/apply", {
           method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ kinks: A.kinks, limits: A.limits, punishments: A.punishments, petnames: A.petnames, petnamesOther: A.petnamesOther }),
+          body: JSON.stringify({ contact: A.contact, kinks: A.kinks, limits: A.limits, punishments: A.punishments, petnames: A.petnames, petnamesOther: A.petnamesOther }),
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) { $("err").textContent = data.error || "Could not send. Check your answers."; $("next").disabled = false; return; }
@@ -375,15 +391,14 @@
       if (i < STEPS.length - 1) { i++; render(); }
     });
 
-    // ---- boot: confirm the onboarding session, get the username ----
-    fetch("/api/onboarding")
+    // ---- boot: load the intro copy; no account is involved ----
+    fetch("/api/apply")
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((d) => {
-        $("who").textContent = d.username || "—";
         INTRO.about = d.about || ""; INTRO.purpose = d.purpose || "";
         render();
       })
-      .catch(() => { window.location.href = "/"; });
+      .catch(() => { render(); });
   </script>
 </body>
 </html>

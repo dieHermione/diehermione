@@ -412,8 +412,49 @@
       document.getElementById("bal-sub").textContent = "points · Angel";
       document.getElementById("coin-num").textContent = "∞";
     }
+    // First-login password gate for hand-made accounts.
+    function showPasswordGate() {
+      const st = document.createElement("style");
+      st.textContent =
+        "#pw-gate{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.95);display:flex;align-items:center;justify-content:center;padding:5vw;font-family:'IBM Plex Mono',monospace}" +
+        "#pw-gate .pw-box{width:min(420px,92vw);border:1px solid var(--accent);background:#05080f;padding:1.8rem;box-shadow:0 0 40px var(--glow)}" +
+        "#pw-gate .pw-h{color:var(--bright);letter-spacing:.06em;margin-bottom:.6rem;font-size:1.1rem}" +
+        "#pw-gate .pw-p{color:var(--dim);font-size:.85rem;line-height:1.6;margin-bottom:1.2rem}" +
+        "#pw-gate input{width:100%;background:rgba(120,190,255,.06);border:1px solid var(--dim2);color:var(--bright);font-family:inherit;font-size:1rem;padding:.55rem .7rem;margin-bottom:.7rem}" +
+        "#pw-gate input:focus{outline:none;border-color:var(--accent)}" +
+        "#pw-gate .pw-err{color:var(--err);min-height:1.2em;font-size:.82rem;margin-bottom:.5rem}" +
+        "#pw-gate .pw-btn{width:100%;border:1px solid var(--accent);background:var(--accent);color:#000;font-family:inherit;letter-spacing:.14em;text-transform:uppercase;padding:.6rem;cursor:pointer}" +
+        "#pw-gate .pw-btn:disabled{opacity:.5}";
+      document.head.appendChild(st);
+      const ov = document.createElement("div"); ov.id = "pw-gate";
+      ov.innerHTML =
+        '<div class="pw-box"><div class="pw-h">// set your password</div>' +
+        '<p class="pw-p">This account was made for you with a temporary password. Choose your own to continue.</p>' +
+        '<input id="pw-1" type="password" placeholder="new password" autocomplete="new-password" />' +
+        '<input id="pw-2" type="password" placeholder="confirm password" autocomplete="new-password" />' +
+        '<div class="pw-err" id="pw-err"></div>' +
+        '<button class="pw-btn" id="pw-go" type="button">set password</button></div>';
+      document.body.appendChild(ov);
+      const go = async () => {
+        const a = document.getElementById("pw-1").value, b = document.getElementById("pw-2").value;
+        const e = document.getElementById("pw-err");
+        if (a.length < 8) { e.textContent = "At least 8 characters."; return; }
+        if (a !== b) { e.textContent = "Passwords do not match."; return; }
+        document.getElementById("pw-go").disabled = true;
+        const r = await fetch("/api/password", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ next: a }) }).catch(() => null);
+        if (r && r.ok) { window.location.reload(); return; }
+        const dd = r ? await r.json().catch(() => ({})) : {};
+        e.textContent = (dd && dd.error) || "That didn't work."; document.getElementById("pw-go").disabled = false;
+      };
+      document.getElementById("pw-go").addEventListener("click", go);
+      document.getElementById("pw-2").addEventListener("keydown", (ev) => { if (ev.key === "Enter") go(); });
+      setTimeout(() => document.getElementById("pw-1").focus(), 60);
+    }
+
     window.siteMe()
       .then((d) => {
+        // A hand-made account must set its own password before anything else.
+        if (d.mustChangePassword) { showPasswordGate(); return; }
         if (d.checkIn) {
           const notice = document.getElementById("checkin-notice");
           notice.textContent = "Daily check-in: +" + d.checkIn.amount + " points. You now have " + d.checkIn.points + ".";

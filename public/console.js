@@ -159,6 +159,14 @@
         return Promise.resolve("opening " + user + "'s profile.");
       },
     },
+    manage: {
+      admin: true,
+      usage: "pray manage",
+      run: function () {
+        setTimeout(function () { window.location.href = "/manage"; }, 220);
+        return Promise.resolve("opening account management.");
+      },
+    },
     quit: {
       usage: "pray quit",
       run: function () {

@@ -109,6 +109,7 @@
   // generic "Go". Anything not listed falls back to "Go there".
   const GO_LABELS = {
     "/admin": "Review",
+    "/manage": "Review",
     "/deathroll": "Play",
     "/dashboard": "Open dailies",
     "/profile": "View profile",

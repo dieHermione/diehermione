@@ -25,6 +25,7 @@ const SUBLIMINAL_FILE = path.join(process.env.DATA_DIR || __dirname, "subliminal
 const DECRYPT_FILE = path.join(process.env.DATA_DIR || __dirname, "decrypt.json");
 const PARSE_FILE = path.join(process.env.DATA_DIR || __dirname, "parses.json");
 const SUMMARY_FILE = path.join(process.env.DATA_DIR || __dirname, "summaries.json");
+const APPLICATIONS_FILE = path.join(process.env.DATA_DIR || __dirname, "applications.json");
 
 // --- simple JSON-file user store (fine for testing; swap for a DB later) ---
 function loadUsers() {
@@ -256,6 +257,137 @@ app.post("/api/onboarding", (req, res) => {
   res.json({ ok: true });
 });
 
+// --- applications (the questionnaire is now an account-less application) ---
+// Applicants no longer create accounts. They fill the questionnaire (with a
+// Discord contact) and Hermione reviews it and creates the account by hand.
+function loadApplications() {
+  try { const d = JSON.parse(fs.readFileSync(APPLICATIONS_FILE, "utf8")); return Array.isArray(d.applications) ? d.applications : []; }
+  catch { return []; }
+}
+function saveApplications(list) {
+  fs.writeFileSync(APPLICATIONS_FILE, JSON.stringify({ applications: list.slice(0, 500) }, null, 2));
+}
+
+app.get("/apply", (req, res) => res.sendFile(path.join(__dirname, "views", "onboarding.html")));
+
+app.get("/api/apply", (req, res) => {
+  const site = loadSite();
+  res.json({ about: site.onboardingAbout, purpose: site.onboardingPurpose });
+});
+
+app.post("/api/apply", (req, res) => {
+  const body = req.body || {};
+  const discord = String((body.contact || {}).discord || "").trim().slice(0, 80);
+  if (!discord) return res.status(400).json({ error: "A Discord username is required so Hermione can reach you." });
+  const kinks = {};
+  for (const k of ONBOARDING_KINKS) {
+    const v = Math.round(Number((body.kinks || {})[k]));
+    if (!(v >= 1 && v <= 5)) return res.status(400).json({ error: "Answer every interest question." });
+    kinks[k] = v;
+  }
+  const punishments = {};
+  for (const p of ONBOARDING_PUNISHMENTS) {
+    const v = String((body.punishments || {})[p] || "");
+    if (v !== "acceptable" && v !== "hate") return res.status(400).json({ error: "Answer every punishment." });
+    punishments[p] = v;
+  }
+  const petnames = {};
+  for (const p of ONBOARDING_PETNAMES) {
+    const v = String((body.petnames || {})[p] || "");
+    if (v !== "like" && v !== "hate") return res.status(400).json({ error: "Answer every petname." });
+    petnames[p] = v;
+  }
+  const limits = String(body.limits || "").trim().slice(0, LIMITS_MAX);
+  const petnamesOther = String(body.petnamesOther || "").trim().slice(0, 120);
+  const flagged = kinks.feet < 4 || kinks.tasks < 4;
+  const application = {
+    id: Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 7),
+    at: new Date().toISOString(),
+    contact: { discord },
+    kinks, limits, punishments, petnames, petnamesOther, flag: flagged,
+  };
+  const list = loadApplications();
+  list.unshift(application);
+  saveApplications(list);
+  const users = loadUsers();
+  const hermione = users["hermione"];
+  if (hermione) {
+    pushNotification(hermione, "application-" + application.id, discord + " has applied. Review it and make their account.", "/manage");
+    saveUsers(users);
+  }
+  res.json({ ok: true });
+});
+
+app.get("/api/admin/applications", (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });
+  res.json({ applications: loadApplications() });
+});
+
+app.delete("/api/admin/applications/:id", (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });
+  saveApplications(loadApplications().filter((a) => a.id !== req.params.id));
+  res.json({ ok: true });
+});
+
+// --- Hermione creates accounts by hand (`pray manage` -> /manage) ---
+// She hands the account out with a dummy password; it is forced to set a real
+// one the first time it signs in.
+app.get("/manage", (req, res) => {
+  if (!isAdmin(req)) return res.redirect("/dashboard");
+  res.sendFile(path.join(__dirname, "views", "manage.html"));
+});
+
+app.post("/api/admin/accounts", async (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });
+  const username = String(req.body.username || "").trim();
+  const password = String(req.body.password || "");
+  const typeChoice = canonical(req.body.type, SIGNUP_RANKS);   // "Visitor" | "Sub"
+  if (username.length < 3 || username.length > 30) return res.status(400).json({ error: "Username must be 3-30 characters." });
+  if (password.length < 8) return res.status(400).json({ error: "The dummy password must be at least 8 characters." });
+  if (!typeChoice) return res.status(400).json({ error: "Pick an account type (disciple or visitor)." });
+  const users = loadUsers();
+  const key = username.toLowerCase();
+  if (users[key]) return res.status(409).json({ error: "That username is already taken." });
+  users[key] = {
+    username,
+    passwordHash: await bcrypt.hash(password, 10),
+    createdAt: new Date().toISOString(),
+    pronouns: canonical(req.body.pronouns, PRONOUN_OPTIONS) || "",
+    rank: typeChoice === "Sub" ? "Servant" : "Visitor",
+    points: 0,
+    photosensitive: false,
+    status: "approved",
+    mustChangePassword: true,
+  };
+  saveUsers(users);
+  res.json({ ok: true, username, type: typeChoice });
+});
+
+// Set (or first-time change) a password. A must-change account may set one this
+// session without the old password; otherwise the current password is required.
+app.post("/api/password", async (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  const users = loadUsers();
+  const key = req.session.username.toLowerCase();
+  const user = users[key];
+  if (!user) return res.status(401).json({ error: "Not logged in." });
+  const next = String(req.body.next || "");
+  if (next.length < 8) return res.status(400).json({ error: "New password must be at least 8 characters." });
+  if (!user.mustChangePassword) {
+    const current = String(req.body.current || "");
+    if (!(await bcrypt.compare(current, user.passwordHash))) {
+      return res.status(403).json({ error: "Current password is incorrect." });
+    }
+  }
+  user.passwordHash = await bcrypt.hash(next, 10);
+  delete user.mustChangePassword;
+  saveUsers(users);
+  res.json({ ok: true });
+});
+
 // --- currency ---
 // Points are the only currency. They used to be admin-granted only, with a
 // separate earned "dollars" balance; the two were merged 1:1, so points are now
@@ -435,6 +567,8 @@ app.get("/api/me", (req, res) => {
     createdAt: users[key].createdAt || null,
     // accounts predating the question have no flag; treat that as not flagged
     photosensitive: users[key].photosensitive === true,
+    // a hand-made account must set a real password on first sign-in
+    mustChangePassword: users[key].mustChangePassword === true,
     checkIn,
   });
 });

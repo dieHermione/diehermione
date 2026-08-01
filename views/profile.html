@@ -136,6 +136,8 @@
     /* edit mode: the same manual page, with the fields opened up */
     #edit-form { display: none; }
     #edit-form.open { display: block; }
+    #pw-form { display: none; }
+    #pw-form.open { display: block; }
     #view-mode.closed { display: none; }
     .fieldrow {
       display: grid; grid-template-columns: 15rem 1fr;
@@ -143,6 +145,11 @@
       align-items: start; margin-bottom: 0.6rem; font-size: 13px;
     }
     .fieldrow > label { color: var(--bright); padding-top: 0.35rem; }
+    .fieldrow input[type="password"] {
+      width: 100%; padding: 0.4rem 0.6rem; background: var(--input-bg);
+      border: 1px solid var(--dim2); color: var(--bright); font-family: inherit; font-size: 13px;
+    }
+    .fieldrow input[type="password"]:focus { outline: none; border-color: var(--accent); }
     .fieldrow textarea, .fieldrow select {
       width: 100%;
       padding: 0.4rem 0.6rem;
@@ -245,11 +252,35 @@
         <h4>SEE ALSO</h4>
         <div class="also" id="also">
           <button type="button" id="edit-btn" data-key="1" hidden>edit<span class="n">(1)</span></button>
+          <button type="button" id="pw-btn" hidden>password</button>
           <a href="/games" data-key="2">games<span class="n">(2)</span></a>
           <a href="/dashboard" data-key="3">dashboard<span class="n">(3)</span></a>
         </div>
       </div>
     </div>
+
+    <form id="pw-form">
+      <div class="form-error" id="pw-error"></div>
+      <div class="sec">
+        <h4>CHANGE PASSWORD</h4>
+        <div class="fieldrow">
+          <label for="pw-current">current</label>
+          <input type="password" id="pw-current" autocomplete="current-password" />
+        </div>
+        <div class="fieldrow">
+          <label for="pw-new">new</label>
+          <input type="password" id="pw-new" autocomplete="new-password" />
+        </div>
+        <div class="fieldrow">
+          <label for="pw-confirm">confirm</label>
+          <input type="password" id="pw-confirm" autocomplete="new-password" />
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="tbtn" id="pw-save">Save</button>
+          <button type="button" class="tbtn" id="pw-cancel">Cancel</button>
+        </div>
+      </div>
+    </form>
 
     <form id="edit-form">
       <div class="form-error" id="form-error"></div>
@@ -434,6 +465,9 @@
 
       // nothing left that is conditional on who is being looked at
       document.getElementById("edit-btn").hidden = !profile.canEdit;
+      // the password control shows only on your own page
+      const isSelf = Boolean(me && me.username && me.username.toLowerCase() === profile.username.toLowerCase());
+      document.getElementById("pw-btn").hidden = !isSelf;
       renumber();
       document.title = name + " - Profile";
     }
@@ -461,6 +495,30 @@
         document.getElementById("f-rank").value = profile.rank;
       }
     }
+
+    // change-password form (own profile only)
+    const pwForm = document.getElementById("pw-form");
+    const pwClear = () => ["pw-current", "pw-new", "pw-confirm"].forEach((id) => document.getElementById(id).value = "");
+    document.getElementById("pw-btn").addEventListener("click", () => {
+      pwForm.classList.add("open");
+      const err = document.getElementById("pw-error"); err.textContent = ""; err.style.color = "";
+      document.getElementById("pw-current").focus();
+    });
+    document.getElementById("pw-cancel").addEventListener("click", () => { pwForm.classList.remove("open"); pwClear(); });
+    pwForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const err = document.getElementById("pw-error"); err.textContent = ""; err.style.color = "";
+      const current = document.getElementById("pw-current").value;
+      const next = document.getElementById("pw-new").value;
+      const confirm = document.getElementById("pw-confirm").value;
+      if (next.length < 8) { err.textContent = "New password must be at least 8 characters."; return; }
+      if (next !== confirm) { err.textContent = "New passwords do not match."; return; }
+      const save = document.getElementById("pw-save"); save.disabled = true;
+      const r = await fetch("/api/password", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ current, next }) }).catch(() => null);
+      save.disabled = false;
+      if (r && r.ok) { pwClear(); err.style.color = "#7dffb0"; err.textContent = "Password changed."; setTimeout(() => pwForm.classList.remove("open"), 900); }
+      else { const d = r ? await r.json().catch(() => ({})) : {}; err.textContent = (d && d.error) || "That didn't work."; }
+    });
 
     // picking a file from the portrait uploads straight away, no form needed
     document.getElementById("quick-icon").addEventListener("change", (e) => {
