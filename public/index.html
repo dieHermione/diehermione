@@ -119,7 +119,7 @@
         </div>
       </form>
 
-      <div class="row dim" id="toggle-line" style="margin-top:1.7rem">no account? &nbsp;<span class="link" id="to-register">&gt; <b>register</b></span></div>
+      <div class="row dim" id="toggle-line" style="margin-top:1.7rem">invite-only login &nbsp;<span class="link" id="to-register">&gt; <b>apply here</b></span></div>
       <div class="row dim" id="guest-line" style="margin-top:0.5rem">just looking? &nbsp;<span class="link" id="to-guest">&gt; <b>continue as a guest</b></span></div>
 
       <div id="pending" hidden>
@@ -146,7 +146,7 @@
       $("password").autocomplete = login ? "current-password" : "new-password";
       $("enter-hint").hidden = !login;   // "↵ sign in" only makes sense when signing in
       $("toggle-line").innerHTML = login
-        ? 'no account? &nbsp;<span class="link" id="to-register">&gt; <b>register</b></span>'
+        ? 'invite-only login &nbsp;<span class="link" id="to-register">&gt; <b>apply here</b></span>'
         : 'already a disciple? &nbsp;<span class="link" id="to-login">&gt; <b>sign in</b></span>';
       $(login ? "to-register" : "to-login").addEventListener("click", () => setMode(login ? "register" : "login"));
       applyRoleState();

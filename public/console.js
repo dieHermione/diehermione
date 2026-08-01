@@ -103,12 +103,12 @@
   };
 
   var PRAY = {
-    add_points: {
+    points: {
       admin: true,
-      usage: "pray add_points <username> <amount>",
+      usage: "pray points <username> <+n|-n>   e.g. pray points alice +5  /  pray points alice -1",
       run: function (args) {
         var user = args[0], n = parseInt(args[1], 10);
-        if (!user || !Number.isInteger(n)) return Promise.resolve(PRAY.add_points.usage);
+        if (!user || !Number.isInteger(n)) return Promise.resolve(PRAY.points.usage);
         return fetch("/api/users/" + encodeURIComponent(user) + "/points", {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ amount: n }),

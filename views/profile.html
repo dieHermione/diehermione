@@ -324,7 +324,7 @@
     function counterRows() {
       const st = profile.stats || {};
       if (profile.points === null) {
-        return [["records", "not kept"], ["days kept", N(daysKept(profile.createdAt))]];
+        return [["records", "not kept"]];
       }
       return [
         ["points", N(profile.points)],
