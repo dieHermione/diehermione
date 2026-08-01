@@ -101,6 +101,9 @@
     .set-row input[type="range"] { flex: 1; min-width: 4rem; accent-color: var(--accent); height: 3px; }
     .set-check { cursor: pointer; color: var(--c); }
     .set-check input { accent-color: var(--accent); }
+    /* a locked toggle (photosensitive accounts) reads as greyed and unclickable */
+    .set-check:has(input:disabled) { cursor: not-allowed; opacity: 0.5; }
+    .set-check input:disabled { cursor: not-allowed; }
     .set-mute { width: 2.4rem; background: transparent; border: 1px solid var(--dim2); color: var(--dim);
       font-family: inherit; font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; padding: 0.1rem 0; }
     .set-mute.off { border-color: var(--err); color: var(--err); }
@@ -312,6 +315,9 @@
         <button id="settings-toggle" class="ctl-btn" type="button" aria-expanded="false">Settings</button>
         <div class="settings" id="settings" hidden>
           <label class="set-row set-check">
+            <input type="checkbox" id="set-photo" /> <span>Photosensitivity</span>
+          </label>
+          <label class="set-row set-check">
             <input type="checkbox" id="set-sub" /> <span>Subliminals</span>
           </label>
           <div class="set-row"><span class="set-k">Master</span>
@@ -381,6 +387,21 @@
       if (window.DashGlitch) {
         window.DashGlitch.setEnabled(ok);
         if (ok) window.DashGlitch.startRandom(); else window.DashGlitch.stopRandom();
+      }
+    }
+    // A photosensitive account has both toggles locked: photosensitivity is on and
+    // greyed (never toggleable), and subliminals cannot be enabled.
+    function applyPhotoLock() {
+      const photoBox = document.getElementById("set-photo");
+      const subBox = document.getElementById("set-sub");
+      if (!photoBox) return;
+      if (photosensitive) {
+        photoBox.checked = true; photoBox.disabled = true;
+        if (subBox) { subBox.checked = false; subBox.disabled = true; }
+        if (window.AudioBus && window.AudioBus.subliminals) window.AudioBus.setSubliminals(false);
+      } else {
+        photoBox.checked = false; photoBox.disabled = false;
+        if (subBox) subBox.disabled = false;
       }
     }
 
@@ -467,6 +488,7 @@
         // still honour the flag on every visit after the first
         try { localStorage.setItem("photosensitive", photosensitive ? "1" : "0"); } catch (e) {}
         applyEffects();
+        applyPhotoLock();
         if (window.Subliminal && !photosensitive) window.Subliminal.loadMessages();
 
         const isHermione = Boolean(d.isAdmin ?? (d.username && d.username.toLowerCase() === "hermione"));
@@ -1045,8 +1067,26 @@
       const subBox = document.getElementById("set-sub");
       subBox.checked = bus.subliminals;
       subBox.addEventListener("change", () => {
+        if (photosensitive) { subBox.checked = false; return; }   // can't enable while photosensitive
         bus.setSubliminals(subBox.checked);
         applyEffects();
+      });
+
+      // photosensitivity: a one-way switch. Once on, it greys out and can never
+      // be turned off, and it locks subliminals off too.
+      const photoBox = document.getElementById("set-photo");
+      photoBox.addEventListener("change", async () => {
+        if (!photoBox.checked) { photoBox.checked = true; return; }   // cannot be unchecked
+        if (!confirm("Turn on photosensitivity protection? This disables every flashing and strobing effect (and subliminals) on your account, and cannot be undone.")) {
+          photoBox.checked = false; return;
+        }
+        photoBox.disabled = true;
+        const r = await fetch("/api/photosensitive", { method: "POST" }).catch(() => null);
+        if (r && r.ok) {
+          photosensitive = true;
+          try { localStorage.setItem("photosensitive", "1"); } catch (e) {}
+          applyPhotoLock(); applyEffects();
+        } else { photoBox.disabled = false; photoBox.checked = false; }
       });
 
       ["master"].concat(bus.channels).forEach((name) => {

@@ -388,6 +388,19 @@ app.post("/api/password", async (req, res) => {
   res.json({ ok: true });
 });
 
+// Turn on photosensitivity protection. Deliberately one-way: once an account is
+// marked photosensitive the flashing effects can never be turned back on for it.
+app.post("/api/photosensitive", (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  const users = loadUsers();
+  const key = req.session.username.toLowerCase();
+  const user = users[key];
+  if (!user) return res.status(401).json({ error: "Not logged in." });
+  user.photosensitive = true;
+  saveUsers(users);
+  res.json({ ok: true, photosensitive: true });
+});
+
 // --- currency ---
 // Points are the only currency. They used to be admin-granted only, with a
 // separate earned "dollars" balance; the two were merged 1:1, so points are now
