@@ -1100,7 +1100,7 @@ app.get("/api/summary/topic", async (req, res) => {
       const data = await fetchTopic(title);
       const words = data.text.split(/\s+/).filter(Boolean).length;
       // the limit scales with the source, rounded to something readable
-      const limit = Math.max(35, Math.min(90, Math.round(words / 12 / 5) * 5));
+      const limit = 3 * Math.max(35, Math.min(90, Math.round(words / 12 / 5) * 5));
       return res.json({ kind, kindLabel: KIND_LABEL[kind], ...data, sourceWords: words, limit });
     } catch (e) { /* try the next one */ }
   }
