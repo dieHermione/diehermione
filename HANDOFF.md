@@ -5,9 +5,12 @@ work on. Rewritten 2026-07-30; earlier versions had a decade of "latest session"
 layers stacked on top of each other and most of it was superseded.
 
 > **The site is called angeldomme.** The `.me` is part of the word, not just the
-> TLD: it reads "angel domme". Never write it as "angeldom" in anything a visitor
-> sees. The old `ANGELDOM //` headers are gone from every page; every header now
-> reads `angelOS v0.2`. Internal identifiers and the domain string are fine.
+> TLD: it reads "angel domme". Never write bare `angeldom` in anything a visitor
+> sees — this includes UI chrome that is easy to overlook, like window title bars
+> and `name@host` handles: write `angeldomme` (or the full domain `angeldom.me`),
+> never `@angeldom`. The old `ANGELDOM //` headers are gone from every page; every
+> header now reads `angelOS v0.2`. Internal identifiers and the domain string are
+> fine. When in doubt, say it aloud: if it reads "angel-dom" it is wrong.
 
 Live at **angeldom.me** (Railway, auto-deploys on push to `main`). One Express
 server (`server.js`), no database, JSON files on disk, no build step. One admin

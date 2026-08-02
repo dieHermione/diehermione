@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>bespoke game cards</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Major+Mono+Display&family=Cinzel:wght@500;600;700&family=Special+Elite&display=swap" rel="stylesheet" />
+<style>
+/* BESPOKE game cards. The wall layout is locked; this is the CARD. Earlier the
+   cards shared one head/title/line template recoloured per game — too
+   homogenous. Here each game's card is its own object: its own frame, art,
+   layout and type, nothing standardised between them, and no live-gameplay
+   line. This page proves the approach on four games (snake, dummy parse, chess,
+   lottery); the rest follow the same "each one unique" rule. Renders off file://. */
+* { box-sizing:border-box; margin:0; padding:0; }
+:root { --dim:#4f7ea0; --dim2:#2c4a5e; --bright:#eafaff; --accent:#8fd0ff; }
+html, body { height:100%; }
+body { background:radial-gradient(120% 90% at 50% 0%, #0a1017, #05070b 70%); color:#aee3ff;
+  font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:14px; overflow:hidden; }
+.scan { position:fixed; inset:0; z-index:200; pointer-events:none;
+  background:repeating-linear-gradient(0deg, rgba(0,0,0,.22) 0 1px, transparent 1px 3px); }
+.vig { position:fixed; inset:0; z-index:199; pointer-events:none; box-shadow:inset 0 0 26vh 9vh rgba(0,0,0,.6); }
+.stage { position:fixed; inset:0; padding:3.4vh 3vw; display:flex; flex-direction:column; }
+.hdr { display:flex; justify-content:space-between; font-size:10px; letter-spacing:.35em; color:var(--dim);
+  text-transform:uppercase; flex-shrink:0; }
+.hdr b { color:var(--bright); font-weight:400; }
+.deck { flex:1; min-height:0; display:flex; align-items:center; justify-content:center; gap:2.1rem; }
+.caption { position:fixed; left:3vw; bottom:2.6vh; z-index:210; font-size:11px; letter-spacing:.14em; color:var(--dim); }
+.caption b { color:var(--accent); font-weight:400; }
+
+/* =========================================================================
+   SNAKE — phosphor CRT. A green monitor actually running the game: the coiled
+   body and a fleeing pellet fill the screen, no title-card furniture.
+   ========================================================================= */
+.crt { width:320px; height:420px; border-radius:20px; padding:15px;
+  background:linear-gradient(#12331f, #06140c); box-shadow:0 22px 50px rgba(0,0,0,.7), inset 0 1px 0 rgba(160,255,190,.12); position:relative; }
+.crt .glass { position:relative; height:100%; border-radius:12px; overflow:hidden;
+  background:radial-gradient(120% 120% at 50% 42%, #0a1f12, #020805 74%);
+  box-shadow:inset 0 0 40px rgba(0,0,0,.95), inset 0 0 0 1px rgba(120,255,160,.10); }
+.crt .glass::after { content:""; position:absolute; inset:0; pointer-events:none;
+  background:repeating-linear-gradient(0deg, rgba(0,0,0,.32) 0 1px, transparent 1px 3px); }
+.crt svg { position:absolute; inset:0; width:100%; height:100%; }
+.crt .tag { position:absolute; top:12px; left:14px; z-index:5; font-size:.62rem; letter-spacing:.18em;
+  color:#7dff9a; text-shadow:0 0 8px #7dff9a; }
+.crt .nm { position:absolute; bottom:12px; left:14px; z-index:5; font-size:1.5rem; font-weight:700; color:#c8ffd8;
+  letter-spacing:.06em; text-shadow:0 0 12px #7dff9a, 0 0 30px #3bd66a; }
+.crt .st { position:absolute; bottom:14px; right:14px; z-index:5; font-size:.6rem; letter-spacing:.16em; color:#4f9e6a; }
+.crt i { position:absolute; width:6px; height:6px; border-radius:50%; background:#2a4a37; box-shadow:inset 0 0 2px #000; }
+.crt i:nth-child(1){top:5px;left:5px} .crt i:nth-child(2){top:5px;right:5px}
+.crt i:nth-child(3){bottom:5px;left:5px} .crt i:nth-child(4){bottom:5px;right:5px}
+
+/* =========================================================================
+   DUMMY PARSE — a damage recount panel. Ability bars + a big DPS number; reads
+   like a combat meter, nothing like a poster.
+   ========================================================================= */
+.parse { width:320px; height:420px; background:#0a0c0f; border:1px solid #2a1414;
+  box-shadow:0 22px 50px rgba(0,0,0,.7); display:flex; flex-direction:column; font-size:13px; }
+.parse .top { display:flex; align-items:baseline; justify-content:space-between; padding:.7rem .9rem;
+  background:linear-gradient(#1a0e0e, #0d0808); border-bottom:1px solid #3a1a1a; }
+.parse .top .t { color:#ff8a7a; letter-spacing:.06em; font-weight:600; }
+.parse .top .t b { color:#ff5a4a; }
+.parse .top .w { font-size:.6rem; letter-spacing:.14em; color:#7a4a44; text-transform:uppercase; }
+.parse .rows { flex:1; padding:.6rem .7rem; display:flex; flex-direction:column; gap:.42rem; }
+.parse .b { position:relative; height:26px; background:#140a0a; overflow:hidden; display:flex; align-items:center; }
+.parse .b .fill { position:absolute; inset:0; opacity:.85; }
+.parse .b .l { position:relative; z-index:2; padding-left:.5rem; color:#fff; font-size:.78rem; }
+.parse .b .v { position:relative; z-index:2; margin-left:auto; padding-right:.5rem; color:#fff; font-variant-numeric:tabular-nums; font-size:.78rem; }
+.parse .dps { padding:.8rem .9rem; border-top:1px solid #3a1a1a; display:flex; align-items:baseline; justify-content:space-between; }
+.parse .dps .big { font-size:2.1rem; font-weight:700; color:#ff5a4a; text-shadow:0 0 18px rgba(255,90,74,.6); letter-spacing:.02em; }
+.parse .dps .k { font-size:.62rem; letter-spacing:.2em; color:#7a4a44; text-transform:uppercase; }
+.parse .foot { padding:.5rem .9rem; border-top:1px solid #1a1010; font-size:.68rem; letter-spacing:.1em;
+  color:#9a4a44; text-transform:uppercase; }
+
+/* =========================================================================
+   CHESS — an ink-wash painting in a gilt frame, hung like art. Sumi-e board and
+   a brushed king; a brass museum plate names it.
+   ========================================================================= */
+.paint { width:308px; height:432px; padding:12px; border-radius:2px;
+  background:linear-gradient(135deg, #b8923f, #7d5f22 40%, #d8b45e 60%, #6f5320);
+  box-shadow:0 22px 50px rgba(0,0,0,.7); }
+.paint .mat { height:100%; padding:14px; background:#e8e2d2; box-shadow:inset 0 0 0 1px #b8923f; display:flex; flex-direction:column; }
+.paint .canvas { position:relative; flex:1; background:
+  radial-gradient(120% 90% at 30% 20%, #f2ede0, #ddd6c4); overflow:hidden; box-shadow:inset 0 0 24px rgba(120,100,60,.25); }
+.paint .canvas svg { position:absolute; inset:0; width:100%; height:100%; }
+.paint .plate { margin-top:12px; align-self:center; padding:.28rem 1.4rem; border-radius:2px;
+  background:linear-gradient(#c8a552, #8a6a26); color:#2a2008; font-family:"Cinzel",serif; font-weight:700;
+  letter-spacing:.24em; font-size:.86rem; box-shadow:inset 0 1px 0 rgba(255,255,255,.4); }
+
+/* =========================================================================
+   LOTTERY — an actual scratch-off ticket. Gold border, instant-win header, a
+   silver panel half scratched to symbols, serial + barcode + fine print.
+   ========================================================================= */
+.ticket { width:312px; height:420px; padding:3px; border-radius:6px;
+  background:repeating-linear-gradient(135deg, #ffe08a 0 8px, #b98a2e 8px 16px);
+  box-shadow:0 22px 50px rgba(0,0,0,.7); }
+.ticket .inner { height:100%; border-radius:4px; background:#120d02; padding:1rem .95rem .8rem;
+  display:flex; flex-direction:column; color:#ffe08a; position:relative; overflow:hidden; }
+.ticket .star { text-align:center; font-size:.7rem; letter-spacing:.34em; color:#ffe9a8; }
+.ticket .head { text-align:center; font-weight:700; font-size:1.5rem; letter-spacing:.03em; color:#fff2c8;
+  text-shadow:0 0 14px rgba(255,215,120,.7); margin:.15rem 0 .1rem; }
+.ticket .rule { text-align:center; font-size:.6rem; letter-spacing:.16em; color:#b98a2e; text-transform:uppercase; margin-bottom:.7rem; }
+.ticket .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:.45rem; margin-bottom:.7rem; }
+.ticket .cellp { aspect-ratio:1; display:flex; align-items:center; justify-content:center; font-size:1.5rem;
+  background:radial-gradient(#2a2008, #140d02); border:1px solid #6a4f18; color:#ffe08a; }
+.ticket .cellp.scr { background:linear-gradient(135deg, #c9c9cf, #8a8a92 45%, #dcdce2 55%, #7a7a82);
+  color:#c9c9cf; box-shadow:inset 0 0 8px rgba(0,0,0,.4); }
+.ticket .win { text-align:center; font-size:.66rem; letter-spacing:.16em; color:#ffd36b; text-transform:uppercase; }
+.ticket .win b { color:#fff2c8; }
+.ticket .foot { margin-top:auto; display:flex; align-items:flex-end; justify-content:space-between; padding-top:.6rem; }
+.ticket .ser { font-size:.6rem; letter-spacing:.1em; color:#b98a2e; line-height:1.5; }
+.ticket .bar { height:24px; width:104px; background:repeating-linear-gradient(90deg, #ffe08a 0 2px, transparent 2px 4px, #ffe08a 4px 5px, transparent 5px 9px); }
+.ticket .fine { text-align:center; font-size:.5rem; letter-spacing:.06em; color:#6a4f18; margin-top:.5rem; }
+</style>
+</head>
+<body>
+<div class="scan"></div><div class="vig"></div>
+<div class="stage">
+  <div class="hdr"><span>angelOS v0.2 <b>// card</b></span><span>bespoke · each game its own object</span><span>4 of 11 shown</span></div>
+  <div class="deck">
+
+    <!-- SNAKE -->
+    <div class="crt"><i></i><i></i><i></i><i></i>
+      <div class="glass">
+        <div class="tag">angeldom OS · snake</div>
+        <svg viewBox="0 0 300 400" preserveAspectRatio="xMidYMid slice">
+          <polyline points="60,300 78,286 96,278 116,276 136,282 152,294 162,310 162,328 152,342 134,348 116,344 104,332 100,316 108,302 124,296 142,298 158,308 168,324 176,246 190,232 210,226 230,230 246,242"
+            fill="none" stroke="#3bd66a" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" opacity="0.28"/>
+          <polyline points="60,300 78,286 96,278 116,276 136,282 152,294 162,310 162,328 152,342 134,348 116,344 104,332 100,316 108,302 124,296 142,298 158,308 168,324 176,246 190,232 210,226 230,230 246,242"
+            fill="none" stroke="#7dff9a" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1 12"/>
+          <circle cx="246" cy="242" r="7.5" fill="#c8ffd8"/>
+          <circle cx="248" cy="240" r="2" fill="#062"/>
+          <circle cx="96" cy="150" r="5" fill="#ffe08a" opacity="0.9"/>
+        </svg>
+        <div class="nm">SNAKE</div>
+        <div class="st">CH 01</div>
+      </div>
+    </div>
+
+    <!-- DUMMY PARSE -->
+    <div class="parse">
+      <div class="top"><span class="t">DUMMY <b>PARSE</b></span><span class="w">damage · dummy</span></div>
+      <div class="rows">
+        <div class="b"><span class="fill" style="width:100%;background:linear-gradient(90deg,#ffd36b,#a9791f)"></span><span class="l">Smite</span><span class="v">2,410</span></div>
+        <div class="b"><span class="fill" style="width:78%;background:linear-gradient(90deg,#ff8a3d,#a1461a)"></span><span class="l">Holy Fire</span><span class="v">1,884</span></div>
+        <div class="b"><span class="fill" style="width:63%;background:linear-gradient(90deg,#b98cff,#5a3a9a)"></span><span class="l">SW: Pain</span><span class="v">1,520</span></div>
+        <div class="b"><span class="fill" style="width:44%;background:linear-gradient(90deg,#7fd0ff,#2f6a9a)"></span><span class="l">Mind Blast</span><span class="v">1,067</span></div>
+        <div class="b"><span class="fill" style="width:26%;background:linear-gradient(90deg,#ff5a4a,#8a2018)"></span><span class="l">Shadowfiend</span><span class="v">640</span></div>
+      </div>
+      <div class="dps"><span class="big">812</span><span class="k">dps · 90s</span></div>
+      <div class="foot">▸ sim a rotation</div>
+    </div>
+
+    <!-- CHESS -->
+    <div class="paint">
+      <div class="mat">
+        <div class="canvas">
+          <svg viewBox="0 0 260 320" preserveAspectRatio="xMidYMid slice">
+            <g fill="#1c1712">
+              <rect x="40" y="120" width="40" height="40" opacity="0.16" transform="rotate(-1 60 140)"/>
+              <rect x="120" y="120" width="40" height="40" opacity="0.20" transform="rotate(1 140 140)"/>
+              <rect x="80" y="160" width="40" height="40" opacity="0.18"/>
+              <rect x="160" y="160" width="40" height="40" opacity="0.14" transform="rotate(-1 180 180)"/>
+              <rect x="40" y="200" width="40" height="40" opacity="0.22" transform="rotate(1 60 220)"/>
+              <rect x="120" y="200" width="40" height="40" opacity="0.15"/>
+            </g>
+            <!-- a brushed king, sumi-e -->
+            <g fill="#0f0b07" opacity="0.9">
+              <path d="M150 70 l7 14 l-7 6 l-7 -6 z"/>
+              <path d="M132 92 q18 -14 36 0 q6 40 -4 70 q-14 10 -28 0 q-10 -30 -4 -70 z" opacity="0.86"/>
+              <ellipse cx="150" cy="176" rx="30" ry="7" opacity="0.7"/>
+            </g>
+            <path d="M96 250 q40 22 120 4" stroke="#1c1712" stroke-width="3" fill="none" opacity="0.4"/>
+          </svg>
+        </div>
+        <div class="plate">CHESS</div>
+      </div>
+    </div>
+
+    <!-- LOTTERY -->
+    <div class="ticket">
+      <div class="inner">
+        <div class="star">✦ &nbsp; ✦ &nbsp; ✦</div>
+        <div class="head">ANGELCOIN</div>
+        <div class="rule">instant · match three</div>
+        <div class="grid">
+          <div class="cellp scr"></div><div class="cellp">✦</div><div class="cellp scr"></div>
+          <div class="cellp">✦</div><div class="cellp">✦</div><div class="cellp scr"></div>
+          <div class="cellp scr"></div><div class="cellp">♛</div><div class="cellp scr"></div>
+        </div>
+        <div class="win">match <b>✦ ✦ ✦</b> — win <b>50</b> coins</div>
+        <div class="foot">
+          <span class="ser">N° 0007-Λ<br>series MMXXVI</span>
+          <span class="bar"></span>
+        </div>
+        <div class="fine">no cash value · her games only · one card per turn</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+<div class="caption">card · <b>bespoke</b> — snake crt · parse recount · chess painting · lottery scratch ticket</div>
+</body>
+</html>
