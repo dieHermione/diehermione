@@ -200,7 +200,8 @@
     .daily .reward { color: var(--dim); font-size: 0.78rem; white-space: nowrap; }
 
     /* ---- leaderboard ---- */
-    .leaderboard-card { grid-area: board; padding-left: 2vw; min-height: 0; overflow: hidden; }
+    /* top-aligned and content-height, so it is no taller than the enter list */
+    .leaderboard-card { grid-area: board; padding-left: 2vw; min-height: 0; align-self: start; overflow: hidden; }
     /* guests see the board but names are not links */
     .dash.is-guest .leaderboard-card td a { pointer-events: none; color: var(--c); text-decoration: none; }
     .leaderboard-card h2 { color: var(--dim); letter-spacing: 0.2em; text-transform: uppercase; font-size: 0.72rem; font-weight: 400; margin: 0 0 0.8rem; }
@@ -565,20 +566,8 @@
       }
     }
 
-    // --- leaderboard folds to the right, same as the panel beside it ---
-    (function () {
-      const card = document.getElementById("board-card");
-      const title = document.getElementById("board-title");
-      title.innerHTML = '<span class="chev">▾</span>Leaderboard';
-      title.classList.add("collapsible");
-      title.addEventListener("click", () => {
-        pinBoardWidth();
-        const shut = card.classList.toggle("collapsed");
-        document.querySelector(".dash").classList.toggle("c-board", shut);
-        fitDash();
-        placeNotif();
-      });
-    })();
+    // The leaderboard used to collapse to a spine, but folding it reflowed the
+    // grid and shifted the top bar. It stays a fixed, non-folding panel now.
 
     // --- settings panel: drives AudioBus, which every page reads ---
     (function () {
