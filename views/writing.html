@@ -25,6 +25,8 @@
   .scan.heavy { background: repeating-linear-gradient(0deg, rgba(0,0,0,0.45) 0 1px, transparent 1px 2px); }
   .screen { width: min(880px, 92vw); position: relative; z-index: 2; display: none; }
   .screen.on { display: block; }
+  /* the game itself is scaled up ~50% (the settings screens are left alone) */
+  #play.on { transform: scale(1.5); transform-origin: center; }
   .c { color: var(--c); } .dim { color: var(--dim); } .ok { color: var(--ok); } .err { color: var(--err); }
   .cap { letter-spacing: 0.24em; text-transform: uppercase; }
   .md { font-size: 15px; line-height: 2; }
@@ -333,9 +335,9 @@
 
   /* ---------- selection ---------- */
   const DIFF_NOTE = {
-    meek: "a clean signal. forgiving.",
-    exacting: "the signal frays; a slip restarts the current line.",
-    merciless: "corrupted from the first keystroke; a slip restarts every repetition.",
+    meek: "mistakes are counted but not punished.",
+    exacting: "a mistake restarts the current repetition",
+    merciless: "a mistake restarts the entire exercise.",
   };
   function pickGroup(container, attr, value) {
     container.querySelectorAll(".opt").forEach((b) => b.classList.toggle("sel", b.dataset[attr] === value));

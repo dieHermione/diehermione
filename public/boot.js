@@ -164,7 +164,7 @@
 
   function play(opts) {
     opts = opts || {};
-    var duration = opts.duration || 8000;   // ~8s of cascade by default
+    var duration = opts.duration || 13000;   // ~13s: the long Arch-style cascade
     var scale = 1;                          // set once the script length is known
     ensureStyle();
 
@@ -232,8 +232,8 @@
     var script = [];
     function step(gap, fn) { script.push([gap, fn]); }
 
-    step(0,    function () { line('<span class="dim">PHOENIX-ANGEL BIOS v0.2      ' + stamp + "</span>"); });
-    step(140,  function () { line('<span class="dim">angelOS Cryogenic Loader</span>'); });
+    step(0,    function () { line('<span class="dim">angelOS v0.2 bootloader      ' + stamp + "</span>"); });
+    step(140,  function () { line('<span class="dim">angelOS Startup Manager</span>'); });
     step(240,  function () {
       var d = line("Memory Test : <b class='br'>0</b> KB");
       countUp(d.querySelector("b"), 655360, 900 * scale);
@@ -244,7 +244,7 @@
     });
     step(180,  function () { line(lead("Detecting Primary Master", "<b class='br'>ANGEL-SSD 640G</b> <span class='ok'>[OK]</span>")); });
     step(210,  function () { line(lead("Detecting Devotion Bus", "<b class='br'>present</b> <span class='ok'>[OK]</span>")); });
-    step(210,  function () { line(lead("Detecting Vessel", "<b class='br'>bound</b> <span class='ok'>[OK]</span>")); });
+    step(210,  function () { line(lead("Detecting Soul", "<b class='br'>bound</b> <span class='ok'>[OK]</span>")); });
     step(210,  function () { line(lead("Detecting Obedience Core", "<b class='br'>online</b> <span class='ok'>[OK]</span>")); });
     step(280,  function () { line("&nbsp;"); line('<span class="acc">angelOS :: decrypt sequence</span>'); });
     step(200,  function () { line(lead("mounting /dev/angel", "<span class='ok'>[OK]</span>")); });
@@ -259,7 +259,33 @@
       step(i === 0 ? 200 : 820, function () { decrypt("DECRYPT :: ", mantra, revealMs * scale); });
     });
 
-    step(900, function () { line("&nbsp;"); line('<span class="ok">&gt; access granted</span> <span class="cur"></span>'); });
+    // then a long Arch/systemd-style startup cascade that scrolls for a while
+    step(360, function () { line("&nbsp;"); line('<span class="acc">angelOS :: bringing up services</span>'); });
+    var UNITS = [
+      "Reached target Local File Systems", "Mounted /dev/angel", "Started Journal Service",
+      "Started D-Bus System Message Bus", "Started udev Kernel Device Manager",
+      "Reached target Sockets", "Started Devotion Keyring Daemon", "Started Obedience Core Supervisor",
+      "Started Ambient Sound Server", "Started Glyph Renderer", "Reached target Sanctum",
+      "Started Sacrament Scheduler", "Started Kneel Watchdog", "Mounted Cryogenic Cache",
+      "Started Confession Log Rotator", "Started Penance Queue Manager", "Started Rank Registry",
+      "Reached target Network", "Started Handshake // angeldom.me", "Started Session Manager",
+      "Started Time Synchronization", "Started Soul Bind Service", "Reached target Multi-User",
+      "Started Login Service", "Started Notification Bus", "Started Elysium Groundskeeper",
+      "Started Leaderboard Tally", "Started Discipline Accountant", "Reached target Graphical Interface",
+      "Started Scanline Compositor", "Started Vignette Shader", "Started Cursor Blink Timer",
+      "Started Idle Devotion Reminder", "Reached target Her Presence", "Started Worship Telemetry",
+      "Mounted /her/will", "Started Supplication Relay", "Started Contrition Cache Warmer",
+      "Started Obeisance Ticker", "Reached target Sworn Fealty"
+    ];
+    // a couple of these come up amber to feel real
+    var WARN_AT = { 8: 1, 21: 1, 33: 1 };
+    UNITS.forEach(function (u, i) {
+      var st = WARN_AT[i] ? "amber" : "ok";
+      var tag = WARN_AT[i] ? "[WARN]" : "[  OK  ]";
+      step(70, function () { line('<span class="dim">[</span><span class="' + st + '">' + tag.replace(/[\[\]]/g, "") + '</span><span class="dim">]</span> ' + esc(u) + "."); });
+    });
+
+    step(500, function () { line("&nbsp;"); line('<span class="ok">&gt; access granted</span> <span class="cur"></span>'); });
 
     // ---- stretch the whole script to fill `duration`, then schedule it ----
     var totalMs = script.reduce(function (s, x) { return s + x[0]; }, 0) + 500;   // + hold
@@ -267,8 +293,9 @@
     var clock = 0;
     script.forEach(function (x) { clock += x[0]; timers.push(setTimeout(x[1], clock * scale)); });
 
-    // ---- finish: lock sound, then navigate or dismiss ----
+    // ---- finish: lock sound, hold the finished screen ~3s, then navigate ----
     var endAt = duration;
+    var HOLD = 3000;   // linger on "access granted" before leaving
     timers.push(setTimeout(function () {
       if (sfx) sfx.resolve();
     }, Math.max(0, endAt - 260)));
@@ -278,7 +305,7 @@
       // no destination (e.g. the admin preview): fade out and clean up
       ov.classList.remove("on");
       setTimeout(function () { ov.remove(); if (typeof opts.onDone === "function") opts.onDone(); }, 360);
-    }, endAt));
+    }, endAt + HOLD));
   }
 
   // pull the editable pool; a failure just leaves the built-in lines in place

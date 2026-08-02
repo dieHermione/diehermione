@@ -65,6 +65,10 @@
        lives on a plain div wrapper and the svg is only ever drawn into. */
     #dialwrap { position: fixed; z-index: 10; pointer-events: none; }
     #dialwrap svg { display: block; }
+    /* some checks jitter to make the read harder */
+    @keyframes shk { 0%{transform:translate(0,0)} 25%{transform:translate(-2px,1px)}
+      50%{transform:translate(2px,-1px)} 75%{transform:translate(-1px,-2px)} 100%{transform:translate(1px,2px)} }
+    #dialwrap.shake { animation: shk .09s steps(2) infinite; }
     .key {
       position: absolute; inset: 0; display: grid; place-items: center;
       font-size: 2.6rem; letter-spacing: .1em; color: var(--bright);
@@ -114,7 +118,7 @@
   <div class="rd tl">IN A ROW<b id="r-rep">0 / 0</b></div>
   <div class="rd tr">BEST<b id="r-streak">0</b></div>
   <div class="rd bl">FAILED<b id="r-failed">0</b></div>
-  <div class="rd br">MODE<b id="r-mode">easy</b></div>
+  <div class="rd br">MODE<b id="r-mode">simple</b></div>
   <div class="pips" id="pips"></div>
 
   <div class="mid" id="mid">
@@ -126,29 +130,22 @@
         the count back to zero.</p>
 
       <div class="opt">
-        <span class="ok">KEYS</span>
-        <div class="row" id="opt-keys">
-          <button class="chip on" type="button" data-keys="all">all ten</button>
-          <button class="chip" type="button" data-keys="space">space only</button>
-        </div>
-      </div>
-      <div class="opt">
         <span class="ok">MODE</span>
         <div class="row" id="opt-mode">
-          <button class="chip on" type="button" data-mode="easy">easy</button>
+          <button class="chip on" type="button" data-mode="simple">simple</button>
           <button class="chip" type="button" data-mode="demanding">demanding</button>
         </div>
       </div>
       <div class="opt">
         <span class="ok">REPS</span>
         <div class="row" id="opt-reps">
-          <button class="chip" type="button" data-reps="6">6</button>
-          <button class="chip on" type="button" data-reps="12">12</button>
-          <button class="chip" type="button" data-reps="20">20</button>
+          <button class="chip on" type="button" data-reps="20">20</button>
           <button class="chip" type="button" data-reps="40">40</button>
+          <button class="chip" type="button" data-reps="60">60</button>
+          <button class="chip" type="button" data-reps="80">80</button>
         </div>
       </div>
-      <p class="hint" id="hint">Demanding shrinks the good zone and speeds the needle up.</p>
+      <p class="hint" id="hint">Simple asks for space only. Demanding asks for any of ten keys. Same fast needle and tight zone either way.</p>
 
       <p id="verdict" class="verdict"></p>
       <button class="btn" id="start" type="button">begin</button>
@@ -166,12 +163,14 @@
       })),
     ];
 
-    // Chosen on the settings screen rather than fixed.
-    let reps = 12;
-    let mode = "easy";            // "demanding" resets the count on any failure
-    let keyMode = "all";          // or "space"
+    // Chosen on the settings screen rather than fixed. The two modes differ only
+    // in the key set: simple = space, demanding = any of ten. Both use the same
+    // fast needle and tight zone, and any miss sends the count back to zero.
+    let reps = 20;
+    let mode = "simple";                  // "simple" | "demanding"
+    let keyMode = "space";                // derived from mode: simple->space, demanding->all
 
-    const GAP_MIN = 900, GAP_MAX = 10000;      // up to ten seconds, so you cannot settle
+    const GAP_MIN = 900, GAP_MAX = 5000;       // max between checks halved from before
     // a touch faster than before
     const SWEEP_MIN = 850, SWEEP_MAX = 1450;   // ms for one trip around the dial
     // the needle starts at 0deg, so the zone has to begin far enough round that
@@ -287,9 +286,9 @@
       const size = Math.round(Math.min(vw, vh) * (0.30 + Math.random() * 0.26));
       const x = Math.round((vw - size) / 2 + (Math.random() - 0.5) * vw * 0.30);
       const y = Math.round((vh - size) / 2 + (Math.random() - 0.5) * vh * 0.26);
-      const zoneSize = (mode === "demanding" ? 18 : 26) + Math.random() * (mode === "demanding" ? 12 : 16);
-      let sweep = SWEEP_MIN + Math.random() * (SWEEP_MAX - SWEEP_MIN);
-      if (mode === "demanding") sweep *= 0.85;           // faster dial on demanding
+      // both modes use the tight zone and fast needle (the old "demanding" feel)
+      const zoneSize = 18 + Math.random() * 12;
+      const sweep = (SWEEP_MIN + Math.random() * (SWEEP_MAX - SWEEP_MIN)) * 0.85;
       // never on or just in front of the needle: leave at least MIN_LEAD_MS of
       // travel before the zone opens, and keep the whole arc on the dial
       const minFrom = (MIN_LEAD_MS / sweep) * 360;
@@ -302,9 +301,14 @@
         key: pool[Math.floor(Math.random() * pool.length)],
         start: performance.now(),
         done: false,
+        // some checks jitter, and some slowly drift across the screen mid-cycle
+        shake: Math.random() < 0.32,
+        drift: Math.random() < 0.45,
+        dx: (Math.random() - 0.5) * 90,
+        dy: (Math.random() - 0.5) * 70,
       };
       wrap.hidden = false;
-      wrap.className = "";
+      wrap.className = check.shake ? "shake" : "";
       drawDial(check);
       moveNeedle(check, 0);
       sndSpawn();
@@ -316,6 +320,11 @@
       const t = (now - check.start) / check.sweep;
       if (t >= 1) { resolve(false, "missed"); return; }
       moveNeedle(check, t * 360);
+      // a drifting check crawls a little from where it spawned as the needle runs
+      if (check.drift) {
+        wrap.style.left = (check.x + check.dx * t) + "px";
+        wrap.style.top = (check.y + check.dy * t) + "px";
+      }
       raf = requestAnimationFrame(tick);
     }
 
@@ -387,12 +396,12 @@
         apply(b.dataset);
       });
     }
-    chipGroup("opt-keys", (d) => { keyMode = d.keys; });
     chipGroup("opt-mode", (d) => {
       mode = d.mode;
+      keyMode = mode === "demanding" ? "all" : "space";
       document.getElementById("hint").textContent = mode === "demanding"
-        ? "Demanding: a smaller good zone and a faster needle."
-        : "Easy: a comfortable good zone. Demanding shrinks it and speeds up.";
+        ? "Demanding: any of ten keys. Fast needle, tight zone, any miss resets to zero."
+        : "Simple: the space bar only. Fast needle, tight zone, any miss resets to zero.";
     });
     chipGroup("opt-reps", (d) => { reps = Number(d.reps); });
 
