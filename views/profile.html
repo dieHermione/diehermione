@@ -599,6 +599,9 @@
       hit.click();
     });
 
+    // The profile hangs off the dashboard, not the games wall: send back there.
+    window.__navBack = function () { window.location.href = "/dashboard"; return true; };
+
     window.siteMe()
       .then((d) => { me = d; profileUser = params.get("user") || d.username; })
       .catch(() => (window.location.href = "/"))   // only a genuine sign-out returns to login
