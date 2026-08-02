@@ -9,7 +9,6 @@
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/site.css" />
   <script src="/me.js"></script>
-  <script src="/glitch.js"></script>
   <style>
     /* Snake — Blood Ritual skin, full window (dark-red terminal). Snake colours
        come from the CSS vars below so the existing draw code stays untouched. */
@@ -135,19 +134,10 @@
       return best;
     }
 
-    // The food escaping is the game's whole tease, so it gets a subliminal of
+    // The food escaping is the game's whole tease.
     // its own: a single brief blip rather than the dashboard's full strobe.
-    // It fires on every escape, with no rate limit.
-    // Snake's own taunt pool, separate from the site-wide subliminals and
-    // Hermione-editable from the admin panel. Falls back to these defaults.
-    let TAUNTS = ["keep trying", "so close", "not for you", "again", "almost",
-                  "try harder", "not yet", "reach", "further", "good servant"];
-    fetch("/api/snake-subliminal").then((r) => (r.ok ? r.json() : null)).then((d) => {
-      if (d && Array.isArray(d.messages) && d.messages.length) TAUNTS = d.messages;
-    }).catch(() => {});
-    function taunt() {
-      if (window.Subliminal) window.Subliminal.blip(TAUNTS[Math.floor(Math.random() * TAUNTS.length)]);
-    }
+    // Taunts were subliminal blips; subliminals were removed site-wide.
+    function taunt() {}
 
     function reset() {
       path = [];
@@ -379,7 +369,6 @@
     window.siteMe().then((d) => {
       if (d.isAdmin) teleportChance = 0.5;
       // same photosensitivity gate as the dashboard
-      if (window.Subliminal) window.Subliminal.setEnabled(!d.photosensitive);
     }).catch(() => (window.location.href = "/"));
 
     ctx.clearRect(0, 0, W, H);

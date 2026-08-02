@@ -92,7 +92,7 @@
 
   /* ---- pray commands: pray <command> [args] ----
      "pray" is the prefix for everything from here on; it replaced "wing".
-     Bare `pray` with no command is itself a command: it flashes a subliminal. */
+     Bare `pray` with no command is itself a command: a small acknowledgement. */
   var GAMES = {
     snake: "/snake", penance: "/writing", devotion: "/writing?mode=devotion",
     wheel: "/wheel", deathroll: "/deathroll", elysium: "/elysium",
@@ -191,7 +191,6 @@
   function runPray(parts) {
     // bare "pray" is an invocation, not a mistake
     if (parts.length === 1) {
-      if (window.Subliminal) window.Subliminal.flashRandom();
       say("she hears you.", "ok");
       return;
     }
@@ -211,7 +210,7 @@
   // still need inventing; these are the placeholders.
   var CODES = {
     "her eyes": function () {
-      if (window.Subliminal) window.Subliminal.flashRandom("SHE SEES ALL");
+      if (window.DashGlitch) window.DashGlitch.glitch();
       return "she is looking.";
     },
     "static": function () { if (window.DashGlitch) window.DashGlitch.play(1); return "signal disturbed."; },

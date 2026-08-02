@@ -25,7 +25,6 @@
  *   AudioBus.channel("ambience")    a GainNode to connect a source to
  *   AudioBus.get("music")           -> {volume, muted}
  *   AudioBus.set("music", {...})    persists + applies instantly + notifies
- *   AudioBus.subliminals            -> bool ; AudioBus.setSubliminals(bool)
  *   AudioBus.onChange(fn)           fires on any local or cross-tab change
  *   AudioBus.claimContinuous(fn)    fn(hasLock) whenever ownership changes
  *   AudioBus.unlock()               start the context on the next gesture
@@ -36,12 +35,12 @@ window.AudioBus = (function () {
   var KEY = "angeldom-audio";
   var CHANNELS = ["music", "ambience", "typing"];
   var DEFAULTS = {
-    // master scales the other three; it is not a channel of its own
+    // master scales the other three; it is not a channel of its own.
+    // music + ambience were halved (everything but typing quieter by 50%).
     master: { volume: 0.3, muted: false },
-    music: { volume: 0.5, muted: false },
-    ambience: { volume: 0.5, muted: false },
+    music: { volume: 0.25, muted: false },
+    ambience: { volume: 0.25, muted: false },
     typing: { volume: 0.5, muted: false },
-    subliminals: true,
   };
 
   var state = load();
@@ -59,7 +58,6 @@ window.AudioBus = (function () {
           if (typeof raw[c].muted === "boolean") out[c].muted = raw[c].muted;
         }
       });
-      if (typeof raw.subliminals === "boolean") out.subliminals = raw.subliminals;
     } catch (e) {}
     return out;
   }
@@ -112,11 +110,6 @@ window.AudioBus = (function () {
     if (patch && typeof patch.muted === "boolean") state[name].muted = patch.muted;
     persist(); apply(); notify();
   }
-  function setSubliminals(on) {
-    state.subliminals = Boolean(on);
-    persist(); notify();
-  }
-
   // another tab changed the settings
   window.addEventListener("storage", function (e) {
     if (e.key !== KEY) return;
@@ -182,8 +175,6 @@ window.AudioBus = (function () {
 
   return {
     ctx: ctx, channel: channel, get: get, set: set,
-    get subliminals() { return state.subliminals; },
-    setSubliminals: setSubliminals,
     onChange: onChange, claimContinuous: claimContinuous, unlock: unlock,
     channels: CHANNELS.slice(),
   };

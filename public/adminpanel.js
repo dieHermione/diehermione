@@ -5,7 +5,7 @@
  * test triggers. The module is self-contained — it injects its own CSS and the
  * session-result modal — so a host page only has to define the terminal palette
  * variables (--c, --dim, --dim2, --bright, --accent, --bg, --glow, --err) and
- * load the effect scripts it drives: glitch.js (Subliminal), dashglitch.js
+ * load the effect scripts it drives: dashglitch.js
  * (DashGlitch) and boot.js (Boot, the decrypt-line preview).
  *
  *   AdminPanel.build(container)   // render the whole panel into an element
@@ -369,56 +369,7 @@ window.AdminPanel = (function () {
     await presetEditor("Penance presets", "/api/penance/presets", "penance",
       "Offered on the Penance selection screen alongside the player's own lines. Same shuffle rule as Devotion. Removing saves straight away.");
 
-    // subliminals: message pool + a test flash (admin-only so players never
-    // see the trigger). The live overlay picks one of these at random.
-    const subSec = document.createElement("div"); subSec.className = "adm-sec";
-    subSec.append(mk("h3", "Subliminals"));
-    const subHint = mk("p", "One message per row. These flash at random every 5 to 30 minutes for anyone not marked photosensitive.");
-    subHint.className = "adm-empty"; subSec.append(subHint);
-    const subTa = document.createElement("textarea"); subTa.rows = 6;
-    subTa.value = (window.Subliminal ? window.Subliminal.messages : []).join("\n");
-    const subBox = document.createElement("div"); subBox.className = "adm-preset";
-    subBox.append(subTa); subSec.append(subBox);
-    const subBar = document.createElement("div"); subBar.className = "adm-preset-bar";
-    const subSel = document.createElement("select"); subSel.className = "adm-select";
-    (window.Subliminal ? window.Subliminal.effects : []).forEach((name, i) => {
-      const o = document.createElement("option"); o.value = i; o.textContent = (i + 1) + ". " + name; subSel.append(o);
-    });
-    subBar.append(subSel);
-    subBar.append(mkChip("Flash", "ghost", () => {
-      // the preview must fire even on an account whose live flashing is gated off
-      if (window.Subliminal) { window.Subliminal.setEnabled(true); window.Subliminal.flash(Number(subSel.value)); }
-    }));
-    const subSave = mkChip("Save messages", "", async () => {
-      const messages = subTa.value.split("\n").map((s) => s.trim()).filter(Boolean);
-      subSave.textContent = "Saving...";
-      const r = await fetch("/api/subliminal", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages }),
-      });
-      subSave.textContent = r.ok ? "Saved" : "Error";
-      if (r.ok && window.Subliminal) window.Subliminal.setMessages(messages);
-      setTimeout(() => { subSave.textContent = "Save messages"; }, 1500);
-    });
-    subBar.append(subSave); subSec.append(subBar); wrap.append(foldable(subSec));
-
-    // snake taunts: a separate pool blipped when the food escapes in Snake
-    const snkSec = document.createElement("div"); snkSec.className = "adm-sec";
-    snkSec.append(mk("h3", "Snake taunts"));
-    const snkHint = mk("p", "One per row. Blipped when the food escapes in Snake. Separate from the site-wide subliminals.");
-    snkHint.className = "adm-empty"; snkSec.append(snkHint);
-    const snkTa = document.createElement("textarea"); snkTa.rows = 6;
-    try { const sr = await fetch("/api/snake-subliminal"); if (sr.ok) snkTa.value = ((await sr.json()).messages || []).join("\n"); } catch (e) {}
-    const snkBox = document.createElement("div"); snkBox.className = "adm-preset"; snkBox.append(snkTa); snkSec.append(snkBox);
-    const snkBar = document.createElement("div"); snkBar.className = "adm-preset-bar";
-    const snkSave = mkChip("Save taunts", "", async () => {
-      const messages = snkTa.value.split("\n").map((s) => s.trim()).filter(Boolean);
-      snkSave.textContent = "Saving...";
-      const r = await fetch("/api/snake-subliminal", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ messages }) });
-      snkSave.textContent = r.ok ? "Saved" : "Error";
-      setTimeout(() => { snkSave.textContent = "Save taunts"; }, 1500);
-    });
-    snkBar.append(snkSave); snkSec.append(snkBar); wrap.append(foldable(snkSec));
+    // (subliminals and snake taunts were removed from the site entirely)
 
     // decrypt lines: what the login animation resolves into, one per row
     const decSec = document.createElement("div"); decSec.className = "adm-sec";

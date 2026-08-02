@@ -1,7 +1,7 @@
 /* Shared glitch bootstrap for the terminal-themed pages. The dashboard and the
  * login page wire DashGlitch into their own settings; every other terminal page
- * includes this small script instead. Glitches are gated off for photosensitive
- * accounts and while the site-wide subliminals switch is off.
+ * includes this small script instead. Glitches are gated off for accounts
+ * flagged photosensitive, and for anyone who switched flashing effects off.
  *
  * Load order (both defer, so they run in order): dashglitch.js, then this. */
 (function () {
@@ -10,12 +10,11 @@
 
   var photosensitive = false;
 
-  function wanted() {
-    // when AudioBus is present its subliminals switch also gates the glitch
-    return !window.AudioBus || window.AudioBus.subliminals !== false;
+  function effectsOff() {
+    try { return localStorage.getItem("glitch-effects") === "0"; } catch (e) { return false; }
   }
   function apply() {
-    var ok = !photosensitive && wanted();
+    var ok = !photosensitive && !effectsOff();
     window.DashGlitch.setEnabled(ok);
     if (ok) window.DashGlitch.startRandom(); else window.DashGlitch.stopRandom();
   }
@@ -33,12 +32,4 @@
     photosensitive = fromCache();
     apply();
   }
-
-  // AudioBus may finish loading after this script; keep trying to subscribe so a
-  // later flip of the subliminals switch re-gates the glitch.
-  var tries = 0;
-  (function hookBus() {
-    if (window.AudioBus && window.AudioBus.onChange) { window.AudioBus.onChange(apply); return; }
-    if (tries++ < 12) setTimeout(hookBus, 500);
-  })();
 })();

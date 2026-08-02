@@ -20,7 +20,7 @@ window.Transitions = (function () {
     { key: "slide", name: "Coverflow slide" },
     { key: "skyzoom", name: "Sky push-in" },
     { key: "shatter", name: "Glass shatter" },
-    { key: "subliminal", name: "Subliminal cut" },
+    { key: "subliminal", name: "Flash cut" },
     { key: "coins", name: "Coin cascade" },
     { key: "iris", name: "Iris" },
   ];

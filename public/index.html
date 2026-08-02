@@ -7,7 +7,6 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <script src="/glitch.js"></script>
   <script src="/dashglitch.js"></script>
   <script src="/boot.js"></script>
   <style>
@@ -145,10 +144,9 @@
     (function () {
       let ok = true;
       try { ok = localStorage.getItem("photosensitive") !== "1"; } catch (e) {}
-      // the site-wide subliminals switch applies here too
-      if (window.AudioBus && !window.AudioBus.subliminals) ok = false;
+      // the flashing-effects toggle (cached by the dashboard) applies here too
+      try { if (localStorage.getItem("glitch-effects") === "0") ok = false; } catch (e) {}
       if (window.DashGlitch) { window.DashGlitch.setEnabled(ok); if (ok) window.DashGlitch.startRandom(); }
-      if (window.Subliminal) window.Subliminal.setEnabled(ok);
     })();
   </script>
   <script src="/ambience.js" defer></script>

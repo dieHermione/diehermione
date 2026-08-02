@@ -20,7 +20,7 @@
 window.Ambience = (function () {
   "use strict";
 
-  var HUM = 0.12;                 // pre-channel level; AudioBus scales it
+  var HUM = 0.036;                // pre-channel level; AudioBus scales it (cut a further 70%)
   var started = false, humGain = null, nodes = [], hasLock = false;
 
   function bus() { return window.AudioBus || null; }

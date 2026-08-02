@@ -8,7 +8,6 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
   <script src="/me.js"></script>
-  <script src="/glitch.js"></script>
   <script src="/dashglitch.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Major+Mono+Display&display=swap" rel="stylesheet" />
   <style>
@@ -252,10 +251,7 @@
         <button id="settings-toggle" class="ctl-btn" type="button" aria-expanded="false">Settings</button>
         <div class="settings" id="settings" hidden>
           <label class="set-row set-check">
-            <input type="checkbox" id="set-photo" /> <span>Photosensitivity</span>
-          </label>
-          <label class="set-row set-check">
-            <input type="checkbox" id="set-sub" /> <span>Subliminals</span>
+            <input type="checkbox" id="set-effects" /> <span>Flashing effects</span>
           </label>
           <div class="set-row"><span class="set-k">Master</span>
             <input type="range" id="vol-master" min="0" max="100" />
@@ -299,35 +295,26 @@
 
   <script>
     let myRank = "—";
-    // Flashing is off if the account declared photosensitivity, and separately
-    // off if the settings panel switches subliminals off. Both must allow it.
+    // Screen-glitch flashing is off if the account was flagged photosensitive at
+    // account creation (a permanent lock), or if the user switched flashing
+    // effects off. Otherwise it runs.
     let photosensitive = false;
+    let effectsOn = true;
+    try { effectsOn = localStorage.getItem("glitch-effects") !== "0"; } catch (e) {}
     function applyEffects() {
-      const wanted = !window.AudioBus || window.AudioBus.subliminals;
-      const ok = !photosensitive && wanted;
-      if (window.Subliminal) {
-        window.Subliminal.setEnabled(ok);
-        if (ok) window.Subliminal.startRandom(); else window.Subliminal.stopRandom();
-      }
+      const ok = !photosensitive && effectsOn;
       if (window.DashGlitch) {
         window.DashGlitch.setEnabled(ok);
         if (ok) window.DashGlitch.startRandom(); else window.DashGlitch.stopRandom();
       }
     }
-    // A photosensitive account has both toggles locked: photosensitivity is on and
-    // greyed (never toggleable), and subliminals cannot be enabled.
-    function applyPhotoLock() {
-      const photoBox = document.getElementById("set-photo");
-      const subBox = document.getElementById("set-sub");
-      if (!photoBox) return;
-      if (photosensitive) {
-        photoBox.checked = true; photoBox.disabled = true;
-        if (subBox) { subBox.checked = false; subBox.disabled = true; }
-        if (window.AudioBus && window.AudioBus.subliminals) window.AudioBus.setSubliminals(false);
-      } else {
-        photoBox.checked = false; photoBox.disabled = false;
-        if (subBox) subBox.disabled = false;
-      }
+    // Photosensitive accounts (flagged at creation) cannot turn flashing effects
+    // on: the box is unchecked and disabled. Everyone else may toggle it freely.
+    function applyEffectsLock() {
+      const box = document.getElementById("set-effects");
+      if (!box) return;
+      if (photosensitive) { box.checked = false; box.disabled = true; effectsOn = false; }
+      else { box.checked = effectsOn; box.disabled = false; }
     }
 
     const h = new Date().getHours();
@@ -421,8 +408,7 @@
         // still honour the flag on every visit after the first
         try { localStorage.setItem("photosensitive", photosensitive ? "1" : "0"); } catch (e) {}
         applyEffects();
-        applyPhotoLock();
-        if (window.Subliminal && !photosensitive) window.Subliminal.loadMessages();
+        applyEffectsLock();
 
         const isHermione = Boolean(d.isAdmin ?? (d.username && d.username.toLowerCase() === "hermione"));
         const noEcon = Boolean(d.noEconomy) || isHermione;
@@ -605,32 +591,18 @@
         toggle.setAttribute("aria-expanded", String(open));
         fitDash();
       });
-      if (!bus) return;
-
-      const subBox = document.getElementById("set-sub");
-      subBox.checked = bus.subliminals;
-      subBox.addEventListener("change", () => {
-        if (photosensitive) { subBox.checked = false; return; }   // can't enable while photosensitive
-        bus.setSubliminals(subBox.checked);
+      // Flashing effects: on by default, off if you de-tick it; the choice is
+      // remembered. Photosensitive accounts have it locked off (applyEffectsLock).
+      const fx = document.getElementById("set-effects");
+      applyEffectsLock();
+      fx.addEventListener("change", () => {
+        if (photosensitive) { fx.checked = false; return; }
+        effectsOn = fx.checked;
+        try { localStorage.setItem("glitch-effects", effectsOn ? "1" : "0"); } catch (e) {}
         applyEffects();
       });
 
-      // photosensitivity: a one-way switch. Once on, it greys out and can never
-      // be turned off, and it locks subliminals off too.
-      const photoBox = document.getElementById("set-photo");
-      photoBox.addEventListener("change", async () => {
-        if (!photoBox.checked) { photoBox.checked = true; return; }   // cannot be unchecked
-        if (!confirm("Turn on photosensitivity protection? This disables every flashing and strobing effect (and subliminals) on your account, and cannot be undone.")) {
-          photoBox.checked = false; return;
-        }
-        photoBox.disabled = true;
-        const r = await fetch("/api/photosensitive", { method: "POST" }).catch(() => null);
-        if (r && r.ok) {
-          photosensitive = true;
-          try { localStorage.setItem("photosensitive", "1"); } catch (e) {}
-          applyPhotoLock(); applyEffects();
-        } else { photoBox.disabled = false; photoBox.checked = false; }
-      });
+      if (!bus) return;
 
       ["master"].concat(bus.channels).forEach((name) => {
         const slider = document.getElementById("vol-" + name);
@@ -647,7 +619,6 @@
         bus.onChange(paint);
         paint();
       });
-      bus.onChange(() => { subBox.checked = bus.subliminals; applyEffects(); });
     })();
 
     document.getElementById("logout").addEventListener("click", async () => {
