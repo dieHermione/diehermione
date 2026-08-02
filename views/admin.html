@@ -14,28 +14,39 @@
   <script src="/audio.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    /* Same terminal palette the dashboard uses; the adm-* styles injected by
-       adminpanel.js read these variables. */
-    :root { --c:#aee3ff; --dim:#4f7ea0; --dim2:#37576f; --bright:#eafaff; --accent:#8fd0ff;
-      --bg:#000000; --glow:rgba(120,190,255,0.32); --ok:#eafaff; --err:#ff7a6d; }
+    /* Same dual-tone palette the dashboard uses; adminpanel.js reads these vars. */
+    :root { --c:#00acdb; --dim:#1f6f8a; --dim2:#134a5d; --bright:#eafaff; --accent:#00acdb;
+      --bg:#000000; --glow:rgba(0,172,219,0.34); --ok:#eafaff; --err:#ff7a6d; }
     [hidden] { display: none !important; }
-    html, body { height: 100%; }
+    html, body { min-height: 100%; }
     body { background: #000; color: var(--c); font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 14px; }
     .scan { position: fixed; inset: 0; z-index: 200; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(0,0,0,.26) 0 1px, transparent 1px 3px); }
-    .wrap { position: relative; z-index: 5; max-width: 820px; margin: 0 auto; padding: 4vh 5vw 8vh; }
-    .top { display: flex; justify-content: space-between; align-items: baseline; font-size: 11px; letter-spacing: .3em; color: var(--dim); text-transform: uppercase; }
-    .top a { color: var(--dim); text-decoration: none; } .top a:hover { color: var(--c); }
-    h1 { font-size: 1.4rem; color: var(--bright); letter-spacing: .06em; margin: 1.4rem 0 0.3rem; font-weight: 600; }
-    .sub { color: var(--dim); margin-bottom: 1.6rem; line-height: 1.6; }
+
+    /* full-width, full-height admin surface */
+    .wrap { position: relative; z-index: 5; width: 100%; min-height: 100vh; padding: 3.2vh 3vw 6vh; }
+    .top { display: flex; justify-content: space-between; align-items: baseline; font-size: 11px;
+      letter-spacing: .3em; color: var(--dim); text-transform: uppercase; padding-left: 3.4rem; }
+    h1 { font-size: 1.4rem; color: var(--bright); letter-spacing: .06em; margin: 1.1rem 0 0.3rem 3.4rem; font-weight: 600; }
+    .sub { color: var(--dim); margin: 0 0 1.6rem 3.4rem; line-height: 1.6; }
     #adminpanel { position: relative; }
+
+    /* standard site back button: a chevron pinned top-left, no plate */
+    .back { position: fixed; top: 1.3rem; left: 1.3rem; z-index: 1000; width: 2.6rem; height: 2.6rem;
+      border-radius: 50%; display: flex; align-items: center; justify-content: center; background: none;
+      color: var(--c); opacity: .8; text-decoration: none; transition: transform .2s ease, opacity .2s ease; }
+    .back:hover { transform: translateY(-2px); opacity: 1; }
+    .back svg { width: 22px; height: 22px; }
   </style>
 </head>
 <body>
   <div class="scan"></div>
+  <a class="back" href="/dashboard" aria-label="Back to dashboard" title="Back to dashboard">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+  </a>
   <div class="wrap">
-    <div class="top"><span><span style="text-transform:none">angelOS v0.2</span> // admin controls</span><a href="/dashboard">&larr; dashboard</a></div>
+    <div class="top"><span><span style="text-transform:none">angelOS v0.2</span> // admin controls</span><span id="whoami"></span></div>
     <h1>Admin controls</h1>
-    <div class="sub">Approvals, accounts, finished series, and the editable text pools and effect triggers.</div>
+    <div class="sub">Approvals, applications, accounts, finished series, and the editable text pools and effect triggers.</div>
     <div id="adminpanel"><p style="color:var(--dim2)">Loading…</p></div>
   </div>
 

@@ -109,6 +109,8 @@ window.AdminPanel = (function () {
       ".adm-sec h3 .sc { display: inline-block; margin-right: 0.35rem; color: var(--dim2); transition: transform 0.15s; }",
       ".adm-sec.shut h3 .sc { transform: rotate(-90deg); }",
       ".adm-sec.shut > *:not(h3) { display: none; }",
+      /* full-width, categorised: sections flow into as many columns as fit */
+      ".adm { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 0.4rem 2.2rem; align-items: start; }",
       ".adm h3 { color: var(--dim); font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 400; margin: 0.4rem 0 0.6rem; }",
       ".adm-sec { margin-bottom: 1.1rem; }",
       ".adm-empty { color: var(--dim2); font-size: 0.85rem; }",
@@ -456,8 +458,8 @@ window.AdminPanel = (function () {
 
     // documentation
     const docSec = document.createElement("div"); docSec.className = "adm-sec";
-    docSec.append(mk("h3", "Documentation"));
-    [["Guide", "/guide"], ["Technical notes", "/tech"], ["Commands", "/commands"]].forEach(([t, h]) => {
+    docSec.append(mk("h3", "Documentation & tools"));
+    [["Account management", "/manage"], ["Guide", "/guide"], ["Technical notes", "/tech"], ["Commands", "/commands"]].forEach(([t, h]) => {
       const a = document.createElement("a"); a.className = "adm-doc"; a.href = h; a.textContent = t; docSec.append(a);
     });
     wrap.append(foldable(docSec));
