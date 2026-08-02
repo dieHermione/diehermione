@@ -6,14 +6,15 @@
   <title>Dashboard - angeldom.me</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
   <script src="/me.js"></script>
   <script src="/dashglitch.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Major+Mono+Display&display=swap" rel="stylesheet" />
   <style>
     /* Big-Type terminal dashboard (black / baby-blue). Self-contained; overrides
        the shared shell. Green is avoided (white used for "done"/ok). */
-    :root { --c:#aee3ff; --dim:#4f7ea0; --dim2:#37576f; --bright:#eafaff; --accent:#8fd0ff; --bg:#000000; --glow:rgba(120,190,255,0.32); --ok:#eafaff; --err:#ff7a6d; --button-bg:#8fd0ff; }
+    /* Dual-tone: white stays white; every blue collapses to one vivid blue. */
+    :root { --c:#00acdb; --dim:#1f6f8a; --dim2:#134a5d; --bright:#eafaff; --accent:#00acdb; --bg:#000000; --glow:rgba(0,172,219,0.34); --ok:#eafaff; --err:#ff7a6d; --button-bg:#00acdb; }
     * { box-sizing: border-box; }
     [hidden] { display: none !important; }
     html, body { height: 100%; overflow: hidden; }
@@ -201,7 +202,9 @@
     .daily .reward { color: var(--dim); font-size: 0.78rem; white-space: nowrap; }
 
     /* ---- leaderboard ---- */
-    .leaderboard-card { grid-area: board; border-left: 1px solid var(--dim2); padding-left: 2vw; min-height: 0; overflow: hidden; }
+    .leaderboard-card { grid-area: board; padding-left: 2vw; min-height: 0; overflow: hidden; }
+    /* guests see the board but names are not links */
+    .dash.is-guest .leaderboard-card td a { pointer-events: none; color: var(--c); text-decoration: none; }
     .leaderboard-card h2 { color: var(--dim); letter-spacing: 0.2em; text-transform: uppercase; font-size: 0.72rem; font-weight: 400; margin: 0 0 0.8rem; }
     .leaderboard-card table { border-collapse: collapse; width: 100%; }
     .leaderboard-card thead th { text-align: left; color: var(--dim2); font-weight: 400; font-size: 0.68rem; letter-spacing: 0.14em; text-transform: uppercase; padding-bottom: 0.4rem; }
@@ -229,7 +232,7 @@
         <div class="eyebrow acct-age" id="acct-age"></div>
       </div>
       <h1><span class="editable" id="welcome-wrap"><span id="welcome">welcome</span></span></h1>
-      <p><span class="editable" id="message-wrap"><span id="dashboard-message">there is no text here yet.</span></span></p>
+      <p><span class="editable" id="message-wrap"><span id="dashboard-message">Thank you for your testing.</span></span></p>
       <div class="copy-editor" id="copy-editor"></div>
       <p class="checkin-notice" id="checkin-notice" hidden></p>
     </section>
@@ -244,9 +247,10 @@
     <section class="control-card">
       <div class="stitle">enter</div>
       <div class="controls">
-        <a href="/games" class="ctl-btn">Games</a>
-        <a id="profile-link" class="ctl-btn" href="/profile">Profile</a>
         <a id="admin-link" class="ctl-btn" href="/admin" hidden>Admin</a>
+        <a href="/games" class="ctl-btn">Games</a>
+        <a id="elysium-link" class="ctl-btn" href="/elysium">Elysium</a>
+        <a id="profile-link" class="ctl-btn" href="/profile">Profile</a>
         <a id="hermione-link" class="ctl-btn" href="/profile?user=hermione" hidden>Hermione</a>
         <button id="settings-toggle" class="ctl-btn" type="button" aria-expanded="false">Settings</button>
         <div class="settings" id="settings" hidden>
@@ -287,7 +291,7 @@
     <section class="leaderboard-card fold-right" id="board-card">
       <h2 id="board-title">Leaderboard</h2>
       <table>
-        <thead><tr><th></th><th>Vessel</th><th>Points</th></tr></thead>
+        <thead><tr><th></th><th>User</th><th>Points</th></tr></thead>
         <tbody id="board"></tbody>
       </table>
     </section>
@@ -419,9 +423,11 @@
         if (d.guest) {
           // Guests get the same dashboard, minus the account economy and the
           // account-only pages; the games they cannot play are locked on /games.
-          document.querySelector(".dash").classList.add("no-panel");
+          document.querySelector(".dash").classList.add("no-panel", "is-guest");
           setGuestBalance();
           const pl = document.getElementById("profile-link"); if (pl) pl.hidden = true;
+          const hl = document.getElementById("hermione-link"); if (hl) hl.hidden = true;
+          const el = document.getElementById("elysium-link"); if (el) el.hidden = true;
           const lo = document.getElementById("logout"); if (lo) lo.textContent = "Sign in or apply";
         } else if (isHermione) {
           setFakeBalance();

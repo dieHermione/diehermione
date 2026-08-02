@@ -796,7 +796,7 @@ app.post("/api/users/:username/approve", (req, res) => {
 });
 
 app.get("/api/leaderboard", (req, res) => {
-  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  if (!req.session.username && !req.session.guest) return res.status(401).json({ error: "Not logged in." });
   const users = loadUsers();
   const board = Object.values(users)
     .filter((u) => u.flagged && u.username.toLowerCase() !== "hermione")
