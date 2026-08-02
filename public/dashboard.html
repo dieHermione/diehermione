@@ -137,8 +137,6 @@
     .balance-card { grid-area: vessel; align-self: end; }
     .bal-num { font-size: clamp(1.8rem, 3.4vw, 2.8rem); color: var(--bright); text-shadow: 0 0 18px var(--glow); font-variant-numeric: tabular-nums; line-height: 1; }
     .bal-sub { color: var(--dim); letter-spacing: 0.1em; text-transform: uppercase; font-size: 0.78rem; margin-top: 0.3rem; }
-    .bal-coins { margin-top: 0.5rem; color: var(--accent); }
-    .bal-coins .coin-lbl { color: var(--dim); margin-left: 0.3rem; font-size: 0.85rem; }
 
     /* ---- dailies / admin panel ---- */
     .dailies-card { grid-area: dailies; display: flex; flex-direction: column; min-height: 0; border-left: 1px solid var(--dim2); padding-left: 2vw; }
@@ -278,7 +276,6 @@
     <aside class="balance-card" id="balance-card">
       <div class="bal-num" id="bal-num">—</div>
       <div class="bal-sub" id="bal-sub">—</div>
-      <div class="bal-coins" id="bal-coins">✦ <span id="coin-num">0</span><span class="coin-lbl">angelcoins</span></div>
     </aside>
 
     <aside class="dailies-card panel-card fold-right" id="dailies-card" hidden>
@@ -337,7 +334,6 @@
         num.textContent = Number(points).toLocaleString();
         sub.textContent = "points · " + myRank;
       }
-      document.getElementById("coin-num").textContent = Number(coins || 0).toLocaleString();
     }
 
     // Hermione has no real points or daily obligation; show placeholders so her
@@ -347,7 +343,6 @@
       num.hidden = false;
       num.textContent = "∞";
       document.getElementById("bal-sub").textContent = "points · Angel";
-      document.getElementById("coin-num").textContent = "∞";
     }
     // Guests keep no currency, but the counters stay on the dashboard as N/A.
     function setGuestBalance() {
@@ -355,7 +350,6 @@
       num.hidden = false;
       num.textContent = "N/A";
       document.getElementById("bal-sub").textContent = "points · guest";
-      document.getElementById("coin-num").textContent = "N/A";
     }
     // First-login password gate for hand-made accounts.
     function showPasswordGate() {

@@ -1411,7 +1411,8 @@ app.post("/api/snake/food", (req, res) => {
     user.snakeToday = 0;
   }
   user.snakeToday += 1;
-  if (!visitor) user.angelcoins = (user.angelcoins || 0) + SNAKE_FOOD_POINTS;
+  // angelcoins were removed; snake food now pays points (what the HUD shows)
+  if (!visitor) user.points = (user.points || 0) + SNAKE_FOOD_POINTS;
   saveUsers(users);
   res.json({
     ok: true,
@@ -1668,7 +1669,8 @@ app.post("/api/wheel/spin", (req, res) => {
   // hermione still records the day so the daily objective completes; it just
   // doesn't gate her next spin
   user.wheelDay = todayKey();
-  if (rankFor(user, key) !== "Visitor") user.angelcoins = (user.angelcoins || 0) + prize.coins;
+  // angelcoins were removed; the wheel no longer credits anything (it is also
+  // unlinked from the game wall now)
   saveUsers(users);
   res.json({
     ok: true,
