@@ -24,7 +24,7 @@ window.AdminPanel = (function () {
     worship: "Worship", petplay: "Petplay" };
   const ONB_PUN = { lines_physical: "Lines (physical)", lines_typing: "Lines (typing)",
     voice_memos: "Voice memos", ignoring: "Ignoring", onsite_games_hard: "On-site games (hard)" };
-  const ONB_PET = { dog: "Dog / doggy / puppy", good: "Good boy / girl", doll: "Doll",
+  const ONB_PET = { dog: "Dog / Doggy / Puppy", good: "Good Boy / Girl", doll: "Doll",
     pet: "Pet", bitch: "Bitch", loser: "Loser", dummy: "Dummy" };
 
   function onboardingBlock(o) {
