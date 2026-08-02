@@ -17,7 +17,7 @@
      Devotion is the blue sibling and never corrupts. These are the resting
      palettes; JS lerps --c/--dim toward the corruption target during play. */
   :root { --c: #c11208; --dim: #6b120d; --ok: #ffffff; --err: #ff2a20; --glow: rgba(193,18,8,0.42); }
-  :root[data-mode="devotion"] { --c: #8fd0ff; --dim: #3f6a94; --ok: #ffffff; --err: #e0543a; --glow: rgba(60,140,220,0.4); }
+  :root[data-mode="devotion"] { --c: #00acdb; --dim: #1f6f8a; --ok: #ffffff; --err: #e0543a; --glow: rgba(0,172,219,0.4); }
   body { font-family: "IBM Plex Mono", monospace; background: #04060a; color: var(--c); }
   #app { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; padding: 4vh 5vw; }
   .scan { position: fixed; inset: 0; pointer-events: none; z-index: 40;
@@ -224,8 +224,8 @@
   const PAL = {
     penance:  { pure: { c: "#c11208", dim: "#6b120d", glow: "rgba(193,18,8,0.42)" },
                 foul: { c: "#ee1305", dim: "#8c0f07", glow: "rgba(238,19,5,0.5)" } },
-    devotion: { pure: { c: "#8fd0ff", dim: "#3f6a94", glow: "rgba(60,140,220,0.4)" },
-                foul: { c: "#8fd0ff", dim: "#3f6a94", glow: "rgba(60,140,220,0.4)" } },
+    devotion: { pure: { c: "#00acdb", dim: "#1f6f8a", glow: "rgba(0,172,219,0.4)" },
+                foul: { c: "#00acdb", dim: "#1f6f8a", glow: "rgba(0,172,219,0.4)" } },
   };
   const PURE = PAL[MODE].pure, FOUL = PAL[MODE].foul;
   function lerp(a, b, t) { return Math.round(a + (b - a) * t); }

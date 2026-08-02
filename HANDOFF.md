@@ -16,6 +16,32 @@ Live at **angeldom.me** (Railway, auto-deploys on push to `main`). One Express
 server (`server.js`), no database, JSON files on disk, no build step. One admin
 identity: `hermione`. Push after each task; the user likes frequent pushes.
 
+> ## Persistence — CRUCIAL, do not regress
+> Every editable-text pool (`decrypt.json`, `devotion.json`, `penance.json`,
+> `site.json` = about-me/site-purpose, applications, users, elysium, writing/parse
+> logs, …) is a JSON file under **`DATA_DIR`** (falls back to the repo dir). The
+> `load*()` functions read the file first and only use the built-in `*_DEFAULTS`
+> when the file is missing — so **Hermione's edits must always win over the code
+> defaults.** They already do in code.
+>
+> The failure the user hit ("lines I removed came back") has two causes, both now
+> understood:
+> 1. **Ephemeral filesystem (the real one).** If `DATA_DIR` is not a **persistent
+>    Railway volume**, the JSON is written to an ephemeral disk and every deploy
+>    resets it to defaults. **Fix is infra, not code:** mount a Railway volume and
+>    set `DATA_DIR` to it. Never rely on the repo dir for live data. Do NOT commit
+>    generated data JSON to the repo as a "fix" — a deploy would then overwrite
+>    live edits with the committed copy.
+> 2. **Admin editors seeded from client-side defaults** (the old Subliminals box
+>    read `window.Subliminal.messages`, the hardcoded pool, not the server). That
+>    class of bug is why saving re-persisted defaults. Rule: **every admin editor
+>    must load its current value from the server (`fetch /api/…`), never from a
+>    client-side default constant.** decrypt / penance / devotion / about+purpose
+>    already do. Subliminals were removed entirely.
+>
+> When adding any new editable pool, follow decrypt.json exactly and verify the
+> admin editor fetches the server value before showing it.
+
 **Read order:** this file, then **`/guide`** and **`/tech`**, which were rewritten
 on 2026-07-30 and are accurate. `README.md` is still stale and owes a pass.
 `mockups/README.md` is the authority on which designs are chosen.
