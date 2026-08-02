@@ -42,7 +42,11 @@ window.Subliminal = (function () {
   var GLOW_CYAN = "0 0 10px #7fe6ff, 0 0 44px #22d3ff, 0 0 100px rgba(34,211,255,0.7)";
 
   var overlay, word, tint, styleInjected, timers = [];
-  var enabled = true, randomTimer = null;
+  // Default OFF, not on. Every consumer (login, dashboard, snake) calls
+  // setEnabled explicitly once it knows the account, so nothing is lost by
+  // starting disabled — and it means a photosensitive account can never flash
+  // in the window before siteMe() resolves (e.g. an early snake blip).
+  var enabled = false, randomTimer = null;
 
   function injectStyle() {
     if (styleInjected) return; styleInjected = true;
