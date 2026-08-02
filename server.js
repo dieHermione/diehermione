@@ -276,8 +276,10 @@ app.get("/api/apply", (req, res) => {
 
 app.post("/api/apply", (req, res) => {
   const body = req.body || {};
-  const discord = String((body.contact || {}).discord || "").trim().slice(0, 80);
-  if (!discord) return res.status(400).json({ error: "A Discord username is required so Hermione can reach you." });
+  // Registration is fully manual now: no contact field. The applicant carries a
+  // short code and DMs Hermione with it; she matches it to these answers.
+  const authCode = String(body.authCode || "").trim().toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 12);
+  if (authCode.length < 4) return res.status(400).json({ error: "Missing application code. Reload and try again." });
   const kinks = {};
   for (const k of ONBOARDING_KINKS) {
     const v = Math.round(Number((body.kinks || {})[k]));
@@ -293,7 +295,7 @@ app.post("/api/apply", (req, res) => {
   const petnames = {};
   for (const p of ONBOARDING_PETNAMES) {
     const v = String((body.petnames || {})[p] || "");
-    if (v !== "like" && v !== "hate") return res.status(400).json({ error: "Answer every petname." });
+    if (!["love", "indifferent", "hate"].includes(v)) return res.status(400).json({ error: "Answer every petname." });
     petnames[p] = v;
   }
   const limits = String(body.limits || "").trim().slice(0, LIMITS_MAX);
@@ -302,7 +304,7 @@ app.post("/api/apply", (req, res) => {
   const application = {
     id: Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 7),
     at: new Date().toISOString(),
-    contact: { discord },
+    authCode,
     kinks, limits, punishments, petnames, petnamesOther, flag: flagged,
   };
   const list = loadApplications();
@@ -311,7 +313,7 @@ app.post("/api/apply", (req, res) => {
   const users = loadUsers();
   const hermione = users["hermione"];
   if (hermione) {
-    pushNotification(hermione, "application-" + application.id, discord + " has applied. Review it and make their account.", "/manage");
+    pushNotification(hermione, "application-" + application.id, "New application · code " + authCode + ". Review it in the admin panel.", "/admin");
     saveUsers(users);
   }
   res.json({ ok: true });

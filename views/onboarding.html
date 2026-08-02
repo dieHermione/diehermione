@@ -90,6 +90,30 @@
     .row2 button.yes.on { border-color: var(--ok); color: var(--ok); box-shadow: 0 0 12px rgba(125,255,176,.25); }
     .row2 button.no.on { border-color: var(--red); color: var(--red); box-shadow: 0 0 12px rgba(255,59,47,.22); }
 
+    /* three-choice rows (petnames: love / indifferent / hate) */
+    .row3 { display: grid; grid-template-columns: 1fr auto auto auto; align-items: center; gap: .5rem;
+      border: 1px solid var(--line); background: var(--panel); padding: .7rem .9rem; }
+    .row3 .name { color: var(--c); }
+    .row3 .opt { background: transparent; border: 1px solid var(--dim2); color: var(--dim); font-family: inherit;
+      font-size: 12px; letter-spacing: .08em; text-transform: uppercase; padding: .4rem .8rem; cursor: pointer;
+      white-space: nowrap; transition: all .12s; }
+    .row3 .opt:hover { color: var(--c); border-color: var(--dim); }
+    .row3 .opt.love.on { border-color: var(--ok); color: var(--ok); box-shadow: 0 0 12px rgba(125,255,176,.25); }
+    .row3 .opt.mid.on { border-color: var(--accent); color: var(--bright); box-shadow: 0 0 12px var(--glow); }
+    .row3 .opt.hate.on { border-color: var(--red); color: var(--red); box-shadow: 0 0 12px rgba(255,59,47,.22); }
+
+    /* several questions stacked on one slide */
+    .qblock { margin-top: 1.6rem; }
+    .qblock:first-of-type { margin-top: 1.2rem; }
+    .qblock .qhead { font-size: 1.15rem; color: var(--bright); letter-spacing: .02em; margin-bottom: .2rem; }
+
+    /* the final slide: Hermione's contact and the application code */
+    .finishbox { margin-top: 1.6rem; border: 1px solid var(--line); background: var(--panel); padding: 1rem 1.2rem; max-width: 34rem; }
+    .finishbox .fb-row { display: flex; justify-content: space-between; align-items: baseline; padding: .4rem 0; }
+    .finishbox .fb-k { color: var(--dim); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; }
+    .finishbox .fb-v { color: var(--bright); font-size: 1.1rem; }
+    .finishbox .fb-v.code { color: var(--gold); letter-spacing: .3em; font-weight: 600; }
+
     textarea, input[type="text"] {
       width: 100%; background: rgba(120,190,255,.05); border: 1px solid var(--line);
       color: var(--bright); font-family: inherit; font-size: 15px; padding: .8rem;
@@ -175,19 +199,23 @@
     ];
 
     // ---- answers ----
-    const A = { contact: { discord: "" }, kinks: {}, limits: "", punishments: {}, petnames: {}, petnamesOther: "" };
+    const A = { kinks: {}, limits: "", punishments: {}, petnames: {}, petnamesOther: "" };
+    // A short application code the applicant DMs to Hermione so she can match a
+    // Discord message to these answers before making the account by hand.
+    const AUTH = Array.from({ length: 6 }, () => "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"[Math.floor(Math.random() * 32)]).join("");
+    const KINK_BY = Object.fromEntries(KINKS.map((k) => [k.id, k]));
 
-    // ---- step plan ----
-    // contact, intro x2, then one kink per step, then limits, punishments, petnames, review.
-    const STEPS = [];
-    STEPS.push({ kind: "contact" });
-    STEPS.push({ kind: "intro", key: "about" });
-    STEPS.push({ kind: "intro", key: "purpose" });
-    KINKS.forEach((k) => STEPS.push({ kind: "kink", k }));
-    STEPS.push({ kind: "limits" });
-    STEPS.push({ kind: "punishments" });
-    STEPS.push({ kind: "petnames" });
-    STEPS.push({ kind: "review" });
+    // ---- step plan: one combined intro, three grouped interest slides (the
+    // last also carries hard limits), punishments, petnames, then the send slide.
+    const STEPS = [
+      { kind: "intro" },
+      { kind: "kinks", ids: ["feet", "tasks", "degradation"] },
+      { kind: "kinks", ids: ["humiliation", "masochism", "exhibitionism"] },
+      { kind: "kinks", ids: ["worship", "petplay"], limits: true },
+      { kind: "punishments" },
+      { kind: "petnames" },
+      { kind: "finish" },
+    ];
     let i = 0;
     let submitted = false;
 
@@ -197,49 +225,56 @@
     // ---- section renderers ----
     // The two intro slides are written by Hermione from the admin panel.
     const INTRO = { about: "", purpose: "" };
-    function contactStep() {
+    function introStep() {
       return `<div class="step">
-        <div class="eyebrow">contact</div>
-        <h1>contact</h1>
-        <div class="fl" style="margin-top:1.4rem"><input type="text" id="discord" maxlength="80"
-          name="contact_discord" autocomplete="off" autocapitalize="off" autocorrect="off"
-          spellcheck="false" placeholder="your Discord username" value="${esc(A.contact.discord)}" /></div>
-      </div>`;
-    }
-    function introAbout() {
-      return `<div class="step">
-        <div class="eyebrow">about me</div>
-        <h1>about me</h1>
+        <div class="eyebrow">about</div>
+        <h1>angeldomme</h1>
         <p class="lede body" style="white-space:pre-wrap">${esc(INTRO.about)}</p>
-      </div>`;
-    }
-    function introPurpose() {
-      return `<div class="step">
-        <div class="eyebrow">site purpose</div>
-        <h1>site purpose</h1>
+        <div class="eyebrow" style="margin-top:1.8rem">site purpose</div>
         <p class="lede body" style="white-space:pre-wrap">${esc(INTRO.purpose)}</p>
       </div>`;
     }
-    function kinkStep(k) {
-      const cur = A.kinks[k.id];
-      const btns = k.scale.map((cap, idx) => {
+    function scaleButtons(id) {
+      const k = KINK_BY[id], cur = A.kinks[id];
+      return k.scale.map((cap, idx) => {
         const val = idx + 1;
-        return `<button type="button" data-val="${val}" class="${cur === val ? "on" : ""}">
-          <span class="num">${val}</span><span class="cap">${cap ? esc(cap) : ""}</span></button>`;
+        return `<button type="button" data-val="${val}" class="${cur === val ? "on" : ""}"><span class="num">${val}</span><span class="cap">${cap ? esc(cap) : ""}</span></button>`;
       }).join("");
-      return `<div class="step">
-        <div class="eyebrow">interest &middot; rate 1 to 5</div>
-        <span class="hint-tip"><h1><span class="hinted">${esc(k.label)}</span></h1>
-          <span class="tip">${esc(k.hint)}</span></span>
-        ${k.sub ? `<div class="qsub">${esc(k.sub)}</div>` : `<div class="qsub">&nbsp;</div>`}
-        <div class="scale" id="scale">${btns}</div>
-      </div>`;
     }
-    function limitsStep() {
+    function kinksStep(step) {
+      const blocks = step.ids.map((id) => {
+        const k = KINK_BY[id];
+        return `<div class="qblock" data-kid="${id}">
+          <span class="hint-tip"><div class="qhead"><span class="hinted">${esc(k.label)}</span></div><span class="tip">${esc(k.hint)}</span></span>
+          ${k.sub ? `<div class="qsub">${esc(k.sub)}</div>` : ""}
+          <div class="scale">${scaleButtons(id)}</div></div>`;
+      }).join("");
+      const lim = step.limits ? `<div class="qblock"><div class="qhead">Hard limits</div>
+        <textarea id="limits" placeholder="write your hard limits here (optional)" maxlength="1000">${esc(A.limits)}</textarea></div>` : "";
+      return `<div class="step"><div class="eyebrow">interests &middot; rate 1 to 5</div><h1>interests</h1>${blocks}${lim}</div>`;
+    }
+    function petnamesStep() {
+      const rows = PETNAMES.map((it) => {
+        const v = A.petnames[it.id];
+        return `<div class="row3" data-id="${it.id}">
+          <span class="name">${esc(it.label)}</span>
+          <button type="button" class="opt love ${v === "love" ? "on" : ""}" data-v="love">Love</button>
+          <button type="button" class="opt mid ${v === "indifferent" ? "on" : ""}" data-v="indifferent">Indifferent</button>
+          <button type="button" class="opt hate ${v === "hate" ? "on" : ""}" data-v="hate">Hate</button>
+        </div>`;
+      }).join("");
+      const other = `<div class="other"><label>other</label><input type="text" id="petother" maxlength="120" placeholder="another name, optional" value="${esc(A.petnamesOther)}" /></div>`;
+      return `<div class="step"><div class="eyebrow">love, indifferent, or hate</div><h1>Petnames</h1><div class="rows">${rows}</div>${other}</div>`;
+    }
+    function finishStep() {
       return `<div class="step">
-        <div class="eyebrow">limits</div>
-        <h1>hard limits</h1>
-        <textarea id="limits" placeholder="write your limits here" maxlength="1000">${esc(A.limits)}</textarea>
+        <div class="eyebrow">final step</div>
+        <h1>send it</h1>
+        <p class="lede">Accounts are made by hand. Send this application, then message Hermione on Discord with the code below so she can match it to your answers and set up your account.</p>
+        <div class="finishbox">
+          <div class="fb-row"><span class="fb-k">Hermione &middot; Discord</span><span class="fb-v">@a.ngelsocks</span></div>
+          <div class="fb-row"><span class="fb-k">your code</span><span class="fb-v code">${AUTH}</span></div>
+        </div>
       </div>`;
     }
     function twoChoiceStep(title, eyebrow, list, store, yesLabel, noLabel, yesVal, noVal, extraOther) {
@@ -288,32 +323,44 @@
       return `<div class="step done">
         <div class="mark">✓</div>
         <h1>sent</h1>
+        <p class="lede">Your code is <b style="color:var(--gold);letter-spacing:.2em">${AUTH}</b> — message Hermione (@a.ngelsocks) with it.</p>
         <div style="margin-top:1.6rem"><a class="btn primary" href="/">go back</a></div>
       </div>`;
     }
 
     // ---- wiring per step ----
     function bindStep(step) {
-      if (step.kind === "contact") {
-        $("discord").addEventListener("input", (e) => { A.contact.discord = e.target.value; refreshNav(); });
-      } else if (step.kind === "kink") {
-        $("scale").addEventListener("click", (e) => {
-          const b = e.target.closest("button[data-val]"); if (!b) return;
-          A.kinks[step.k.id] = Number(b.dataset.val);
-          [...$("scale").children].forEach((c) => c.classList.toggle("on", c === b));
-          refreshNav();
+      if (step.kind === "kinks") {
+        document.querySelectorAll(".qblock[data-kid]").forEach((block) => {
+          const id = block.dataset.kid;
+          block.querySelector(".scale").addEventListener("click", (e) => {
+            const b = e.target.closest("button[data-val]"); if (!b) return;
+            A.kinks[id] = Number(b.dataset.val);
+            [...block.querySelectorAll(".scale button")].forEach((c) => c.classList.toggle("on", c === b));
+            refreshNav();
+          });
         });
-      } else if (step.kind === "limits") {
-        $("limits").addEventListener("input", (e) => { A.limits = e.target.value; });
-      } else if (step.kind === "punishments" || step.kind === "petnames") {
+        const lim = $("limits");
+        if (lim) lim.addEventListener("input", (e) => { A.limits = e.target.value; });
+      } else if (step.kind === "punishments") {
         document.querySelectorAll(".row2").forEach((row) => {
-          const store = step.kind === "punishments" ? A.punishments : A.petnames;
           const id = row.dataset.id;
           row.querySelectorAll("button").forEach((btn) => {
             btn.addEventListener("click", () => {
-              store[id] = btn.dataset.v;
+              A.punishments[id] = btn.dataset.v;
               row.querySelector(".yes").classList.toggle("on", btn.classList.contains("yes"));
               row.querySelector(".no").classList.toggle("on", btn.classList.contains("no"));
+              refreshNav();
+            });
+          });
+        });
+      } else if (step.kind === "petnames") {
+        document.querySelectorAll(".row3").forEach((row) => {
+          const id = row.dataset.id;
+          row.querySelectorAll(".opt").forEach((btn) => {
+            btn.addEventListener("click", () => {
+              A.petnames[id] = btn.dataset.v;
+              row.querySelectorAll(".opt").forEach((o) => o.classList.toggle("on", o === btn));
               refreshNav();
             });
           });
@@ -325,42 +372,36 @@
 
     // ---- completeness gate ----
     function stepComplete(step) {
-      if (step.kind === "contact") return !!A.contact.discord.trim();
-      if (step.kind === "kink") return !!A.kinks[step.k.id];
+      if (step.kind === "kinks") return step.ids.every((id) => !!A.kinks[id]);
       if (step.kind === "punishments") return PUNISHMENTS.every((p) => A.punishments[p.id]);
       if (step.kind === "petnames") return PETNAMES.every((p) => A.petnames[p.id]);
-      return true; // intro, limits (optional), review
+      return true; // intro, finish
     }
 
     function render() {
       const step = STEPS[i];
       let html = "";
-      if (step.kind === "contact") html = contactStep();
-      else if (step.kind === "intro") html = step.key === "about" ? introAbout() : introPurpose();
-      else if (step.kind === "kink") html = kinkStep(step.k);
-      else if (step.kind === "limits") html = limitsStep();
+      if (step.kind === "intro") html = introStep();
+      else if (step.kind === "kinks") html = kinksStep(step);
       else if (step.kind === "punishments") html = twoChoiceStep("Punishments", "acceptable, or not", PUNISHMENTS, A.punishments, "Acceptable", "I hate this", "acceptable", "hate", false);
-      else if (step.kind === "petnames") html = twoChoiceStep("Petnames", "like, or hate", PETNAMES, A.petnames, "Like", "Hate", "like", "hate", true);
-      else if (step.kind === "review") html = reviewStep();
+      else if (step.kind === "petnames") html = petnamesStep();
+      else if (step.kind === "finish") html = finishStep();
       $("stage").innerHTML = html;
       bindStep(step);
 
-      // progress
-      const labels = { contact: "contact", intro: "intro", kink: "interests", limits: "limits", punishments: "punishments", petnames: "petnames", review: "review" };
+      const labels = { intro: "intro", kinks: "interests", punishments: "punishments", petnames: "petnames", finish: "send" };
       $("proglabel").textContent = labels[step.kind] || "";
       $("progcount").textContent = (i + 1) + " / " + STEPS.length;
-      $("progfill").style.width = ((i) / (STEPS.length - 1) * 100) + "%";
+      $("progfill").style.width = (i / (STEPS.length - 1) * 100) + "%";
 
-      // Step 0's back doesn't dead-end: it leaves the questionnaire for login.
       $("back").disabled = false;
-      $("next").textContent = step.kind === "review" ? "send →" : "next →";
+      $("next").textContent = step.kind === "finish" ? "send →" : "next →";
       $("next").classList.toggle("primary", true);
       $("err").textContent = "";
       refreshNav();
     }
     function refreshNav() {
-      const step = STEPS[i];
-      $("next").disabled = !stepComplete(step);
+      $("next").disabled = !stepComplete(STEPS[i]);
     }
 
     async function submit() {
@@ -369,7 +410,7 @@
       try {
         const res = await fetch("/api/apply", {
           method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ contact: A.contact, kinks: A.kinks, limits: A.limits, punishments: A.punishments, petnames: A.petnames, petnamesOther: A.petnamesOther }),
+          body: JSON.stringify({ authCode: AUTH, kinks: A.kinks, limits: A.limits, punishments: A.punishments, petnames: A.petnames, petnamesOther: A.petnamesOther }),
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) { $("err").textContent = data.error || "Could not send. Check your answers."; $("next").disabled = false; return; }
@@ -386,7 +427,7 @@
     $("next").addEventListener("click", () => {
       const step = STEPS[i];
       if (!stepComplete(step)) return;
-      if (step.kind === "review") { submit(); return; }
+      if (step.kind === "finish") { submit(); return; }
       if (i < STEPS.length - 1) { i++; render(); }
     });
 
