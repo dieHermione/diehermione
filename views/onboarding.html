@@ -201,11 +201,9 @@
       return `<div class="step">
         <div class="eyebrow">contact</div>
         <h1>contact</h1>
-        <p class="lede">There are no accounts to make here. Hermione reads every application by
-          hand and, if she is interested, reaches out and sets up your account herself. Leave a
-          Discord username she can contact you at.</p>
         <div class="fl" style="margin-top:1.4rem"><input type="text" id="discord" maxlength="80"
-          placeholder="your Discord username" value="${esc(A.contact.discord)}" /></div>
+          name="contact_discord" autocomplete="off" autocapitalize="off" autocorrect="off"
+          spellcheck="false" placeholder="your Discord username" value="${esc(A.contact.discord)}" /></div>
       </div>`;
     }
     function introAbout() {
@@ -353,7 +351,8 @@
       $("progcount").textContent = (i + 1) + " / " + STEPS.length;
       $("progfill").style.width = ((i) / (STEPS.length - 1) * 100) + "%";
 
-      $("back").disabled = i === 0;
+      // Step 0's back doesn't dead-end: it leaves the questionnaire for login.
+      $("back").disabled = false;
       $("next").textContent = step.kind === "review" ? "send →" : "next →";
       $("next").classList.toggle("primary", true);
       $("err").textContent = "";
@@ -383,7 +382,7 @@
       }
     }
 
-    $("back").addEventListener("click", () => { if (i > 0) { i--; render(); } });
+    $("back").addEventListener("click", () => { if (i > 0) { i--; render(); } else { window.location.href = "/"; } });
     $("next").addEventListener("click", () => {
       const step = STEPS[i];
       if (!stepComplete(step)) return;
