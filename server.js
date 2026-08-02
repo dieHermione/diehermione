@@ -1075,11 +1075,11 @@ app.get("/api/chess/games", (req, res) => {
 });
 
 // kept out of public/ so the static middleware can't serve it unauthenticated
-// The admin panels moved onto Hermione's own profile; keep the old URL working
-// by sending it there.
+// The admin controls live on their own page now (extracted off the dashboard).
+// Admin-only, like /manage and /commands.
 app.get("/admin", requireLogin, (req, res) => {
   if (!isAdmin(req)) return res.redirect("/dashboard");
-  res.redirect("/profile");
+  res.sendFile(path.join(__dirname, "views", "admin.html"));
 });
 
 // Demo surface for the reusable card navigator (see public/cardnav.js).
