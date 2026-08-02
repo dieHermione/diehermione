@@ -1172,18 +1172,22 @@ app.get("/chess-extra.js", (req, res) => {
    here so the browser makes no third-party request and so a failure has one
    place to fall back from. Titles are a fixed hand-picked list; nothing the
    player types ever reaches Wikipedia. */
+// Topics are drawn from four categories only: angels, feminism, Greek
+// mythology, and pre-18th-century history.
 const SUMMARY_TOPICS = [
-  ["event", "Apollo 11"], ["event", "Chernobyl disaster"], ["event", "Great Fire of London"],
-  ["event", "Battle of Hastings"], ["event", "Magna Carta"], ["event", "1815 eruption of Mount Tambora"],
-  ["event", "Spanish flu"], ["event", "Sinking of the Titanic"],
-  ["object", "Rubik's Cube"], ["object", "Astrolabe"], ["object", "Typewriter"],
-  ["object", "Lighthouse"], ["object", "Metronome"], ["object", "Kaleidoscope"],
-  ["object", "Sextant"], ["object", "Zoetrope"], ["object", "Barometer"],
-  ["character", "Sherlock Holmes"], ["character", "Frankenstein's monster"], ["character", "Count Dracula"],
-  ["character", "Don Quixote"], ["character", "Captain Ahab"], ["character", "Miss Havisham"],
-  ["character", "Cheshire Cat"], ["character", "Baba Yaga"], ["character", "Hamlet"],
+  ["angels", "Angel"], ["angels", "Archangel"], ["angels", "Gabriel"], ["angels", "Michael (archangel)"],
+  ["angels", "Seraph"], ["angels", "Cherub"], ["angels", "Guardian angel"], ["angels", "Fallen angel"],
+  ["angels", "Hierarchy of angels"], ["angels", "Ophanim"],
+  ["feminism", "Feminism"], ["feminism", "Mary Wollstonecraft"], ["feminism", "Simone de Beauvoir"],
+  ["feminism", "Women's suffrage"], ["feminism", "Suffragette"], ["feminism", "Second-wave feminism"],
+  ["feminism", "Emmeline Pankhurst"], ["feminism", "Sojourner Truth"], ["feminism", "The Second Sex"],
+  ["myth", "Greek mythology"], ["myth", "Athena"], ["myth", "Medusa"], ["myth", "Persephone"],
+  ["myth", "Aphrodite"], ["myth", "Artemis"], ["myth", "Prometheus"], ["myth", "Pandora"], ["myth", "Hecate"],
+  ["history", "Roman Empire"], ["history", "Byzantine Empire"], ["history", "Black Death"],
+  ["history", "Fall of Constantinople"], ["history", "Norman Conquest"], ["history", "Charlemagne"],
+  ["history", "Hundred Years' War"], ["history", "Crusades"], ["history", "Magna Carta"], ["history", "Vikings"],
 ];
-const KIND_LABEL = { event: "a historical event", object: "a real-world object", character: "a fictional character" };
+const KIND_LABEL = { angels: "angels", feminism: "feminism", myth: "Greek mythology", history: "pre-18th century history" };
 
 // one page is fetched per round; a small cache keeps repeat rounds polite
 const summaryCache = new Map();
@@ -1193,7 +1197,7 @@ const SUMMARY_TTL = 6 * 60 * 60 * 1000;
 // and leaves nothing to do. This pulls the article body instead, through the
 // action API's plain-text extract, and trims it to something a person will
 // actually read in one sitting.
-const SUMMARY_MAX_CHARS = 4200;
+const SUMMARY_MAX_CHARS = 7200;
 
 function trimToParagraph(text, max) {
   if (text.length <= max) return text;
@@ -1220,13 +1224,14 @@ async function fetchTopic(title) {
   const j = await res.json();
   const page = j && j.query && j.query.pages && j.query.pages[0];
   if (!page || page.missing) throw new Error("no page");
-  // drop the section headings the plain-text extract leaves in
+  // drop the section headings, then make every paragraph break a consistent
+  // blank line so paragraphs never touch (the extract mixes single and double
+  // newlines).
   const body = String(page.extract || "")
     .split("\n")
-    .filter((line) => !/^=+ .* =+$/.test(line.trim()))
-    .join("\n")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
+    .map((line) => line.trim())
+    .filter((line) => line && !/^=+ .* =+$/.test(line))
+    .join("\n\n");
   const data = {
     title: page.title || title,
     text: trimToParagraph(body, SUMMARY_MAX_CHARS),

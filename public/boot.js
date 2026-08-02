@@ -176,7 +176,7 @@
     var ov = document.createElement("div"); ov.id = "boot-overlay";
     ov.innerHTML =
       '<div class="vig"></div><div class="scan"></div>' +
-      '<div class="top"><span>angelOS v0.2</span><span>power-on self test</span></div>' +
+      '<div class="top"><span style="text-transform:none">angelOS v0.2</span><span>power-on self test</span></div>' +
       '<div class="console"><div id="boot-log"></div></div>';
     document.body.appendChild(ov);
     requestAnimationFrame(function () { ov.classList.add("on"); });
