@@ -208,19 +208,19 @@
     .leaderboard-card::-webkit-scrollbar-thumb { background: rgba(0,172,219,0.35); border-radius: 999px; }
     /* guests see the board but names are not links */
     .dash.is-guest .leaderboard-card td a { pointer-events: none; color: var(--c); text-decoration: none; }
-    .leaderboard-card h2 { color: var(--dim); letter-spacing: 0.2em; text-transform: uppercase; font-size: 0.72rem; font-weight: 400; margin: 0 0 0.8rem; text-align: right; }
-    /* Right-anchored to the window edge (mirrors the points display on the left),
-       with a fixed gap and fixed columns so it never stretches for long names or
-       point totals — long names ellipsize instead. */
-    .leaderboard-card table { border-collapse: collapse; width: auto; margin-left: auto; }
+    .leaderboard-card h2 { color: var(--dim); letter-spacing: 0.2em; text-transform: uppercase; font-size: 0.72rem; font-weight: 400; margin: 0 0 0.8rem; }
+    /* Full width: rows and heading are left-aligned; the points column right-aligns
+       to the window edge (mirrors the points display's padding on the left). Long
+       names ellipsize so the table never stretches. */
+    .leaderboard-card table { border-collapse: collapse; width: 100%; }
     .leaderboard-card th, .leaderboard-card td { white-space: nowrap; }
     .leaderboard-card thead th { text-align: left; color: var(--dim2); font-weight: 400; font-size: 0.68rem; letter-spacing: 0.14em; text-transform: uppercase; padding-bottom: 0.4rem; }
-    .leaderboard-card th:nth-child(2), .leaderboard-card td:nth-child(2) { max-width: 7em; overflow: hidden; text-overflow: ellipsis; }
-    .leaderboard-card th:last-child, .leaderboard-card td:last-child { text-align: right; padding-left: 9em; }
+    .leaderboard-card th:nth-child(2), .leaderboard-card td:nth-child(2) { width: 100%; max-width: 0; overflow: hidden; text-overflow: ellipsis; padding-right: 3em; }
+    .leaderboard-card th:last-child, .leaderboard-card td:last-child { text-align: right; }
     .leaderboard-card td { padding: 0.24rem 0; }
-    .leaderboard-card td.rank { color: var(--dim); width: 2.4em; }
+    .leaderboard-card td.rank { color: var(--dim); width: 2.4em; padding-right: 0.8em; }
     .leaderboard-card td a { color: var(--c); } .leaderboard-card td a:hover { color: var(--bright); }
-    .leaderboard-card td:last-child { color: var(--accent); font-variant-numeric: tabular-nums; min-width: 3.5em; }
+    .leaderboard-card td:last-child { color: var(--accent); font-variant-numeric: tabular-nums; }
 
     /* notifications bell (injected into #notif-slot) */
     #notif-slot .notif-btn { background: transparent; border: 1px solid var(--dim2); color: var(--c); border-radius: 4px !important; }
