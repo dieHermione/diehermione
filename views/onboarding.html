@@ -16,7 +16,7 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     [hidden] { display: none !important; }
     :root {
-      --c: #00acdb; --dim: rgba(0,172,219,0.62); --dim2: rgba(0,172,219,0.4); --bright: #eafaff;
+      --c: #00acdb; --dim: #006b88; --dim2: #004558; --bright: #eafaff;
       --accent: #00acdb; --glow: rgba(0,172,219,.34); --red: #ff3b2f; --gold: #ffd27a;
       --ok: #7dffb0; --panel: #0a1720; --line: #173040;
     }
@@ -170,7 +170,7 @@
     //   feet   - Feet, socks, shoes, anything adjacent. The biggest thing.
     //   tasks  - Research / Essays / Games / Other.
     const KINK_SCALE_A = ["I hate them", "indifferent", "I like them", "love", "obsessed"];
-    const KINK_SCALE_B = ["I hate this", "indifferent", "I like this", "love", "obsessed"];
+    const KINK_SCALE_B = ["hate", "indifferent", "like", "love", "obsessed"];
     const KINKS = [
       { id: "feet",         label: "Feet",         sub: "Feet, socks, shoes, anything adjacent to them.", hint: "placeholder", scale: KINK_SCALE_A },
       { id: "tasks",        label: "Tasks / Chores", sub: "Research / Essays / Games / Other.",            hint: "placeholder", scale: KINK_SCALE_B },
@@ -383,7 +383,7 @@
       let html = "";
       if (step.kind === "intro") html = introStep();
       else if (step.kind === "kinks") html = kinksStep(step);
-      else if (step.kind === "punishments") html = twoChoiceStep("Punishments", "acceptable, or not", PUNISHMENTS, A.punishments, "Acceptable", "I hate this", "acceptable", "hate", false);
+      else if (step.kind === "punishments") html = twoChoiceStep("Punishments", "acceptable, or not", PUNISHMENTS, A.punishments, "Acceptable", "hate", "acceptable", "hate", false);
       else if (step.kind === "petnames") html = petnamesStep();
       else if (step.kind === "finish") html = finishStep();
       $("stage").innerHTML = html;
@@ -431,14 +431,25 @@
       if (i < STEPS.length - 1) { i++; render(); }
     });
 
-    // ---- boot: load the intro copy; no account is involved ----
-    fetch("/api/apply")
-      .then((r) => (r.ok ? r.json() : Promise.reject()))
-      .then((d) => {
-        INTRO.about = d.about || ""; INTRO.purpose = d.purpose || "";
-        render();
-      })
-      .catch(() => { render(); });
+    // ---- boot: load the intro copy + Hermione's editable option descriptions ----
+    function loadSubs() {
+      return fetch("/api/questionnaire")
+        .then((r) => (r.ok ? r.json() : Promise.reject()))
+        .then((d) => {
+          const s = (d && d.subs) || {};
+          KINKS.forEach((k) => { if (s[k.id] !== undefined) k.sub = s[k.id]; });
+        })
+        .catch(() => {});
+    }
+    loadSubs().then(() => {
+      fetch("/api/apply")
+        .then((r) => (r.ok ? r.json() : Promise.reject()))
+        .then((d) => {
+          INTRO.about = d.about || ""; INTRO.purpose = d.purpose || "";
+          render();
+        })
+        .catch(() => { render(); });
+    });
   </script>
   <script src="/dashglitch.js" defer></script>
 

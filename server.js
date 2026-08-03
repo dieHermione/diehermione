@@ -2033,6 +2033,53 @@ function saveSite(site) {
   fs.writeFileSync(SITE_FILE, JSON.stringify(site, null, 2));
 }
 
+// Editable sub-text under each questionnaire (kink) option on /apply. File-first
+// like every other pool; the built-in copy is only the fallback. Empty is allowed
+// (several options carry no description).
+const QUESTIONNAIRE_FILE = path.join(process.env.DATA_DIR || __dirname, "questionnaire.json");
+const QUESTIONNAIRE_DEFAULTS = {
+  subs: {
+    feet: "Feet, socks, shoes, anything adjacent to them.",
+    tasks: "Research / Essays / Games / Other.",
+    degradation: "",
+    humiliation: "",
+    masochism: "",
+    exhibitionism: "",
+    worship: "",
+    petplay: "",
+  },
+};
+function loadQuestionnaire() {
+  try {
+    const saved = JSON.parse(fs.readFileSync(QUESTIONNAIRE_FILE, "utf8"));
+    return { subs: { ...QUESTIONNAIRE_DEFAULTS.subs, ...(saved.subs || {}) } };
+  } catch {
+    return { subs: { ...QUESTIONNAIRE_DEFAULTS.subs } };
+  }
+}
+function saveQuestionnaire(q) {
+  fs.writeFileSync(QUESTIONNAIRE_FILE, JSON.stringify(q, null, 2));
+}
+
+// public: /apply is account-less, so the questionnaire page reads this unauthenticated
+app.get("/api/questionnaire", (req, res) => {
+  res.json(loadQuestionnaire());
+});
+app.put("/api/questionnaire", (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });
+  const incoming = (req.body && req.body.subs) || {};
+  const q = loadQuestionnaire();
+  for (const id of Object.keys(q.subs)) {
+    if (incoming[id] === undefined) continue;
+    const value = String(incoming[id]).trim();
+    if (value.length > 200) return res.status(400).json({ error: "Keep each description under 200 characters." });
+    q.subs[id] = value;
+  }
+  saveQuestionnaire(q);
+  res.json({ ok: true, subs: q.subs });
+});
+
 app.get("/api/site", (req, res) => {
   if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
   const site = loadSite();

@@ -36,14 +36,14 @@
       "#console .con-log{max-height:30vh;overflow-y:auto;font-size:0.82rem;line-height:1.7;" +
       "scrollbar-width:thin;}" +
       "#console .con-log div{white-space:pre-wrap;}" +
-      "#console .con-log .in{opacity:0.6;}" +
+      "#console .con-log .in{opacity:1;}" +
       "#console .con-log .ok{color:var(--bright,var(--br,currentColor));}" +
       "#console .con-log .no{color:var(--err,#ff5a4a);}" +
       "#console .con-line{display:flex;align-items:center;gap:0.5rem;margin-top:0.5rem;}" +
       "#console .con-line span{color:var(--accent,var(--br,currentColor));}" +
       "#console input{flex:1;background:transparent;border:none;outline:none;" +
       "color:var(--bright,var(--br,currentColor));font-family:inherit;font-size:0.92rem;letter-spacing:0.04em;}" +
-      "#console .con-hint{opacity:0.4;font-size:0.64rem;letter-spacing:0.18em;text-transform:uppercase;margin-top:0.4rem;}";
+      "#console .con-hint{font-size:0.64rem;letter-spacing:0.18em;text-transform:uppercase;margin-top:0.4rem;}";
     document.head.appendChild(s);
   }
 

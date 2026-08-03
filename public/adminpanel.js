@@ -248,6 +248,38 @@ window.AdminPanel = (function () {
     }).catch(() => {});
     wrap.append(foldable(onbSec));
 
+    // questionnaire option descriptions: the sub-text under each /apply kink option
+    const qSec = document.createElement("div"); qSec.className = "adm-sec";
+    qSec.append(mk("h3", "Questionnaire descriptions"));
+    const qHint = mk("p", "The sub-text shown under each option on the application questionnaire. Leave blank for none.");
+    qHint.className = "adm-empty"; qSec.append(qHint);
+    const QLABELS = { feet: "Feet", tasks: "Tasks / Chores", degradation: "Degradation", humiliation: "Humiliation",
+      masochism: "Masochism", exhibitionism: "Exhibitionism", worship: "Worship", petplay: "Petplay" };
+    const qInputs = {};
+    Object.keys(QLABELS).forEach((id) => {
+      const lab = mk("label", QLABELS[id]); lab.className = "adm-lbl";
+      const inp = document.createElement("input"); inp.type = "text"; inp.className = "adm-area"; inp.value = "";
+      inp.placeholder = "no description"; qInputs[id] = inp;
+      qSec.append(lab, inp);
+    });
+    const qSave = mkChip("Save descriptions", "", async () => {
+      const subs = {}; Object.keys(qInputs).forEach((id) => { subs[id] = qInputs[id].value; });
+      qSave.textContent = "Saving...";
+      const r = await fetch("/api/questionnaire", {
+        method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ subs }),
+      });
+      qSave.textContent = r.ok ? "Saved" : "Error";
+      setTimeout(() => { qSave.textContent = "Save descriptions"; }, 1500);
+    });
+    const qRow = document.createElement("div"); qRow.style.marginTop = ".5rem"; qRow.append(qSave);
+    qSec.append(qRow);
+    // fetch current values from the server before showing them (never seed from a client default)
+    fetch("/api/questionnaire").then((r) => r.json()).then((d) => {
+      const s = (d && d.subs) || {};
+      Object.keys(qInputs).forEach((id) => { qInputs[id].value = s[id] || ""; });
+    }).catch(() => {});
+    wrap.append(foldable(qSec));
+
     // accounts: points + leaderboard listing
     const accSec = document.createElement("div");
     accSec.className = "adm-sec";
@@ -417,7 +449,7 @@ window.AdminPanel = (function () {
     const TABS = [
       { id: "members", label: "Members", match: ["Approvals", "Applications", "Accounts"] },
       { id: "writing", label: "Writing", match: ["Devotion presets", "Penance presets", "Lines completed"] },
-      { id: "content", label: "Site content", match: ["Onboarding intro", "Decrypt lines", "Screen glitch"] },
+      { id: "content", label: "Site content", match: ["Onboarding intro", "Questionnaire descriptions", "Decrypt lines", "Screen glitch"] },
       { id: "docs", label: "Docs & tools", match: ["Documentation"] },
     ];
     const tabFor = (sec) => {
