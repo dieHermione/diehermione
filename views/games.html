@@ -21,9 +21,11 @@
       --accent: #8fd0ff; --glow: rgba(0,172,219,.32);
       --red: #ff3b2f; --deep: #c11208; --err: #ff5a4a;
       /* Penance red, shared with the skill-check card so the two read as one game
-         family. Anchored on the penance game's own signature red (#c11208) but
-         pushed brighter/more saturated so the card feels vivid rather than muddy. */
-      --pen-red: #ff2a20; --pen-hot: #ff5142; --pen-mid: #d61409; --pen-low: #b0130a;
+         family. This IS the penance game's actual text colour (#c11208 — the
+         `--c` every line, cursor and label uses in writing.html); the card is
+         monochrome in it, exactly like the game. An earlier lighter coral read as
+         washed-out, which is the opposite of the game's deep blood red. */
+      --pen-red: #c11208; --pen-hot: #c11208; --pen-mid: #c11208; --pen-low: #c11208;
     }
     html, body { height: 100%; }
     body {
@@ -181,7 +183,7 @@
     const GAMES = [
       { n: "snake",       href: "/snake",                 art: "snake", a: "#ff3b2f", wb: "linear-gradient(#1a0708, #05060a)",
         tip: "Free-swimming serpent. Chase the fleeing heart and grow; die on your own tail." },
-      { n: "penance",     href: "/writing",               art: "pen",   a: "#ff2a20", wb: "#0e0607",
+      { n: "penance",     href: "/writing",               art: "pen",   a: "#c11208", wb: "#0e0607",
         tip: "A typing drill of correction. Type each line exactly — falter and it corrupts." },
       { n: "devotion",    href: "/writing?mode=devotion", art: "dev",   a: "#00acdb", wb: "#050a10", account: true,
         tip: "A verse reader. Recite Her lines in turn. An account is required." },
@@ -189,7 +191,7 @@
         tip: "Roll against another, each cap the next roll. Hit one and you lose. Account required." },
       { n: "dummy parse", href: "/dummyparse",            art: "parse", a: "#ff5a4a", wb: "#0a0608",
         tip: "A priest damage recount. Parse the dummy and chase a higher DPS." },
-      { n: "skill check", href: "/skillcheck",            art: "skill", a: "#ff2a20", wb: "radial-gradient(120% 120% at 50% 46%, #200a0c, #050202 74%)",
+      { n: "skill check", href: "/skillcheck",            art: "skill", a: "#c11208", wb: "radial-gradient(120% 120% at 50% 46%, #200a0c, #050202 74%)",
         tip: "Stop the sweeping dial inside the good zone. Pure nerve." },
       { n: "summary",     href: "/summary",               art: "sum",   a: "#00acdb", wb: "#050a10",
         tip: "Read a real Wikipedia article, then retell it under a strict word limit." },
@@ -241,7 +243,7 @@
         <div class="dps"><b>812</b><span>dps</span></div></div>`,
       skill: () => `<div class="c-skill"><svg viewBox="0 0 214 262">
         <circle cx="107" cy="128" r="64" fill="none" stroke="#3a1416" stroke-width="14"/>
-        <path d="M 63.6 171.4 A 64 64 0 0 1 47.7 102.9" fill="none" stroke="#ff2a20" stroke-width="14"/>
+        <path d="M 63.6 171.4 A 64 64 0 0 1 47.7 102.9" fill="none" stroke="#c11208" stroke-width="14"/>
         <circle cx="107" cy="128" r="64" fill="none" stroke="rgba(174,227,255,.18)" stroke-width="1"/>
         <line x1="107" y1="128" x2="72" y2="86" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
         <circle cx="107" cy="128" r="6" fill="#fff"/></svg></div>`,
