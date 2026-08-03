@@ -305,11 +305,18 @@
   }
 
   function init() {
-    const ui = build();
-    if (!ui) return;
-    refresh(ui, { silent: true }).then(() => {
-      setInterval(() => refresh(ui), 15000);
-    });
+    // Notifications are Hermione-only now, so the bell only appears for the admin.
+    const start = () => {
+      const ui = build();
+      if (!ui) return;
+      refresh(ui, { silent: true }).then(() => {
+        setInterval(() => refresh(ui), 15000);
+      });
+    };
+    if (window.siteMe) {
+      window.siteMe().then((d) => { if (d && d.isAdmin) start(); }).catch(() => {});
+    }
+    // no siteMe (or non-admin) -> no bell
   }
 
   if (document.readyState === "loading") {

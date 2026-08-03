@@ -836,14 +836,7 @@ app.post("/api/users/:username/points", (req, res) => {
   const key = req.params.username.toLowerCase();
   if (!users[key]) return res.status(404).json({ error: "No such account." });
   users[key].points = (users[key].points || 0) + amount;
-  pushNotification(
-    users[key],
-    "points-" + Date.now(),
-    (amount > 0 ? "Hermione gave you " + amount : "Hermione took " + Math.abs(amount)) +
-      (Math.abs(amount) === 1 ? " point" : " points") +
-      ". You now have " + users[key].points + ".",
-    "/profile"
-  );
+  // (member-facing point notifications were removed; notifications are Hermione-only now)
   saveUsers(users);
   res.json({ ok: true, points: users[key].points });
 });
@@ -1556,7 +1549,8 @@ app.post("/api/deathroll/roll", (req, res) => {
   const users = loadUsers();
   const otherKey = side === "hermione" ? key : "hermione";
   const other = users[otherKey];
-  if (other) {
+  // notifications are Hermione-only now: only push when she is the recipient
+  if (other && otherKey === "hermione") {
     const roller = side === "hermione" ? "Hermione" : game.opponent;
     pushNotification(
       other,
