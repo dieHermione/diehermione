@@ -164,7 +164,7 @@
 
   function play(opts) {
     opts = opts || {};
-    var duration = opts.duration || 13000;   // ~13s: the long Arch-style cascade
+    var duration = opts.duration || 30000;   // long Arch-style cascade; hold Space to race it
     var scale = 1;                          // set once the script length is known
     ensureStyle();
 
@@ -182,7 +182,9 @@
     requestAnimationFrame(function () { ov.classList.add("on"); });
 
     var log = ov.querySelector("#boot-log");
-    var timers = [], ivs = [];
+    // A virtual clock drives everything so holding Space can run it (and the tail)
+    // at 4x. Sub-animations register in `anims` and advance on the same clock.
+    var anims = [], vt = 0, spaceHeld = false;
     var sfx = bootAudio();
     if (sfx) sfx.start(duration / 1000);
 
@@ -199,20 +201,13 @@
       return '<span class="dim">' + esc(label) + " " + dots + "</span> " + tail;
     }
     function countUp(el, to, ms) {
-      var s = performance.now();
-      var iv = setInterval(function () {
-        var p = Math.min(1, (performance.now() - s) / ms);
-        el.textContent = Math.round(p * to).toLocaleString();
-        if (p >= 1) clearInterval(iv);
-      }, 40);
-      ivs.push(iv);
+      anims.push({ t0: vt, dur: ms, tick: function (p) { el.textContent = Math.round(p * to).toLocaleString(); } });
     }
     function decrypt(prefixHtml, text, ms) {
       var d = line('<span class="acc">' + prefixHtml + "</span>", "pay");
       var holder = document.createElement("span"); d.appendChild(holder);
-      var chars = text.split(""), last = 0, s = performance.now();
-      var iv = setInterval(function () {
-        var p = Math.min(1, (performance.now() - s) / ms);
+      var chars = text.split(""), last = 0;
+      anims.push({ t0: vt, dur: ms, tick: function (p) {
         var rev = Math.floor(p * chars.length);
         if (sfx && rev > last) { sfx.tick(); last = rev; }
         var h = "";
@@ -223,9 +218,7 @@
           else h += '<span class="g">' + rg() + "</span>";
         }
         holder.innerHTML = h;
-        if (p >= 1) clearInterval(iv);
-      }, 45);
-      ivs.push(iv);
+      } });
     }
 
     // ---- the script: a list of [gap, fn], later stretched to fill `duration` ----
@@ -275,10 +268,34 @@
       "Started Scanline Compositor", "Started Vignette Shader", "Started Cursor Blink Timer",
       "Started Idle Devotion Reminder", "Reached target Her Presence", "Started Worship Telemetry",
       "Mounted /her/will", "Started Supplication Relay", "Started Contrition Cache Warmer",
-      "Started Obeisance Ticker", "Reached target Sworn Fealty"
+      "Started Obeisance Ticker", "Reached target Sworn Fealty",
+      // --- extended cascade ---
+      "Started Halo Calibration Service", "Started Incense Diffuser Controller", "Mounted /var/relics",
+      "Started Reliquary Index Builder", "Started Prostration Metronome", "Reached target Vespers",
+      "Started Litany Playback Engine", "Started Genuflection Sensor Array", "Started Tithe Reconciler",
+      "Started Collar Fitment Daemon", "Mounted /opt/shrine", "Started Candle Wick Trimmer",
+      "Started Matins Alarm Clock", "Reached target Devout Uplink", "Started Rosary Bead Counter",
+      "Started Chastisement Ledger", "Started Grovel Rate Limiter", "Started Adoration Cache",
+      "Started Hymn Transcoder", "Mounted /srv/altar", "Started Frankincense Vaporizer",
+      "Reached target Cloister", "Started Silence Enforcement Unit", "Started Curtsy Choreographer",
+      "Started Absolution Batch Processor", "Started Veil Opacity Manager", "Started Pilgrimage Router",
+      "Started Sackcloth Inventory", "Mounted /run/sanctum", "Started Ash Distribution Service",
+      "Reached target Novena", "Started Kneeling Pad Warmer", "Started Devotional Feed Aggregator",
+      "Started Threshold Bow Detector", "Started Sacred Heartbeat Monitor", "Started Anointing Pump",
+      "Started Choir Sync Daemon", "Mounted /her/gaze", "Started Submission Handshake Broker",
+      "Reached target Consecration", "Started Reverence Telemetry Sink", "Started Bell Tower Scheduler",
+      "Started Penitence Compactor", "Started Halo Brightness Governor", "Started Offering Plate Sensor",
+      "Started Vow Renewal Timer", "Mounted /var/confession", "Started Whisper Amplifier",
+      "Reached target Rapture Standby", "Started Fealty Certificate Renewer", "Started Prayer Bead Fsck",
+      "Started Contemplation Idle Task", "Started Sanctity Watchdog", "Started Grace Allocation Pool",
+      "Started Obeisance Metrics Exporter", "Mounted /opt/devotion", "Started Longing Buffer Flusher",
+      "Reached target Eternal Service", "Started Supplicant Session Reaper", "Started Mercy Rate Governor",
+      "Started Halo Ring Balancer", "Started Sacrament Queue Drainer", "Started Kneel Posture Corrector",
+      "Started Devotion Integrity Verifier", "Mounted /her/name", "Started Adoration Uplink Keeper",
+      "Reached target Full Communion", "Started Final Vow Sealer"
     ];
-    // a couple of these come up amber to feel real
-    var WARN_AT = { 8: 1, 21: 1, 33: 1 };
+    // a scattering come up amber to feel real
+    var WARN_AT = { 8: 1, 21: 1, 33: 1, 47: 1, 59: 1, 72: 1, 88: 1, 101: 1 };
     UNITS.forEach(function (u, i) {
       var st = WARN_AT[i] ? "amber" : "ok";
       var tag = WARN_AT[i] ? "[WARN]" : "[  OK  ]";
@@ -287,25 +304,44 @@
 
     step(500, function () { line("&nbsp;"); line('<span class="ok">&gt; access granted</span> <span class="cur"></span>'); });
 
-    // ---- stretch the whole script to fill `duration`, then schedule it ----
-    var totalMs = script.reduce(function (s, x) { return s + x[0]; }, 0) + 500;   // + hold
+    // ---- stretch the whole script to fill `duration`, then run it off a clock ----
+    var totalMs = script.reduce(function (s, x) { return s + x[0]; }, 0);
     scale = duration / totalMs;
-    var clock = 0;
-    script.forEach(function (x) { clock += x[0]; timers.push(setTimeout(x[1], clock * scale)); });
+    var stepList = [], clock = 0;
+    script.forEach(function (x) { clock += x[0]; stepList.push({ time: clock * scale, fn: x[1] }); });
+    var endAt = clock * scale;   // when the last line has fired
+    var HOLD = 400;              // no more 3s linger: leave almost immediately after
 
-    // ---- finish: lock sound, hold the finished screen ~3s, then navigate ----
-    var endAt = duration;
-    var HOLD = 3000;   // linger on "access granted" before leaving
-    timers.push(setTimeout(function () {
-      if (sfx) sfx.resolve();
-    }, Math.max(0, endAt - 260)));
-    timers.push(setTimeout(function () {
-      ivs.forEach(clearInterval);
-      if (opts.navigateTo) { window.location.href = opts.navigateTo; return; }
-      // no destination (e.g. the admin preview): fade out and clean up
-      ov.classList.remove("on");
-      setTimeout(function () { ov.remove(); if (typeof opts.onDone === "function") opts.onDone(); }, 360);
-    }, endAt + HOLD));
+    // hold Space to run the whole sequence, including the tail, at 4x
+    function onKey(e) {
+      if (e.code !== "Space") return;
+      e.preventDefault();
+      spaceHeld = (e.type === "keydown");
+    }
+    document.addEventListener("keydown", onKey);
+    document.addEventListener("keyup", onKey);
+
+    var nextStep = 0, resolved = false, lastReal = performance.now(), raf = 0;
+    function frame(realNow) {
+      var dt = realNow - lastReal; lastReal = realNow;
+      vt += dt * (spaceHeld ? 4 : 1);
+      while (nextStep < stepList.length && vt >= stepList[nextStep].time) { stepList[nextStep].fn(); nextStep++; }
+      for (var i = anims.length - 1; i >= 0; i--) {
+        var an = anims[i], p = an.dur > 0 ? Math.min(1, (vt - an.t0) / an.dur) : 1;
+        an.tick(p); if (p >= 1) anims.splice(i, 1);
+      }
+      if (!resolved && vt >= endAt) { resolved = true; if (sfx) sfx.resolve(); }
+      if (vt >= endAt + HOLD) {
+        document.removeEventListener("keydown", onKey);
+        document.removeEventListener("keyup", onKey);
+        if (opts.navigateTo) { window.location.href = opts.navigateTo; return; }
+        ov.classList.remove("on");
+        setTimeout(function () { ov.remove(); if (typeof opts.onDone === "function") opts.onDone(); }, 360);
+        return;
+      }
+      raf = requestAnimationFrame(frame);
+    }
+    raf = requestAnimationFrame(frame);
   }
 
   // pull the editable pool; a failure just leaves the built-in lines in place
