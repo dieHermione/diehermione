@@ -1179,8 +1179,12 @@ const SUMMARY_TOPICS = [
   ["history", "Roman Empire"], ["history", "Byzantine Empire"], ["history", "Black Death"],
   ["history", "Fall of Constantinople"], ["history", "Norman Conquest"], ["history", "Charlemagne"],
   ["history", "Hundred Years' War"], ["history", "Crusades"], ["history", "Magna Carta"], ["history", "Vikings"],
+  ["scripture", "Biblical criticism"], ["scripture", "Historical criticism"], ["scripture", "Documentary hypothesis"],
+  ["scripture", "Synoptic problem"], ["scripture", "Q source"], ["scripture", "Historical Jesus"],
+  ["scripture", "Form criticism"], ["scripture", "Redaction criticism"], ["scripture", "Markan priority"],
+  ["scripture", "Julius Wellhausen"], ["scripture", "Authorship of the Bible"], ["scripture", "Dating the Bible"],
 ];
-const KIND_LABEL = { angels: "angels", feminism: "feminism", myth: "Greek mythology", history: "pre-18th century history" };
+const KIND_LABEL = { angels: "angels", feminism: "feminism", myth: "Greek mythology", history: "pre-18th century history", scripture: "critical biblical scholarship" };
 
 // one page is fetched per round; a small cache keeps repeat rounds polite
 const summaryCache = new Map();
