@@ -24,7 +24,7 @@
     body {
       background: #000; color: var(--c);
       font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 15px;
-      overflow-x: hidden;
+      overflow: hidden;
     }
     .scan { position: fixed; inset: 0; z-index: 200; pointer-events: none;
       background: repeating-linear-gradient(0deg, rgba(0,0,0,.26) 0 1px, transparent 1px 3px); }
@@ -32,7 +32,7 @@
       box-shadow: inset 0 0 26vh 9vh rgba(0,0,0,.7); }
 
     .shell { position: relative; z-index: 5; max-width: 760px; margin: 0 auto;
-      min-height: 100%; display: flex; flex-direction: column; padding: 4vh 5vw 3vh; }
+      height: 100%; display: flex; flex-direction: column; padding: 4vh 5vw 3vh; }
     .top { display: flex; justify-content: space-between; align-items: baseline;
       font-size: 11px; letter-spacing: .3em; color: var(--dim); text-transform: uppercase; }
     .top b { color: var(--bright); font-weight: 400; }
@@ -44,8 +44,9 @@
     .prog .lab { display: flex; justify-content: space-between; margin-top: .4rem;
       font-size: 10px; letter-spacing: .2em; color: var(--dim); text-transform: uppercase; }
 
-    .stage { flex: 1; display: flex; flex-direction: column; justify-content: center;
-      padding: 3vh 0; }
+    /* the page itself never scrolls; a tall slide scrolls inside the stage */
+    .stage { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column;
+      justify-content: safe center; padding: 3vh 0; }
     .step { animation: rise .35s ease; }
     @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
     .eyebrow { color: var(--dim); letter-spacing: .3em; text-transform: uppercase; font-size: 11px; }
@@ -56,8 +57,9 @@
     .lede.body { color: var(--c); }
 
     /* the 1..5 interest scale */
-    .qsub { color: var(--dim); font-size: .95rem; margin: .5rem 0 1.8rem; }
-    .scale { display: grid; grid-template-columns: repeat(5, 1fr); gap: .6rem; }
+    .qsub { color: var(--dim); font-size: .95rem; margin: .5rem 0 0; }
+    /* consistent gap above the buttons whether or not a description is present */
+    .scale { display: grid; grid-template-columns: repeat(5, 1fr); gap: .6rem; margin-top: 1.2rem; }
     .scale button { position: relative; background: var(--panel); border: 1px solid var(--line);
       color: var(--c); font-family: inherit; font-size: 1.5rem; padding: 1.3rem 0 .6rem;
       cursor: pointer; transition: border-color .12s, box-shadow .12s, background .12s; }
@@ -228,7 +230,6 @@
     function introStep() {
       return `<div class="step">
         <div class="eyebrow">about</div>
-        <h1>angeldomme</h1>
         <p class="lede body" style="white-space:pre-wrap">${esc(INTRO.about)}</p>
         <div class="eyebrow" style="margin-top:1.8rem">site purpose</div>
         <p class="lede body" style="white-space:pre-wrap">${esc(INTRO.purpose)}</p>
@@ -251,7 +252,7 @@
       }).join("");
       const lim = step.limits ? `<div class="qblock"><div class="qhead">Hard limits</div>
         <textarea id="limits" placeholder="write your hard limits here (optional)" maxlength="1000">${esc(A.limits)}</textarea></div>` : "";
-      return `<div class="step"><div class="eyebrow">interests &middot; rate 1 to 5</div><h1>interests</h1>${blocks}${lim}</div>`;
+      return `<div class="step"><div class="eyebrow">rate each 1 to 5</div>${blocks}${lim}</div>`;
     }
     function petnamesStep() {
       const rows = PETNAMES.map((it) => {
