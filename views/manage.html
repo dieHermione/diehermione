@@ -11,16 +11,30 @@
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     [hidden] { display: none !important; }
-    :root { --c:#aee3ff; --dim:#4f7ea0; --dim2:#2c4a5e; --bright:#eafaff; --accent:#8fd0ff;
-            --glow:rgba(0,172,219,.32); --red:#ff5a4a; --gold:#ffd27a; --ok:#7dffb0; --line:#173040; --panel:#0a1720; }
+    /* Dual-tone: white stays white; every blue collapses to one vivid blue. */
+    :root { --c:#00acdb; --dim:rgba(0,172,219,0.62); --dim2:rgba(0,172,219,0.4); --bright:#eafaff; --accent:#00acdb;
+            --glow:rgba(0,172,219,.34); --red:#ff5a4a; --gold:#ffd27a; --ok:#eafaff; --line:rgba(0,172,219,0.28); --panel:rgba(0,172,219,0.04); }
     html, body { height:100%; }
     body { background:#000; color:var(--c); font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:14px; }
     .scan { position:fixed; inset:0; z-index:200; pointer-events:none; background:repeating-linear-gradient(0deg,rgba(0,0,0,.26) 0 1px,transparent 1px 3px); }
+    /* standard site back button: a chevron pinned top-left, no plate */
+    .back { position:fixed; top:1.3rem; left:1.3rem; z-index:1000; width:2.6rem; height:2.6rem;
+      border-radius:50%; display:flex; align-items:center; justify-content:center; background:none;
+      color:var(--c); opacity:.8; text-decoration:none; transition:transform .2s ease, opacity .2s ease; }
+    .back:hover { transform:translateY(-2px); opacity:1; }
+    .back svg { width:22px; height:22px; }
     .wrap { position:relative; z-index:5; max-width:960px; margin:0 auto; padding:4vh 5vw 6vh; }
-    .top { display:flex; justify-content:space-between; align-items:baseline; font-size:11px; letter-spacing:.3em; color:var(--dim); text-transform:uppercase; }
-    .top a { color:var(--dim); text-decoration:none; } .top a:hover { color:var(--c); }
+    .top { font-size:11px; letter-spacing:.3em; color:var(--dim); text-transform:uppercase; }
     h1 { font-size:1.4rem; color:var(--bright); letter-spacing:.06em; margin:1.4rem 0 0.3rem; font-weight:600; }
     .sub { color:var(--dim); margin-bottom:1.6rem; }
+    /* tabs across the top-left: only one panel is shown at a time */
+    .tabs { display:flex; flex-wrap:wrap; gap:.3rem; margin:0 0 1.6rem; border-bottom:1px solid var(--dim2); }
+    .tab { border:1px solid var(--dim2); border-bottom:none; background:transparent; color:var(--dim); font-family:inherit;
+      font-size:.72rem; letter-spacing:.14em; text-transform:uppercase; padding:.5rem 1.15rem; cursor:pointer; position:relative; top:1px; }
+    .tab:hover { color:var(--c); }
+    .tab.active { color:var(--bright); border-color:var(--accent); background:rgba(0,172,219,.09); }
+    .tab .badge { color:var(--accent); margin-left:.4rem; }
+    .panel { display:none; } .panel.active { display:block; }
     section { border:1px solid var(--line); background:var(--panel); padding:1.2rem 1.3rem; margin-bottom:1.4rem; }
     h2 { font-size:.72rem; letter-spacing:.2em; text-transform:uppercase; color:var(--dim); font-weight:400; margin-bottom:1rem; }
     .field { display:flex; align-items:center; gap:1rem; margin-bottom:.9rem; flex-wrap:wrap; }
@@ -28,10 +42,6 @@
     input { flex:1; min-width:12rem; background:rgba(0,172,219,.06); border:1px solid var(--line); color:var(--bright);
       font-family:inherit; font-size:1rem; padding:.5rem .7rem; }
     input:focus { outline:none; border-color:var(--accent); box-shadow:0 0 12px var(--glow); }
-    .types { display:flex; gap:.6rem; }
-    .type { border:1px solid var(--dim2); background:transparent; color:var(--dim); font-family:inherit; font-size:.85rem;
-      letter-spacing:.08em; text-transform:lowercase; padding:.4rem 1.1rem; cursor:pointer; }
-    .type.on { border-color:var(--accent); color:var(--bg,#000); background:var(--accent); box-shadow:0 0 14px var(--glow); }
     .btn { border:1px solid var(--c); background:transparent; color:var(--bright); font-family:inherit; font-size:.82rem;
       letter-spacing:.16em; text-transform:uppercase; padding:.6rem 1.6rem; cursor:pointer; }
     .btn.solid { background:var(--accent); color:#000; box-shadow:0 0 18px var(--glow); }
@@ -61,36 +71,52 @@
   </style>
 </head>
 <body>
+  <a class="back" href="/admin" aria-label="Back to admin" title="Back to admin">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+  </a>
   <div class="wrap">
-    <div class="top"><span><span style="text-transform:none">angelOS v0.2</span> // account management</span><a href="/dashboard">&larr; dashboard</a></div>
+    <div class="top"><span style="text-transform:none">angelOS v0.2</span> // account management</div>
     <h1>Manage accounts</h1>
     <div class="sub">Create an account, hand it out with the dummy password; the account sets its own on first sign-in.</div>
 
-    <section>
-      <h2>Create account</h2>
-      <div class="field"><label>username</label><input id="u-name" maxlength="30" placeholder="username" /></div>
-      <div class="field"><label>type</label>
-        <div class="types" id="types">
-          <button class="type on" type="button" data-type="Sub">disciple</button>
-          <button class="type" type="button" data-type="Visitor">visitor</button>
-        </div>
-      </div>
-      <div class="field"><label>dummy password</label><input id="u-pass" maxlength="72" /><button class="gen" id="gen" type="button">generate</button></div>
-      <div class="field"><label></label><button class="btn solid" id="create" type="button">create account</button></div>
-      <div class="msg" id="msg"></div>
-    </section>
+    <div class="tabs" id="tabs">
+      <button class="tab active" type="button" data-tab="create">Create account</button>
+      <button class="tab" type="button" data-tab="quest">Questionnaires</button>
+    </div>
 
-    <section>
-      <h2>Applications</h2>
-      <div class="apps" id="apps"><div class="empty">Loading…</div></div>
-    </section>
+    <div class="panel active" data-tab="create">
+      <section>
+        <h2>Create account</h2>
+        <div class="field"><label>username</label><input id="u-name" maxlength="30" placeholder="username" /></div>
+        <div class="field"><label>dummy password</label><input id="u-pass" maxlength="72" /><button class="gen" id="gen" type="button">generate</button></div>
+        <div class="field"><label></label><button class="btn solid" id="create" type="button">create account</button></div>
+        <div class="note">Every account is created as a disciple. The account is prompted to set its own password on first sign-in.</div>
+        <div class="msg" id="msg"></div>
+      </section>
+    </div>
+
+    <div class="panel" data-tab="quest">
+      <section>
+        <h2>Completed questionnaires</h2>
+        <div class="note" style="margin:-.4rem 0 1rem">Each carries the code the applicant DMs Hermione, so a message can be matched to its answers.</div>
+        <div class="apps" id="apps"><div class="empty">Loading…</div></div>
+      </section>
+    </div>
   </div>
   <div class="scan"></div>
 
   <script>
     const $ = (id) => document.getElementById(id);
     const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
-    let type = "Sub";
+    const type = "Sub";   // accounts are all disciples now; visitor was retired
+
+    // --- tabs ---
+    $("tabs").addEventListener("click", (e) => {
+      const b = e.target.closest(".tab"); if (!b) return;
+      const id = b.dataset.tab;
+      document.querySelectorAll(".tab").forEach((t) => t.classList.toggle("active", t === b));
+      document.querySelectorAll(".panel").forEach((p) => p.classList.toggle("active", p.dataset.tab === id));
+    });
 
     function randPass() {
       const cs = "abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -99,12 +125,6 @@
     }
     $("gen").addEventListener("click", () => { $("u-pass").value = randPass(); });
     $("u-pass").value = randPass();
-
-    $("types").addEventListener("click", (e) => {
-      const b = e.target.closest(".type"); if (!b) return;
-      type = b.dataset.type;
-      [...$("types").children].forEach((c) => c.classList.toggle("on", c === b));
-    });
 
     function msg(text, cls) { const m = $("msg"); m.textContent = text; m.className = "msg " + (cls || ""); }
 
@@ -122,11 +142,11 @@
       } catch (e) { $("create").disabled = false; return msg("Network trouble.", "no"); }
       $("create").disabled = false;
       if (!res.ok) return msg(data.error || "That didn't work.", "no");
-      msg("Created " + data.username + " (" + (type === "Sub" ? "disciple" : "visitor") + "). Password: " + password, "ok");
+      msg("Created " + data.username + " (disciple). Password: " + password, "ok");
       $("u-name").value = ""; $("u-pass").value = randPass();
     });
 
-    // --- applications ---
+    // --- completed questionnaires ---
     const KINKS = ["feet","tasks","degradation","humiliation","masochism","exhibitionism","worship","petplay"];
     const PUNS = ["lines_physical","lines_typing","voice_memos","ignoring","onsite_games_hard"];
     const PETS = ["dog","good","doll","pet","bitch","loser","dummy"];
@@ -136,7 +156,10 @@
       let data = { applications: [] };
       try { const r = await fetch("/api/admin/applications"); if (r.ok) data = await r.json(); } catch (e) {}
       const box = $("apps");
-      if (!data.applications.length) { box.innerHTML = '<div class="empty">No applications waiting.</div>'; return; }
+      const count = data.applications.length;
+      const badge = document.querySelector('.tab[data-tab="quest"]');
+      if (badge && count) badge.innerHTML = 'Questionnaires <span class="badge">' + count + "</span>";
+      if (!count) { box.innerHTML = '<div class="empty">No questionnaires yet.</div>'; return; }
       box.replaceChildren();
       data.applications.forEach((a) => {
         const el = document.createElement("div");
@@ -146,29 +169,23 @@
         const nr = PETS.map((p) => `<div class="ritem"><span class="k">${p}</span><span class="v">${a.petnames[p] === "like" ? "like" : "hate"}</span></div>`).join("");
         el.innerHTML =
           `<div class="head">
-            <div><span class="who">${esc(a.contact && a.contact.discord)}</span> ${a.flag ? '<span class="flagtag">&middot; flagged</span>' : ''}
+            <div><span class="who">code ${esc(a.authCode || "—")}</span> ${a.flag ? '<span class="flagtag">&middot; flagged</span>' : ''}
               <span class="when">${new Date(a.at).toLocaleString()}</span></div>
             <div class="acts">
               <button class="btn mini" data-act="toggle" type="button">view</button>
-              <button class="btn mini" data-act="use" type="button">use &rarr; create</button>
               <button class="btn mini ghost" data-act="dismiss" type="button">dismiss</button>
             </div>
           </div>
           <div class="detail">
+            <div class="rgroup"><h3>contact</h3><div class="ritem"><span class="k">${esc(a.contact && a.contact.discord)}</span></div></div>
             <div class="rgroup"><h3>interests</h3>${kr}</div>
             <div class="rgroup"><h3>limits</h3><div class="ritem"><span class="k" style="white-space:pre-wrap">${esc(a.limits) || "<span style='color:var(--dim2)'>none given</span>"}</span></div></div>
             <div class="rgroup"><h3>punishments</h3>${pr}</div>
             <div class="rgroup"><h3>petnames</h3>${nr}${a.petnamesOther ? `<div class="ritem"><span class="k">other</span><span class="v">${esc(a.petnamesOther)}</span></div>` : ""}</div>
           </div>`;
         el.querySelector('[data-act="toggle"]').addEventListener("click", () => el.classList.toggle("open"));
-        el.querySelector('[data-act="use"]').addEventListener("click", () => {
-          const suggested = String((a.contact && a.contact.discord) || "").replace(/[^a-zA-Z0-9]+/g, "").slice(0, 30);
-          $("u-name").value = suggested; $("u-pass").value = randPass();
-          window.scrollTo({ top: 0, behavior: "smooth" });
-          msg("Prefilled from " + (a.contact && a.contact.discord) + ". Set a username and create.", "ok");
-        });
         el.querySelector('[data-act="dismiss"]').addEventListener("click", async () => {
-          if (!confirm("Dismiss this application?")) return;
+          if (!confirm("Dismiss this questionnaire?")) return;
           const r = await fetch("/api/admin/applications/" + encodeURIComponent(a.id), { method: "DELETE" });
           if (r.ok) el.remove();
         });
@@ -181,8 +198,6 @@
   </script>
   <script src="/console.js" defer></script>
   <script src="/dashglitch.js" defer></script>
-
   <script src="/glitchboot.js" defer></script>
-
 </body>
 </html>

@@ -313,7 +313,7 @@ app.post("/api/apply", (req, res) => {
   const users = loadUsers();
   const hermione = users["hermione"];
   if (hermione) {
-    pushNotification(hermione, "application-" + application.id, "New application · code " + authCode + ". Review it in the admin panel.", "/admin");
+    pushNotification(hermione, "application-" + application.id, "New questionnaire · code " + authCode + ". Review it in account management.", "/manage");
     saveUsers(users);
   }
   res.json({ ok: true });
@@ -350,10 +350,9 @@ app.post("/api/admin/accounts", async (req, res) => {
   if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });
   const username = String(req.body.username || "").trim();
   const password = String(req.body.password || "");
-  const typeChoice = canonical(req.body.type, SIGNUP_RANKS);   // "Visitor" | "Sub"
+  const typeChoice = "Sub";   // accounts are all disciples now; visitor was retired (guests cover that role)
   if (username.length < 3 || username.length > 30) return res.status(400).json({ error: "Username must be 3-30 characters." });
   if (password.length < 8) return res.status(400).json({ error: "The dummy password must be at least 8 characters." });
-  if (!typeChoice) return res.status(400).json({ error: "Pick an account type (disciple or visitor)." });
   const users = loadUsers();
   const key = username.toLowerCase();
   if (users[key]) return res.status(409).json({ error: "That username is already taken." });
@@ -362,7 +361,7 @@ app.post("/api/admin/accounts", async (req, res) => {
     passwordHash: await bcrypt.hash(password, 10),
     createdAt: new Date().toISOString(),
     pronouns: canonical(req.body.pronouns, PRONOUN_OPTIONS) || "",
-    rank: typeChoice === "Sub" ? "Servant" : "Visitor",
+    rank: "Servant",
     points: 0,
     photosensitive: false,
     status: "approved",
@@ -447,7 +446,6 @@ function todayKey(now = new Date()) {
 function awardDailyCheckIn(users, key) {
   const user = users[key];
   if (!user) return null;
-  if (rankFor(user, key) === "Visitor") return null;   // visitors keep no points
   const today = todayKey();
   if (user.lastCheckIn === today) return null;
   user.lastCheckIn = today;
@@ -574,8 +572,8 @@ app.get("/api/me", (req, res) => {
   const checkIn = awardDailyCheckIn(users, key);
   if (clearTitheLeftovers(users, key)) saveUsers(users);
   const rank = rankFor(users[key], key);
-  // Hermione and Visitors sit outside the points/dailies economy
-  const noEconomy = key === "hermione" || rank === "Visitor";
+  // Hermione sits outside the points economy
+  const noEconomy = key === "hermione";
   res.json({
     username: req.session.username,
     isAdmin: isAdmin(req),
@@ -618,24 +616,24 @@ const RANK_LADDER = [
   { name: "Follower", note: "" },
   { name: "Servant", note: "" },
 ];
-const RANK_ASIDE = { name: "Visitor", note: "Not a sub." };
-const RANK_OPTIONS = [...RANK_LADDER.map((r) => r.name), RANK_ASIDE.name];
-const SIGNUP_RANKS = ["Visitor", "Sub"];
-// "Citizen" was the old name for the "Sub" signup rank; keep mapping it so
-// accounts created before the rename still resolve to a real rank.
-const LEGACY_RANKS = { domme: "Visitor", sub: "Servant", citizen: "Servant" };
+// Visitor was retired; guests fill that role now. Legacy visitor values are
+// folded into the entry rank so old accounts still resolve to something real.
+const RANK_ASIDE = null;
+const RANK_OPTIONS = [...RANK_LADDER.map((r) => r.name)];
+const SIGNUP_RANKS = ["Sub"];
+// "Citizen"/"domme"/"visitor" were old rank values; map them onto a real rank.
+const LEGACY_RANKS = { domme: "Servant", sub: "Servant", citizen: "Servant", visitor: "Servant" };
 
 // what hermione may hand out: everything except Princess and the unnamed rank
 const ASSIGNABLE_RANKS = [
   ...RANK_LADDER.filter((r) => r.name !== "Angel" && !r.unassignable).map((r) => r.name),
-  RANK_ASIDE.name,
 ];
 
 app.get("/api/ranks", (req, res) => {
   if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
   res.json({
     ladder: RANK_LADDER.map((r, i) => ({ position: i + 1, name: r.name, note: r.note })),
-    aside: RANK_ASIDE,
+    aside: RANK_ASIDE,   // null now that Visitor is gone
     assignable: ASSIGNABLE_RANKS,
   });
 });
@@ -1392,7 +1390,7 @@ app.post("/api/snake/food", (req, res) => {
   const key = req.session.username.toLowerCase();
   const user = users[key];
   if (!user) return res.status(404).json({ error: "No such account." });
-  const visitor = rankFor(user, key) === "Visitor";   // plays and keeps stats, earns no points
+  const visitor = false;   // visitor rank retired; every account earns snake points
   // rate limit: refill one token every SNAKE_REFILL_MS, up to SNAKE_BURST
   const now = Date.now();
   const bucket = req.session.snakeBucket || { tokens: SNAKE_BURST, at: now };
@@ -1771,8 +1769,8 @@ app.post("/api/slots/buy", requirePlayer, (req, res) => {
   const key = req.session.username && req.session.username.toLowerCase();
   const user = key && users[key];
   const unlimited = key === "hermione";
-  // A guest or Visitor has no wallet to stake from, so they cannot play for keeps.
-  if (!user || (!unlimited && rankFor(user, key) === "Visitor")) {
+  // A guest has no wallet to stake from, so they cannot play for keeps.
+  if (!user) {
     return res.status(403).json({ error: "This game needs an account with angelcoins." });
   }
   const balance = user.angelcoins || 0;
@@ -2626,6 +2624,20 @@ app.get("/tech", requireLogin, (req, res) => {
 app.get("/profile", requireLogin, (req, res) => {
   res.sendFile(path.join(__dirname, "views", "profile.html"));
 });
+
+// One-time migration: Visitor was retired, so fold any existing visitor accounts
+// into the entry disciple rank. Runs at boot, rewrites only if something changed.
+(function migrateVisitorsToDisciple() {
+  try {
+    const users = loadUsers();
+    let changed = false;
+    for (const k of Object.keys(users)) {
+      const raw = String((users[k] && (users[k].rank || users[k].role)) || "").toLowerCase();
+      if (raw === "visitor") { users[k].rank = "Servant"; delete users[k].role; changed = true; }
+    }
+    if (changed) { saveUsers(users); console.log("Migrated visitor accounts to disciple."); }
+  } catch (e) { console.error("visitor migration skipped:", e && e.message); }
+})();
 
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);

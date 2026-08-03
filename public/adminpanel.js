@@ -189,7 +189,6 @@ window.AdminPanel = (function () {
     const wrap = document.createElement("div");
     wrap.className = "adm-wrap";
 
-    const pending = users.filter((u) => u.pending);
     const approved = users.filter((u) => !u.pending && u.username.toLowerCase() !== "hermione");
 
     const mkChip = (label, cls, fn) => {
@@ -217,68 +216,9 @@ window.AdminPanel = (function () {
       return sec;
     };
 
-    // approvals
-    const appSec = document.createElement("div");
-    appSec.className = "adm-sec";
-    const appH = document.createElement("h3");
-    appH.textContent = "Approvals" + (pending.length ? " · " + pending.length : "");
-    appSec.append(appH);
-    if (!pending.length) {
-      const e = document.createElement("p"); e.className = "adm-empty"; e.textContent = "No one waiting.";
-      appSec.append(e);
-    } else {
-      for (const u of pending) {
-        const row = document.createElement("div");
-        row.className = "adm-row pending" + (u.onboardingFlag ? " flagged" : "");
-        const nm = document.createElement("span"); nm.className = "nm grow"; nm.textContent = u.username;
-        row.append(nm);
-        row.append(mkChip("Approve", "", async () => {
-          const r = await fetch("/api/users/" + encodeURIComponent(u.username) + "/approve", { method: "POST" });
-          if (r.ok) build(container);
-        }));
-        row.append(mkChip("Refuse", "ghost", async () => {
-          if (!confirm("Refuse and delete " + u.username + "?")) return;
-          const r = await fetch("/api/users/" + encodeURIComponent(u.username), { method: "DELETE" });
-          if (r.ok) build(container);
-        }));
-        if (u.intro) { const i = document.createElement("div"); i.className = "intro"; i.textContent = u.intro; row.append(i); }
-        if (u.onboarding) row.append(onboardingBlock(u.onboarding));
-        appSec.append(row);
-      }
-    }
-    wrap.append(foldable(appSec));
-
-    // applications: the account-less questionnaire submissions, each with the
-    // code the applicant DMs Hermione so she can match a message to the answers.
-    let apps = { applications: [] };
-    try { const r = await fetch("/api/admin/applications"); if (r.ok) apps = await r.json(); } catch (e) {}
-    const appsSec = document.createElement("div"); appsSec.className = "adm-sec";
-    const appsH = document.createElement("h3");
-    appsH.textContent = "Applications" + (apps.applications && apps.applications.length ? " · " + apps.applications.length : "");
-    appsSec.append(appsH);
-    if (!apps.applications || !apps.applications.length) {
-      const e = document.createElement("p"); e.className = "adm-empty"; e.textContent = "No applications yet.";
-      appsSec.append(e);
-    } else {
-      for (const a of apps.applications) {
-        const row = document.createElement("div");
-        row.className = "adm-row pending" + (a.flag ? " flagged" : "");
-        const nm = document.createElement("span"); nm.className = "nm grow";
-        nm.innerHTML = 'code <b style="color:var(--bright)">' + esc(a.authCode || "—") + "</b>";
-        row.append(nm);
-        const when = document.createElement("span"); when.style.color = "var(--dim)"; when.style.fontSize = ".72rem";
-        when.textContent = a.at ? new Date(a.at).toLocaleString() : "";
-        row.append(when);
-        row.append(mkChip("Dismiss", "ghost", async () => {
-          if (!confirm("Dismiss application " + (a.authCode || a.id) + "?")) return;
-          const r = await fetch("/api/admin/applications/" + encodeURIComponent(a.id), { method: "DELETE" });
-          if (r.ok) build(container);
-        }));
-        row.append(onboardingBlock(a));   // reads a.kinks/limits/punishments/petnames
-        appsSec.append(row);
-      }
-    }
-    wrap.append(foldable(appsSec));
+    // Approvals and Applications were removed from here: accounts are made by hand
+    // (no approval step), and completed questionnaires now live in Account
+    // management (/manage), not the admin panel.
 
     // onboarding intro slides (About me / Site Purpose), editable copy that a
     // disciple reads at the top of the questionnaire
