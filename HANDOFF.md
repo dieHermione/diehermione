@@ -16,6 +16,21 @@ Live at **angeldom.me** (Railway, auto-deploys on push to `main`). One Express
 server (`server.js`), no database, JSON files on disk, no build step. One admin
 identity: `hermione`. Push after each task; the user likes frequent pushes.
 
+> ## Dual-tone colour rule — no dimming
+> Every blue-and-white surface uses **exactly two text colours**: the vivid brand
+> blue **`#00acdb`** and white **`#eafaff`**. There is **no dim/mid blue for text**
+> — the old `--dim`/`--dim2` shades (`#006b88`, `#004558`, and the older `#4f7ea0`,
+> `#2c4a5e`, `#aee3ff`, `#8fd0ff`) are gone from text; `--dim` and `--dim2` now just
+> resolve to `#00acdb`. Labels/eyebrows are the same blue as the values and links,
+> not a fainter one. Also: **no text transparency anywhere** — never set `color:`
+> to an `rgba()` with alpha or put `opacity:<1` on visible text; on the black
+> background use the opaque colour. (`--glow`, borders, and backgrounds may keep an
+> alpha; they are not text.) This applies to every blue-white page — dashboard,
+> login, boot, onboarding, summary, admin, manage, commands, guide, tech, profile —
+> and to the **penance** and **summary** game cards. Among games only penance and
+> summary follow the blue rule; the others keep their own accent (red, etc.).
+> Penance's own screen is red — dual-tone still holds there: one red + white.
+
 > ## Persistence — CRUCIAL, do not regress
 > Every editable-text pool (`decrypt.json`, `devotion.json`, `penance.json`,
 > `site.json` = about-me/site-purpose, applications, users, elysium, writing/parse
