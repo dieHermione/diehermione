@@ -22,6 +22,7 @@ const ELYSIUM_FILE = path.join(process.env.DATA_DIR || __dirname, "elysium.json"
 const DEVOTION_FILE = path.join(process.env.DATA_DIR || __dirname, "devotion.json");
 const PENANCE_FILE = path.join(process.env.DATA_DIR || __dirname, "penance.json");
 const DECRYPT_FILE = path.join(process.env.DATA_DIR || __dirname, "decrypt.json");
+const GAMETIPS_FILE = path.join(process.env.DATA_DIR || __dirname, "gametips.json");
 const PARSE_FILE = path.join(process.env.DATA_DIR || __dirname, "parses.json");
 const SUMMARY_FILE = path.join(process.env.DATA_DIR || __dirname, "summaries.json");
 const APPLICATIONS_FILE = path.join(process.env.DATA_DIR || __dirname, "applications.json");
@@ -2362,6 +2363,51 @@ app.post("/api/decrypt", (req, res) => {
   if (!lines.length) return res.status(400).json({ error: "Add at least one line." });
   fs.writeFileSync(DECRYPT_FILE, JSON.stringify({ lines }, null, 2));
   res.json({ ok: true, lines });
+});
+
+// Game-selection hover text: the "// ..." panel shown over each card on /games.
+// Keyed by game name. File-first like every other editable pool, so Hermione's
+// edits in /admin win over these defaults; games.html falls back to its own
+// baked-in copy only if the fetch fails entirely.
+const GAMETIPS_DEFAULTS = {
+  tips: {
+    "snake": "Free-swimming serpent. Chase the fleeing heart and grow; die on your own tail.",
+    "penance": "A typing drill of correction. Type each line exactly — falter and it corrupts.",
+    "devotion": "A verse reader. Recite Her lines in turn. An account is required.",
+    "deathroll": "Roll against another, each cap the next roll. Hit one and you lose. Account required.",
+    "dummy parse": "A priest damage recount. Parse the dummy and chase a higher DPS.",
+    "skill check": "Stop the sweeping dial inside the good zone. Pure nerve.",
+    "summary": "Read a real Wikipedia article, then retell it in your own words.",
+  },
+};
+function loadGameTips() {
+  const merged = JSON.parse(JSON.stringify(GAMETIPS_DEFAULTS.tips));
+  try {
+    const data = JSON.parse(fs.readFileSync(GAMETIPS_FILE, "utf8"));
+    if (data && data.tips && typeof data.tips === "object") {
+      for (const [k, v] of Object.entries(data.tips)) {
+        if (typeof v === "string" && v.trim()) merged[k] = v;
+      }
+    }
+  } catch {}
+  return merged;
+}
+app.get("/api/gametips", (req, res) => {
+  res.json({ tips: loadGameTips() });
+});
+app.post("/api/gametips", (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });
+  const incoming = req.body && typeof req.body.tips === "object" ? req.body.tips : null;
+  if (!incoming) return res.status(400).json({ error: "tips must be an object." });
+  const tips = {};
+  for (const [k, v] of Object.entries(incoming)) {
+    const key = String(k).slice(0, 40);
+    const val = String(v == null ? "" : v).trim().slice(0, 240);
+    if (key && val) tips[key] = val;
+  }
+  fs.writeFileSync(GAMETIPS_FILE, JSON.stringify({ tips }, null, 2));
+  res.json({ ok: true, tips: loadGameTips() });
 });
 
 // (the subliminal and snake-taunt pools were removed with subliminals)

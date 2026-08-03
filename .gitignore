@@ -31,3 +31,4 @@ questionnaire.json
 # persistent session store + its signing key (generated data, per-environment)
 sessions.json
 .session-secret
+gametips.json

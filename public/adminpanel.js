@@ -476,6 +476,40 @@ window.AdminPanel = (function () {
     });
     decBar.append(decSave); decSec.append(decBar); wrap.append(foldable(decSec));
 
+    // game-selection hover text: the "// ..." panel over each card on /games.
+    // Persistence rule: the editor fetches the live server values before rendering
+    // (never seeded from a client constant), so a save can't re-persist a default.
+    const tipsSec = document.createElement("div"); tipsSec.className = "adm-sec";
+    tipsSec.append(mk("h3", "Game hover text"));
+    const tipsHint = mk("p", "The “// …” panel shown over each game's card on the selection wall. One line each; keep it short.");
+    tipsHint.className = "adm-empty"; tipsSec.append(tipsHint);
+    const tipsBox = document.createElement("div"); tipsBox.className = "adm-preset";
+    tipsSec.append(tipsBox);
+    const tipInputs = {};
+    fetch("/api/gametips").then((r) => (r.ok ? r.json() : null)).then((d) => {
+      const tips = (d && d.tips) || {};
+      Object.keys(tips).forEach((name) => {
+        const lbl = mk("label", name); lbl.className = "adm-lbl";
+        const ta = document.createElement("textarea"); ta.rows = 2; ta.value = tips[name];
+        tipInputs[name] = ta;
+        tipsBox.append(lbl, ta);
+      });
+    }).catch(() => { tipsHint.textContent = "Could not load hover text."; });
+    const tipsBar = document.createElement("div"); tipsBar.className = "adm-preset-bar";
+    const tipsSave = mkChip("Save hover text", "", async () => {
+      const out = {};
+      Object.keys(tipInputs).forEach((n) => { out[n] = tipInputs[n].value.trim(); });
+      tipsSave.textContent = "Saving...";
+      const r = await fetch("/api/gametips", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tips: out }),
+      });
+      tipsSave.textContent = r.ok ? "Saved" : "Error";
+      if (!r.ok) tipsHint.textContent = ((await r.json().catch(() => ({}))).error) || "Error";
+      setTimeout(() => { tipsSave.textContent = "Save hover text"; }, 1500);
+    });
+    tipsBar.append(tipsSave); tipsSec.append(tipsBar); wrap.append(foldable(tipsSec));
+
     // screen glitch: fires on its own every 40 to 180 seconds, testable here
     const glSec = document.createElement("div"); glSec.className = "adm-sec";
     glSec.append(mk("h3", "Screen glitch"));
@@ -504,7 +538,7 @@ window.AdminPanel = (function () {
     const TABS = [
       { id: "members", label: "Members", match: ["Approvals", "Applications", "Accounts"] },
       { id: "writing", label: "Writing", match: ["Devotion presets", "Penance presets", "Lines completed", "Summaries handed in"] },
-      { id: "content", label: "Site content", match: ["Onboarding intro", "Questionnaire descriptions", "Decrypt lines", "Screen glitch"] },
+      { id: "content", label: "Site content", match: ["Onboarding intro", "Questionnaire descriptions", "Decrypt lines", "Game hover text", "Screen glitch"] },
       { id: "docs", label: "Docs & tools", match: ["Documentation"] },
     ];
     const tabFor = (sec) => {

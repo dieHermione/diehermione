@@ -194,7 +194,7 @@
       { n: "skill check", href: "/skillcheck",            art: "skill", a: "#c11208", wb: "radial-gradient(120% 120% at 50% 46%, #200a0c, #050202 74%)",
         tip: "Stop the sweeping dial inside the good zone. Pure nerve." },
       { n: "summary",     href: "/summary",               art: "sum",   a: "#00acdb", wb: "#050a10",
-        tip: "Read a real Wikipedia article, then retell it under a strict word limit." },
+        tip: "Read a real Wikipedia article, then retell it in your own words." },
     ];
 
     // a ring of laurel leaves, for the elysium card
@@ -335,6 +335,16 @@
         const num = board.querySelector(".c-elys-w .ew-num");
         const days = d && d.tree && typeof d.tree.ageDays === "number" ? d.tree.ageDays : null;
         if (num && days != null) num.textContent = days;
+      }).catch(() => {});
+      // Hover text is Hermione-editable in /admin; the g.tip strings above are just
+      // the fallback if this fetch fails. Override each card with the server value.
+      fetch("/api/gametips").then((r) => (r.ok ? r.json() : null)).then((d) => {
+        if (!d || !d.tips) return;
+        cards.forEach((el, i) => {
+          const t = d.tips[GAMES[i].n];
+          const tipEl = el.querySelector(".tip");
+          if (t && tipEl) tipEl.textContent = t;
+        });
       }).catch(() => {});
     }
 
