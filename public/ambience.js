@@ -96,13 +96,13 @@ window.Ambience = (function () {
     for (var i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3);
     var n = a.createBufferSource(); n.buffer = buf;
     var f = a.createBiquadFilter(); f.type = "bandpass"; f.frequency.value = bad ? 1300 : 2100; f.Q.value = 0.8;
-    var g = a.createGain(); g.gain.value = bad ? 0.24 : 0.14;
+    var g = a.createGain(); g.gain.value = bad ? 0.12 : 0.07;   // typing click, cut 50%
     n.connect(f).connect(g).connect(out); n.start(now); n.stop(now + 0.03);
     var o = a.createOscillator(); o.type = "sine";
     o.frequency.setValueAtTime(bad ? 88 : 150, now);
     o.frequency.exponentialRampToValueAtTime(60, now + 0.04);
     var og = a.createGain();
-    og.gain.setValueAtTime(bad ? 0.18 : 0.10, now);
+    og.gain.setValueAtTime(bad ? 0.09 : 0.05, now);   // typing click thump, cut 50%
     og.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
     o.connect(og).connect(out); o.start(now); o.stop(now + 0.06);
   }
