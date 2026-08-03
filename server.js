@@ -2655,6 +2655,8 @@ app.get(["/lottery", "/slots"], requirePlayer, (req, res) => {
 });
 
 app.get("/writing", requirePlayer, (req, res) => {
+  // Devotion needs an account, same as deathroll; a guest is turned back.
+  if (req.query.mode === "devotion" && isGuest(req)) return res.redirect("/games");
   res.sendFile(path.join(__dirname, "views", "writing.html"));
 });
 

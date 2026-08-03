@@ -68,21 +68,21 @@
     /* PENANCE — a typing drill: one line, the caret mid-word, and the counters */
     .c-pen { position: absolute; inset: 0; padding: 1.1rem .95rem 2rem; display: flex; flex-direction: column;
       justify-content: center; gap: .75rem; }
-    .c-pen .meta { font-size: .58rem; letter-spacing: .2em; text-transform: uppercase; color: #a8534b; }
-    .c-pen .phrase { font-size: .98rem; line-height: 1.5; color: #6a2a26; }
-    .c-pen .phrase b { color: #ff6a5c; font-weight: 400; }
-    .c-pen .phrase .cur { background: #ff3b2f; color: #120607; }
-    .c-pen .pbar { height: 4px; background: #2a1010; }
-    .c-pen .pbar b { display: block; height: 100%; width: 24%; background: #ff3b2f; }
-    .c-pen .stat { font-size: .6rem; letter-spacing: .1em; color: #a8534b; }
+    .c-pen .meta { font-size: .58rem; letter-spacing: .2em; text-transform: uppercase; color: #00acdb; }
+    .c-pen .phrase { font-size: .98rem; line-height: 1.5; color: #00acdb; }
+    .c-pen .phrase b { color: #eafaff; font-weight: 400; }
+    .c-pen .phrase .cur { background: #00acdb; color: #04060a; }
+    .c-pen .pbar { height: 4px; background: #06222b; }
+    .c-pen .pbar b { display: block; height: 100%; width: 24%; background: #00acdb; }
+    .c-pen .stat { font-size: .6rem; letter-spacing: .1em; color: #00acdb; }
 
     /* DEVOTION — a verse reader: real lines, the current one lit, a small progress */
     .c-dev { position: absolute; inset: 0; padding: .8rem .85rem 2rem; display: flex; flex-direction: column; gap: .42rem;
       font-size: .76rem; line-height: 1.35; }
-    .c-dev .v { color: #5f89a6; }
+    .c-dev .v { color: #00acdb; }
     .c-dev .v.on { color: #eafaff; text-shadow: 0 0 10px var(--a); }
     .c-dev .v.on::before { content: "▸ "; color: var(--a); }
-    .c-dev .prog { margin-top: auto; font-size: .56rem; letter-spacing: .18em; color: #3f6a94; text-transform: uppercase; }
+    .c-dev .prog { margin-top: auto; font-size: .56rem; letter-spacing: .18em; color: #00acdb; text-transform: uppercase; }
 
     /* ELYSIUM — a laurel wreath around the real days-tended count */
     .c-elys-w { position: absolute; inset: 0; padding: .8rem .8rem 2.2rem; display: flex; flex-direction: column;
@@ -107,13 +107,13 @@
     /* SUMMARY — a read-and-retell column with a word-limit rule */
     .c-sum { position: absolute; inset: 0; padding: .7rem .8rem; overflow: hidden; }
     .c-sum .h { color: #eafaff; font-size: .82rem; letter-spacing: .02em; margin-bottom: .3rem; }
-    .c-sum .k { font-size: .54rem; letter-spacing: .16em; color: #4f7ea0; text-transform: uppercase; margin-bottom: .5rem; }
+    .c-sum .k { font-size: .54rem; letter-spacing: .16em; color: #00acdb; text-transform: uppercase; margin-bottom: .5rem; }
     .c-sum .lines { display: flex; flex-direction: column; gap: 5px; }
-    .c-sum .lines i { display: block; height: 3px; background: rgba(174,227,255,.28); }
+    .c-sum .lines i { display: block; height: 3px; background: #00acdb; }
     .c-sum .lines i:nth-child(3n) { width: 74%; } .c-sum .lines i:nth-child(4n) { width: 88%; }
-    .c-sum .limit { margin-top: .5rem; height: 4px; background: rgba(174,227,255,.14); }
+    .c-sum .limit { margin-top: .5rem; height: 4px; background: #06222b; }
     .c-sum .limit b { display: block; height: 100%; width: 62%; background: var(--a); }
-    .c-sum .wc { margin-top: .3rem; font-size: .56rem; letter-spacing: .1em; color: #4f7ea0; }
+    .c-sum .wc { margin-top: .3rem; font-size: .56rem; letter-spacing: .1em; color: #00acdb; }
 
     /* ---------- selection & lock ---------- */
     .p.sel { z-index: 20; }
@@ -162,12 +162,12 @@
        shares the one macOS window frame. */
     const GAMES = [
       { n: "snake",       href: "/snake",                 art: "snake", a: "#ff3b2f", wb: "linear-gradient(#1a0708, #05060a)" },
-      { n: "penance",     href: "/writing",               art: "pen",   a: "#ff5a4a", wb: "#0e0607" },
-      { n: "devotion",    href: "/writing?mode=devotion", art: "dev",   a: "#8fd0ff", wb: "#050a10" },
+      { n: "penance",     href: "/writing",               art: "pen",   a: "#00acdb", wb: "#050a10" },
+      { n: "devotion",    href: "/writing?mode=devotion", art: "dev",   a: "#00acdb", wb: "#050a10", account: true },
       { n: "deathroll",   href: "/deathroll",             art: "death", a: "#ff3b2f", wb: "linear-gradient(#180708, #05060a)", multi: true },
       { n: "dummy parse", href: "/dummyparse",            art: "parse", a: "#ff5a4a", wb: "#0a0608" },
       { n: "skill check", href: "/skillcheck",            art: "skill", a: "#ff3b2f", wb: "radial-gradient(120% 120% at 50% 46%, #200a0c, #050202 74%)" },
-      { n: "summary",     href: "/summary",               art: "sum",   a: "#8fd0ff", wb: "#050a10" },
+      { n: "summary",     href: "/summary",               art: "sum",   a: "#00acdb", wb: "#050a10" },
     ];
 
     // a ring of laurel leaves, for the elysium card
@@ -264,7 +264,7 @@
         a.href = g.href;
         a.tabIndex = 0;
         // anything needing an account is pasted over for a guest
-        const locked = guest && g.multi;
+        const locked = guest && (g.multi || g.account);
         if (locked) {
           a.classList.add("locked");
           a.removeAttribute("href");
