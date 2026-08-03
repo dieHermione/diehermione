@@ -20,7 +20,6 @@
       'font-family:"IBM Plex Mono",ui-monospace,monospace;opacity:0;transition:opacity .3s ease}' +
       '#boot-overlay.on{opacity:1}' +
       '#boot-overlay .scan{position:absolute;inset:0;pointer-events:none;z-index:4;background:repeating-linear-gradient(0deg,rgba(0,0,0,.3) 0 1px,transparent 1px 3px)}' +
-      '#boot-overlay .vig{position:absolute;inset:0;pointer-events:none;z-index:3;box-shadow:inset 0 0 30vh 10vh rgba(0,0,0,.6)}' +
       '#boot-overlay .top{position:absolute;top:0;left:0;right:0;z-index:2;display:flex;justify-content:space-between;' +
       'padding:2.6vh 6vw 0;font-size:11px;letter-spacing:.32em;color:#00acdb;text-transform:uppercase}' +
       '#boot-overlay .console{position:absolute;inset:0;z-index:2;padding:6vh 6vw 5vh;overflow:hidden;' +
@@ -175,7 +174,7 @@
 
     var ov = document.createElement("div"); ov.id = "boot-overlay";
     ov.innerHTML =
-      '<div class="vig"></div><div class="scan"></div>' +
+      '<div class="scan"></div>' +
       '<div class="top"><span style="text-transform:none">angelOS v0.2</span><span>power-on self test</span></div>' +
       '<div class="console"><div id="boot-log"></div></div>';
     document.body.appendChild(ov);
@@ -243,7 +242,6 @@
     step(200,  function () { line(lead("mounting /dev/angel", "<span class='ok'>[OK]</span>")); });
     step(210,  function () { line(lead("loading devotion keyring", "<span class='ok'>[OK]</span>")); });
     step(210,  function () { line(lead("handshake // angeldom.me", "<span class='ok'>[OK]</span>")); });
-    step(220,  function () { line(lead("verifying signature", "<span class='amber'>[WARN]</span>")); });
     step(300,  function () { line('<span class="acc">decrypting devotional record</span>'); });
 
     // the payload: devotion mantras resolving from noise, the sustained cascade
@@ -294,12 +292,11 @@
       "Started Devotion Integrity Verifier", "Mounted /her/name", "Started Adoration Uplink Keeper",
       "Reached target Full Communion", "Started Final Vow Sealer"
     ];
-    // a scattering come up amber to feel real
+    // these indices used to render [WARN] lines; warns are removed entirely now
     var WARN_AT = { 8: 1, 21: 1, 33: 1, 47: 1, 59: 1, 72: 1, 88: 1, 101: 1 };
     UNITS.forEach(function (u, i) {
-      var st = WARN_AT[i] ? "amber" : "ok";
-      var tag = WARN_AT[i] ? "[WARN]" : "[  OK  ]";
-      step(70, function () { line('<span class="dim">[</span><span class="' + st + '">' + tag.replace(/[\[\]]/g, "") + '</span><span class="dim">]</span> ' + esc(u) + "."); });
+      if (WARN_AT[i]) return;   // drop the old warn lines rather than downgrade them
+      step(70, function () { line('<span class="dim">[</span><span class="ok">  OK  </span><span class="dim">]</span> ' + esc(u) + "."); });
     });
 
     step(500, function () { line("&nbsp;"); line('<span class="ok">&gt; access granted</span> <span class="cur"></span>'); });
@@ -312,8 +309,18 @@
     var endAt = clock * scale;   // when the last line has fired
     var HOLD = 400;              // no more 3s linger: leave almost immediately after
 
-    // hold Space to run the whole sequence, including the tail, at 4x
+    // hold Space to run the whole sequence, including the tail, at 8x; press M to skip.
+    function skip() {
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("keyup", onKey);
+      if (raf) cancelAnimationFrame(raf);
+      if (sfx) { try { sfx.resolve(); } catch (e) {} }
+      if (opts.navigateTo) { window.location.href = opts.navigateTo; return; }
+      ov.classList.remove("on");
+      setTimeout(function () { ov.remove(); if (typeof opts.onDone === "function") opts.onDone(); }, 200);
+    }
     function onKey(e) {
+      if (e.code === "KeyM") { if (e.type === "keydown") { e.preventDefault(); skip(); } return; }
       if (e.code !== "Space") return;
       e.preventDefault();
       spaceHeld = (e.type === "keydown");
@@ -324,7 +331,7 @@
     var nextStep = 0, resolved = false, lastReal = performance.now(), raf = 0;
     function frame(realNow) {
       var dt = realNow - lastReal; lastReal = realNow;
-      vt += dt * (spaceHeld ? 4 : 1);
+      vt += dt * (spaceHeld ? 8 : 1);
       while (nextStep < stepList.length && vt >= stepList[nextStep].time) { stepList[nextStep].fn(); nextStep++; }
       for (var i = anims.length - 1; i >= 0; i--) {
         var an = anims[i], p = an.dur > 0 ? Math.min(1, (vt - an.t0) / an.dur) : 1;
