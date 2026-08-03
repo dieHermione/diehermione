@@ -44,7 +44,7 @@
     .nav button { font-family: inherit; cursor: pointer; font-size: 0.9rem; letter-spacing: 0.18em; text-transform: uppercase; font-weight: 700;
       padding: 0.6rem 1.8rem; border: 1.5px solid var(--br); background: transparent; color: var(--br); box-shadow: 0 0 18px rgba(255,32,16,0.28); }
     .nav button:hover { background: var(--br); color: var(--bg); }
-    #back { border-color: var(--dim); color: var(--c); box-shadow: none; }
+    #back { border-color: var(--br); color: var(--br); box-shadow: 0 0 18px rgba(255,32,16,0.28); }
   </style>
   <script src="/audio.js"></script>
 </head>
@@ -57,7 +57,7 @@
   <div class="hud tl"><div class="k">score</div><div class="v" id="hud-score">0</div></div>
   <div class="hud tr"><div class="k">length</div><div class="v" id="hud-length">0</div></div>
   <div class="hud bl"><div class="k">points earned</div><div class="v" id="hud-earned">0</div></div>
-  <div class="hud br2"><div class="k">boost &middot; hold space</div><div class="boostbar" id="boostbar"><span id="boost-fill"></span></div></div>
+  <div class="hud br2"><div class="k">boost &middot; hold shift</div><div class="boostbar" id="boostbar"><span id="boost-fill"></span></div></div>
 
   <div class="nav">
     <button id="start" type="button">Start</button>
@@ -374,9 +374,12 @@
     document.addEventListener("keydown", (e) => {
       const t = e.target, tag = (t && t.tagName || "").toLowerCase();
       if (tag === "input" || tag === "textarea") return;
-      if (e.key === "p" || e.key === "P") { e.preventDefault(); togglePause(); return; }
-      if (e.code === "Space") {                 // hold to boost
+      if (e.code === "Space") {                 // tap to pause / resume
         e.preventDefault();
+        if (!e.repeat) togglePause();
+        return;
+      }
+      if (e.key === "Shift") {                  // hold to boost
         if (alive && !paused) boostHeld = true;
         return;
       }
@@ -386,7 +389,7 @@
       turnInput = d;
     });
     document.addEventListener("keyup", (e) => {
-      if (e.code === "Space") { boostHeld = false; return; }
+      if (e.key === "Shift") { boostHeld = false; return; }
       const d = keyDir(e);
       if (d && Math.sign(turnInput) === d) turnInput = 0;
     });
