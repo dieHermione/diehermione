@@ -31,10 +31,10 @@
     /* dash never scrolls; sized under fitDash's threshold so it isn't scaled */
     .dash { position: relative; z-index: 5; width: min(1640px, 94vw); height: calc(100vh - 104px); margin: 46px auto 0;
       display: grid; grid-template-columns: 1.15fr 1.4fr 1fr; grid-template-rows: auto 1fr auto; gap: 3.2vh 3vw;
-      grid-template-areas: "hello hello clock" "actions dailies board" "vessel dailies board"; }
+      grid-template-areas: "hello hello clock" "actions dailies board" "vessel dailies ."; }
     /* no admin panel: the middle column closes up instead of leaving a hole */
     .dash.no-panel { grid-template-columns: 1.3fr 1fr;
-      grid-template-areas: "hello clock" "actions board" "vessel board"; }
+      grid-template-areas: "hello clock" "actions board" "vessel ."; }
     @media (max-width: 900px) {
       .dash, .dash.no-panel, .dash.c-dailies, .dash.c-board, .dash.c-dailies.c-board {
         grid-template-columns: 1fr;
@@ -201,7 +201,7 @@
 
     /* ---- leaderboard ---- */
     /* top-aligned and content-height, so it is no taller than the enter list */
-    .leaderboard-card { grid-area: board; padding-left: 2vw; min-height: 0; align-self: start; overflow: hidden; }
+    .leaderboard-card { grid-area: board; padding-left: 2vw; min-height: 0; align-self: end; overflow: hidden; }
     /* guests see the board but names are not links */
     .dash.is-guest .leaderboard-card td a { pointer-events: none; color: var(--c); text-decoration: none; }
     .leaderboard-card h2 { color: var(--dim); letter-spacing: 0.2em; text-transform: uppercase; font-size: 0.72rem; font-weight: 400; margin: 0 0 0.8rem; }
