@@ -11,7 +11,8 @@
   <script src="/audio.js"></script>
   <style>
     /* Summary, "source + entry" (design 1): the source down the left, your
-       answer down the right, with a live word count and a limit meter under it.
+       answer down the right, with a live word count under it. There is no word
+       limit and no length guidance on the player's side — just the count.
        Self-contained, no site.css. */
     * { box-sizing: border-box; margin: 0; padding: 0; }
     [hidden] { display: none !important; }
@@ -74,11 +75,6 @@
     .meterwrap { flex-shrink: 0; margin-top: .8rem; }
     .counts { display: flex; justify-content: space-between; font-size: 11px; color: var(--dim); }
     .counts b { color: var(--bright); font-weight: 400; }
-    .counts.over b { color: var(--err); }
-    .meter { height: 5px; background: rgba(44,74,94,.6); margin-top: .4rem; position: relative; overflow: hidden; }
-    .meter i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .12s linear; }
-    .meter.near i { background: var(--gold); }
-    .meter.over i { background: var(--red); }
 
     .rules { font-size: 10px; line-height: 1.9; color: var(--c); margin-top: .7rem; }
     .acts { display: flex; gap: .6rem; margin-top: .9rem; flex-shrink: 0; }
@@ -109,7 +105,6 @@
     <div class="hdr">
       <span>angelOS v0.2 &nbsp;·&nbsp; SUMMARY</span>
       <span id="state">FETCHING</span>
-      <span>LIMIT <b id="hdr-limit">—</b> WORDS</span>
     </div>
 
     <div class="cols">
@@ -122,15 +117,13 @@
       </section>
 
       <section class="pane">
-        <h2><span>YOUR SUMMARY</span><b id="limit-note">—</b></h2>
-        <textarea id="entry" placeholder="say it back, shorter" disabled
+        <h2><span>YOUR SUMMARY</span></h2>
+        <textarea id="entry" placeholder="say it back in your own words" disabled
                   spellcheck="false" autocomplete="off"></textarea>
         <div class="meterwrap">
           <div class="counts" id="counts">
             <span><b id="wc">0</b> words</span>
-            <span id="left">—</span>
           </div>
-          <div class="meter" id="meter"><i id="fill"></i></div>
           <div class="rules">AI use is an automatic failure.</div>
         </div>
         <div class="acts">
@@ -149,25 +142,17 @@
     const skipBtn = document.getElementById("skip");
     const verdict = document.getElementById("verdict");
 
-    let round = null;      // { title, kind, text, url, limit }
+    let round = null;      // { title, kind, text, url }
     let handedIn = false;
 
     const countWords = (s) => s.trim().split(/\s+/).filter(Boolean).length;
 
+    // No word limit: the count is a neutral tally, and hand-in only needs some text.
     function paintCount() {
       if (!round) return;
       const n = countWords(entry.value);
-      const frac = Math.min(1.6, n / round.limit);
       document.getElementById("wc").textContent = n;
-      document.getElementById("fill").style.width = Math.min(100, frac * 100) + "%";
-      const meter = document.getElementById("meter");
-      meter.classList.toggle("near", n > round.limit * 0.85 && n <= round.limit);
-      meter.classList.toggle("over", n > round.limit);
-      document.getElementById("counts").classList.toggle("over", n > round.limit);
-      document.getElementById("left").textContent = n > round.limit
-        ? (n - round.limit) + " over"
-        : (round.limit - n) + " left";
-      submitBtn.disabled = handedIn || n === 0 || n > round.limit;
+      submitBtn.disabled = handedIn || n === 0;
     }
 
     async function load() {
@@ -202,8 +187,6 @@
       document.getElementById("kind").textContent = data.kindLabel;
       document.getElementById("source").textContent = data.text;
       document.getElementById("src-words").textContent = data.sourceWords + " words";
-      document.getElementById("hdr-limit").textContent = data.limit;
-      document.getElementById("limit-note").textContent = data.limit + " words or fewer";
       if (data.url) {
         const a = document.createElement("a");
         a.href = data.url; a.target = "_blank"; a.rel = "noreferrer noopener";
@@ -219,7 +202,7 @@
     async function handIn() {
       if (!round || handedIn) return;
       const words = countWords(entry.value);
-      if (words === 0 || words > round.limit) return;
+      if (words === 0) return;
       handedIn = true;
       submitBtn.disabled = true;
       entry.disabled = true;
@@ -228,13 +211,13 @@
         await fetch("/api/summary/complete", {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            topic: round.title, kind: round.kind, limit: round.limit,
+            topic: round.title, kind: round.kind,
             words, text: entry.value,
           }),
         });
         verdict.className = "verdict good";
-        verdict.textContent = "Handed in: " + words + " words of a possible " +
-          round.limit + ". She will read it.";
+        verdict.textContent = "Handed in: " + words +
+          (words === 1 ? " word" : " words") + ". She will read it.";
       } catch (e) {
         verdict.className = "verdict bad";
         verdict.textContent = "Written, but it could not be handed in.";

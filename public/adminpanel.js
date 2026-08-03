@@ -128,7 +128,7 @@ window.AdminPanel = (function () {
     const modal = ensureSmodal();
     modal.querySelector("#sm-who").textContent = entry.player + (entry.guest ? " (guest)" : "");
     modal.querySelector("#sm-topic").textContent = (entry.topic || "—") + (entry.kind ? " · " + entry.kind : "");
-    modal.querySelector("#sm-words").textContent = entry.words + " / " + entry.limit;
+    modal.querySelector("#sm-words").textContent = entry.words + (entry.limit ? " / " + entry.limit : "");
     modal.querySelector("#sm-when").textContent = entry.at ? new Date(entry.at).toLocaleString() : "";
     modal.querySelector("#sm-text").textContent = entry.text || "";
     modal.classList.add("open");
@@ -586,7 +586,7 @@ window.AdminPanel = (function () {
         who.textContent = entry.player + (entry.guest ? " (guest)" : "");
         const meta = document.createElement("span"); meta.className = "meta2";
         const topic = entry.topic ? entry.topic.slice(0, 40) : "summary";
-        meta.textContent = topic + " · " + entry.words + "/" + entry.limit + " words";
+        meta.textContent = topic + " · " + entry.words + " words" + (entry.limit ? " / " + entry.limit : "");
         who.addEventListener("click", () => showSummary(entry));
         meta.addEventListener("click", () => showSummary(entry));
         const dismiss = document.createElement("button"); dismiss.className = "adm-log-x"; dismiss.textContent = "×"; dismiss.title = "Dismiss";
