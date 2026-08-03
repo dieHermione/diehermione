@@ -442,9 +442,10 @@ const AudioCtl = (function () {
 
   // push the stored state onto the actual audio nodes and the UI
   function apply() {
-    music.volume = state.musicVol / 100;
+    // all Elysium audio cut by a further 50% (0.5 on music, 0.34 -> 0.17 on rain)
+    music.volume = (state.musicVol / 100) * 0.5;
     music.muted = state.musicMuted;
-    if (rainGain) rainGain.gain.value = state.ambMuted ? 0 : (state.ambVol / 100) * 0.34;
+    if (rainGain) rainGain.gain.value = state.ambMuted ? 0 : (state.ambVol / 100) * 0.17;
     document.getElementById("abMusic").classList.toggle("muted", state.musicMuted);
     document.getElementById("abAmb").classList.toggle("muted", state.ambMuted);
     const mv = document.getElementById("musicVol"), av = document.getElementById("ambVol");
@@ -898,9 +899,5 @@ setInterval(refresh, 5 * 60 * 1000);
 </script>
   <script src="/console.js" defer></script>
   <script src="/ambience.js" defer></script>
-  <script src="/dashglitch.js" defer></script>
-
-  <script src="/glitchboot.js" defer></script>
-
 </body>
 </html>

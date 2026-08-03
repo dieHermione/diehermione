@@ -263,6 +263,9 @@
   function audio() { if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} } if (actx && actx.state === "suspended") actx.resume(); return actx; }
   function startAmbience() {
     const a = audio(); if (!a || ambStarted) return; ambStarted = true;
+    // Penance's corruption static was too harsh, so it is gone entirely; only
+    // Devotion keeps its soft low hum. setAmbience() no-ops without ambGain.
+    if (!DEVOTION) return;
     const size = 2 * a.sampleRate, buf = a.createBuffer(1, size, a.sampleRate), d = buf.getChannelData(0);
     for (let i = 0; i < size; i++) d[i] = Math.random() * 2 - 1;
     const n = a.createBufferSource(); n.buffer = buf; n.loop = true;
