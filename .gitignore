@@ -27,3 +27,7 @@ decrypt.json
 penance.json
 applications.json
 snakesubliminal.json
+questionnaire.json
+# persistent session store + its signing key (generated data, per-environment)
+sessions.json
+.session-secret

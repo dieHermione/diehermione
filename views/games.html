@@ -20,6 +20,10 @@
       --c: #aee3ff; --dim: #4f7ea0; --dim2: #2c4a5e; --bright: #eafaff;
       --accent: #8fd0ff; --glow: rgba(0,172,219,.32);
       --red: #ff3b2f; --deep: #c11208; --err: #ff5a4a;
+      /* Penance red, shared with the skill-check card so the two read as one game
+         family. Anchored on the penance game's own signature red (#c11208) but
+         pushed brighter/more saturated so the card feels vivid rather than muddy. */
+      --pen-red: #ff2a20; --pen-hot: #ff5142; --pen-mid: #d61409; --pen-low: #b0130a;
     }
     html, body { height: 100%; }
     body {
@@ -68,13 +72,13 @@
     /* PENANCE — a typing drill: one line, the caret mid-word, and the counters */
     .c-pen { position: absolute; inset: 0; padding: 1.1rem .95rem 2rem; display: flex; flex-direction: column;
       justify-content: center; gap: .75rem; }
-    .c-pen .meta { font-size: .58rem; letter-spacing: .2em; text-transform: uppercase; color: #a8534b; }
-    .c-pen .phrase { font-size: .98rem; line-height: 1.5; color: #6a2a26; }
-    .c-pen .phrase b { color: #ff6a5c; font-weight: 400; }
-    .c-pen .phrase .cur { background: #ff3b2f; color: #120607; }
-    .c-pen .pbar { height: 4px; background: #2a1010; }
-    .c-pen .pbar b { display: block; height: 100%; width: 24%; background: #ff3b2f; }
-    .c-pen .stat { font-size: .6rem; letter-spacing: .1em; color: #a8534b; }
+    .c-pen .meta { font-size: .58rem; letter-spacing: .2em; text-transform: uppercase; color: var(--pen-hot); }
+    .c-pen .phrase { font-size: .98rem; line-height: 1.5; color: var(--pen-low); }
+    .c-pen .phrase b { color: var(--pen-hot); font-weight: 400; }
+    .c-pen .phrase .cur { background: var(--pen-red); color: #120607; }
+    .c-pen .pbar { height: 4px; background: #3a0d09; }
+    .c-pen .pbar b { display: block; height: 100%; width: 24%; background: var(--pen-red); }
+    .c-pen .stat { font-size: .6rem; letter-spacing: .1em; color: var(--pen-hot); }
 
     /* DEVOTION — a verse reader: real lines, the current one lit, a small progress */
     .c-dev { position: absolute; inset: 0; padding: .8rem .85rem 2rem; display: flex; flex-direction: column; gap: .42rem;
@@ -130,6 +134,20 @@
       text-transform: uppercase; color: var(--c); }
     .p.locked .locknote { display: block; }
 
+    /* in-theme hover text: no native title chrome. Each card draws its own clipped
+       terminal panel (the same "// ..." treatment the dashboard game links used)
+       over its face on hover or keyboard focus. */
+    .p .tip { position: absolute; left: 12px; right: 12px; top: 50%; transform: translateY(-50%);
+      z-index: 25; padding: .62rem .72rem; text-align: left; pointer-events: none;
+      background: rgba(0,0,0,.94); border: 1px solid var(--a, var(--accent));
+      box-shadow: 0 0 22px color-mix(in srgb, var(--a, var(--accent)) 40%, transparent);
+      color: var(--bright); font-size: .72rem; line-height: 1.5; letter-spacing: .02em;
+      clip-path: polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 7px 100%, 0 calc(100% - 7px));
+      opacity: 0; visibility: hidden; transition: opacity .14s ease; }
+    .p .tip::before { content: "// "; color: var(--a, var(--accent)); }
+    .p:hover .tip, .p:focus-visible .tip { opacity: 1; visibility: visible; }
+    .p.locked .tip { display: none; }   /* the lock note speaks for locked cards */
+
     .foot { flex-shrink: 0; font-size: 10px; letter-spacing: .3em; color: var(--dim2);
       margin-top: .8rem; text-align: center; }
 
@@ -161,13 +179,20 @@
        wall. Each game names a bespoke interior "art" and its accent; every card
        shares the one macOS window frame. */
     const GAMES = [
-      { n: "snake",       href: "/snake",                 art: "snake", a: "#ff3b2f", wb: "linear-gradient(#1a0708, #05060a)" },
-      { n: "penance",     href: "/writing",               art: "pen",   a: "#ff5a4a", wb: "#0e0607" },
-      { n: "devotion",    href: "/writing?mode=devotion", art: "dev",   a: "#00acdb", wb: "#050a10", account: true },
-      { n: "deathroll",   href: "/deathroll",             art: "death", a: "#ff3b2f", wb: "linear-gradient(#180708, #05060a)", multi: true },
-      { n: "dummy parse", href: "/dummyparse",            art: "parse", a: "#ff5a4a", wb: "#0a0608" },
-      { n: "skill check", href: "/skillcheck",            art: "skill", a: "#ff3b2f", wb: "radial-gradient(120% 120% at 50% 46%, #200a0c, #050202 74%)" },
-      { n: "summary",     href: "/summary",               art: "sum",   a: "#00acdb", wb: "#050a10" },
+      { n: "snake",       href: "/snake",                 art: "snake", a: "#ff3b2f", wb: "linear-gradient(#1a0708, #05060a)",
+        tip: "Free-swimming serpent. Chase the fleeing heart and grow; die on your own tail." },
+      { n: "penance",     href: "/writing",               art: "pen",   a: "#ff2a20", wb: "#0e0607",
+        tip: "A typing drill of correction. Type each line exactly — falter and it corrupts." },
+      { n: "devotion",    href: "/writing?mode=devotion", art: "dev",   a: "#00acdb", wb: "#050a10", account: true,
+        tip: "A verse reader. Recite Her lines in turn. An account is required." },
+      { n: "deathroll",   href: "/deathroll",             art: "death", a: "#ff3b2f", wb: "linear-gradient(#180708, #05060a)", multi: true,
+        tip: "Roll against another, each cap the next roll. Hit one and you lose. Account required." },
+      { n: "dummy parse", href: "/dummyparse",            art: "parse", a: "#ff5a4a", wb: "#0a0608",
+        tip: "A priest damage recount. Parse the dummy and chase a higher DPS." },
+      { n: "skill check", href: "/skillcheck",            art: "skill", a: "#ff2a20", wb: "radial-gradient(120% 120% at 50% 46%, #200a0c, #050202 74%)",
+        tip: "Stop the sweeping dial inside the good zone. Pure nerve." },
+      { n: "summary",     href: "/summary",               art: "sum",   a: "#00acdb", wb: "#050a10",
+        tip: "Read a real Wikipedia article, then retell it under a strict word limit." },
     ];
 
     // a ring of laurel leaves, for the elysium card
@@ -216,7 +241,7 @@
         <div class="dps"><b>812</b><span>dps</span></div></div>`,
       skill: () => `<div class="c-skill"><svg viewBox="0 0 214 262">
         <circle cx="107" cy="128" r="64" fill="none" stroke="#3a1416" stroke-width="14"/>
-        <path d="M 63.6 171.4 A 64 64 0 0 1 47.7 102.9" fill="none" stroke="#ff3b2f" stroke-width="14"/>
+        <path d="M 63.6 171.4 A 64 64 0 0 1 47.7 102.9" fill="none" stroke="#ff2a20" stroke-width="14"/>
         <circle cx="107" cy="128" r="64" fill="none" stroke="rgba(174,227,255,.18)" stroke-width="1"/>
         <line x1="107" y1="128" x2="72" y2="86" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
         <circle cx="107" cy="128" r="6" fill="#fff"/></svg></div>`,
@@ -263,6 +288,7 @@
         a.className = "p";
         a.href = g.href;
         a.tabIndex = 0;
+        a.style.setProperty("--a", g.a);   // so the hover panel picks up the game's accent
         // anything needing an account is pasted over for a guest
         const locked = guest && (g.multi || g.account);
         if (locked) {
@@ -270,7 +296,8 @@
           a.removeAttribute("href");
           a.setAttribute("aria-disabled", "true");
         }
-        a.innerHTML = frameHTML(g, i) + (locked ? '<div class="locknote">sign in to play</div>' : "");
+        const tip = g.tip ? `<div class="tip">${g.tip}</div>` : "";
+        a.innerHTML = frameHTML(g, i) + tip + (locked ? '<div class="locknote">sign in to play</div>' : "");
         a.addEventListener("mouseenter", () => setSel(i));
         a.addEventListener("focus", () => setSel(i));
         a.addEventListener("click", (e) => { if (locked) e.preventDefault(); });

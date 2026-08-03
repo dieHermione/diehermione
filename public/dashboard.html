@@ -29,10 +29,10 @@
 
     /* dash never scrolls; sized under fitDash's threshold so it isn't scaled */
     .dash { position: relative; z-index: 5; width: min(1640px, 94vw); height: calc(100vh - 104px); margin: 46px auto 0;
-      display: grid; grid-template-columns: 1.15fr 1.4fr 1fr; grid-template-rows: auto 1fr auto; gap: 3.2vh 3vw;
+      display: grid; grid-template-columns: 1.15fr 1.4fr 0.67fr; grid-template-rows: auto 1fr auto; gap: 3.2vh 3vw;
       grid-template-areas: "hello hello clock" "actions dailies board" "vessel dailies ."; }
     /* no admin panel: the middle column closes up instead of leaving a hole */
-    .dash.no-panel { grid-template-columns: 1.3fr 1fr;
+    .dash.no-panel { grid-template-columns: 1.3fr 0.67fr;
       grid-template-areas: "hello clock" "actions board" "vessel ."; }
     @media (max-width: 900px) {
       .dash, .dash.no-panel, .dash.c-dailies, .dash.c-board, .dash.c-dailies.c-board {
@@ -174,7 +174,7 @@
        so folding the middle column hands its space to the first column only.
        The leaderboard keeps its size and the hero keeps its right edge, which
        is what the notifications bell is anchored to. */
-    .dash.c-dailies { grid-template-columns: 1fr 3rem var(--board-w, 1.15fr); }
+    .dash.c-dailies { grid-template-columns: 1fr 3rem var(--board-w, 0.77fr); }
     .dash.c-board { grid-template-columns: 1.15fr 1.75fr 3rem; }
     .dash.c-dailies.c-board { grid-template-columns: 1fr 3rem 3rem; }
     /* The clock shares the leaderboard's column. When the board folds to a 3rem

@@ -69,12 +69,74 @@ function saveGames(games) {
 
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json({ limit: "3mb" })); // room for base64 profile pictures
+
+// ---- persistent sessions ----
+// Two things used to log everyone out on every deploy:
+//   1. the secret defaulted to crypto.randomBytes() when SESSION_SECRET was unset,
+//      so each restart signed cookies with a new key and invalidated all of them;
+//   2. express-session's default store is in-memory, so the session records were
+//      wiped on restart even when the cookie was still valid.
+// Both are fixed below so a login survives restarts and redeploys. The store is a
+// small file-backed one (sessions.json under DATA_DIR) — same "JSON files on disk,
+// no DB" model as everything else, no new dependency. Single-instance only.
+const SESSIONS_FILE = path.join(process.env.DATA_DIR || __dirname, "sessions.json");
+const SECRET_FILE = path.join(process.env.DATA_DIR || __dirname, ".session-secret");
+
+// A stable secret: the env var if set, else one persisted to DATA_DIR so it is the
+// same across restarts even when the env var is absent.
+function sessionSecret() {
+  if (process.env.SESSION_SECRET) return process.env.SESSION_SECRET;
+  try { return fs.readFileSync(SECRET_FILE, "utf8").trim(); } catch {}
+  const s = crypto.randomBytes(32).toString("hex");
+  try { fs.writeFileSync(SECRET_FILE, s); } catch {}
+  return s;
+}
+
+class FileSessionStore extends session.Store {
+  constructor() {
+    super();
+    this.sessions = new Map();
+    this.dirty = false;
+    try {
+      const raw = JSON.parse(fs.readFileSync(SESSIONS_FILE, "utf8"));
+      for (const [sid, s] of Object.entries(raw)) this.sessions.set(sid, s);
+    } catch {}
+    this.prune();
+    // Flush at most once a second. Losing up to a second of writes on a hard crash
+    // is harmless (worst case, one re-login), and this keeps disk churn tiny.
+    setInterval(() => this.flush(), 1000).unref();
+  }
+  isExpired(s) {
+    const exp = s && s.cookie && s.cookie.expires;
+    return exp ? Date.now() > new Date(exp).getTime() : false;
+  }
+  prune() {
+    for (const [sid, s] of this.sessions) if (this.isExpired(s)) { this.sessions.delete(sid); this.dirty = true; }
+  }
+  flush() {
+    if (!this.dirty) return;
+    this.dirty = false;
+    try { fs.writeFileSync(SESSIONS_FILE, JSON.stringify(Object.fromEntries(this.sessions))); } catch {}
+  }
+  get(sid, cb) {
+    const s = this.sessions.get(sid);
+    if (!s) return cb(null, null);
+    if (this.isExpired(s)) { this.sessions.delete(sid); this.dirty = true; return cb(null, null); }
+    cb(null, s);
+  }
+  set(sid, s, cb) { this.sessions.set(sid, s); this.dirty = true; if (cb) cb(null); }
+  touch(sid, s, cb) { const cur = this.sessions.get(sid); if (cur) { cur.cookie = s.cookie; this.dirty = true; } if (cb) cb(null); }
+  destroy(sid, cb) { this.sessions.delete(sid); this.dirty = true; if (cb) cb(null); }
+}
+
 app.use(
   session({
-    secret: process.env.SESSION_SECRET || crypto.randomBytes(32).toString("hex"),
+    store: new FileSessionStore(),
+    secret: sessionSecret(),
     resave: false,
     saveUninitialized: false,
-    cookie: { httpOnly: true, sameSite: "lax", maxAge: 1000 * 60 * 60 * 24 },
+    rolling: true,   // refresh the cookie's expiry on activity, so active users stay in
+    cookie: { httpOnly: true, sameSite: "lax", maxAge: 1000 * 60 * 60 * 24 * 30 },
   })
 );
 app.use(express.static(path.join(__dirname, "public")));
@@ -1266,7 +1328,23 @@ function loadSummaries() {
   catch { return []; }
 }
 
-// Kept so Hermione can read them later; there is no admin view for these yet.
+// Admin-only: read the handed-in summaries (newest first). The admin panel's
+// Writing tab lists these and opens each one's full text.
+app.get("/api/admin/summaries", (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });
+  res.json({ entries: loadSummaries() });
+});
+
+// Admin-only: dismiss one handed-in summary.
+app.delete("/api/admin/summaries/:id", (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });
+  const list = loadSummaries().filter((e) => e.id !== req.params.id);
+  fs.writeFileSync(SUMMARY_FILE, JSON.stringify({ entries: list }, null, 2));
+  res.json({ ok: true });
+});
+
 app.post("/api/summary/complete", (req, res) => {
   const who = playerId(req);
   if (!who) return res.status(401).json({ error: "Not logged in." });

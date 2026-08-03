@@ -15,7 +15,14 @@ session" layers stacked on top of each other and most of it was superseded.
 
 Live at **angeldom.me** (Railway, auto-deploys on push to `main`). One Express
 server (`server.js`), no database, JSON files on disk, no build step. One admin
-identity: `hermione`. Push after each task; the user likes frequent pushes.
+identity: `hermione`.
+
+> ## Always push
+> **Commit and push to `main` after every task — no need to ask first.** This is a
+> small personal hobby site; the user has standing authorization to push, and
+> pushing early never ruins anyone's experience. Don't sit on finished, verified
+> work waiting for a go-ahead. (Auto-deploys on push, so a quick post-push sanity
+> check against the live marker is still worth it — see Railway lag below.)
 
 > ## Dual-tone colour rule — no dimming
 > Every blue-and-white surface uses **exactly two text colours**: the vivid brand

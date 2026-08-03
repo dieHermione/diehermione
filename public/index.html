@@ -74,6 +74,21 @@
     .link:hover b { text-decoration: underline; }
     .errline { color: var(--err); min-height: 1.2em; margin: 0.6rem 0 0; }
     .fields { margin-top: 0.4rem; }
+
+    /* Mobile: the desktop scale(1.5) blew the content past a viewport that clips
+       overflow, so the fields and the enter button ended up off-screen and login
+       was impossible. On narrow screens drop the transform, let the page scroll,
+       and let the label/input rows wrap so nothing runs off the edge. */
+    @media (max-width: 720px) {
+      html, body { overflow: auto; }
+      #scene { position: static; min-height: 100%; padding: 5vh 6vw; align-items: flex-start; }
+      .content { transform: none; width: 100%; font-size: 1rem; line-height: 1.75; }
+      .fl { flex-wrap: wrap; gap: 0.25rem 0.6rem; }
+      .fl .lab { min-width: 0; }
+      .fl input, .fl select, .fl textarea { flex: 1 1 100%; font-size: 16px; } /* 16px stops iOS zoom-on-focus */
+      .roles { flex-wrap: wrap; }
+      .role::after { width: min(13rem, 78vw); }
+    }
   </style>
   <script src="/audio.js"></script>
 </head>

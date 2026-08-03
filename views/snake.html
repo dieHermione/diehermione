@@ -77,16 +77,18 @@
        Running into your own body ends the run: the first stretch behind the
        head is skipped so a hard turn cannot kill you on its own. */
 
-    const SPEED = 380;          // px per second
+    const SPEED = 456;          // px per second (1.2x the old default of 380)
     const TURN = 3.4;           // radians per second at full lock
     // The trail is the body, so its length in px is also how much of a turn
     // stays visible: at SPEED this is a little over a second of history.
-    const START_LEN = 260;
+    const START_LEN = 520;      // doubled from the old 260 so the snake starts long
     const GROW_PER_FOOD = 42;
     const HEAD_R = 9;           // head radius; the body tapers away from this
     const FOOD_R = 9;
     const FLEE_R = 46;          // the food bolts if the head gets this close
-    const FOOD_SPEED = SPEED / 2;   // the food drifts at half the snake's pace
+    // The food drifts at 0.6x the snake's pace — half the old snake speed times the
+    // 1.2x food bump, which lands the same whether measured off the old or new SPEED.
+    const FOOD_SPEED = SPEED / 2;
     const FOOD_TURN_MIN = 0.5, FOOD_TURN_MAX = 1.8;  // seconds between direction changes
     const NECK = 34;            // trail points behind the head that cannot kill
     // boost: hold space to go faster. A full bar buys ~5s at BOOST_MULT and
@@ -187,13 +189,19 @@
     function moveFood(dt) {
       if (!food) return;
       if (elapsed >= foodTurnAt) {
-        foodAngle += (Math.random() - 0.5) * Math.PI;
+        // slightly wider swing than the old +-90deg, so the food wanders more
+        foodAngle += (Math.random() - 0.5) * Math.PI * 1.4;
         foodTurnAt = elapsed + FOOD_TURN_MIN + Math.random() * (FOOD_TURN_MAX - FOOD_TURN_MIN);
       }
-      food = wrap({
-        x: food.x + Math.cos(foodAngle) * FOOD_SPEED * dt,
-        y: food.y + Math.sin(foodAngle) * FOOD_SPEED * dt,
-      });
+      // The food is penned inside the window: it bounces off the walls instead of
+      // wrapping through them (the snake still wraps; only the food is bounded).
+      let nx = food.x + Math.cos(foodAngle) * FOOD_SPEED * dt;
+      let ny = food.y + Math.sin(foodAngle) * FOOD_SPEED * dt;
+      if (nx < FOOD_R)       { nx = FOOD_R;     foodAngle = Math.PI - foodAngle; }
+      else if (nx > W - FOOD_R) { nx = W - FOOD_R; foodAngle = Math.PI - foodAngle; }
+      if (ny < FOOD_R)       { ny = FOOD_R;     foodAngle = -foodAngle; }
+      else if (ny > H - FOOD_R) { ny = H - FOOD_R; foodAngle = -foodAngle; }
+      food = { x: nx, y: ny };
     }
 
     function step(dt) {
@@ -393,6 +401,27 @@
       const d = keyDir(e);
       if (d && Math.sign(turnInput) === d) turnInput = 0;
     });
+
+    // Touch steering for phones (there is no keyboard): press the left or right
+    // half of the screen to turn that way while held, release to go straight. A
+    // second finger anywhere is the boost, standing in for Shift.
+    function touchTurn(list) {
+      for (const t of list) { if (t.clientX < window.innerWidth / 2) return -1; return 1; }
+      return 0;
+    }
+    function onTouch(e) {
+      e.preventDefault();
+      if (!alive || paused) return;
+      turnInput = touchTurn(e.touches);
+      boostHeld = e.touches.length >= 2;
+    }
+    canvas.addEventListener("touchstart", onTouch, { passive: false });
+    canvas.addEventListener("touchmove", onTouch, { passive: false });
+    canvas.addEventListener("touchend", (e) => {
+      e.preventDefault();
+      if (!e.touches.length) { turnInput = 0; boostHeld = false; }
+      else onTouch(e);
+    }, { passive: false });
 
     function togglePause() {
       if (!alive) return;

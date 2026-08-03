@@ -100,6 +100,40 @@ window.AdminPanel = (function () {
     modal.classList.add("open");
   }
 
+  /* --- the handed-in-summary modal, created on first use -------------- */
+  function ensureSmodal() {
+    let modal = document.getElementById("smodal");
+    if (modal) return modal;
+    modal = document.createElement("div");
+    modal.id = "smodal";
+    modal.innerHTML =
+      '<div class="term">' +
+      '<div class="pt-title" id="sm-title">:: summary handed in ::</div>' +
+      '<hr />' +
+      '<div class="prow"><span class="pk">servant</span><span id="sm-who"></span></div>' +
+      '<div class="prow"><span class="pk">topic</span><span id="sm-topic"></span></div>' +
+      '<div class="prow"><span class="pk">words</span><span id="sm-words"></span></div>' +
+      '<div class="prow"><span class="pk">when</span><span class="pdim" id="sm-when"></span></div>' +
+      '<hr />' +
+      '<div class="sm-text" id="sm-text"></div>' +
+      '<button class="pclose" id="sm-close">close</button>' +
+      '</div>';
+    document.body.appendChild(modal);
+    modal.querySelector("#sm-close").addEventListener("click", () => modal.classList.remove("open"));
+    modal.addEventListener("click", (ev) => { if (ev.target.id === "smodal") modal.classList.remove("open"); });
+    return modal;
+  }
+
+  function showSummary(entry) {
+    const modal = ensureSmodal();
+    modal.querySelector("#sm-who").textContent = entry.player + (entry.guest ? " (guest)" : "");
+    modal.querySelector("#sm-topic").textContent = (entry.topic || "—") + (entry.kind ? " · " + entry.kind : "");
+    modal.querySelector("#sm-words").textContent = entry.words + " / " + entry.limit;
+    modal.querySelector("#sm-when").textContent = entry.at ? new Date(entry.at).toLocaleString() : "";
+    modal.querySelector("#sm-text").textContent = entry.text || "";
+    modal.classList.add("open");
+  }
+
   /* --- injected styles ------------------------------------------------ */
   function injectStyle() {
     if (document.getElementById("adminpanel-style")) return;
@@ -110,7 +144,9 @@ window.AdminPanel = (function () {
       ".adm-sec.shut h3 .sc { transform: rotate(-90deg); }",
       ".adm-sec.shut > *:not(h3) { display: none; }",
       /* full-width, categorised: sections flow into as many columns as fit */
-      ".adm { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 0.4rem 2.2rem; align-items: start; }",
+      /* min(340px,100%) instead of a flat 340px so a phone narrower than the
+         column does not get a horizontal scrollbar — it drops to one column. */
+      ".adm { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(340px, 100%), 1fr)); gap: 0.4rem 2.2rem; align-items: start; }",
       /* tabs across the top-left: only one panel is shown at a time */
       ".adm-tabs { display: flex; flex-wrap: wrap; gap: 0.3rem; margin: 0 0 1.6rem; border-bottom: 1px solid var(--dim2); }",
       ".adm-tab { border: 1px solid var(--dim2); border-bottom: none; background: transparent; color: var(--dim); font-family: inherit; font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; padding: 0.5rem 1.15rem; cursor: pointer; position: relative; top: 1px; }",
@@ -173,6 +209,17 @@ window.AdminPanel = (function () {
       "#pmodal .pk { color: var(--dim); } #pmodal .pdim { color: var(--dim2); }",
       "#pmodal .pclose { margin-top: 1.2rem; border: 1px solid var(--c); background: transparent; color: var(--c); font-family: inherit; padding: 0.3rem 1.2rem; cursor: pointer; text-transform: uppercase; letter-spacing: 0.1em; }",
       "#pmodal .pclose:hover { background: var(--c); color: var(--bg); }",
+      /* handed-in-summary modal (smodal): same chrome as pmodal, plus a scrollable body */
+      "#smodal { position: fixed; inset: 0; z-index: 200; background: rgba(2,4,8,0.8); display: none; align-items: center; justify-content: center; }",
+      "#smodal.open { display: flex; }",
+      "#smodal .term { width: min(620px, 92vw); background: #06101a; border: 1px solid var(--accent); box-shadow: 0 0 40px var(--glow); padding: 1.6rem 1.8rem; font-family: 'IBM Plex Mono', monospace; color: var(--c); }",
+      "#smodal .pt-title { color: var(--bright); letter-spacing: 0.1em; margin-bottom: 0.6rem; }",
+      "#smodal hr { border: none; border-top: 1px solid var(--dim2); margin: 0.7rem 0; }",
+      "#smodal .prow { display: flex; justify-content: space-between; gap: 1rem; padding: 0.15rem 0; }",
+      "#smodal .pk { color: var(--dim); } #smodal .pdim { color: var(--dim2); }",
+      "#smodal .sm-text { max-height: 48vh; overflow-y: auto; white-space: pre-wrap; line-height: 1.6; color: var(--bright); font-size: 0.9rem; }",
+      "#smodal .pclose { margin-top: 1.2rem; border: 1px solid var(--c); background: transparent; color: var(--c); font-family: inherit; padding: 0.3rem 1.2rem; cursor: pointer; text-transform: uppercase; letter-spacing: 0.1em; }",
+      "#smodal .pclose:hover { background: var(--c); color: var(--bg); }",
     ].join("\n");
     const s = document.createElement("style"); s.id = "adminpanel-style"; s.textContent = css;
     document.head.appendChild(s);
@@ -324,6 +371,14 @@ window.AdminPanel = (function () {
     const logEmpty = document.createElement("p"); logEmpty.className = "adm-empty"; logEmpty.textContent = "No series finished yet.";
     logSec.append(logList, logEmpty); wrap.append(foldable(logSec));
 
+    // Summaries handed in: the summary game stores each hand-in; list them here
+    // and open the full text on click. Populated after the panel is assembled.
+    const sumSec = document.createElement("div"); sumSec.className = "adm-sec";
+    sumSec.append(mk("h3", "Summaries handed in"));
+    const sumList = document.createElement("div");
+    const sumEmpty = document.createElement("p"); sumEmpty.className = "adm-empty"; sumEmpty.textContent = "No summaries handed in yet.";
+    sumSec.append(sumList, sumEmpty); wrap.append(foldable(sumSec));
+
     // devotion presets editor (Hermione-editable line sets)
     /* Both writing games take preset line-sets, stored and validated the
        same way, so one editor is built twice rather than copied. */
@@ -448,7 +503,7 @@ window.AdminPanel = (function () {
     // a time instead of everything at once.
     const TABS = [
       { id: "members", label: "Members", match: ["Approvals", "Applications", "Accounts"] },
-      { id: "writing", label: "Writing", match: ["Devotion presets", "Penance presets", "Lines completed"] },
+      { id: "writing", label: "Writing", match: ["Devotion presets", "Penance presets", "Lines completed", "Summaries handed in"] },
       { id: "content", label: "Site content", match: ["Onboarding intro", "Questionnaire descriptions", "Decrypt lines", "Screen glitch"] },
       { id: "docs", label: "Docs & tools", match: ["Documentation"] },
     ];
@@ -519,6 +574,31 @@ window.AdminPanel = (function () {
       row.append(who, meta, dismiss);
       logList.append(row);
     });
+
+    // handed-in summaries: one admin fetch, newest first (server already sorts)
+    const sres = await fetch("/api/admin/summaries").catch(() => null);
+    if (sres && sres.ok) {
+      const { entries = [] } = await sres.json();
+      sumEmpty.hidden = entries.length > 0;
+      entries.slice(0, 60).forEach((entry) => {
+        const row = document.createElement("div"); row.className = "adm-log";
+        const who = document.createElement("span"); who.className = "who2";
+        who.textContent = entry.player + (entry.guest ? " (guest)" : "");
+        const meta = document.createElement("span"); meta.className = "meta2";
+        const topic = entry.topic ? entry.topic.slice(0, 40) : "summary";
+        meta.textContent = topic + " · " + entry.words + "/" + entry.limit + " words";
+        who.addEventListener("click", () => showSummary(entry));
+        meta.addEventListener("click", () => showSummary(entry));
+        const dismiss = document.createElement("button"); dismiss.className = "adm-log-x"; dismiss.textContent = "×"; dismiss.title = "Dismiss";
+        dismiss.addEventListener("click", async (ev) => {
+          ev.stopPropagation();
+          const r = await fetch("/api/admin/summaries/" + encodeURIComponent(entry.id), { method: "DELETE" });
+          if (r.ok) row.remove();
+        });
+        row.append(who, meta, dismiss);
+        sumList.append(row);
+      });
+    }
   }
 
   return { build: build, showResult: showResult };
