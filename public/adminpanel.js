@@ -111,6 +111,14 @@ window.AdminPanel = (function () {
       ".adm-sec.shut > *:not(h3) { display: none; }",
       /* full-width, categorised: sections flow into as many columns as fit */
       ".adm { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 0.4rem 2.2rem; align-items: start; }",
+      /* tabs across the top-left: only one panel is shown at a time */
+      ".adm-tabs { display: flex; flex-wrap: wrap; gap: 0.3rem; margin: 0 0 1.6rem; border-bottom: 1px solid var(--dim2); }",
+      ".adm-tab { border: 1px solid var(--dim2); border-bottom: none; background: transparent; color: var(--dim); font-family: inherit; font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; padding: 0.5rem 1.15rem; cursor: pointer; position: relative; top: 1px; }",
+      ".adm-tab:hover { color: var(--c); }",
+      ".adm-tab.active { color: var(--bright); border-color: var(--accent); background: rgba(0,172,219,0.09); }",
+      ".adm-tab .badge { color: var(--err); margin-left: 0.4rem; }",
+      ".adm-panel { display: none; }",
+      ".adm-panel.active { display: grid; }",
       ".adm h3 { color: var(--dim); font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 400; margin: 0.4rem 0 0.6rem; }",
       ".adm-sec { margin-bottom: 1.1rem; }",
       ".adm-empty { color: var(--dim2); font-size: 0.85rem; }",
@@ -179,7 +187,7 @@ window.AdminPanel = (function () {
     if (!res.ok) { body.innerHTML = '<p class="adm-empty">Could not load accounts.</p>'; return; }
     const { users } = await res.json();
     const wrap = document.createElement("div");
-    wrap.className = "adm";
+    wrap.className = "adm-wrap";
 
     const pending = users.filter((u) => u.pending);
     const approved = users.filter((u) => !u.pending && u.username.toLowerCase() !== "hermione");
@@ -463,6 +471,53 @@ window.AdminPanel = (function () {
       const a = document.createElement("a"); a.className = "adm-doc"; a.href = h; a.textContent = t; docSec.append(a);
     });
     wrap.append(foldable(docSec));
+
+    // Group the sections into a few top-left tabs so the panel shows one area at
+    // a time instead of everything at once.
+    const TABS = [
+      { id: "members", label: "Members", match: ["Approvals", "Applications", "Accounts"] },
+      { id: "writing", label: "Writing", match: ["Devotion presets", "Penance presets", "Lines completed"] },
+      { id: "content", label: "Site content", match: ["Onboarding intro", "Decrypt lines", "Screen glitch"] },
+      { id: "docs", label: "Docs & tools", match: ["Documentation"] },
+    ];
+    const tabFor = (sec) => {
+      const h = sec.querySelector("h3");
+      // strip the leading fold chevron (span.sc) so matching sees the real label
+      const t = (h ? h.textContent : "").replace(/^[^A-Za-z]+/, "").trim();
+      const hit = TABS.find((tab) => tab.match.some((m) => t.startsWith(m)));
+      return (hit || TABS[0]).id;
+    };
+    const secs = [...wrap.querySelectorAll(":scope > .adm-sec")];
+    const panels = {};
+    TABS.forEach((tab) => {
+      const p = document.createElement("div");
+      p.className = "adm adm-panel"; p.dataset.tab = tab.id;
+      panels[tab.id] = p;
+    });
+    secs.forEach((sec) => panels[tabFor(sec)].append(sec));
+    const bar = document.createElement("div"); bar.className = "adm-tabs";
+    const activate = (id) => {
+      TABS.forEach((tab) => {
+        panels[tab.id].classList.toggle("active", tab.id === id);
+        const btn = bar.querySelector('[data-tab="' + tab.id + '"]');
+        if (btn) btn.classList.toggle("active", tab.id === id);
+      });
+    };
+    wrap.replaceChildren(bar);
+    TABS.forEach((tab) => {
+      const panel = panels[tab.id];
+      if (!panel.children.length) return;               // hide tabs with nothing in them
+      const btn = document.createElement("button");
+      btn.className = "adm-tab"; btn.dataset.tab = tab.id; btn.textContent = tab.label;
+      const waiting = panel.querySelectorAll(".adm-row.pending").length;
+      if (waiting) { const b = document.createElement("span"); b.className = "badge"; b.textContent = waiting; btn.append(b); }
+      btn.addEventListener("click", () => activate(tab.id));
+      bar.append(btn);
+      wrap.append(panel);
+    });
+    const firstBtn = bar.querySelector(".adm-tab");
+    if (firstBtn) activate(firstBtn.dataset.tab);
+
     body.append(wrap);
 
     // gather every account's finished series
