@@ -19,28 +19,28 @@ identity: `hermione`. Push after each task; the user likes frequent pushes.
 > ## Persistence — CRUCIAL, do not regress
 > Every editable-text pool (`decrypt.json`, `devotion.json`, `penance.json`,
 > `site.json` = about-me/site-purpose, applications, users, elysium, writing/parse
-> logs, …) is a JSON file under **`DATA_DIR`** (falls back to the repo dir). The
-> `load*()` functions read the file first and only use the built-in `*_DEFAULTS`
-> when the file is missing — so **Hermione's edits must always win over the code
-> defaults.** They already do in code.
+> logs, …) is a JSON file under **`DATA_DIR`**. The `load*()` functions read the
+> file first and only use the built-in `*_DEFAULTS` when the file is missing — so
+> **Hermione's edits always win over the code defaults.** They already do in code.
 >
-> The failure the user hit ("lines I removed came back") has two causes, both now
-> understood:
-> 1. **Ephemeral filesystem (the real one).** If `DATA_DIR` is not a **persistent
->    Railway volume**, the JSON is written to an ephemeral disk and every deploy
->    resets it to defaults. **Fix is infra, not code:** mount a Railway volume and
->    set `DATA_DIR` to it. Never rely on the repo dir for live data. Do NOT commit
->    generated data JSON to the repo as a "fix" — a deploy would then overwrite
->    live edits with the committed copy.
-> 2. **Admin editors seeded from client-side defaults** (the old Subliminals box
->    read `window.Subliminal.messages`, the hardcoded pool, not the server). That
->    class of bug is why saving re-persisted defaults. Rule: **every admin editor
->    must load its current value from the server (`fetch /api/…`), never from a
->    client-side default constant.** decrypt / penance / devotion / about+purpose
->    already do. Subliminals were removed entirely.
+> **Infra is already correct (verified 2026-08-02):** Railway service
+> `diehermione` has a persistent volume (`diehermione-volume`) mounted at `/data`
+> and the env var **`DATA_DIR=/data`** set. That's proven by accounts surviving
+> deploys — same `DATA_DIR`, same volume, so the text pools persist too. **Do not
+> add a second volume, and do not point `DATA_DIR` anywhere else.** Never "fix"
+> persistence by committing generated data JSON to the repo — a deploy would then
+> overwrite live edits with the committed copy.
 >
-> When adding any new editable pool, follow decrypt.json exactly and verify the
-> admin editor fetches the server value before showing it.
+> So the "lines I removed came back" bug was **not** the filesystem. It was an
+> admin editor seeded from a **client-side default** (the old Subliminals box read
+> `window.Subliminal.messages`, the hardcoded pool, not the server), so saving
+> re-persisted defaults over the edit. Subliminals were removed entirely; the
+> remaining editors (decrypt / penance / devotion / about+purpose) all `fetch`
+> their current value from the server before showing it.
+>
+> **Rule for any new editable pool:** copy `decrypt.json` exactly (file-first
+> load, defaults only as fallback) AND make its admin editor fetch the server
+> value before rendering. Never seed an editor from a client-side constant.
 
 **Read order:** this file, then **`/guide`** and **`/tech`**, which were rewritten
 on 2026-07-30 and are accurate. `README.md` is still stale and owes a pass.
