@@ -19,7 +19,7 @@
      while carrying one (the cast bar, the cooldown overlay). */
   [hidden]{display:none !important}
   :root{--c:#aee3ff;--dim:#4f7ea0;--dim2:#2c4a5e;--bright:#eafaff;--accent:#8fd0ff;
-        --glow:rgba(120,190,255,.32);--red:#ff3b2f;--deep:#c11208;--gold:#ffd27a;--ok:#7dffb0}
+        --glow:rgba(0,172,219,.32);--red:#ff3b2f;--deep:#c11208;--gold:#ffd27a;--ok:#7dffb0}
   html,body{height:100%;margin:0;overflow:hidden}
   body{background:#000;color:var(--c);font-family:"IBM Plex Mono",monospace;font-size:14px}
   .scan{position:fixed;inset:0;z-index:90;pointer-events:none;
@@ -56,9 +56,9 @@
   .lt{display:grid;grid-template-rows:1fr auto;gap:.9rem;min-height:0}
 
   .arena{position:relative;border:1px solid var(--dim2);overflow:hidden;min-height:0;
-    background:radial-gradient(60% 60% at 50% 45%,rgba(120,190,255,.05),transparent 70%)}
+    background:radial-gradient(60% 60% at 50% 45%,rgba(0,172,219,.05),transparent 70%)}
   .dummy{position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);text-align:center}
-  .dummy .fig{font-size:7rem;line-height:1;color:var(--dim);text-shadow:0 0 30px rgba(120,190,255,.25);
+  .dummy .fig{font-size:7rem;line-height:1;color:var(--dim);text-shadow:0 0 30px rgba(0,172,219,.25);
     transition:transform .08s,color .08s}
   .dummy.hit .fig{transform:scale(1.06);color:var(--bright)}
   .dummy .nm{font-size:10px;letter-spacing:.34em;color:var(--dim);margin-top:.4rem}
@@ -66,7 +66,7 @@
   .stacks{display:flex;gap:.4rem;justify-content:center;margin-top:.7rem;flex-wrap:wrap}
   .stk{border:1px solid var(--deep);color:#ffb0a8;font-size:9px;letter-spacing:.12em;padding:.16rem .45rem;
     background:rgba(255,20,10,.09)}
-  .stk.blue{border-color:var(--accent);color:var(--accent);background:rgba(120,190,255,.09)}
+  .stk.blue{border-color:var(--accent);color:var(--accent);background:rgba(0,172,219,.09)}
 
   .float{position:absolute;pointer-events:none;font-weight:700;white-space:nowrap;
     animation:rise 1.15s ease-out forwards;text-shadow:0 0 12px rgba(0,0,0,.9);z-index:5}
@@ -91,7 +91,7 @@
   .fx-burst{width:150px;height:150px;border-radius:50%;border:2px solid rgba(255,150,120,.9);
     animation:fxring .5s ease-out forwards}
   .fx-column{width:70px;height:230px;
-    background:linear-gradient(180deg,rgba(255,255,255,.85),rgba(120,190,255,.25) 40%,transparent);
+    background:linear-gradient(180deg,rgba(255,255,255,.85),rgba(0,172,219,.25) 40%,transparent);
     animation:fxcol .5s ease-out forwards}
   .fx-sigil{width:130px;height:130px;border:2px solid var(--accent);
     animation:fxsigil .6s ease-out forwards}
@@ -123,8 +123,8 @@
     font-size:12px;padding:.34rem .2rem;border-bottom:1px solid rgba(44,74,94,.5);align-items:center}
   .lbrow.head{color:var(--dim);font-size:9px;letter-spacing:.26em;text-transform:uppercase;border-color:var(--dim2)}
   .lbrow b{color:var(--bright);font-weight:400}
-  .lbrow.me{background:rgba(120,190,255,.09)}
-  .lbrow.data{cursor:pointer} .lbrow.data:hover{background:rgba(120,190,255,.06)}
+  .lbrow.me{background:rgba(0,172,219,.09)}
+  .lbrow.data{cursor:pointer} .lbrow.data:hover{background:rgba(0,172,219,.06)}
   .lbrow .rk{color:var(--dim)} .lbrow .rk.top{color:var(--gold)}
   .lbrow .pl::before{content:"▸ ";color:var(--dim2);font-size:10px}
   .lbrow.open .pl::before{content:"▾ ";color:var(--accent)}
@@ -161,17 +161,17 @@
   .manatxt{font-size:9px;letter-spacing:.2em;color:var(--dim);margin-top:.2rem}
   .buffs{display:flex;flex-wrap:wrap;gap:.3rem;margin-top:.45rem;justify-content:center}
   .bf{border:1px solid var(--accent);color:var(--accent);font-size:9px;padding:.14rem .4rem;
-    background:rgba(120,190,255,.09);letter-spacing:.1em}
+    background:rgba(0,172,219,.09);letter-spacing:.1em}
   .bf.gold{border-color:var(--gold);color:var(--gold);background:rgba(255,210,122,.1)}
 
   /* ---- the card deck: an icon per ability with its numbers shown inline ---- */
   .cards{display:grid;grid-template-columns:repeat(2,1fr);gap:.5rem;height:clamp(320px,52vh,480px);
     align-content:start;overflow-y:auto;
-    flex-shrink:0;scrollbar-width:thin;scrollbar-color:rgba(120,190,255,.4) transparent;padding-right:.2rem}
-  .cards::-webkit-scrollbar{width:7px}.cards::-webkit-scrollbar-thumb{background:rgba(120,190,255,.35);border-radius:999px}
+    flex-shrink:0;scrollbar-width:thin;scrollbar-color:rgba(0,172,219,.4) transparent;padding-right:.2rem}
+  .cards::-webkit-scrollbar{width:7px}.cards::-webkit-scrollbar-thumb{background:rgba(0,172,219,.35);border-radius:999px}
   .card{border:1px solid var(--dim2);position:relative;overflow:hidden;cursor:pointer;
     display:flex;gap:.55rem;align-items:flex-start;padding:.5rem .6rem;text-align:left;
-    background:linear-gradient(180deg,rgba(120,190,255,.05),transparent 60%)}
+    background:linear-gradient(180deg,rgba(0,172,219,.05),transparent 60%)}
   .card .icon{width:30px;height:30px;color:var(--c);flex-shrink:0}
   .card .icon svg{width:100%;height:100%;display:block}
   .card .cbody{min-width:0;flex:1}
@@ -213,7 +213,7 @@
   .ctrls{display:flex;gap:.5rem;margin-top:.6rem}
   .btn{flex:1;border:1px solid var(--c);background:transparent;color:var(--bright);font-family:inherit;
     font-size:.78rem;letter-spacing:.18em;text-transform:uppercase;padding:.45rem;cursor:pointer}
-  .btn:hover{background:rgba(120,190,255,.12)}
+  .btn:hover{background:rgba(0,172,219,.12)}
   .btn.stop{border-color:var(--red);color:#ffb0a8}
   .btn:disabled{opacity:.35;cursor:not-allowed}
 
@@ -258,7 +258,7 @@
   /* vertical gridlines every 20% line up with the axis ticks below */
   .lane{position:relative;height:100%;border:1px solid rgba(44,74,94,.5);
     background:linear-gradient(90deg,rgba(44,74,94,.35) 1px,transparent 1px) -1px 0/20% 100%,
-      rgba(120,190,255,.03)}
+      rgba(0,172,219,.03)}
   /* the pre-pull region: everything before the first damage, dimmed */
   .prepull{position:absolute;top:0;bottom:0;left:0;background:rgba(0,0,0,.4);z-index:0;pointer-events:none}
   .cstart{position:absolute;top:0;bottom:0;width:1px;background:var(--ok);
@@ -269,21 +269,21 @@
   /* position:static and box-shadow:none override the .cstart/.now marker rules,
      whose class names the swatches share */
   .tllegend i{width:14px;height:9px;display:inline-block;position:static;box-shadow:none}
-  .tllegend i.cast{border:1px solid var(--c);background:rgba(120,190,255,.14)}
+  .tllegend i.cast{border:1px solid var(--c);background:rgba(0,172,219,.14)}
   .tllegend i.chan{border:1px solid var(--gold);background:rgba(255,210,122,.14)}
   .tllegend i.inst{background:var(--c)}
-  .tllegend i.cool{background:repeating-linear-gradient(45deg,rgba(120,190,255,.2) 0 3px,transparent 3px 6px);border:1px solid rgba(44,74,94,.6)}
+  .tllegend i.cool{background:repeating-linear-gradient(45deg,rgba(0,172,219,.2) 0 3px,transparent 3px 6px);border:1px solid rgba(44,74,94,.6)}
   .tllegend i.cstart{background:var(--ok)}
   .tllegend i.now{background:var(--red)}
   .cdbar{position:absolute;top:0;bottom:0;border-bottom:3px solid rgba(79,126,160,.85);
-    background:repeating-linear-gradient(45deg,rgba(120,190,255,.13) 0 4px,transparent 4px 9px)}
-  .blk{position:absolute;top:2px;bottom:2px;border:1px solid var(--c);background:rgba(120,190,255,.14);
+    background:repeating-linear-gradient(45deg,rgba(0,172,219,.13) 0 4px,transparent 4px 9px)}
+  .blk{position:absolute;top:2px;bottom:2px;border:1px solid var(--c);background:rgba(0,172,219,.14);
     display:flex;align-items:center;padding:0 .3rem;font-size:9.5px;color:var(--bright);
     overflow:hidden;white-space:nowrap;min-width:3px}
   .blk.chan{border-color:var(--gold);background:rgba(255,210,122,.14);color:var(--gold)}
   .blk.inst{background:var(--c);color:#04070a;min-width:8px}
-  .gblk{position:absolute;top:2px;bottom:2px;background:rgba(120,190,255,.10);
-    border-left:1px solid rgba(120,190,255,.35)}
+  .gblk{position:absolute;top:2px;bottom:2px;background:rgba(0,172,219,.10);
+    border-left:1px solid rgba(0,172,219,.35)}
   .now{position:absolute;top:0;bottom:0;width:2px;background:var(--red);
     box-shadow:0 0 12px rgba(255,59,47,.8);z-index:6;pointer-events:none}
   .axis{display:grid;grid-template-columns:var(--gut) 1fr;font-size:9px;color:var(--dim2);

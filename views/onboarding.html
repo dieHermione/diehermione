@@ -16,7 +16,7 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     [hidden] { display: none !important; }
     :root {
-      --c: #00acdb; --dim: #1f6f8a; --dim2: #134a5d; --bright: #eafaff;
+      --c: #00acdb; --dim: rgba(0,172,219,0.62); --dim2: rgba(0,172,219,0.4); --bright: #eafaff;
       --accent: #00acdb; --glow: rgba(0,172,219,.34); --red: #ff3b2f; --gold: #ffd27a;
       --ok: #7dffb0; --panel: #0a1720; --line: #173040;
     }
@@ -63,7 +63,7 @@
       cursor: pointer; transition: border-color .12s, box-shadow .12s, background .12s; }
     .scale button:hover { border-color: var(--dim); }
     .scale button.on { border-color: var(--c); color: var(--bright);
-      box-shadow: 0 0 16px var(--glow); background: rgba(120,190,255,.08); }
+      box-shadow: 0 0 16px var(--glow); background: rgba(0,172,219,.08); }
     .scale button .num { display: block; font-size: 1.5rem; line-height: 1; }
     .scale button .cap { display: block; font-size: 10px; letter-spacing: .04em; color: var(--dim);
       text-transform: uppercase; margin-top: .7rem; min-height: 2.2em; padding: 0 .2rem; }
@@ -115,7 +115,7 @@
     .finishbox .fb-v.code { color: var(--gold); letter-spacing: .3em; font-weight: 600; }
 
     textarea, input[type="text"] {
-      width: 100%; background: rgba(120,190,255,.05); border: 1px solid var(--line);
+      width: 100%; background: rgba(0,172,219,.05); border: 1px solid var(--line);
       color: var(--bright); font-family: inherit; font-size: 15px; padding: .8rem;
       resize: vertical; }
     textarea { min-height: 8rem; }

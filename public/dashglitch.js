@@ -49,7 +49,7 @@ window.DashGlitch = (function () {
       // the background is untouched. See crush() below.
       ".dg-crush{display:none}",
       ".dg-comb{inset:0;background:repeating-linear-gradient(0deg,rgba(0,0,0,0.85) 0 2px,transparent 2px 4px);}",
-      ".dg-edge{inset:0;box-shadow:inset 0 0 22vh 10vh rgba(0,0,0,0.92),inset 0 0 8vh 2vh rgba(255,42,26,0.55);}",
+      ".dg-edge{inset:0;box-shadow:inset 0 0 22vh 10vh rgba(0,0,0,0.92),inset 0 0 8vh 2vh rgba(0,172,219,0.6);}",
     ].join("");
     var s = document.createElement("style"); s.id = "dashglitch-style"; s.textContent = css;
     document.head.appendChild(s);

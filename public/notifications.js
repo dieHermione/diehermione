@@ -20,7 +20,7 @@
       height: 0.38rem;
       border-radius: 50%;
       background: #eafaff;
-      box-shadow: 0 0 8px rgba(120,190,255,0.7);
+      box-shadow: 0 0 8px rgba(0,172,219,0.7);
       display: none;
     }
     .notif-wrap.has-unread .notif-dot { display: block; }
@@ -32,8 +32,8 @@
       width: min(20rem, 80vw);
       padding: 0.5rem;
       background: #05080f;
-      border: 1px solid rgba(120,190,255,0.3);
-      box-shadow: 0 12px 34px rgba(0,0,0,0.7), 0 0 24px rgba(120,190,255,0.12);
+      border: 1px solid rgba(0,172,219,0.3);
+      box-shadow: 0 12px 34px rgba(0,0,0,0.7), 0 0 24px rgba(0,172,219,0.12);
       display: none;
       flex-direction: column;
       gap: 0.4rem;
@@ -41,19 +41,19 @@
       max-height: 70vh;
       overflow-y: auto;
       scrollbar-width: thin;
-      scrollbar-color: rgba(120,190,255,0.45) transparent;
+      scrollbar-color: rgba(0,172,219,0.45) transparent;
     }
     .notif-panel::-webkit-scrollbar { width: 7px; }
     .notif-panel::-webkit-scrollbar-track { background: transparent; }
-    .notif-panel::-webkit-scrollbar-thumb { background: rgba(120,190,255,0.35); border-radius: 999px; }
+    .notif-panel::-webkit-scrollbar-thumb { background: rgba(0,172,219,0.35); border-radius: 999px; }
     .notif-wrap.open .notif-panel { display: flex; }
     .notif-item {
       display: flex;
       align-items: flex-start;
       gap: 0.5rem;
       padding: 0.55rem 0.65rem;
-      border: 1px solid rgba(120,190,255,0.16);
-      background: rgba(120,190,255,0.05);
+      border: 1px solid rgba(0,172,219,0.16);
+      background: rgba(0,172,219,0.05);
       color: #aee3ff;
       font-size: 0.85rem;
       line-height: 1.4;
@@ -100,9 +100,9 @@
       padding: 0.45rem !important;
       background: transparent !important;
       color: #aee3ff !important;
-      border: 1px solid rgba(120,190,255,0.3) !important;
+      border: 1px solid rgba(0,172,219,0.3) !important;
     }
-    .notif-clear:hover { background: rgba(120,190,255,0.1) !important; }
+    .notif-clear:hover { background: rgba(0,172,219,0.1) !important; }
   `;
 
   // Wording per destination, so the button says where it goes rather than a

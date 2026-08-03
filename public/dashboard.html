@@ -13,7 +13,7 @@
     /* Big-Type terminal dashboard (black / baby-blue). Self-contained; overrides
        the shared shell. Green is avoided (white used for "done"/ok). */
     /* Dual-tone: white stays white; every blue collapses to one vivid blue. */
-    :root { --c:#00acdb; --dim:#1f6f8a; --dim2:#134a5d; --bright:#eafaff; --accent:#00acdb; --bg:#000000; --glow:rgba(0,172,219,0.34); --ok:#eafaff; --err:#ff7a6d; --button-bg:#00acdb; }
+    :root { --c:#00acdb; --dim:rgba(0,172,219,0.62); --dim2:rgba(0,172,219,0.4); --bright:#eafaff; --accent:#00acdb; --bg:#000000; --glow:rgba(0,172,219,0.34); --ok:#eafaff; --err:#ff7a6d; --button-bg:#00acdb; }
     * { box-sizing: border-box; }
     [hidden] { display: none !important; }
     html, body { height: 100%; overflow: hidden; }
@@ -71,14 +71,14 @@
     .copy-editor { display: none; margin-top: 1rem; border: 1px solid var(--dim2); padding: 0.9rem; max-width: 520px; }
     .copy-editor.open { display: block; }
     .copy-editor label { display: block; color: var(--dim); font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; margin: 0.5rem 0 0.25rem; }
-    .copy-editor input { width: 100%; background: rgba(120,190,255,0.06); border: 1px solid var(--dim2); color: var(--bright); font-family: inherit; padding: 0.4rem 0.5rem; }
+    .copy-editor input { width: 100%; background: rgba(0,172,219,0.06); border: 1px solid var(--dim2); color: var(--bright); font-family: inherit; padding: 0.4rem 0.5rem; }
     .copy-editor .hint { color: var(--dim2); font-size: 0.75rem; margin: 0.5rem 0; }
     .copy-editor .row { display: flex; gap: 0.6rem; margin-top: 0.4rem; }
 
     /* ---- clock ---- */
     .clock-card { grid-area: clock; text-align: right; }
     .clk-eyebrow { color: var(--dim); letter-spacing: 0.2em; text-transform: uppercase; font-size: 0.72rem; }
-    .clk-time { font-size: clamp(2rem, 4vw, 3.4rem); color: var(--accent); text-shadow: 0 0 16px var(--glow); font-variant-numeric: tabular-nums; line-height: 1.1; margin: 0.2rem 0; }
+    .clk-time { font-size: clamp(2rem, 4vw, 3.4rem); color: var(--bright); text-shadow: 0 0 16px var(--glow); font-variant-numeric: tabular-nums; line-height: 1.1; margin: 0.2rem 0; }
     .clk-ampm { font-size: 1rem; color: var(--dim); }
     .clk-date { color: var(--dim); }
     .clk-reset { color: var(--dim2); font-size: 0.85rem; margin-top: 0.3rem; }
@@ -185,22 +185,27 @@
     .dash.c-board .clock-card { justify-self: end; width: max-content; overflow: visible; }
 
     .panel-body { flex: 1; min-height: 0; max-height: 60vh; overflow-y: auto; padding-right: 0.3rem;
-      scrollbar-width: thin; scrollbar-color: rgba(120,190,255,0.45) transparent; }   /* Firefox */
+      scrollbar-width: thin; scrollbar-color: rgba(0,172,219,0.45) transparent; }   /* Firefox */
     .panel-body::-webkit-scrollbar { width: 7px; } .panel-body::-webkit-scrollbar-track { background: transparent; }
-    .panel-body::-webkit-scrollbar-thumb { background: rgba(120,190,255,0.35); border-radius: 999px; }
+    .panel-body::-webkit-scrollbar-thumb { background: rgba(0,172,219,0.35); border-radius: 999px; }
     .daily-list { display: flex; flex-direction: column; gap: 0.5rem; }
     .daily { display: flex; align-items: baseline; gap: 0.7rem; }
     .daily .tick { color: var(--dim2); width: 1.1em; } .daily.done .tick { color: var(--bright); }
     .daily .body { flex: 1; min-width: 0; }
     .daily .label { color: var(--c); } .daily.done .label { color: var(--bright); }
     .daily .detail { color: var(--dim); font-size: 0.8rem; margin-top: 0.1rem; }
-    .daily .mini-bar { height: 3px; background: rgba(120,190,255,0.14); margin-top: 0.4rem; overflow: hidden; }
+    .daily .mini-bar { height: 3px; background: rgba(0,172,219,0.14); margin-top: 0.4rem; overflow: hidden; }
     .daily .mini-bar span { display: block; height: 100%; background: var(--accent); }
     .daily .reward { color: var(--dim); font-size: 0.78rem; white-space: nowrap; }
 
     /* ---- leaderboard ---- */
     /* top-aligned and content-height, so it is no taller than the enter list */
-    .leaderboard-card { grid-area: board; padding-left: 2vw; min-height: 0; align-self: end; overflow: hidden; }
+    /* height is synced to the control card in JS so LEADERBOARD sits level with
+       ENTER; if the board overfills that height it scrolls rather than growing up */
+    .leaderboard-card { grid-area: board; padding-left: 2vw; min-height: 0; align-self: end; overflow-y: auto; overflow-x: hidden;
+      scrollbar-width: thin; scrollbar-color: rgba(0,172,219,0.45) transparent; }
+    .leaderboard-card::-webkit-scrollbar { width: 6px; }
+    .leaderboard-card::-webkit-scrollbar-thumb { background: rgba(0,172,219,0.35); border-radius: 999px; }
     /* guests see the board but names are not links */
     .dash.is-guest .leaderboard-card td a { pointer-events: none; color: var(--c); text-decoration: none; }
     .leaderboard-card h2 { color: var(--dim); letter-spacing: 0.2em; text-transform: uppercase; font-size: 0.72rem; font-weight: 400; margin: 0 0 0.8rem; }
@@ -359,7 +364,7 @@
         "#pw-gate .pw-box{width:min(420px,92vw);border:1px solid var(--accent);background:#05080f;padding:1.8rem;box-shadow:0 0 40px var(--glow)}" +
         "#pw-gate .pw-h{color:var(--bright);letter-spacing:.06em;margin-bottom:.6rem;font-size:1.1rem}" +
         "#pw-gate .pw-p{color:var(--dim);font-size:.85rem;line-height:1.6;margin-bottom:1.2rem}" +
-        "#pw-gate input{width:100%;background:rgba(120,190,255,.06);border:1px solid var(--dim2);color:var(--bright);font-family:inherit;font-size:1rem;padding:.55rem .7rem;margin-bottom:.7rem}" +
+        "#pw-gate input{width:100%;background:rgba(0,172,219,.06);border:1px solid var(--dim2);color:var(--bright);font-family:inherit;font-size:1rem;padding:.55rem .7rem;margin-bottom:.7rem}" +
         "#pw-gate input:focus{outline:none;border-color:var(--accent)}" +
         "#pw-gate .pw-err{color:var(--err);min-height:1.2em;font-size:.82rem;margin-bottom:.5rem}" +
         "#pw-gate .pw-btn{width:100%;border:1px solid var(--accent);background:var(--accent);color:#000;font-family:inherit;letter-spacing:.14em;text-transform:uppercase;padding:.6rem;cursor:pointer}" +
@@ -655,9 +660,21 @@
       if (board.classList.contains("collapsed")) return;
       _dash.style.setProperty("--board-w", Math.round(board.getBoundingClientRect().width) + "px");
     }
+    // The leaderboard is bottom-aligned in the same row as the controls; matching
+    // its height to the control card makes its top (LEADERBOARD) sit level with
+    // ENTER, and a fixed height means a full board scrolls instead of growing up.
+    function syncBoardHeight() {
+      const ctrl = document.querySelector(".control-card");
+      const board = document.querySelector(".leaderboard-card");
+      if (!ctrl || !board) return;
+      board.style.height = "";
+      if (window.matchMedia("(max-width: 900px)").matches) return;   // stacked layout keeps natural height
+      board.style.height = ctrl.offsetHeight + "px";
+    }
     function fitDash() {
       if (!_dash) return;
       _dash.style.transform = "";
+      syncBoardHeight();
       const avail = window.innerHeight - 88;  // leave top+bottom margin
       const h = _dash.getBoundingClientRect().height;
       if (h > avail + 2) {
@@ -670,6 +687,12 @@
       placeNotif();
     }
     try { new ResizeObserver(fitDash).observe(_dash); } catch (e) {}
+    // the control list is populated async (me.js), so re-sync the board height
+    // whenever it changes size, not just on the initial fit
+    try {
+      const ctrlEl = document.querySelector(".control-card");
+      if (ctrlEl) new ResizeObserver(syncBoardHeight).observe(ctrlEl);
+    } catch (e) {}
     window.addEventListener("resize", fitDash);
     fitDash();
   </script>
