@@ -29,6 +29,13 @@
     .tl { top: 3vh; left: 3vw; } .tr { top: 3vh; right: 3vw; text-align: right; }
     .bl { bottom: 3vh; left: 3vw; } .br2 { bottom: 3vh; right: 3vw; text-align: right; }
     .tl .v { font-size: clamp(2rem, 5vw, 3.4rem); } .tr .v, .bl .v { font-size: clamp(1.2rem, 2.6vw, 1.8rem); }
+    /* boost meter: fills over time, drained by holding space */
+    .boostbar { width: clamp(120px, 16vw, 220px); height: 9px; margin-top: 0.55rem; margin-left: auto;
+      border: 1.5px solid var(--dim); background: rgba(0,0,0,0.4); }
+    .boostbar span { display: block; height: 100%; width: 0%; background: var(--dim);
+      box-shadow: 0 0 10px var(--glow); }
+    .boostbar.ready span { background: var(--br); }
+    .boostbar.firing span { background: var(--heart-color, #fff); box-shadow: 0 0 16px var(--heart-color, #fff); }
     .title { position: fixed; top: 3vh; left: 50%; transform: translateX(-50%); z-index: 5; text-align: center; }
     .title h1 { font-size: clamp(1.3rem, 3vw, 2.2rem); letter-spacing: 0.34em; text-transform: uppercase; color: var(--br); text-shadow: 0 0 22px var(--glow); font-weight: 700; }
     .title .status { color: var(--dim); font-size: 0.9rem; letter-spacing: 0.06em; margin-top: 0.7rem; min-height: 1.3em; font-weight: 700; }
@@ -50,6 +57,7 @@
   <div class="hud tl"><div class="k">score</div><div class="v" id="hud-score">0</div></div>
   <div class="hud tr"><div class="k">length</div><div class="v" id="hud-length">0</div></div>
   <div class="hud bl"><div class="k">points earned</div><div class="v" id="hud-earned">0</div></div>
+  <div class="hud br2"><div class="k">boost &middot; hold space</div><div class="boostbar" id="boostbar"><span id="boost-fill"></span></div></div>
 
   <div class="nav">
     <button id="start" type="button">Start</button>
@@ -81,6 +89,12 @@
     const FOOD_SPEED = SPEED / 2;   // the food drifts at half the snake's pace
     const FOOD_TURN_MIN = 0.5, FOOD_TURN_MAX = 1.8;  // seconds between direction changes
     const NECK = 34;            // trail points behind the head that cannot kill
+    // boost: hold space to go faster. A full bar buys ~5s at BOOST_MULT and
+    // refills over BOOST_FILL_SECONDS. While held and empty it stays empty until
+    // released, so you cannot feather it for free.
+    const BOOST_MULT = 1.9;
+    const BOOST_SECONDS = 5;        // a full bar lasts about five seconds
+    const BOOST_FILL_SECONDS = 16;  // and refills from empty in about sixteen
 
     let W = 0, H = 0;
     function sizeCanvas() {
@@ -103,6 +117,7 @@
     let path = [];              // [{x,y}], newest first; the body is this trail
     let angle = 0, turnInput = 0, targetLen = START_LEN;
     let food = null, score = 0, earned = 0, alive = false, raf = null, last = 0, paused = false;
+    let boost = 1, boostHeld = false;   // boost: 0..1 charge, and whether space is down
     let fleeArmed = true;       // one escape roll per approach, not per frame
     let foodAngle = 0, foodTurnAt = 0, elapsed = 0;
 
@@ -183,9 +198,18 @@
 
     function step(dt) {
       elapsed += dt;
+      // resolve boost: drain while held with charge left, otherwise refill
+      let speedMult = 1;
+      if (boostHeld && boost > 0) {
+        speedMult = BOOST_MULT;
+        boost = Math.max(0, boost - dt / BOOST_SECONDS);
+      } else if (!boostHeld) {
+        boost = Math.min(1, boost + dt / BOOST_FILL_SECONDS);
+      }
       angle += turnInput * TURN * dt;
       const head = path[0];
-      const next = wrap({ x: head.x + Math.cos(angle) * SPEED * dt, y: head.y + Math.sin(angle) * SPEED * dt });
+      const spd = SPEED * speedMult;
+      const next = wrap({ x: head.x + Math.cos(angle) * spd * dt, y: head.y + Math.sin(angle) * spd * dt });
       path.unshift(next);
       trimPath();
       if (hitsSelf(next)) { gameOver(); return; }
@@ -309,6 +333,13 @@
       document.getElementById("hud-score").textContent = score;
       document.getElementById("hud-length").textContent = Math.round(targetLen);
       document.getElementById("hud-earned").textContent = earned;
+      const bf = document.getElementById("boost-fill");
+      const bb = document.getElementById("boostbar");
+      if (bf) bf.style.width = (boost * 100).toFixed(1) + "%";
+      if (bb) {
+        bb.classList.toggle("firing", boostHeld && boost > 0);
+        bb.classList.toggle("ready", !(boostHeld && boost > 0) && boost >= 0.999);
+      }
     }
     function gameOver() {
       alive = false;
@@ -326,6 +357,7 @@
       document.getElementById("start").textContent = "Restart";
       const pb = document.getElementById("pause");
       pb.disabled = false; pb.textContent = "Pause"; paused = false;
+      boost = 1; boostHeld = false;
       last = performance.now();
       if (!raf) raf = requestAnimationFrame(frame);
     }
@@ -340,10 +372,13 @@
       return 0;
     }
     document.addEventListener("keydown", (e) => {
-      if (e.key === "p" || e.key === "P" || e.code === "Space") {
-        const t = e.target, tag = (t && t.tagName || "").toLowerCase();
-        if (tag === "input" || tag === "textarea") return;
-        e.preventDefault(); togglePause(); return;
+      const t = e.target, tag = (t && t.tagName || "").toLowerCase();
+      if (tag === "input" || tag === "textarea") return;
+      if (e.key === "p" || e.key === "P") { e.preventDefault(); togglePause(); return; }
+      if (e.code === "Space") {                 // hold to boost
+        e.preventDefault();
+        if (alive && !paused) boostHeld = true;
+        return;
       }
       const d = keyDir(e);
       if (!d) return;
@@ -351,6 +386,7 @@
       turnInput = d;
     });
     document.addEventListener("keyup", (e) => {
+      if (e.code === "Space") { boostHeld = false; return; }
       const d = keyDir(e);
       if (d && Math.sign(turnInput) === d) turnInput = 0;
     });
