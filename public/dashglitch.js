@@ -174,9 +174,11 @@ window.DashGlitch = (function () {
      This deliberately does NOT use an overlay. An overlay, backdrop-filter or
      otherwise, cannot avoid the background; swapping the variables the page
      draws its text, rules and buttons from leaves the background alone. */
+  // colour inversion: blue elements flash white, white elements flash blue
+  // (used to slam to red; red stands out too much against the mostly-blue palette)
   var CRUSH = {
-    "--c": "#7a0b04", "--bright": "#b83226", "--dim": "#4a0a04",
-    "--dim2": "#2c0602", "--accent": "#9c1810", "--glow": "rgba(120,10,4,0.4)",
+    "--c": "#eafaff", "--bright": "#00acdb", "--dim": "#eafaff",
+    "--dim2": "#eafaff", "--accent": "#eafaff", "--glow": "rgba(255,255,255,0.5)",
   };
   function crush() {
     var t = 0, hits = Math.round(rnd(3, 6));
