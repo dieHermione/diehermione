@@ -27,9 +27,9 @@ identity: `hermione`. Push after each task; the user likes frequent pushes.
 > background use the opaque colour. (`--glow`, borders, and backgrounds may keep an
 > alpha; they are not text.) This applies to every blue-white page — dashboard,
 > login, boot, onboarding, summary, admin, manage, commands, guide, tech, profile —
-> and to the **penance** and **summary** game cards. Among games only penance and
-> summary follow the blue rule; the others keep their own accent (red, etc.).
-> Penance's own screen is red — dual-tone still holds there: one red + white.
+> and to the **devotion** and **summary** game cards. Among games only devotion and
+> summary follow the blue rule; the others keep their own accent. **Penance is red**
+> (card and screen) — it is *not* blue; dual-tone still holds there as one red + white.
 
 > ## Persistence — CRUCIAL, do not regress
 > Every editable-text pool (`decrypt.json`, `devotion.json`, `penance.json`,

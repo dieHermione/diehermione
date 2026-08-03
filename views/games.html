@@ -68,13 +68,13 @@
     /* PENANCE — a typing drill: one line, the caret mid-word, and the counters */
     .c-pen { position: absolute; inset: 0; padding: 1.1rem .95rem 2rem; display: flex; flex-direction: column;
       justify-content: center; gap: .75rem; }
-    .c-pen .meta { font-size: .58rem; letter-spacing: .2em; text-transform: uppercase; color: #00acdb; }
-    .c-pen .phrase { font-size: .98rem; line-height: 1.5; color: #00acdb; }
-    .c-pen .phrase b { color: #eafaff; font-weight: 400; }
-    .c-pen .phrase .cur { background: #00acdb; color: #04060a; }
-    .c-pen .pbar { height: 4px; background: #06222b; }
-    .c-pen .pbar b { display: block; height: 100%; width: 24%; background: #00acdb; }
-    .c-pen .stat { font-size: .6rem; letter-spacing: .1em; color: #00acdb; }
+    .c-pen .meta { font-size: .58rem; letter-spacing: .2em; text-transform: uppercase; color: #a8534b; }
+    .c-pen .phrase { font-size: .98rem; line-height: 1.5; color: #6a2a26; }
+    .c-pen .phrase b { color: #ff6a5c; font-weight: 400; }
+    .c-pen .phrase .cur { background: #ff3b2f; color: #120607; }
+    .c-pen .pbar { height: 4px; background: #2a1010; }
+    .c-pen .pbar b { display: block; height: 100%; width: 24%; background: #ff3b2f; }
+    .c-pen .stat { font-size: .6rem; letter-spacing: .1em; color: #a8534b; }
 
     /* DEVOTION — a verse reader: real lines, the current one lit, a small progress */
     .c-dev { position: absolute; inset: 0; padding: .8rem .85rem 2rem; display: flex; flex-direction: column; gap: .42rem;
@@ -162,7 +162,7 @@
        shares the one macOS window frame. */
     const GAMES = [
       { n: "snake",       href: "/snake",                 art: "snake", a: "#ff3b2f", wb: "linear-gradient(#1a0708, #05060a)" },
-      { n: "penance",     href: "/writing",               art: "pen",   a: "#00acdb", wb: "#050a10" },
+      { n: "penance",     href: "/writing",               art: "pen",   a: "#ff5a4a", wb: "#0e0607" },
       { n: "devotion",    href: "/writing?mode=devotion", art: "dev",   a: "#00acdb", wb: "#050a10", account: true },
       { n: "deathroll",   href: "/deathroll",             art: "death", a: "#ff3b2f", wb: "linear-gradient(#180708, #05060a)", multi: true },
       { n: "dummy parse", href: "/dummyparse",            art: "parse", a: "#ff5a4a", wb: "#0a0608" },
