@@ -450,7 +450,7 @@ function readClues(state) {
     "The wood is sound to the touch.",
     "Resting, and none the worse for it.",
   ];
-  let headline = SETTLED[Math.floor((state.tick || 0) / 6) % SETTLED.length];
+  let headline = SETTLED[Math.floor((state.ageTicks || 0) / 6) % SETTLED.length];
   const worst = [...state.diseases].sort((a, b) => b.stage - a.stage)[0];
   if (worst && worst.stage >= 1) {
     const d = DISEASES[worst.type];
