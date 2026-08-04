@@ -45,6 +45,26 @@
       padding: 0.6rem 1.8rem; border: 1.5px solid var(--br); background: transparent; color: var(--br); box-shadow: 0 0 18px rgba(255,32,16,0.28); }
     .nav button:hover { background: var(--br); color: var(--bg); }
     #back { border-color: var(--br); color: var(--br); box-shadow: 0 0 18px rgba(255,32,16,0.28); }
+
+    /* the countdown — white, top centre */
+    .tmr { position: fixed; top: 3vh; left: 50%; transform: translateX(-50%); z-index: 5; text-align: center;
+      color: #fff; font-size: clamp(1.6rem, 4vw, 2.8rem); font-variant-numeric: tabular-nums; text-shadow: 0 0 18px rgba(255,255,255,0.35); }
+    .tmr .k { font-size: 0.7rem; letter-spacing: 0.28em; text-transform: uppercase; color: var(--br); font-weight: 700; margin-bottom: 0.2rem; }
+
+    /* settings + results overlays */
+    .overlay { position: fixed; inset: 0; z-index: 8; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 1rem; background: rgba(0,0,0,0.78); text-align: center; }
+    .overlay h1 { font-size: clamp(1.8rem, 5vw, 3rem); letter-spacing: 0.28em; text-transform: uppercase; color: var(--br); text-shadow: 0 0 22px var(--glow); font-weight: 700; }
+    .olabel { color: var(--br); letter-spacing: 0.18em; text-transform: uppercase; font-size: 0.8rem; }
+    .oinput { width: 6rem; background: rgba(0,0,0,0.4); border: 1.5px solid var(--br); color: #fff; font-family: inherit;
+      font-size: 1.4rem; text-align: center; padding: 0.4rem 0; }
+    .oinput:focus { outline: none; box-shadow: 0 0 16px var(--glow); }
+    .ostat { color: var(--br); font-size: 1.1rem; } .ostat b { color: #fff; }
+    .orow { display: flex; gap: 1rem; }
+    .obtn { font-family: inherit; cursor: pointer; font-size: 0.9rem; letter-spacing: 0.18em; text-transform: uppercase; font-weight: 700;
+      padding: 0.6rem 1.8rem; border: 1.5px solid var(--br); background: transparent; color: var(--br); box-shadow: 0 0 18px var(--glow); margin-top: 0.6rem; }
+    .obtn:hover { background: var(--br); color: var(--bg); }
+    .obtn.ghost { border-color: var(--dim); color: var(--dim); box-shadow: none; }
   </style>
   <script src="/audio.js"></script>
 </head>
@@ -53,15 +73,31 @@
   <div class="scan"></div>
 
   <div class="title"><p class="status" id="status"></p></div>
+  <div class="tmr" id="tmr" hidden><div class="k">time left</div><span id="tmr-val">0:00</span></div>
   <div class="hud tl"><div class="k">score</div><div class="v" id="hud-score">0</div></div>
   <div class="hud tr"><div class="k">length</div><div class="v" id="hud-length">0</div></div>
   <div class="hud bl"><div class="k">points earned</div><div class="v" id="hud-earned">0</div></div>
   <div class="hud br2"><div class="k">boost &middot; hold shift</div><div class="boostbar" id="boostbar"><span id="boost-fill"></span></div></div>
 
   <div class="nav">
-    <button id="start" type="button">Start</button>
     <button id="pause" type="button" disabled>Pause</button>
     <button id="back" type="button">Dashboard</button>
+  </div>
+
+  <div class="overlay" id="settings">
+    <h1>snake</h1>
+    <div class="olabel">time limit (minutes)</div>
+    <input class="oinput" id="minutes" type="text" inputmode="numeric" maxlength="3" value="2" />
+    <button class="obtn" id="begin" type="button">begin</button>
+  </div>
+
+  <div class="overlay" id="results" hidden>
+    <h1 id="r-title">time</h1>
+    <div class="ostat"><b id="r-food">0</b> eaten &middot; <b id="r-earned">0</b> points</div>
+    <div class="orow">
+      <button class="obtn" id="again" type="button">again</button>
+      <button class="obtn ghost" id="results-back" type="button">dashboard</button>
+    </div>
   </div>
 
   <script>
@@ -121,6 +157,7 @@
     let boost = 1, boostHeld = false;   // boost: 0..1 charge, and whether space is down
     let fleeArmed = true;       // one escape roll per approach, not per frame
     let foodAngle = 0, foodTurnAt = 0, elapsed = 0;
+    let timeLimit = 120, timeLeft = 0;   // seconds; the run is a race for the most food
 
     // wrap coordinates onto the torus the old grid used
     function wrap(p) {
@@ -319,12 +356,20 @@
     function frame(now) {
       raf = requestAnimationFrame(frame);
       if (!alive) return;
-      if (paused) { last = now; return; }                    // hold position, do not bank time
+      if (paused) { last = now; return; }                    // hold position, do not bank time (pauses the timer too)
       const dt = Math.min(0.05, (now - last) / 1000 || 0);   // clamp after a tab stall
       last = now;
+      timeLeft -= dt;
+      if (timeLeft <= 0) { timeLeft = 0; showTimer(); endRun("time"); return; }
       step(dt);
       draw();
       showScore();
+      showTimer();
+    }
+
+    function showTimer() {
+      const s = Math.max(0, Math.ceil(timeLeft));
+      document.getElementById("tmr-val").textContent = Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
     }
 
     async function awardFood() {
@@ -348,20 +393,29 @@
         bb.classList.toggle("ready", !(boostHeld && boost > 0) && boost >= 0.999);
       }
     }
-    function gameOver() {
+    function gameOver() { endRun("dead"); }   // ran into your own tail
+
+    function endRun(reason) {
+      if (!alive) return;
       alive = false;
-      statusEl.textContent = "You ran into yourself. " + score +
-        (score === 1 ? " piece" : " pieces") + " eaten.";
       const pb = document.getElementById("pause");
       pb.disabled = true;
-      document.getElementById("start").textContent = "Play again";
+      document.getElementById("r-title").textContent = reason === "time" ? "time" : "dead";
+      document.getElementById("r-food").textContent = score;
+      document.getElementById("r-earned").textContent = earned;
+      document.getElementById("tmr").hidden = true;
+      document.getElementById("results").hidden = false;
       draw();
     }
 
     function start() {
-      sizeCanvas(); reset(); earned = 0; showScore();
+      const mins = Math.max(1, Math.min(999, parseInt(document.getElementById("minutes").value, 10) || 2));
+      timeLimit = mins * 60; timeLeft = timeLimit;
+      document.getElementById("settings").hidden = true;
+      document.getElementById("results").hidden = true;
+      document.getElementById("tmr").hidden = false;
+      sizeCanvas(); reset(); earned = 0; showScore(); showTimer();
       statusEl.textContent = "";
-      document.getElementById("start").textContent = "Restart";
       const pb = document.getElementById("pause");
       pb.disabled = false; pb.textContent = "Pause"; paused = false;
       boost = 1; boostHeld = false;
@@ -430,7 +484,14 @@
       statusEl.textContent = paused ? "paused" : "";
     }
     document.getElementById("pause").addEventListener("click", togglePause);
-    document.getElementById("start").addEventListener("click", start);
+    document.getElementById("begin").addEventListener("click", start);
+    document.getElementById("again").addEventListener("click", () => {
+      document.getElementById("results").hidden = true;
+      document.getElementById("settings").hidden = false;
+    });
+    document.getElementById("results-back").addEventListener("click", () => { window.location.href = "/dashboard"; });
+    // digits only in the minutes field (no number spinner)
+    document.getElementById("minutes").addEventListener("input", (e) => { e.target.value = e.target.value.replace(/\D/g, "").slice(0, 3); });
     document.getElementById("back").addEventListener("click", () => { window.location.href = "/dashboard"; });
 
     window.siteMe().then((d) => {
