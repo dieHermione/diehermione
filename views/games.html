@@ -70,6 +70,15 @@
     .c-ph { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
       color: #7a8694; font-size: .92rem; letter-spacing: .08em; }
 
+    /* MULTITAP — the flat old-phone keypad, one key lit */
+    .c-mt { position: absolute; inset: 0; padding: .8rem .8rem 2rem; display: flex; align-items: center; justify-content: center; }
+    .c-mt .pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; width: 150px; }
+    .c-mt .key { border: 1px solid #123; background: #060d13; border-radius: 4px; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; padding: .28rem 0; }
+    .c-mt .key b { color: #eafaff; font-size: .72rem; font-weight: 500; line-height: 1; }
+    .c-mt .key s { color: var(--a); font-size: .42rem; letter-spacing: .1em; text-decoration: none; margin-top: .12rem; min-height: .5em; }
+    .c-mt .key.on { border-color: var(--a); background: rgba(0,172,219,.16); box-shadow: 0 0 10px var(--a); }
+
     /* PENANCE — a typing drill: one line, the caret mid-word, and the counters */
     .c-pen { position: absolute; inset: 0; padding: 1.1rem .95rem 2rem; display: flex; flex-direction: column;
       justify-content: center; gap: .75rem; }
@@ -215,7 +224,11 @@
       // snake & deathroll are placeholder cards for now — their art is still being
       // worked out. The games themselves are unchanged and still linked.
       snake: () => `<div class="c-ph">placeholder card</div>`,
-      t9: () => `<div class="c-ph">placeholder card</div>`,
+      t9: () => `<div class="c-mt"><div class="pad">${
+        [["1",".,-"],["2","abc"],["3","def"],["4","ghi"],["5","jkl"],["6","mno"],
+         ["7","pqrs"],["8","tuv"],["9","wxyz"],["*","⌫"],["0","␣"],["#","↵"]]
+          .map(([n,l],i) => `<div class="key${i===5?" on":""}"><b>${n}</b><s>${l}</s></div>`).join("")
+      }</div></div>`,
 
       // penance: a typing drill on a real line from the penance pool. Hydrated
       // from /api/penance/presets; the literal below is a real pool line as a
