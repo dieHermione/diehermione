@@ -444,7 +444,7 @@
         applyEffects();
         applyEffectsLock();
         // the account's saved accent wins over the local cache; reflect it in the picker
-        if (window.Theme) { window.Theme.fromAccount(d.themeColor || "default"); markSwatch(window.Theme.get()); }
+        if (window.Theme) { window.Theme.fromAccount(d.themeColor || "default", d.guest); markSwatch(window.Theme.get()); }
 
         const isHermione = Boolean(d.isAdmin ?? (d.username && d.username.toLowerCase() === "hermione"));
         const noEcon = Boolean(d.noEconomy) || isHermione;

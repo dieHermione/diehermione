@@ -49,8 +49,13 @@
       });
     } catch (e) {}
   }
-  // called after /api/me: the account's stored colour is authoritative
-  function fromAccount(label) {
+  // Called after /api/me. For a signed-in account the stored colour is
+  // authoritative. A GUEST has no account record, so /api/me reports nothing —
+  // normalising that to "default" used to wipe the guest's pick on every page
+  // load (the colour survived only on the dashboard). Guests keep the local
+  // choice for the whole session instead.
+  function fromAccount(label, isGuest) {
+    if (isGuest) return;
     label = norm(label);
     if (label !== get()) { cache(label); apply(label); }
   }

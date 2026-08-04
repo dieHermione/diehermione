@@ -81,7 +81,7 @@
       justify-content: center; gap: .5rem; padding-bottom: 1.6rem; }
     .c-dr .val { font-weight: 800; font-size: 3rem; line-height: .9; color: var(--a);
       text-shadow: 0 0 26px rgba(193,18,8,.5); font-variant-numeric: tabular-nums; }
-    .c-dr .status { font-size: .58rem; letter-spacing: .06em; color: #e2a49e; }
+    .c-dr .status { font-size: .58rem; letter-spacing: .06em; color: #eafaff; }
     .c-dr .pill { border: 1.5px solid var(--a); color: var(--a); font-size: .5rem; letter-spacing: .22em;
       text-transform: uppercase; padding: .3rem .8rem; margin-top: .3rem; }
 
@@ -427,7 +427,7 @@
     window.addEventListener("resize", layout);
 
     window.siteMe()
-      .then((d) => { if (window.Theme) window.Theme.fromAccount(d.themeColor || "default"); guest = Boolean(d.guest); build(); })
+      .then((d) => { if (window.Theme) window.Theme.fromAccount(d.themeColor || "default", d.guest); guest = Boolean(d.guest); build(); })
       .catch(() => (window.location.href = "/"));
   </script>
   <script src="/nav.js" defer></script>

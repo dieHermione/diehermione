@@ -136,10 +136,10 @@
       <div class="opt">
         <span class="ok">REPS</span>
         <div class="row" id="opt-reps">
-          <button class="chip on" type="button" data-reps="20">20</button>
-          <button class="chip" type="button" data-reps="40">40</button>
-          <button class="chip" type="button" data-reps="60">60</button>
-          <button class="chip" type="button" data-reps="80">80</button>
+          <button class="chip on" type="button" data-reps="10">10</button>
+          <button class="chip" type="button" data-reps="20">20</button>
+          <button class="chip" type="button" data-reps="35">35</button>
+          <button class="chip" type="button" data-reps="50">50</button>
           <input class="chip repin" id="reps-custom" type="text" inputmode="numeric" maxlength="3" placeholder="custom" />
         </div>
       </div>
@@ -171,7 +171,7 @@
     // Chosen on the settings screen rather than fixed. The two modes differ in the
     // key set (simple = space, demanding = any of ten) AND the colour scheme:
     // simple wears the dashboard blue/white, demanding wears Penance's red/white.
-    let reps = 20;
+    let reps = 10;                        // matches the first (selected) preset chip
     let mode = "simple";                  // "simple" | "demanding"
     let keyMode = "space";                // derived from mode: simple->space, demanding->all
 
