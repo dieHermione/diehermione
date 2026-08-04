@@ -30,16 +30,17 @@
 
   /* the classic stack: line, then keypad, centred */
   .body { flex:1; min-height:0; display:flex; flex-direction:column; align-items:center;
-    justify-content:center; gap:2.4rem; }
+    justify-content:center; gap:1.6rem; }
 
-  /* the example sentence to copy, shown plainly */
-  .example { font-size:clamp(1.1rem, 2.8vw, 1.7rem); letter-spacing:.02em; line-height:1.5;
-    text-align:center; max-width:34ch; color:var(--c); }
+  /* the example sentence to copy, shown plainly; long phrases scroll internally
+     so the keypad always stays on screen */
+  .example { font-size:clamp(1rem, 2.2vw, 1.4rem); letter-spacing:.02em; line-height:1.5;
+    text-align:center; max-width:min(70ch, 88vw); max-height:26vh; overflow-y:auto; color:var(--c); }
   /* the box you type into: committed letters, then the pending multi-tap caret */
-  .entry { min-width:min(34ch, 82vw); min-height:2.6rem; padding:.6rem .9rem;
+  .entry { width:min(70ch, 88vw); min-height:2.6rem; max-height:22vh; overflow-y:auto; padding:.6rem .9rem;
     border:1px solid var(--line); background:var(--panel); border-radius:6px;
-    font-size:clamp(1.1rem, 2.8vw, 1.7rem); letter-spacing:.02em; line-height:1.4;
-    text-align:center; color:var(--w); }
+    font-size:clamp(1rem, 2.2vw, 1.4rem); letter-spacing:.02em; line-height:1.4;
+    text-align:left; color:var(--w); }
   .entry.wrong { border-color:var(--err); box-shadow:0 0 16px rgba(255,90,74,.35); }
   .entry .done { color:var(--w); }
   .entry .bad { color:var(--err); text-decoration:line-through; }
@@ -99,35 +100,24 @@
     // These are the fallback; the live, Hermione-editable set is fetched from
     // /api/multitap below and replaces this if it loads.
     let POOL = [
-      "i will not keep her waiting",
-      "i answer her every message",
-      "i type slowly so she knows i mean it",
-      "i belong to her",
-      "her word is my command",
-      "i exist to please her",
-      "i am grateful for her attention",
-      "i will do better next time",
-      "i think of her always",
-      "i obey without question",
-      "she is my whole world",
-      "i am nothing without her guidance",
+      "an angel is a spiritual, heavenly, or supernatural entity, usually humanoid with bird-like wings, often depicted as a messenger or intermediary between god (the transcendent) and humanity (the profane) in various traditions like the abrahamic religions. other roles include protectors and guides for humans, such as guardian angels, and servants of god. in western belief-systems the term is often used to distinguish benevolent from malevolent intermediary beings.",
     ];
     const RUN_LINES = 8;
-    // No auto-commit timer: a letter is only finalised when the SPACE key is
-    // pressed (see press()). Cycling a key never commits on its own.
+    // No auto-commit timer. A pending letter is finalised when ANY other key is
+    // pressed (or # to confirm the last one); * deletes. See press().
 
-    // key -> the letters it cycles through. 0 is space; * is backspace; # unused.
+    // key -> the letters it cycles through. 0 is space; * deletes; # confirms.
     const MAP = {
-      "1": [".", ",", "?", "!"],
+      "1": [".", ",", "?", "!", "'", "-", "(", ")"],
       "2": ["a", "b", "c"], "3": ["d", "e", "f"], "4": ["g", "h", "i"],
       "5": ["j", "k", "l"], "6": ["m", "n", "o"], "7": ["p", "q", "r", "s"],
       "8": ["t", "u", "v"], "9": ["w", "x", "y", "z"], "0": [" "],
     };
     // the labels printed on the keypad face (a real keypad has these; they are
-    // not instructions). * and # are left bare on purpose.
+    // not instructions). * = delete, # = confirm are labelled so they're findable.
     const LABELS = {
-      "1": ".,?", "2": "abc", "3": "def", "4": "ghi", "5": "jkl", "6": "mno",
-      "7": "pqrs", "8": "tuv", "9": "wxyz", "*": "", "0": "␣", "#": "",
+      "1": ".,-()", "2": "abc", "3": "def", "4": "ghi", "5": "jkl", "6": "mno",
+      "7": "pqrs", "8": "tuv", "9": "wxyz", "*": "⌫ del", "0": "␣", "#": "↵ ok",
     };
     const ORDER = ["1","2","3","4","5","6","7","8","9","*","0","#"];
 
@@ -178,21 +168,35 @@
     }
     function escapeHtml(s) { return s.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c])); }
 
-    // A letter is finalised ONLY here, when SPACE commits the pending tap.
-    function commitPending() {
-      if (!pending) return;
-      const ch = pendingChar();
-      if (typed.length < target.length && ch !== target[typed.length]) mistakes++;
-      typed += ch;
+    // Confirm the pending letter. Returns true only if it was committed correctly
+    // AND the line is not yet finished (so the caller may start the next letter).
+    // A WRONG letter sends the whole phrase back to the beginning.
+    function confirmCurrent() {
+      if (!pending) return true;                     // nothing to confirm
+      const ch = pendingChar(), pos = typed.length;
       pending = null;
+      if (pos >= target.length) return false;        // already full; ignore
+      if (ch !== target[pos]) { mistakes++; typed += ch; resetPhrase(); return false; }
+      typed += ch;
+      if (typed.length >= target.length) { lineComplete(); return false; }
+      return true;
     }
-
-    // The sentence is only checked once it is full length: an exact match advances,
-    // otherwise the box goes red and the player must backspace and fix it.
-    function checkDone() {
-      if (typed.length < target.length) { entryEl.classList.remove("wrong"); return; }
-      if (typed === target) { entryEl.classList.remove("wrong"); render(); setTimeout(nextLine, 240); }
-      else { entryEl.classList.add("wrong"); }
+    function lineComplete() {
+      entryEl.classList.remove("wrong");
+      render();
+      setTimeout(nextLine, 240);
+    }
+    function resetPhrase() {
+      typed = ""; pending = null;                    // one wrong letter = start over
+      render();
+      entryEl.classList.add("wrong");
+      setTimeout(() => entryEl.classList.remove("wrong"), 350);
+    }
+    function deleteOne() {
+      if (pending) pending = null;                   // drop the uncommitted letter
+      else if (typed.length) typed = typed.slice(0, -1);
+      entryEl.classList.remove("wrong");
+      render();
     }
 
     function flash(k) {
@@ -205,26 +209,13 @@
       if (!playing) return;
       flash(k);
       try { if (window.playType) window.playType(); } catch (e) {}
-      if (k === "*") {                              // backspace: drop pending, else last committed char
-        if (pending) pending = null;
-        else if (typed.length) typed = typed.slice(0, -1);
-        entryEl.classList.remove("wrong");
-        render();
-        return;
-      }
-      if (k === "#") return;                          // unused
-      if (k === "0") {                               // SPACE: finalise the pending letter, else a real space
-        if (pending) { commitPending(); }
-        else if (typed.length < target.length) { if (target[typed.length] !== " ") mistakes++; typed += " "; }
-        render(); checkDone();
-        return;
-      }
+      if (k === "*") { deleteOne(); return; }                 // delete
+      if (k === "#") { confirmCurrent(); render(); return; }  // confirm the last letter
       if (!MAP[k]) return;
-      // a letter key: never commits — it only sets/cycles the pending letter. A
-      // different key replaces it (so a mis-tap can be fixed before committing).
-      if (typed.length >= target.length) return;
-      if (pending && pending.key === k) pending.count++;   // same key cycles
-      else pending = { key: k, count: 0 };                 // different key replaces
+      if (pending && pending.key === k) { pending.count++; render(); return; }  // same key cycles
+      // any different key first CONFIRMS the current pending, then starts the new one
+      if (!confirmCurrent()) return;                 // reset or completed — swallow this key
+      pending = { key: k, count: 0 };
       render();
     }
 

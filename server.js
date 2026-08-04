@@ -2446,18 +2446,7 @@ app.post("/api/gametips", (req, res) => {
 // File-first like every other pool; Hermione edits them in /admin.
 const MULTITAP_DEFAULTS = {
   lines: [
-    "i will not keep her waiting",
-    "i answer her every message",
-    "i type slowly so she knows i mean it",
-    "i belong to her",
-    "her word is my command",
-    "i exist to please her",
-    "i am grateful for her attention",
-    "i will do better next time",
-    "i think of her always",
-    "i obey without question",
-    "she is my whole world",
-    "i am nothing without her guidance",
+    "an angel is a spiritual, heavenly, or supernatural entity, usually humanoid with bird-like wings, often depicted as a messenger or intermediary between god (the transcendent) and humanity (the profane) in various traditions like the abrahamic religions. other roles include protectors and guides for humans, such as guardian angels, and servants of god. in western belief-systems the term is often used to distinguish benevolent from malevolent intermediary beings.",
   ],
 };
 function loadMultitap() {
@@ -2476,7 +2465,7 @@ app.post("/api/multitap", (req, res) => {
   const incoming = Array.isArray(req.body.lines) ? req.body.lines : null;
   if (!incoming) return res.status(400).json({ error: "lines must be an array." });
   // lowercase, letters/spaces/basic punctuation — the keypad can only produce these
-  const lines = incoming.map((m) => String(m).toLowerCase().replace(/[^a-z0-9 .,?!'-]/g, "").trim().slice(0, 120)).filter(Boolean).slice(0, 100);
+  const lines = incoming.map((m) => String(m).toLowerCase().replace(/[^a-z0-9 .,?!'()-]/g, "").trim().slice(0, 600)).filter(Boolean).slice(0, 100);
   if (!lines.length) return res.status(400).json({ error: "Add at least one line." });
   fs.writeFileSync(MULTITAP_FILE, JSON.stringify({ lines }, null, 2));
   res.json({ ok: true, lines });
