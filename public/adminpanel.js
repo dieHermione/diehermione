@@ -451,6 +451,31 @@ window.AdminPanel = (function () {
     await presetEditor("Penance presets", "/api/penance/presets", "penance",
       "Offered on the Penance selection screen alongside the player's own lines. Same shuffle rule as Devotion. Removing saves straight away.");
 
+    // multitap sentences: the example lines the multitap game asks you to type.
+    // One per row; lowercase, letters/spaces/basic punctuation only.
+    const mtSec = document.createElement("div"); mtSec.className = "adm-sec";
+    mtSec.append(mk("h3", "Multitap lines"));
+    const mtHint = mk("p", "The example sentences the multitap game shows, one per row. Lowercase; letters, spaces and simple punctuation only.");
+    mtHint.className = "adm-empty"; mtSec.append(mtHint);
+    const mtTa = document.createElement("textarea"); mtTa.rows = 6; mtTa.value = "loading..."; mtTa.disabled = true;
+    fetch("/api/multitap").then((r) => (r.ok ? r.json() : null)).then((d) => {
+      mtTa.value = d && d.lines ? d.lines.join("\n") : "";
+      mtTa.disabled = false;
+    }).catch(() => { mtTa.value = ""; mtTa.disabled = false; });
+    const mtBox = document.createElement("div"); mtBox.className = "adm-preset"; mtBox.append(mtTa); mtSec.append(mtBox);
+    const mtBar = document.createElement("div"); mtBar.className = "adm-preset-bar";
+    const mtSave = mkChip("Save lines", "", async () => {
+      const lines = mtTa.value.split("\n").map((x) => x.trim()).filter(Boolean);
+      mtSave.textContent = "Saving...";
+      const r = await fetch("/api/multitap", {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ lines }),
+      });
+      mtSave.textContent = r.ok ? "Saved" : "Error";
+      if (!r.ok) mtHint.textContent = ((await r.json().catch(() => ({}))).error) || "Error";
+      setTimeout(() => { mtSave.textContent = "Save lines"; }, 1500);
+    });
+    mtBar.append(mtSave); mtSec.append(mtBar); wrap.append(foldable(mtSec));
+
     // (subliminals and snake taunts were removed from the site entirely)
 
     // decrypt lines: what the login animation resolves into, one per row
@@ -549,7 +574,7 @@ window.AdminPanel = (function () {
     // a time instead of everything at once.
     const TABS = [
       { id: "members", label: "Members", match: ["Approvals", "Applications", "Accounts"] },
-      { id: "writing", label: "Writing", match: ["Devotion presets", "Penance presets", "Lines completed", "Summaries handed in"] },
+      { id: "writing", label: "Writing", match: ["Devotion presets", "Penance presets", "Multitap lines", "Lines completed", "Summaries handed in"] },
       { id: "content", label: "Site content", match: ["Onboarding intro", "Questionnaire descriptions", "Decrypt lines", "Game hover text", "Screen glitch"] },
       { id: "docs", label: "Docs & tools", match: ["Documentation"] },
     ];

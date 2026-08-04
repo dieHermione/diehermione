@@ -23,6 +23,7 @@ const DEVOTION_FILE = path.join(process.env.DATA_DIR || __dirname, "devotion.jso
 const PENANCE_FILE = path.join(process.env.DATA_DIR || __dirname, "penance.json");
 const DECRYPT_FILE = path.join(process.env.DATA_DIR || __dirname, "decrypt.json");
 const GAMETIPS_FILE = path.join(process.env.DATA_DIR || __dirname, "gametips.json");
+const MULTITAP_FILE = path.join(process.env.DATA_DIR || __dirname, "multitap.json");
 const PARSE_FILE = path.join(process.env.DATA_DIR || __dirname, "parses.json");
 const SUMMARY_FILE = path.join(process.env.DATA_DIR || __dirname, "summaries.json");
 const APPLICATIONS_FILE = path.join(process.env.DATA_DIR || __dirname, "applications.json");
@@ -2439,6 +2440,46 @@ app.post("/api/gametips", (req, res) => {
   }
   fs.writeFileSync(GAMETIPS_FILE, JSON.stringify({ tips }, null, 2));
   res.json({ ok: true, tips: loadGameTips() });
+});
+
+// Multitap sentences: the example lines the multitap game asks you to type.
+// File-first like every other pool; Hermione edits them in /admin.
+const MULTITAP_DEFAULTS = {
+  lines: [
+    "i will not keep her waiting",
+    "i answer her every message",
+    "i type slowly so she knows i mean it",
+    "i belong to her",
+    "her word is my command",
+    "i exist to please her",
+    "i am grateful for her attention",
+    "i will do better next time",
+    "i think of her always",
+    "i obey without question",
+    "she is my whole world",
+    "i am nothing without her guidance",
+  ],
+};
+function loadMultitap() {
+  try {
+    const data = JSON.parse(fs.readFileSync(MULTITAP_FILE, "utf8"));
+    if (data && Array.isArray(data.lines) && data.lines.length) return data;
+  } catch {}
+  return JSON.parse(JSON.stringify(MULTITAP_DEFAULTS));
+}
+app.get("/api/multitap", (req, res) => {
+  res.json({ lines: loadMultitap().lines });
+});
+app.post("/api/multitap", (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });
+  const incoming = Array.isArray(req.body.lines) ? req.body.lines : null;
+  if (!incoming) return res.status(400).json({ error: "lines must be an array." });
+  // lowercase, letters/spaces/basic punctuation — the keypad can only produce these
+  const lines = incoming.map((m) => String(m).toLowerCase().replace(/[^a-z0-9 .,?!'-]/g, "").trim().slice(0, 120)).filter(Boolean).slice(0, 100);
+  if (!lines.length) return res.status(400).json({ error: "Add at least one line." });
+  fs.writeFileSync(MULTITAP_FILE, JSON.stringify({ lines }, null, 2));
+  res.json({ ok: true, lines });
 });
 
 // (the subliminal and snake-taunt pools were removed with subliminals)
