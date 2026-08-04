@@ -574,7 +574,8 @@ window.AdminPanel = (function () {
     // a time instead of everything at once.
     const TABS = [
       { id: "members", label: "Members", match: ["Approvals", "Applications", "Accounts"] },
-      { id: "writing", label: "Writing", match: ["Devotion presets", "Penance presets", "Multitap lines", "Lines completed", "Summaries handed in"] },
+      { id: "writing", label: "Writing", match: ["Devotion presets", "Penance presets", "Multitap lines"] },
+      { id: "completed", label: "Completed", match: ["Lines completed", "Summaries handed in"] },
       { id: "content", label: "Site content", match: ["Onboarding intro", "Questionnaire descriptions", "Decrypt lines", "Game hover text", "Screen glitch"] },
       { id: "docs", label: "Docs & tools", match: ["Documentation"] },
     ];

@@ -1315,12 +1315,14 @@ async function end() {
   S.running = false;
   S.ended = true;
   S.cast = null;
-  stopCastVoice();
-  syncCooldownBars();
+  // Reset the controls FIRST, before any call that could throw (a timed run can
+  // end mid-cast). end() runs unguarded from the rAF frame, so if a later call
+  // threw, the pull button was left disabled and only a refresh brought it back.
   document.getElementById("mode").disabled = false;
   document.getElementById("pull").disabled = false;
   document.getElementById("stop").disabled = true;
   document.getElementById("livedot").hidden = true;
+  try { stopCastVoice(); syncCooldownBars(); } catch (e) {}
   const ct = combatElapsed();
   const dps = Math.round(S.total / Math.max(0.001, ct));
   document.getElementById("statusline").textContent =
