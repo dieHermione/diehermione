@@ -250,8 +250,10 @@
       step(i === 0 ? 200 : 820, function () { decrypt("DECRYPT :: ", mantra, revealMs * scale); });
     });
 
-    // then a long Arch/systemd-style startup cascade that scrolls for a while
-    step(360, function () { line("&nbsp;"); line('<span class="acc">angelOS :: bringing up services</span>'); });
+    // then a long Arch/systemd-style startup cascade that scrolls for a while.
+    // Wait out the last decrypt reveal (revealMs) before the cascade begins, so the
+    // decrypt finishes resolving instead of scrolling away mid-resolve.
+    step(revealMs + 220, function () { line("&nbsp;"); line('<span class="acc">angelOS :: bringing up services</span>'); });
     var UNITS = [
       "Reached target Local File Systems", "Mounted /dev/angel", "Started Journal Service",
       "Started D-Bus System Message Bus", "Started udev Kernel Device Manager",
@@ -331,7 +333,9 @@
     var nextStep = 0, resolved = false, lastReal = performance.now(), raf = 0;
     function frame(realNow) {
       var dt = realNow - lastReal; lastReal = realNow;
-      vt += dt * (spaceHeld ? 8 : 1);
+      // Normal playback already runs at what used to be the Space speed (8x);
+      // holding Space now doubles that again to 16x.
+      vt += dt * (spaceHeld ? 16 : 8);
       while (nextStep < stepList.length && vt >= stepList[nextStep].time) { stepList[nextStep].fn(); nextStep++; }
       for (var i = anims.length - 1; i >= 0; i--) {
         var an = anims[i], p = an.dur > 0 ? Math.min(1, (vt - an.t0) / an.dur) : 1;

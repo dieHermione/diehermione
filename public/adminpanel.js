@@ -361,11 +361,17 @@ window.AdminPanel = (function () {
         });
         if (r.ok) { u.flagged = !u.flagged; listed.classList.toggle("on", u.flagged); listed.textContent = u.flagged ? "Listed" : "Unlisted"; }
       });
+      const del = mkChip("Delete", "ghost", async () => {
+        if (!confirm("Delete " + u.username + "'s account for good? This cannot be undone.")) return;
+        const r = await fetch("/api/users/" + encodeURIComponent(u.username), { method: "DELETE" });
+        if (r.ok) row.remove();
+        else { const e = await r.json().catch(() => ({})); alert(e.error || "Could not delete."); }
+      });
       row.append(nm, grow,
         mkMini("−", () => adjust(-1)),
         mkMini("+", () => adjust(1)),
         mkChip("±", "ghost", () => { const n = parseInt(prompt("Adjust " + u.username + "'s points by:", "10")); if (Number.isInteger(n)) adjust(n); }),
-        listed);
+        listed, del);
       accSec.append(row);
     }
     wrap.append(foldable(accSec));

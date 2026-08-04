@@ -138,6 +138,21 @@
         });
       },
     },
+    delete_account: {
+      admin: true,
+      usage: "pray delete_account <username>",
+      run: function (args) {
+        var user = String(args[0] || "").trim();
+        if (!user) return Promise.resolve(PRAY.delete_account.usage);
+        if (user.toLowerCase() === "hermione") return Promise.resolve("The admin account can't be deleted.");
+        return fetch("/api/users/" + encodeURIComponent(user), { method: "DELETE" }).then(function (r) {
+          return r.json().catch(function () { return {}; }).then(function (d) {
+            if (!r.ok) return d.error || "That didn't work.";
+            return user + "'s account has been deleted.";
+          });
+        });
+      },
+    },
     launch: {
       usage: "pray launch <" + Object.keys(GAMES).join("|") + ">",
       run: function (args) {
