@@ -2016,8 +2016,11 @@ app.post("/api/writing/complete", (req, res) => {
   const entry = {
     id: "wl-" + Date.now(),
     category: String(req.body.category || "").slice(0, 120),
+    preset: String(req.body.preset || "").slice(0, 120),
+    difficulty: String(req.body.difficulty || "").slice(0, 40),
     passages: clampInt(req.body.passages, 100000),
     mistakes: clampInt(req.body.mistakes, 1000000),
+    accuracy: clampInt(req.body.accuracy, 100),
     elapsedMs: clampInt(req.body.elapsedMs, 1000 * 60 * 60 * 24),
     at: new Date().toISOString(),
   };

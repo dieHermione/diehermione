@@ -140,7 +140,7 @@
       <div class="field">
         <div class="flabel">difficulty</div>
         <div class="opts" id="diff-opts">
-          <button class="opt" data-diff="meek">meek</button>
+          <button class="opt" data-diff="easy">easy</button>
           <button class="opt sel" data-diff="exacting">exacting</button>
           <button class="opt danger" data-diff="merciless">merciless</button>
         </div>
@@ -218,12 +218,13 @@
   }
 
   /* ---------- corruption model ---------- */
-  const DIFF_BASE = { meek: 0, exacting: 0.4, merciless: 0.85 };
+  // Only merciless corrupts now; easy and exacting hold the pure colour.
+  const DIFF_BASE = { easy: 0, exacting: 0, merciless: 0.85 };
   // Per-mode palette. Penance rests on a dark red and corrupts toward hotter
   // red; Devotion is blue and never leaves it (corruption() is pinned to 0).
   const PAL = {
     penance:  { pure: { c: "#c11208", dim: "#c11208", glow: "rgba(193,18,8,0.42)" },
-                foul: { c: "#ee1305", dim: "#8c0f07", glow: "rgba(238,19,5,0.5)" } },
+                foul: { c: "#7a0c04", dim: "#4d0803", glow: "rgba(122,12,4,0.5)" } },
     devotion: { pure: { c: "#00acdb", dim: "#00acdb", glow: "rgba(0,172,219,0.4)" },
                 foul: { c: "#00acdb", dim: "#00acdb", glow: "rgba(0,172,219,0.4)" } },
   };
@@ -338,7 +339,7 @@
 
   /* ---------- selection ---------- */
   const DIFF_NOTE = {
-    meek: "mistakes are counted but not punished.",
+    easy: "mistakes are counted but not punished.",
     exacting: "a mistake restarts the current repetition",
     merciless: "a mistake restarts the entire exercise.",
   };
@@ -378,7 +379,7 @@
     const po = document.createElement("div"); po.className = "opts"; po.id = "preset-opts";
     lf.insertBefore(po, $("lines"));
     const own = document.createElement("button");
-    own.className = "opt sel"; own.dataset.preset = ""; own.textContent = "my own lines";
+    own.className = "opt sel"; own.dataset.preset = ""; own.textContent = "custom";
     po.append(own);
     po.addEventListener("click", (e) => {
       const b = e.target.closest("[data-preset]"); if (!b) return;
@@ -398,7 +399,7 @@
   }
 
   if (DEVOTION) {
-    state.diff = "meek";                    // never corrupts
+    state.diff = "easy";                    // never corrupts
     $("diff-opts").closest(".field").style.display = "none";
     const lf = $("lines").closest(".field");
     lf.querySelector(".flabel").textContent = "line set";
@@ -525,11 +526,19 @@
     });
     document.body.style.setProperty("--c", mix(PURE.c, FOUL.c, t));
     show("done");
-    // log the finished series so it appears under Hermione's "Lines Completed"
+    // log the finished series so it appears under Hermione's "Lines Completed".
+    // Send everything the results screen shows (preset, difficulty, accuracy) so
+    // the admin panel carries the full picture, not a subset.
     const letters = state.lines.reduce((a, l) => a + l.length, 0) * Math.ceil(state.reps / state.lines.length);
+    const presetName = (function () {
+      const id = DEVOTION ? devPreset : pnPreset;
+      if (!id) return DEVOTION ? "devotion" : "custom";
+      return (PRESETS[id] || {}).name || id;
+    })();
     fetch("/api/writing/complete", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ category: state.category, passages: state.reps, mistakes: state.mistakes, elapsedMs: elapsed, letters }),
+      body: JSON.stringify({ category: state.category, preset: presetName, difficulty: state.diff,
+        passages: state.reps, mistakes: state.mistakes, accuracy: acc, elapsedMs: elapsed, letters }),
     }).then((r) => { $("r-log").textContent = r.ok ? "> logged to her record" : ""; }).catch(() => {});
   }
 

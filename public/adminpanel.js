@@ -74,8 +74,11 @@ window.AdminPanel = (function () {
       '<hr />' +
       '<div class="prow"><span class="pk">servant</span><span id="pt-who"></span></div>' +
       '<div class="prow"><span class="pk">mode</span><span id="pt-mode"></span></div>' +
+      '<div class="prow"><span class="pk">preset</span><span id="pt-preset"></span></div>' +
+      '<div class="prow"><span class="pk">difficulty</span><span id="pt-diff"></span></div>' +
       '<div class="prow"><span class="pk">lines</span><span id="pt-lines"></span></div>' +
       '<div class="prow"><span class="pk">errors</span><span id="pt-err"></span></div>' +
+      '<div class="prow"><span class="pk">accuracy</span><span id="pt-acc"></span></div>' +
       '<div class="prow"><span class="pk">time</span><span id="pt-time"></span></div>' +
       '<div class="prow"><span class="pk">when</span><span class="pdim" id="pt-when"></span></div>' +
       '<button class="pclose" id="pt-close">close</button>' +
@@ -93,8 +96,11 @@ window.AdminPanel = (function () {
     modal.querySelector("#pt-title").textContent = ":: " + mode + " complete ::";
     modal.querySelector("#pt-who").textContent = name;
     modal.querySelector("#pt-mode").textContent = mode;
+    modal.querySelector("#pt-preset").textContent = e.preset || "—";
+    modal.querySelector("#pt-diff").textContent = e.difficulty || "—";
     modal.querySelector("#pt-lines").textContent = e.passages + " / " + e.passages;
     modal.querySelector("#pt-err").textContent = e.mistakes;
+    modal.querySelector("#pt-acc").textContent = (e.accuracy != null ? e.accuracy : "—") + "%";
     modal.querySelector("#pt-time").textContent = fmt(e.elapsedMs);
     modal.querySelector("#pt-when").textContent = e.at ? new Date(e.at).toLocaleString() : "";
     modal.classList.add("open");
@@ -596,7 +602,7 @@ window.AdminPanel = (function () {
       const row = document.createElement("div"); row.className = "adm-log";
       const who = document.createElement("span"); who.className = "who2"; who.textContent = name;
       const meta = document.createElement("span"); meta.className = "meta2";
-      meta.textContent = (e.category || "series") + " · " + e.passages + " lines · " + e.mistakes + " err";
+      meta.textContent = (e.category || "series") + (e.preset ? " / " + e.preset : "") + " · " + e.passages + " lines · " + e.mistakes + " err";
       who.addEventListener("click", () => showResult(name, e, fmt));
       meta.addEventListener("click", () => showResult(name, e, fmt));
       const dismiss = document.createElement("button"); dismiss.className = "adm-log-x"; dismiss.textContent = "×"; dismiss.title = "Dismiss";
