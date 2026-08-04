@@ -27,6 +27,15 @@
   .screen.on { display: block; }
   /* the game itself is scaled up ~50% (the settings screens are left alone) */
   #play.on { transform: scale(1.5); transform-origin: center; }
+  /* Mobile: the 1.5x scale blew the play screen past a clipped viewport (same bug
+     the login page had). Drop the scale, let the page scroll, and shrink the fixed
+     stage to a normal flow so nothing runs off the edge. */
+  @media (max-width: 820px) {
+    #play.on { transform: none; }
+    #app { position: static; min-height: 100%; align-items: flex-start; }
+    html, body { overflow: auto; }
+    .screen { width: 100%; }
+  }
   .c { color: var(--c); } .dim { color: var(--dim); } .ok { color: var(--ok); } .err { color: var(--err); }
   .cap { letter-spacing: 0.24em; text-transform: uppercase; }
   .md { font-size: 15px; line-height: 2; }
@@ -335,6 +344,8 @@
   }
   function leaveBoot() { if ($("boot").classList.contains("on")) { show("select"); refreshBegin(); $("lines").focus(); } }
   document.addEventListener("keydown", (e) => { if ($("boot").classList.contains("on")) { e.preventDefault(); leaveBoot(); } }, true);
+  // mobile has no keyboard for "press any key" — a tap dismisses the boot too
+  document.addEventListener("pointerdown", () => { if ($("boot").classList.contains("on")) leaveBoot(); }, true);
   $("boot").addEventListener("click", leaveBoot);
 
   /* ---------- selection ---------- */
