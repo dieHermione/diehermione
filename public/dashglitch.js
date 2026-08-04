@@ -49,7 +49,6 @@ window.DashGlitch = (function () {
       // the background is untouched. See crush() below.
       ".dg-crush{display:none}",
       ".dg-comb{inset:0;background:repeating-linear-gradient(0deg,rgba(0,0,0,0.85) 0 2px,transparent 2px 4px);}",
-      ".dg-edge{inset:0;box-shadow:inset 0 0 22vh 10vh rgba(0,0,0,0.92),inset 0 0 8vh 2vh rgba(0,172,219,0.6);}",
     ].join("");
     var s = document.createElement("style"); s.id = "dashglitch-style"; s.textContent = css;
     document.head.appendChild(s);
@@ -210,15 +209,7 @@ window.DashGlitch = (function () {
     return t + 320;
   }
 
-  // 6. edge burn: the vignette closes in and glows red at the rim
-  function edgeBurn() {
-    var v = el("dg-edge");
-    v.dataset.peak = "1";
-    at(0, function () { v.style.opacity = "1"; });
-    at(rnd(260, 460), function () { v.style.opacity = "0"; });
-    sweep(v, 700);
-    return 780;
-  }
+  // (edge burn removed: its inset rim glow read as a vignette, which is gone site-wide)
 
   var EFFECTS = [
     { key: "tear", name: "Tear bands", run: tearBands },
@@ -226,7 +217,6 @@ window.DashGlitch = (function () {
     { key: "bloom", name: "Bloom", run: bloom },
     { key: "crush", name: "Contrast crush", run: crush },
     { key: "comb", name: "Comb", run: comb },
-    { key: "edge", name: "Edge burn", run: edgeBurn },
   ];
 
   function clearFx() {
@@ -258,7 +248,6 @@ window.DashGlitch = (function () {
     { run: bloom,     w: 4, guard: bloomAllowed },
     { run: crush,     w: 4 },
     { run: comb,      w: 4 },
-    { run: edgeBurn,  w: 3 },
   ];
   function playRun(runFn) {
     if (!enabled) return 0;

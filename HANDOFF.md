@@ -136,10 +136,11 @@ the dashboard no longer lists them individually.
   acknowledges ("she hears you") — it does NOT flash a subliminal any more;
   subliminals were removed entirely.** The `/commands` page documents them.
 - **`glitch.js` is deleted** (it drove the removed subliminal word-flash).
-  **`dashglitch.js`** is the screen distortion (six effects; tear/dropout/bloom/
-  contrast-crush/comb/edge-burn on a weighted 2.5–8s scheduler). Contrast crush
-  swaps palette variables (never touches the background) and now **inverts
-  blue↔white** instead of slamming to red; edge burn glows blue. Every terminal
+  **`dashglitch.js`** is the screen distortion (five effects; tear/dropout/bloom/
+  contrast-crush/comb on a weighted 2.5–8s scheduler). **Edge burn was removed** —
+  its inset rim glow read as a vignette, which is gone site-wide. Contrast crush
+  swaps palette variables (never touches the background) and **inverts
+  blue↔white** instead of slamming to red. Every terminal
   page runs it via `dashglitch.js` + `glitchboot.js` — **except Elysium**, which
   has it removed on purpose. Photosensitive accounts and the effects-off toggle
   gate it off.

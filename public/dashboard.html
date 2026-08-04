@@ -89,7 +89,7 @@
     .controls { display: flex; flex-direction: column; align-items: flex-start; gap: 0.1rem; }
     .ctl-btn, .controls a { display: block; background: none; border: none; color: var(--c); font-family: inherit; font-size: 1.08rem; letter-spacing: 0.04em; padding: 0.16rem 0; cursor: pointer; text-align: left; }
     .controls a::before, .ctl-dropdown > .ctl-btn::before, #hermione-link::before, #logout::before,
-    #settings-toggle::before { content: "› "; color: var(--dim2); }
+    #settings-toggle::before { content: "› "; color: var(--bright); }
 
     /* settings, folded into the control card between the games and log out */
     #settings-toggle[aria-expanded="true"]::before { content: "⌄ "; }
@@ -140,7 +140,7 @@
     /* ---- vessel (balance) ---- */
     .balance-card { grid-area: vessel; align-self: end; }
     .bal-num { font-size: clamp(1.8rem, 3.4vw, 2.8rem); color: var(--bright); text-shadow: 0 0 18px var(--glow); font-variant-numeric: tabular-nums; line-height: 1; }
-    .bal-sub { color: var(--dim); letter-spacing: 0.1em; text-transform: uppercase; font-size: 0.78rem; margin-top: 0.3rem; }
+    .bal-sub { color: var(--bright); letter-spacing: 0.1em; text-transform: uppercase; font-size: 0.78rem; margin-top: 0.3rem; }
 
     /* ---- dailies / admin panel ---- */
     .dailies-card { grid-area: dailies; display: flex; flex-direction: column; min-height: 0; border-left: 1px solid var(--dim2); padding-left: 2vw; }
@@ -223,7 +223,7 @@
     .leaderboard-card th:nth-child(2), .leaderboard-card td:nth-child(2) { width: 100%; max-width: 0; overflow: hidden; text-overflow: ellipsis; padding-right: 3em; }
     .leaderboard-card th:last-child, .leaderboard-card td:last-child { text-align: right; }
     .leaderboard-card td { padding: 0.24rem 0; }
-    .leaderboard-card td.rank { color: var(--dim); width: 2.4em; padding-right: 0.8em; }
+    .leaderboard-card td.rank { color: var(--bright); width: 2.4em; padding-right: 0.8em; }
     .leaderboard-card td a { color: var(--c); } .leaderboard-card td a:hover { color: var(--bright); }
     .leaderboard-card td:last-child { color: var(--accent); font-variant-numeric: tabular-nums; }
 
