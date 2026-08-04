@@ -32,14 +32,20 @@
   .body { flex:1; min-height:0; display:flex; flex-direction:column; align-items:center;
     justify-content:center; gap:2.4rem; }
 
-  .line { font-size:clamp(1.2rem, 3.2vw, 2rem); letter-spacing:.02em; line-height:1.5;
-    text-align:center; max-width:34ch; }
-  .line .done { color:var(--w); }
-  .line .bad { color:var(--err); text-decoration:line-through; }
-  .line .rest { color:var(--c); }
-  .line .cur { background:var(--c); color:#04060a; padding:0 .05em; }
-  .line .cur.pending { background:var(--w); }   /* an uncommitted multi-tap letter */
-  .blink { animation:bl 1s steps(1) infinite; } @keyframes bl { 0%,50%{opacity:1} 50.01%,100%{opacity:0} }
+  /* the example sentence to copy, shown plainly */
+  .example { font-size:clamp(1.1rem, 2.8vw, 1.7rem); letter-spacing:.02em; line-height:1.5;
+    text-align:center; max-width:34ch; color:var(--c); }
+  /* the box you type into: committed letters, then the pending multi-tap caret */
+  .entry { min-width:min(34ch, 82vw); min-height:2.6rem; padding:.6rem .9rem;
+    border:1px solid var(--line); background:var(--panel); border-radius:6px;
+    font-size:clamp(1.1rem, 2.8vw, 1.7rem); letter-spacing:.02em; line-height:1.4;
+    text-align:center; color:var(--w); }
+  .entry.wrong { border-color:var(--err); box-shadow:0 0 16px rgba(255,90,74,.35); }
+  .entry .done { color:var(--w); }
+  .entry .bad { color:var(--err); text-decoration:line-through; }
+  .entry .cur { background:var(--w); color:#04060a; padding:0 .05em; }
+  .entry .caret { border-left:2px solid var(--c); margin-left:1px; animation:bl 1s steps(1) infinite; }
+  @keyframes bl { 0%,50%{opacity:1} 50.01%,100%{opacity:0} }
 
   .pad { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; width:min(340px, 82vw); }
   .key { border:1px solid var(--line); background:var(--panel); border-radius:8px; cursor:pointer;
@@ -69,7 +75,8 @@
   <div class="stage">
     <div class="hdr"><span><span style="text-transform:none">angelOS</span> v0.2 &middot; multitap</span><span>line <b id="ln">1</b> / <b id="lt">1</b></span></div>
     <div class="body">
-      <div class="line" id="line"></div>
+      <div class="example" id="example"></div>
+      <div class="entry" id="entry"></div>
       <div class="pad" id="pad"></div>
     </div>
   </div>
@@ -104,7 +111,8 @@
       "i am nothing without her guidance",
     ];
     const RUN_LINES = 8;
-    const TAP_TIMEOUT = 1000;   // ms before a pending multi-tap letter commits
+    // No auto-commit timer: a letter is only finalised when the SPACE key is
+    // pressed (see press()). Cycling a key never commits on its own.
 
     // key -> the letters it cycles through. 0 is space; * is backspace; # unused.
     const MAP = {
@@ -122,11 +130,10 @@
     const ORDER = ["1","2","3","4","5","6","7","8","9","*","0","#"];
 
     const $ = (id) => document.getElementById(id);
-    const lineEl = $("line"), padEl = $("pad");
+    const exampleEl = $("example"), entryEl = $("entry"), padEl = $("pad");
 
     let lines = [], idx = 0, target = "", typed = "";
     let pending = null;          // { key, count } — an uncommitted letter
-    let pendTimer = null;
     let mistakes = 0, startedAt = 0, playing = false;
 
     // ---- keypad markup ----
@@ -150,43 +157,40 @@
     }
 
     function render() {
+      exampleEl.textContent = target;
       const parts = [];
-      // committed characters, coloured by whether they match the target
+      // committed characters, coloured by whether they match the target so far
       for (let i = 0; i < typed.length; i++) {
-        const ch = typed[i] === " " ? " " : escapeHtml(typed[i]);
+        const ch = typed[i] === " " ? "&nbsp;" : escapeHtml(typed[i]);
         const cls = typed[i] === target[i] ? "done" : "bad";
         parts.push('<span class="' + cls + '">' + ch + "</span>");
       }
-      // the caret: a pending (uncommitted) letter, or a block on the next slot
+      // the caret: the pending (uncommitted) letter, or a blinking bar
       if (pending) {
         const pc = pendingChar();
-        parts.push('<span class="cur pending">' + (pc === " " ? " " : escapeHtml(pc)) + "</span>");
-      } else if (typed.length < target.length) {
-        const nx = target[typed.length];
-        parts.push('<span class="cur">' + (nx === " " ? " " : escapeHtml(nx)) + "</span>");
+        parts.push('<span class="cur">' + (pc === " " ? "&nbsp;" : escapeHtml(pc)) + "</span>");
+      } else {
+        parts.push('<span class="caret">&nbsp;</span>');
       }
-      // the rest of the target, still to type (skip the slot the caret sits on)
-      const restStart = typed.length + (pending ? 0 : 1);
-      const rest = target.slice(restStart);
-      if (rest) parts.push('<span class="rest">' + escapeHtml(rest).replace(/ /g, " ") + "</span>");
-      lineEl.innerHTML = parts.join("");
+      entryEl.innerHTML = parts.join("");
     }
     function escapeHtml(s) { return s.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c])); }
 
+    // A letter is finalised ONLY here, when SPACE commits the pending tap.
     function commitPending() {
       if (!pending) return;
       const ch = pendingChar();
-      if (typed[typed.length] !== undefined) { /* noop */ }
-      if (ch !== target[typed.length]) mistakes++;
+      if (typed.length < target.length && ch !== target[typed.length]) mistakes++;
       typed += ch;
       pending = null;
-      clearTimeout(pendTimer); pendTimer = null;
-      afterAppend();
     }
 
-    function afterAppend() {
-      if (typed.length >= target.length) { render(); setTimeout(nextLine, 160); return; }
-      render();
+    // The sentence is only checked once it is full length: an exact match advances,
+    // otherwise the box goes red and the player must backspace and fix it.
+    function checkDone() {
+      if (typed.length < target.length) { entryEl.classList.remove("wrong"); return; }
+      if (typed === target) { entryEl.classList.remove("wrong"); render(); setTimeout(nextLine, 240); }
+      else { entryEl.classList.add("wrong"); }
     }
 
     function flash(k) {
@@ -198,29 +202,27 @@
     function press(k) {
       if (!playing) return;
       flash(k);
-      try { if (window.Audio && window.playType) window.playType(); } catch (e) {}
-      if (k === "*") {                              // backspace: drop pending, else last char
-        if (pending) { pending = null; clearTimeout(pendTimer); pendTimer = null; render(); }
-        else if (typed.length) { typed = typed.slice(0, -1); render(); }
+      try { if (window.playType) window.playType(); } catch (e) {}
+      if (k === "*") {                              // backspace: drop pending, else last committed char
+        if (pending) pending = null;
+        else if (typed.length) typed = typed.slice(0, -1);
+        entryEl.classList.remove("wrong");
+        render();
         return;
       }
       if (k === "#") return;                          // unused
-      if (!MAP[k]) return;
-      if (k === "0") {                               // space commits any pending, then appends
-        commitPending();
-        if (typed.length < target.length) { if (target[typed.length] !== " ") mistakes++; typed += " "; afterAppend(); }
+      if (k === "0") {                               // SPACE: finalise the pending letter, else a real space
+        if (pending) { commitPending(); }
+        else if (typed.length < target.length) { if (target[typed.length] !== " ") mistakes++; typed += " "; }
+        render(); checkDone();
         return;
       }
-      // a letter key
-      if (pending && pending.key === k) {            // same key: cycle
-        pending.count++;
-      } else {                                       // different key: commit old, start new
-        commitPending();
-        if (typed.length >= target.length) return;   // line filled while committing
-        pending = { key: k, count: 0 };
-      }
-      clearTimeout(pendTimer);
-      pendTimer = setTimeout(commitPending, TAP_TIMEOUT);
+      if (!MAP[k]) return;
+      // a letter key: never commits — it only sets/cycles the pending letter. A
+      // different key replaces it (so a mis-tap can be fixed before committing).
+      if (typed.length >= target.length) return;
+      if (pending && pending.key === k) pending.count++;   // same key cycles
+      else pending = { key: k, count: 0 };                 // different key replaces
       render();
     }
 
@@ -228,6 +230,7 @@
       idx++;
       if (idx >= lines.length) { finish(); return; }
       target = lines[idx]; typed = ""; pending = null;
+      entryEl.classList.remove("wrong");
       $("ln").textContent = idx + 1;
       render();
     }
