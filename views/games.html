@@ -88,11 +88,12 @@
     /* MULTITAP — the flat old-phone keypad, one key lit */
     .c-mt { position: absolute; inset: 0; padding: .8rem .8rem 2rem; display: flex; align-items: center; justify-content: center; }
     .c-mt .pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; width: 150px; }
-    .c-mt .key { border: 1px solid #123; background: #060d13; border-radius: 4px; display: flex; flex-direction: column;
+    .c-mt .key { border: 1px solid color-mix(in srgb, var(--a) 22%, transparent); background: rgba(0,0,0,.45);
+      border-radius: 4px; display: flex; flex-direction: column;
       align-items: center; justify-content: center; padding: .28rem 0; }
     .c-mt .key b { color: #eafaff; font-size: .72rem; font-weight: 500; line-height: 1; }
     .c-mt .key s { color: var(--a); font-size: .42rem; letter-spacing: .1em; text-decoration: none; margin-top: .12rem; min-height: .5em; }
-    .c-mt .key.on { border-color: var(--a); background: rgba(0,172,219,.16); box-shadow: 0 0 10px var(--a); }
+    .c-mt .key.on { border-color: var(--a); background: color-mix(in srgb, var(--a) 16%, transparent); box-shadow: 0 0 10px var(--a); }
 
     /* PENANCE — a typing drill: one line, the caret mid-word, and the counters */
     .c-pen { position: absolute; inset: 0; padding: 1.1rem .95rem 2rem; display: flex; flex-direction: column;
@@ -211,7 +212,7 @@
         tip: "A typing drill of correction. Type each line exactly — falter and it corrupts." },
       { n: "devotion",    href: "/writing?mode=devotion", art: "dev",   a: "#00acdb", wb: "#050a10", account: true,
         tip: "A verse reader. Recite Her lines in turn. An account is required." },
-      { n: "multitap",    href: "/t9",                    art: "t9",    a: "#00acdb", wb: "#050a10",
+      { n: "multitap",    href: "/t9",                    art: "t9",    a: "#0bdb00", wb: "#050d05",
         tip: "A typing drill on an old-phone keypad. No hints — remember the taps." },
       { n: "deathroll",   href: "/deathroll",             art: "death", a: "#c11208", wb: "#0e0607", multi: true,
         tip: "Roll against another, each cap the next roll. Hit one and you lose. Account required." },

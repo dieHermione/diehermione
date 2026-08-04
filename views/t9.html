@@ -13,10 +13,11 @@
   /* T9: multi-tap typing on a flat keypad. Design 1 (classic stack). There is
      NO instructional text anywhere — no tap cues, no key hints, no footer. The
      player has to remember the layout and the tap counts. Being obtuse is the
-     point. Self-contained, no site.css. Dual-tone: blue #00acdb + white only. */
+     point. Self-contained, no site.css. Dual-tone: green #0bdb00 + white only
+     (multitap is the green game, the way Penance is the red one). */
   * { box-sizing: border-box; margin: 0; padding: 0; }
   [hidden] { display: none !important; }
-  :root { --c:#00acdb; --w:#eafaff; --err:#ff5a4a; --glow:rgba(0,172,219,.30); --line:#0c2731; --panel:#060d13; }
+  :root { --c:#0bdb00; --w:#eafaff; --err:#ff5a4a; --glow:rgba(11,219,0,.30); --line:#0e2b0a; --panel:#050d05; }
   html, body { height: 100%; overflow: hidden; }
   body { background:#000; color:var(--c); font-family:"IBM Plex Mono",ui-monospace,monospace;
     -webkit-user-select:none; user-select:none; }
@@ -55,7 +56,7 @@
     transition:background .06s, border-color .06s, box-shadow .06s; }
   .key .kn { color:var(--w); font-size:1.2rem; line-height:1; }
   .key .kl { color:var(--c); font-size:.62rem; letter-spacing:.16em; margin-top:.34rem; min-height:.7em; }
-  .key:active, .key.hit { border-color:var(--c); background:rgba(0,172,219,.16); box-shadow:0 0 16px var(--glow); }
+  .key:active, .key.hit { border-color:var(--c); background:rgba(11,219,0,.16); box-shadow:0 0 16px var(--glow); }
 
   /* completion + start overlays */
   /* settings and results are each their OWN screen — fully opaque, so the play
@@ -69,7 +70,7 @@
   .center .stat b { color:var(--w); font-weight:400; }
   .btn { border:1.5px solid var(--c); background:transparent; color:var(--w); font-family:inherit;
     font-size:.82rem; letter-spacing:.24em; text-transform:uppercase; padding:.7rem 1.8rem; cursor:pointer; }
-  .btn:hover { background:rgba(0,172,219,.14); box-shadow:0 0 18px var(--glow); }
+  .btn:hover { background:rgba(11,219,0,.14); box-shadow:0 0 18px var(--glow); }
   .btn:disabled { opacity:.35; cursor:not-allowed; }
   .btn:disabled:hover { background:transparent; box-shadow:none; }
 
@@ -271,6 +272,14 @@
       $("ln").textContent = idx + 1;
       render();
     }
+
+    // Admin console hook (`pray skip_stage`): drop the current line but still
+    // count it as progress, exactly as if it had been typed out.
+    window.__skipStage = function () {
+      if (!playing) return false;
+      nextLine();
+      return true;
+    };
 
     // ---- settings ----
     let reps = 5;                 // how many lines the run asks for

@@ -153,6 +153,18 @@
         });
       },
     },
+    skip_stage: {
+      admin: true,
+      usage: "pray skip_stage",
+      run: function () {
+        // The page provides the hook (penance/devotion and multitap do); it skips
+        // the current line but still counts it toward the run's progress.
+        if (typeof window.__skipStage !== "function") {
+          return Promise.resolve("Nothing to skip here.");
+        }
+        return Promise.resolve(window.__skipStage() ? "Stage skipped." : "No line in progress.");
+      },
+    },
     launch: {
       usage: "pray launch <" + Object.keys(GAMES).join("|") + ">",
       run: function (args) {

@@ -511,6 +511,14 @@
     startPassage();
   }
 
+  // Admin console hook (`pray skip_stage`): drop the current line but still count
+  // it as progress, exactly as if it had been typed out.
+  window.__skipStage = function () {
+    if (!$("play").classList.contains("on") || state.done) return false;
+    finishPassage();
+    return true;
+  };
+
   function fmtTime(ms) { const s = Math.round(ms / 1000); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); }
 
   function finishSession() {
