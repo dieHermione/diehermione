@@ -27,8 +27,6 @@
     }
     .scan { position: fixed; inset: 0; z-index: 200; pointer-events: none;
       background: repeating-linear-gradient(0deg, rgba(0,0,0,.30) 0 1px, transparent 1px 3px); }
-    .vig { position: fixed; inset: 0; z-index: 199; pointer-events: none;
-      box-shadow: inset 0 0 24vh 8vh rgba(0,0,0,.7); }
 
     .doc { position: absolute; inset: 0; display: grid;
       grid-template-columns: 16rem minmax(0, 1fr); gap: 3rem; padding: 3vh 4vw; }
@@ -290,7 +288,7 @@
       <div class="foot">angelOS v0.2 &nbsp;·&nbsp; revised 30 july 2026</div>
     </main>
   </div>
-  <div class="vig"></div><div class="scan"></div>
+<div class="scan"></div>
 
   <script>
     const nav = document.getElementById("index");

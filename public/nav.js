@@ -60,9 +60,11 @@
       if (typeof window.__navBack === "function" && window.__navBack()) e.preventDefault();
     });
     document.body.insertBefore(back, document.body.firstChild);
-    // gate: bounce signed-out visitors, and send a guest back to the guest page
+    // gate: bounce signed-out visitors. Guests follow the same back logic as
+    // everyone else — a game sub-page returns to /games, the wall to /dashboard
+    // (no blanket guest override to /dashboard, which sent game pages there).
     window.siteMe()
-      .then(function (d) { back.hidden = false; if (d && d.guest) back.setAttribute("href", "/dashboard"); })
+      .then(function () { back.hidden = false; })
       .catch(function () { window.location.href = "/"; });
   }
 

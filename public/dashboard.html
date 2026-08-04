@@ -25,7 +25,7 @@
     .term-vig { position: fixed; inset: 0; z-index: 59; pointer-events: none; box-shadow: inset 0 0 26vh 9vh rgba(0,0,0,0.6); }
     a { color: inherit; text-decoration: none; }
     .dim { color: var(--dim); } .dim2 { color: var(--dim2); } .br { color: var(--bright); text-shadow: 0 0 10px var(--glow); } .accent { color: var(--accent); }
-    .stitle { color: var(--dim); letter-spacing: 0.2em; text-transform: uppercase; font-size: 0.72rem; margin-bottom: 0.6rem; }
+    .stitle { color: var(--bright); letter-spacing: 0.2em; text-transform: uppercase; font-size: 0.72rem; margin-bottom: 0.6rem; }
 
     /* dash never scrolls; sized under fitDash's threshold so it isn't scaled */
     .dash { position: relative; z-index: 5; width: min(1640px, 94vw); height: calc(100vh - 104px); margin: 46px auto 0;
@@ -214,7 +214,7 @@
        names ellipsize so the table never stretches. */
     .leaderboard-card table { border-collapse: collapse; width: 100%; }
     .leaderboard-card th, .leaderboard-card td { white-space: nowrap; }
-    .leaderboard-card thead th { text-align: left; color: var(--dim2); font-weight: 400; font-size: 0.68rem; letter-spacing: 0.14em; text-transform: uppercase; padding-bottom: 0.4rem; }
+    .leaderboard-card thead th { text-align: left; color: var(--bright); font-weight: 400; font-size: 0.68rem; letter-spacing: 0.14em; text-transform: uppercase; padding-bottom: 0.4rem; }
     .leaderboard-card th:nth-child(2), .leaderboard-card td:nth-child(2) { width: 100%; max-width: 0; overflow: hidden; text-overflow: ellipsis; padding-right: 3em; }
     .leaderboard-card th:last-child, .leaderboard-card td:last-child { text-align: right; }
     .leaderboard-card td { padding: 0.24rem 0; }
@@ -259,7 +259,6 @@
         <a href="/games" class="ctl-btn">Games</a>
         <a id="elysium-link" class="ctl-btn" href="/elysium">Elysium</a>
         <a id="profile-link" class="ctl-btn" href="/profile">Profile</a>
-        <a id="hermione-link" class="ctl-btn" href="/profile?user=hermione" hidden>Hermione</a>
         <button id="settings-toggle" class="ctl-btn" type="button" aria-expanded="false">Settings</button>
         <div class="settings" id="settings" hidden>
           <label class="set-row set-check">
@@ -423,14 +422,12 @@
         myRank = d.rank || "—";
         const age = d.createdAt ? Math.floor((Date.now() - new Date(d.createdAt)) / 86400000) : null;
         document.getElementById("acct-age").textContent = age != null ? "Member for " + age + (age === 1 ? " day" : " days") : "";
-        document.getElementById("hermione-link").hidden = isHermione;
         if (d.guest) {
           // Guests get the same dashboard, minus the account economy and the
           // account-only pages; the games they cannot play are locked on /games.
           document.querySelector(".dash").classList.add("no-panel", "is-guest");
           setGuestBalance();
           const pl = document.getElementById("profile-link"); if (pl) pl.hidden = true;
-          const hl = document.getElementById("hermione-link"); if (hl) hl.hidden = true;
           const el = document.getElementById("elysium-link"); if (el) el.hidden = true;
           const lo = document.getElementById("logout"); if (lo) lo.textContent = "Sign in or apply";
         } else if (isHermione) {

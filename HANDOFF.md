@@ -12,6 +12,12 @@ session" layers stacked on top of each other and most of it was superseded.
 > never `@angeldom`. The old `ANGELDOM //` headers are gone from every page; every
 > header now reads `angelOS v0.2`. Internal identifiers and the domain string are
 > fine. When in doubt, say it aloud: if it reads "angel-dom" it is wrong.
+>
+> **`angelOS` keeps its exact casing — never `ANGELOS`, never `Angelos`.** Watch
+> the common trap: a header styled `text-transform: uppercase` turns `angelOS`
+> into `ANGELOS`. Wrap the word in a `text-transform: none` span (as `admin.html`
+> does) so the rest of the header can still be uppercased while `angelOS` stays
+> intact.
 
 Live at **angeldom.me** (Railway, auto-deploys on push to `main`). One Express
 server (`server.js`), no database, JSON files on disk, no build step. One admin

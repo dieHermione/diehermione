@@ -22,7 +22,6 @@
     -webkit-user-select:none; user-select:none; }
   .scan { position:fixed; inset:0; z-index:40; pointer-events:none;
     background:repeating-linear-gradient(0deg, rgba(0,0,0,.28) 0 1px, transparent 1px 3px); }
-  .vig { position:fixed; inset:0; z-index:41; pointer-events:none; box-shadow:inset 0 0 30vh 10vh rgba(0,0,0,.6); }
 
   .stage { position:fixed; inset:0; z-index:5; display:flex; flex-direction:column; padding:3vh 4vw; }
   .hdr { display:flex; justify-content:space-between; font-size:11px; letter-spacing:.32em;
@@ -68,7 +67,7 @@
 </head>
 <body class="has-top-nav">
   <div class="stage">
-    <div class="hdr"><span>angelOS v0.2 &middot; t9</span><span>line <b id="ln">1</b> / <b id="lt">1</b></span></div>
+    <div class="hdr"><span><span style="text-transform:none">angelOS</span> v0.2 &middot; multitap</span><span>line <b id="ln">1</b> / <b id="lt">1</b></span></div>
     <div class="body">
       <div class="line" id="line"></div>
       <div class="pad" id="pad"></div>
@@ -76,7 +75,7 @@
   </div>
 
   <div class="center" id="start">
-    <h1>t9</h1>
+    <h1>multitap</h1>
     <button class="btn" id="begin" type="button">begin</button>
   </div>
 
@@ -86,7 +85,7 @@
     <button class="btn" id="again" type="button">again</button>
   </div>
 
-  <div class="vig"></div><div class="scan"></div>
+<div class="scan"></div>
 
   <script>
     // ---- content: lowercase lines, T9-friendly (mostly letters + spaces) ----
