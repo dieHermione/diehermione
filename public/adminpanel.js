@@ -306,8 +306,8 @@ window.AdminPanel = (function () {
     qSec.append(mk("h3", "Questionnaire descriptions"));
     const qHint = mk("p", "The sub-text shown under each option on the application questionnaire. Leave blank for none.");
     qHint.className = "adm-empty"; qSec.append(qHint);
-    const QLABELS = { feet: "Feet", tasks: "Tasks / Chores", degradation: "Degradation", humiliation: "Humiliation",
-      masochism: "Masochism", exhibitionism: "Exhibitionism", worship: "Worship", petplay: "Petplay" };
+    const QLABELS = { feet: "Feet", tasks: "Tasks / Chores", degradation: "Degradation",
+      masochism: "Masochism", chastity: "Chastity", worship: "Worship", petplay: "Petplay" };
     const qInputs = {};
     Object.keys(QLABELS).forEach((id) => {
       const lab = mk("label", QLABELS[id]); lab.className = "adm-lbl";

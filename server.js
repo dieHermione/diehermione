@@ -252,8 +252,8 @@ function isPending(user) {
 // this out. The answers are stored on the account for Hermione to read before
 // she approves. Feet and Tasks/Chores are load-bearing: if either is rated below
 // 4, the pending account's approval card is flagged red.
-const ONBOARDING_KINKS = ["feet", "tasks", "degradation", "humiliation",
-  "masochism", "exhibitionism", "worship", "petplay"];
+const ONBOARDING_KINKS = ["feet", "tasks", "degradation",
+  "masochism", "chastity", "worship", "petplay"];
 const ONBOARDING_PUNISHMENTS = ["lines_physical", "lines_typing", "voice_memos",
   "ignoring", "onsite_games_hard"];
 const ONBOARDING_PETNAMES = ["dog", "good", "doll", "pet", "bitch", "loser", "dummy"];
@@ -363,11 +363,13 @@ app.post("/api/apply", (req, res) => {
   }
   const limits = String(body.limits || "").trim().slice(0, LIMITS_MAX);
   const petnamesOther = String(body.petnamesOther || "").trim().slice(0, 120);
+  const age = Math.max(0, Math.min(120, parseInt(body.age, 10) || 0));
+  const brat = body.brat === "yes" ? "yes" : body.brat === "no" ? "no" : "";
   const flagged = kinks.feet < 4 || kinks.tasks < 4;
   const application = {
     id: Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 7),
     at: new Date().toISOString(),
-    authCode,
+    authCode, age, brat,
     kinks, limits, punishments, petnames, petnamesOther, flag: flagged,
   };
   const list = loadApplications();
@@ -2136,9 +2138,8 @@ const QUESTIONNAIRE_DEFAULTS = {
     feet: "Feet, socks, shoes, anything adjacent to them.",
     tasks: "Research / Essays / Games / Other.",
     degradation: "",
-    humiliation: "",
     masochism: "",
-    exhibitionism: "",
+    chastity: "",
     worship: "",
     petplay: "",
   },

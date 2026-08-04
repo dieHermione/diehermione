@@ -140,7 +140,7 @@
           <button class="chip" type="button" data-reps="40">40</button>
           <button class="chip" type="button" data-reps="60">60</button>
           <button class="chip" type="button" data-reps="80">80</button>
-          <input class="chip repin" id="reps-custom" type="number" min="1" max="999" inputmode="numeric" placeholder="custom" />
+          <input class="chip repin" id="reps-custom" type="text" inputmode="numeric" maxlength="3" placeholder="custom" />
         </div>
       </div>
       <p class="hint" id="hint">Simple: the space bar only. Demanding: any of ten keys.</p>
@@ -418,6 +418,7 @@
     chipGroup("opt-reps", (d) => { reps = Number(d.reps); document.getElementById("reps-custom").value = ""; });
     // custom rep count: typing a number deselects the preset chips
     document.getElementById("reps-custom").addEventListener("input", (e) => {
+      e.target.value = e.target.value.replace(/\D/g, "").slice(0, 3);   // digits only, no spinner
       const n = Math.max(1, Math.min(999, parseInt(e.target.value, 10) || 0));
       if (n) { reps = n; document.querySelectorAll("#opt-reps .chip").forEach((c) => c.classList.remove("on")); }
     });

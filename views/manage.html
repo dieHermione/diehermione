@@ -147,7 +147,7 @@
     });
 
     // --- completed questionnaires ---
-    const KINKS = ["feet","tasks","degradation","humiliation","masochism","exhibitionism","worship","petplay"];
+    const KINKS = ["feet","tasks","degradation","masochism","chastity","worship","petplay"];
     const PUNS = ["lines_physical","lines_typing","voice_memos","ignoring","onsite_games_hard"];
     const PETS = ["dog","good","doll","pet","bitch","loser","dummy"];
     function labelize(s) { return s.replace(/_/g, " "); }
@@ -177,7 +177,10 @@
             </div>
           </div>
           <div class="detail">
-            <div class="rgroup"><h3>contact</h3><div class="ritem"><span class="k">${esc(a.contact && a.contact.discord)}</span></div></div>
+            <div class="rgroup"><h3>applicant</h3>
+              <div class="ritem"><span class="k">age</span><span class="v">${a.age ? esc(String(a.age)) : "—"}</span></div>
+              <div class="ritem"><span class="k">brat</span><span class="v">${a.brat ? esc(a.brat) : "—"}</span></div>
+            </div>
             <div class="rgroup"><h3>interests</h3>${kr}</div>
             <div class="rgroup"><h3>limits</h3><div class="ritem"><span class="k" style="white-space:pre-wrap">${esc(a.limits) || "<span style='color:var(--dim2)'>none given</span>"}</span></div></div>
             <div class="rgroup"><h3>punishments</h3>${pr}</div>

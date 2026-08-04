@@ -45,6 +45,17 @@ identity: `hermione`.
 > summary follow the blue rule; the others keep their own accent. **Penance is red**
 > (card and screen) — it is *not* blue; dual-tone still holds there as one red + white.
 
+> ## UI rules for games (do not regress)
+> - **Never use `<input type="number">`.** Its up/down spinner is banned everywhere.
+>   For a numeric field use `<input type="text" inputmode="numeric" maxlength="N">`
+>   and strip non-digits on input (`value = value.replace(/\D/g, "")`).
+> - **A results screen is its own screen.** When a game finishes, show the results
+>   on a dedicated screen — never rendered beneath the settings/options. Settings,
+>   play, and results are three distinct screens. This applies to every game.
+> - Any results screen that also reports to the admin panel (summary, penance,
+>   devotion, …) must send **all** the data the in-game results screen shows, not a
+>   subset.
+
 > ## Persistence — CRUCIAL, do not regress
 > Every editable-text pool (`decrypt.json`, `devotion.json`, `penance.json`,
 > `site.json` = about-me/site-purpose, applications, users, elysium, writing/parse

@@ -175,9 +175,8 @@
       { id: "feet",         label: "Feet",         sub: "Feet, socks, shoes, anything adjacent to them.", hint: "placeholder", scale: KINK_SCALE_A },
       { id: "tasks",        label: "Tasks / Chores", sub: "Research / Essays / Games / Other.",            hint: "placeholder", scale: KINK_SCALE_B },
       { id: "degradation",  label: "Degradation",  sub: "", hint: "placeholder", scale: KINK_SCALE_B },
-      { id: "humiliation",  label: "Humiliation",  sub: "", hint: "placeholder", scale: KINK_SCALE_B },
       { id: "masochism",    label: "Masochism",    sub: "", hint: "placeholder", scale: KINK_SCALE_B },
-      { id: "exhibitionism",label: "Exhibitionism",sub: "", hint: "placeholder", scale: KINK_SCALE_B },
+      { id: "chastity",     label: "Chastity",     sub: "", hint: "placeholder", scale: KINK_SCALE_B },
       { id: "worship",      label: "Worship",      sub: "", hint: "placeholder", scale: KINK_SCALE_B },
       { id: "petplay",      label: "Petplay",      sub: "", hint: "placeholder", scale: KINK_SCALE_B },
     ];
@@ -199,7 +198,7 @@
     ];
 
     // ---- answers ----
-    const A = { kinks: {}, limits: "", punishments: {}, petnames: {}, petnamesOther: "" };
+    const A = { kinks: {}, limits: "", punishments: {}, petnames: {}, petnamesOther: "", brat: "", age: "" };
     // A short application code the applicant DMs to Hermione so she can match a
     // Discord message to these answers before making the account by hand.
     const AUTH = Array.from({ length: 6 }, () => "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"[Math.floor(Math.random() * 32)]).join("");
@@ -210,10 +209,11 @@
     const STEPS = [
       { kind: "intro" },
       { kind: "kinks", ids: ["feet", "tasks", "degradation"] },
-      { kind: "kinks", ids: ["humiliation", "masochism", "exhibitionism"] },
-      { kind: "kinks", ids: ["worship", "petplay"], limits: true },
+      { kind: "kinks", ids: ["masochism", "chastity", "worship"] },
+      { kind: "kinks", ids: ["petplay"], limits: true },
       { kind: "punishments" },
       { kind: "petnames" },
+      { kind: "brat" },
       { kind: "finish" },
     ];
     let i = 0;
@@ -270,13 +270,15 @@
         <div class="eyebrow">final step</div>
         <h1>send it</h1>
         <p class="lede">Accounts are made by hand. Send this application, then message Hermione on Discord with the code below so she can match it to your answers and set up your account.</p>
+        <div class="other" style="margin-top:1.2rem"><label>age</label>
+          <input type="text" id="age" inputmode="numeric" maxlength="3" placeholder="your age" value="${esc(A.age)}" /></div>
         <div class="finishbox">
           <div class="fb-row"><span class="fb-k">Hermione &middot; Discord</span><span class="fb-v">@a.ngelsocks</span></div>
           <div class="fb-row"><span class="fb-k">your code</span><span class="fb-v code">${AUTH}</span></div>
         </div>
       </div>`;
     }
-    function twoChoiceStep(title, eyebrow, list, store, yesLabel, noLabel, yesVal, noVal, extraOther) {
+    function twoChoiceStep(title, eyebrow, list, store, yesLabel, noLabel, yesVal, noVal, extraOther, note) {
       const rows = list.map((it) => {
         const v = store[it.id];
         return `<div class="row2" data-id="${it.id}">
@@ -288,11 +290,26 @@
       const other = extraOther ? `<div class="other"><label>other</label>
         <input type="text" id="petother" maxlength="120" placeholder="another name, optional"
           value="${esc(A.petnamesOther)}" /></div>` : "";
+      const noteHtml = note ? `<p class="lede" style="margin-top:.8rem">${esc(note)}</p>` : "";
       return `<div class="step">
         <div class="eyebrow">${esc(eyebrow)}</div>
         <h1>${esc(title)}</h1>
+        ${noteHtml}
         <div class="rows">${rows}</div>
         ${other}
+      </div>`;
+    }
+    function bratStep() {
+      const v = A.brat;
+      return `<div class="step">
+        <div class="eyebrow">one more thing</div>
+        <h1>are you a <span class="hint-tip"><span class="hinted">brat</span><span class="tip">a sub who intentionally disobeys in order to elicit punishment</span></span>?</h1>
+        <div class="rows" id="brat-opts">
+          <div class="row2"><span class="name"></span>
+            <button type="button" class="yes ${v === "yes" ? "on" : ""}" data-v="yes">Yes</button>
+            <button type="button" class="no ${v === "no" ? "on" : ""}" data-v="no">No</button>
+          </div>
+        </div>
       </div>`;
     }
     function reviewStep() {
@@ -366,6 +383,21 @@
         });
         const other = $("petother");
         if (other) other.addEventListener("input", (e) => { A.petnamesOther = e.target.value; });
+      } else if (step.kind === "brat") {
+        document.querySelectorAll("#brat-opts button").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            A.brat = btn.dataset.v;
+            document.querySelectorAll("#brat-opts button").forEach((b) => b.classList.toggle("on", b === btn));
+            refreshNav();
+          });
+        });
+      } else if (step.kind === "finish") {
+        const ageEl = $("age");
+        if (ageEl) ageEl.addEventListener("input", (e) => {
+          e.target.value = e.target.value.replace(/\D/g, "").slice(0, 3);   // digits only, no spinner
+          A.age = e.target.value;
+          refreshNav();
+        });
       }
     }
 
@@ -374,7 +406,9 @@
       if (step.kind === "kinks") return step.ids.every((id) => !!A.kinks[id]);
       if (step.kind === "punishments") return PUNISHMENTS.every((p) => A.punishments[p.id]);
       if (step.kind === "petnames") return PETNAMES.every((p) => A.petnames[p.id]);
-      return true; // intro, finish
+      if (step.kind === "brat") return A.brat === "yes" || A.brat === "no";
+      if (step.kind === "finish") return parseInt(A.age, 10) >= 18;   // an age is required to send
+      return true; // intro
     }
 
     function render() {
@@ -382,13 +416,15 @@
       let html = "";
       if (step.kind === "intro") html = introStep();
       else if (step.kind === "kinks") html = kinksStep(step);
-      else if (step.kind === "punishments") html = twoChoiceStep("Punishments", "acceptable, or not", PUNISHMENTS, A.punishments, "Acceptable", "hate", "acceptable", "hate", false);
+      else if (step.kind === "punishments") html = twoChoiceStep("Punishments", "acceptable, or not", PUNISHMENTS, A.punishments, "Acceptable", "hate", "acceptable", "hate", false,
+        "These options are not for indicating what you find fun. They are for indicating what you are willing to do if you are disobedient.");
       else if (step.kind === "petnames") html = petnamesStep();
+      else if (step.kind === "brat") html = bratStep();
       else if (step.kind === "finish") html = finishStep();
       $("stage").innerHTML = html;
       bindStep(step);
 
-      const labels = { intro: "intro", kinks: "interests", punishments: "punishments", petnames: "petnames", finish: "send" };
+      const labels = { intro: "intro", kinks: "interests", punishments: "punishments", petnames: "petnames", brat: "brat", finish: "send" };
       $("proglabel").textContent = labels[step.kind] || "";
       $("progcount").textContent = (i + 1) + " / " + STEPS.length;
       $("progfill").style.width = (i / (STEPS.length - 1) * 100) + "%";
@@ -409,7 +445,7 @@
       try {
         const res = await fetch("/api/apply", {
           method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ authCode: AUTH, kinks: A.kinks, limits: A.limits, punishments: A.punishments, petnames: A.petnames, petnamesOther: A.petnamesOther }),
+          body: JSON.stringify({ authCode: AUTH, age: A.age, brat: A.brat, kinks: A.kinks, limits: A.limits, punishments: A.punishments, petnames: A.petnames, petnamesOther: A.petnamesOther }),
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) { $("err").textContent = data.error || "Could not send. Check your answers."; $("next").disabled = false; return; }
