@@ -561,10 +561,10 @@
   }));
 
   // Back button: from the play/results screen it returns to the selection screen;
-  // from selection (or boot) it goes to the dashboard.
+  // from selection (or boot) it goes to the games wall (where it was opened from).
   window.__navBack = function () {
     const atStart = $("select").classList.contains("on") || $("boot").classList.contains("on");
-    if (atStart) { window.location.href = "/dashboard"; return true; }
+    if (atStart) { window.location.href = "/games"; return true; }
     state.done = true;
     if (glitchTimer) { clearInterval(glitchTimer); glitchTimer = null; }
     $("play").classList.remove("glitch");
