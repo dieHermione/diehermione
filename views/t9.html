@@ -58,8 +58,11 @@
   .key:active, .key.hit { border-color:var(--c); background:rgba(0,172,219,.16); box-shadow:0 0 16px var(--glow); }
 
   /* completion + start overlays */
+  /* settings and results are each their OWN screen — fully opaque, so the play
+     surface behind them never bleeds through */
   .center { position:absolute; inset:0; z-index:6; display:flex; flex-direction:column;
-    align-items:center; justify-content:center; gap:1.2rem; background:rgba(0,0,0,.72); text-align:center; }
+    align-items:center; justify-content:center; gap:1.4rem; background:#04060a; text-align:center;
+    padding:2rem 1rem; overflow-y:auto; }
   .center h1 { font-size:clamp(1.6rem,4vw,2.6rem); color:var(--w); letter-spacing:.14em;
     text-transform:uppercase; text-shadow:0 0 26px var(--glow); }
   .center .stat { font-size:1rem; letter-spacing:.08em; }
@@ -67,6 +70,25 @@
   .btn { border:1.5px solid var(--c); background:transparent; color:var(--w); font-family:inherit;
     font-size:.82rem; letter-spacing:.24em; text-transform:uppercase; padding:.7rem 1.8rem; cursor:pointer; }
   .btn:hover { background:rgba(0,172,219,.14); box-shadow:0 0 18px var(--glow); }
+  .btn:disabled { opacity:.35; cursor:not-allowed; }
+  .btn:disabled:hover { background:transparent; box-shadow:none; }
+
+  /* settings screen: same vocabulary as the writing game's selection screen */
+  .form { display:flex; flex-direction:column; gap:1rem; width:min(30rem, 86vw); text-align:left; }
+  .field { display:flex; flex-direction:column; gap:.4rem; }
+  .flabel { font-size:.58rem; letter-spacing:.24em; text-transform:uppercase; color:var(--c); }
+  .opts { display:flex; flex-wrap:wrap; gap:.5rem; }
+  .opt { cursor:pointer; padding:.35rem .9rem; border:1px solid var(--line); color:var(--c);
+    background:var(--panel); font-family:inherit; font-size:.86rem; border-radius:3px; }
+  .opt:hover { border-color:var(--c); }
+  .opt.sel { background:var(--c); color:#04060a; border-color:var(--c); }
+  .repin { width:6rem; text-align:center; }
+  .repin::placeholder { color:var(--c); opacity:.6; }
+  .repin:focus { outline:none; border-color:var(--c); color:var(--w); }
+  .own { width:100%; min-height:5rem; resize:vertical; background:var(--panel); border:1px solid var(--line);
+    color:var(--w); font-family:inherit; font-size:.9rem; line-height:1.7; padding:.5rem .6rem; border-radius:3px; }
+  .own:focus { outline:none; border-color:var(--c); }
+  .own::placeholder { color:var(--c); opacity:.6; }
 
   /* back chevron colour (nav.js injects .dash-back; it inherits currentColor) */
   body { color:var(--c); }
@@ -84,6 +106,28 @@
 
   <div class="center" id="start">
     <h1>multitap</h1>
+    <div class="form">
+      <div class="field">
+        <div class="flabel">lines</div>
+        <div class="opts" id="src-opts">
+          <button class="opt sel" type="button" data-src="preset">preset</button>
+          <button class="opt" type="button" data-src="custom">custom</button>
+        </div>
+      </div>
+      <div class="field" id="own-field" hidden>
+        <div class="flabel">your lines &middot; one per row</div>
+        <textarea class="own" id="own" spellcheck="false" placeholder="i belong to her"></textarea>
+      </div>
+      <div class="field">
+        <div class="flabel">repetitions</div>
+        <div class="opts" id="rep-opts">
+          <button class="opt sel" type="button" data-reps="5">5</button>
+          <button class="opt" type="button" data-reps="10">10</button>
+          <button class="opt" type="button" data-reps="20">20</button>
+          <input class="opt repin" id="reps-custom" type="text" inputmode="numeric" maxlength="3" placeholder="custom" />
+        </div>
+      </div>
+    </div>
     <button class="btn" id="begin" type="button">begin</button>
   </div>
 
@@ -102,7 +146,7 @@
     let POOL = [
       "an angel is a spiritual, heavenly, or supernatural entity, usually humanoid with bird-like wings, often depicted as a messenger or intermediary between god (the transcendent) and humanity (the profane) in various traditions like the abrahamic religions. other roles include protectors and guides for humans, such as guardian angels, and servants of god. in western belief-systems the term is often used to distinguish benevolent from malevolent intermediary beings.",
     ];
-    const RUN_LINES = 8;
+    // (how many lines a run asks for is chosen on the settings screen)
     // No auto-commit timer. A pending letter is finalised when ANY other key is
     // pressed (or # to confirm the last one); * deletes. See press().
 
@@ -228,9 +272,46 @@
       render();
     }
 
+    // ---- settings ----
+    let reps = 5;                 // how many lines the run asks for
+    let source = "preset";        // "preset" (the editable pool) | "custom" (own lines)
+    let customLines = [];
+
+    // Build `n` lines from a pool: shuffle, and reshuffle each pass so a short
+    // pool repeats without an immediate repeat at the seam.
+    function buildSequence(pool, n) {
+      const out = [];
+      let bag = [];
+      while (out.length < n) {
+        if (!bag.length) {
+          bag = shuffled(pool, pool.length);
+          if (out.length && bag.length > 1 && bag[0] === out[out.length - 1]) bag.push(bag.shift());
+        }
+        out.push(bag.shift());
+      }
+      return out;
+    }
+
+    function activePool() {
+      return source === "custom" ? customLines : POOL;
+    }
+    function refreshBegin() {
+      $("begin").disabled = activePool().length === 0;
+    }
+
+    function showSettings() {
+      playing = false;
+      $("done").hidden = true;
+      $("start").hidden = false;
+      refreshBegin();
+    }
+
     function start() {
-      lines = shuffled(POOL, RUN_LINES);
+      const pool = activePool();
+      if (!pool.length) return;
+      lines = buildSequence(pool, reps);
       idx = 0; target = lines[0]; typed = ""; pending = null;
+      entryEl.classList.remove("wrong");
       mistakes = 0; startedAt = Date.now(); playing = true;
       $("ln").textContent = 1; $("lt").textContent = lines.length;
       $("start").hidden = true; $("done").hidden = true;
@@ -249,13 +330,44 @@
     // you tap the on-screen keypad, nothing else. (No keydown listener at all.)
     padEl.addEventListener("click", (e) => { const b = e.target.closest(".key"); if (b) press(b.dataset.k); });
     $("begin").addEventListener("click", start);
-    $("again").addEventListener("click", start);
+    $("again").addEventListener("click", showSettings);   // results -> settings, like snake
+
+    // settings wiring
+    function chipGroup(id, apply) {
+      const box = $(id);
+      box.addEventListener("click", (e) => {
+        const b = e.target.closest(".opt[data-src], .opt[data-reps]");
+        if (!b) return;
+        [...box.querySelectorAll(".opt")].forEach((x) => x.classList.toggle("sel", x === b));
+        apply(b.dataset);
+      });
+    }
+    chipGroup("src-opts", (d) => {
+      source = d.src;
+      $("own-field").hidden = source !== "custom";
+      refreshBegin();
+    });
+    chipGroup("rep-opts", (d) => { reps = Number(d.reps); $("reps-custom").value = ""; });
+    $("reps-custom").addEventListener("input", (e) => {
+      e.target.value = e.target.value.replace(/\D/g, "").slice(0, 3);   // digits only, no spinner
+      const n = Math.max(1, Math.min(999, parseInt(e.target.value, 10) || 0));
+      if (n) { reps = n; $("rep-opts").querySelectorAll(".opt[data-reps]").forEach((c) => c.classList.remove("sel")); }
+    });
+    // own lines: same sanitising the keypad can actually produce
+    $("own").addEventListener("input", (e) => {
+      customLines = e.target.value.split("\n")
+        .map((l) => l.toLowerCase().replace(/[^a-z0-9 .,?!'()-]/g, "").trim())
+        .filter(Boolean);
+      refreshBegin();
+    });
 
     window.siteMe().then(() => {}).catch(() => (window.location.href = "/"));
     // pull the live, editable sentence pool (falls back to POOL above on failure)
     fetch("/api/multitap").then((r) => (r.ok ? r.json() : null)).then((d) => {
       if (d && Array.isArray(d.lines) && d.lines.length) POOL = d.lines;
+      refreshBegin();
     }).catch(() => {});
+    refreshBegin();
   </script>
   <script src="/nav.js" defer></script>
   <script src="/console.js" defer></script>
