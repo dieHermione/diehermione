@@ -2382,6 +2382,7 @@ const GAMETIPS_DEFAULTS = {
     "snake": "Free-swimming serpent. Chase the fleeing heart and grow; die on your own tail.",
     "penance": "A typing drill of correction. Type each line exactly — falter and it corrupts.",
     "devotion": "A verse reader. Recite Her lines in turn. An account is required.",
+    "multitap": "A typing drill on an old-phone keypad. No hints — remember the taps.",
     "deathroll": "Roll against another, each cap the next roll. Hit one and you lose. Account required.",
     "dummy parse": "A priest damage recount. Parse the dummy and chase a higher DPS.",
     "skill check": "Stop the sweeping dial inside the good zone. Pure nerve.",

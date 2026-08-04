@@ -139,7 +139,7 @@
     /* in-theme hover text: no native title chrome. Each card draws its own clipped
        terminal panel (the same "// ..." treatment the dashboard game links used)
        over its face on hover or keyboard focus. */
-    .p .tip { position: absolute; left: 12px; right: 12px; top: 50%; transform: translateY(-50%);
+    .p .tip { position: absolute; left: 0; top: 0; width: 15rem; max-width: 80vw;
       z-index: 25; padding: .62rem .72rem; text-align: left; pointer-events: none;
       background: rgba(0,0,0,.94); border: 1px solid var(--a, var(--accent));
       box-shadow: 0 0 22px color-mix(in srgb, var(--a, var(--accent)) 40%, transparent);
@@ -187,6 +187,8 @@
         tip: "A typing drill of correction. Type each line exactly — falter and it corrupts." },
       { n: "devotion",    href: "/writing?mode=devotion", art: "dev",   a: "#00acdb", wb: "#050a10", account: true,
         tip: "A verse reader. Recite Her lines in turn. An account is required." },
+      { n: "multitap",    href: "/t9",                    art: "t9",    a: "#00acdb", wb: "#050a10",
+        tip: "A typing drill on an old-phone keypad. No hints — remember the taps." },
       { n: "deathroll",   href: "/deathroll",             art: "death", a: "#ff3b2f", wb: "linear-gradient(#180708, #05060a)", multi: true,
         tip: "Roll against another, each cap the next roll. Hit one and you lose. Account required." },
       { n: "dummy parse", href: "/dummyparse",            art: "parse", a: "#ff5a4a", wb: "#0a0608",
@@ -213,6 +215,7 @@
       // snake & deathroll are placeholder cards for now — their art is still being
       // worked out. The games themselves are unchanged and still linked.
       snake: () => `<div class="c-ph">placeholder card</div>`,
+      t9: () => `<div class="c-ph">placeholder card</div>`,
 
       // penance: a typing drill on a real line from the penance pool. Hydrated
       // from /api/penance/presets; the literal below is a real pool line as a
@@ -300,8 +303,10 @@
         }
         const tip = g.tip ? `<div class="tip">${g.tip}</div>` : "";
         a.innerHTML = frameHTML(g, i) + tip + (locked ? '<div class="locknote">sign in to play</div>' : "");
-        a.addEventListener("mouseenter", () => setSel(i));
-        a.addEventListener("focus", () => setSel(i));
+        a.addEventListener("mouseenter", (e) => { setSel(i); positionTip(a, e.clientX, e.clientY); });
+        a.addEventListener("mousemove", (e) => positionTip(a, e.clientX, e.clientY));
+        // keyboard focus has no cursor, so anchor the panel to a sensible default
+        a.addEventListener("focus", () => { setSel(i); const t = a.querySelector(".tip"); if (t) { t.style.left = "12px"; t.style.top = "58%"; } });
         a.addEventListener("click", (e) => { if (locked) e.preventDefault(); });
         board.append(a);
         return a;
@@ -351,6 +356,20 @@
     function setSel(i) {
       sel = (i + GAMES.length) % GAMES.length;
       cards.forEach((el, n) => el.classList.toggle("sel", n === sel));
+    }
+
+    // The hover panel is anchored to the cursor: it floats just off the pointer
+    // and flips to the other side near the viewport edges so it never runs off.
+    function positionTip(a, cx, cy) {
+      const t = a.querySelector(".tip");
+      if (!t) return;
+      const r = a.getBoundingClientRect();
+      const tw = 240, th = t.offsetHeight || 84, pad = 16;
+      let x = cx - r.left + pad, y = cy - r.top + pad;
+      if (cx + pad + tw > window.innerWidth) x = cx - r.left - tw - 8;
+      if (cy + pad + th > window.innerHeight) y = cy - r.top - th - 8;
+      t.style.left = x + "px";
+      t.style.top = y + "px";
     }
 
     function open() {

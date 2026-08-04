@@ -250,14 +250,9 @@
       $("done").hidden = false;
     }
 
-    // ---- input: on-screen taps and the physical keypad ----
+    // ---- input: MOUSE ONLY. The physical keyboard is deliberately ignored —
+    // you tap the on-screen keypad, nothing else. (No keydown listener at all.)
     padEl.addEventListener("click", (e) => { const b = e.target.closest(".key"); if (b) press(b.dataset.k); });
-    document.addEventListener("keydown", (e) => {
-      if (!playing) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); start(); } return; }
-      let k = e.key;
-      if (k === "Backspace") k = "*";
-      if (/^[0-9*#]$/.test(k)) { e.preventDefault(); press(k); }
-    });
     $("begin").addEventListener("click", start);
     $("again").addEventListener("click", start);
 
