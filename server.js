@@ -1458,6 +1458,14 @@ app.get("/snake", requirePlayer, (req, res) => {
   res.sendFile(path.join(__dirname, "views", "snake.html"));
 });
 
+// T9 — a typing game on an old-phone multi-tap keypad. Deliberately unguided:
+// no on-screen hints about which key or how many taps. Self-refereed client-side
+// like the other typing games; no payout wired yet.
+app.get("/t9", requirePlayer, (req, res) => {
+  touchGuest(req);
+  res.sendFile(path.join(__dirname, "views", "t9.html"));
+});
+
 // $1 per snake food. The client reports each pickup, so a light floor on how
 // fast awards can arrive keeps a stuck key or a rapid script from printing money.
 app.post("/api/snake/food", (req, res) => {

@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>T9 - angeldom.me</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<script src="/me.js"></script>
+<script src="/audio.js"></script>
+<style>
+  /* T9: multi-tap typing on a flat keypad. Design 1 (classic stack). There is
+     NO instructional text anywhere — no tap cues, no key hints, no footer. The
+     player has to remember the layout and the tap counts. Being obtuse is the
+     point. Self-contained, no site.css. Dual-tone: blue #00acdb + white only. */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  [hidden] { display: none !important; }
+  :root { --c:#00acdb; --w:#eafaff; --err:#ff5a4a; --glow:rgba(0,172,219,.30); --line:#0c2731; --panel:#060d13; }
+  html, body { height: 100%; overflow: hidden; }
+  body { background:#000; color:var(--c); font-family:"IBM Plex Mono",ui-monospace,monospace;
+    -webkit-user-select:none; user-select:none; }
+  .scan { position:fixed; inset:0; z-index:40; pointer-events:none;
+    background:repeating-linear-gradient(0deg, rgba(0,0,0,.28) 0 1px, transparent 1px 3px); }
+  .vig { position:fixed; inset:0; z-index:41; pointer-events:none; box-shadow:inset 0 0 30vh 10vh rgba(0,0,0,.6); }
+
+  .stage { position:fixed; inset:0; z-index:5; display:flex; flex-direction:column; padding:3vh 4vw; }
+  .hdr { display:flex; justify-content:space-between; font-size:11px; letter-spacing:.32em;
+    text-transform:uppercase; flex-shrink:0; padding-left:2.8rem; }
+  .hdr b { color:var(--w); font-weight:400; }
+
+  /* the classic stack: line, then keypad, centred */
+  .body { flex:1; min-height:0; display:flex; flex-direction:column; align-items:center;
+    justify-content:center; gap:2.4rem; }
+
+  .line { font-size:clamp(1.2rem, 3.2vw, 2rem); letter-spacing:.02em; line-height:1.5;
+    text-align:center; max-width:34ch; }
+  .line .done { color:var(--w); }
+  .line .bad { color:var(--err); text-decoration:line-through; }
+  .line .rest { color:var(--c); }
+  .line .cur { background:var(--c); color:#04060a; padding:0 .05em; }
+  .line .cur.pending { background:var(--w); }   /* an uncommitted multi-tap letter */
+  .blink { animation:bl 1s steps(1) infinite; } @keyframes bl { 0%,50%{opacity:1} 50.01%,100%{opacity:0} }
+
+  .pad { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; width:min(340px, 82vw); }
+  .key { border:1px solid var(--line); background:var(--panel); border-radius:8px; cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding:.55rem 0; min-height:60px; font-family:inherit; color:var(--c);
+    transition:background .06s, border-color .06s, box-shadow .06s; }
+  .key .kn { color:var(--w); font-size:1.2rem; line-height:1; }
+  .key .kl { color:var(--c); font-size:.62rem; letter-spacing:.16em; margin-top:.34rem; min-height:.7em; }
+  .key:active, .key.hit { border-color:var(--c); background:rgba(0,172,219,.16); box-shadow:0 0 16px var(--glow); }
+
+  /* completion + start overlays */
+  .center { position:absolute; inset:0; z-index:6; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:1.2rem; background:rgba(0,0,0,.72); text-align:center; }
+  .center h1 { font-size:clamp(1.6rem,4vw,2.6rem); color:var(--w); letter-spacing:.14em;
+    text-transform:uppercase; text-shadow:0 0 26px var(--glow); }
+  .center .stat { font-size:1rem; letter-spacing:.08em; }
+  .center .stat b { color:var(--w); font-weight:400; }
+  .btn { border:1.5px solid var(--c); background:transparent; color:var(--w); font-family:inherit;
+    font-size:.82rem; letter-spacing:.24em; text-transform:uppercase; padding:.7rem 1.8rem; cursor:pointer; }
+  .btn:hover { background:rgba(0,172,219,.14); box-shadow:0 0 18px var(--glow); }
+
+  /* back chevron colour (nav.js injects .dash-back; it inherits currentColor) */
+  body { color:var(--c); }
+</style>
+</head>
+<body class="has-top-nav">
+  <div class="stage">
+    <div class="hdr"><span>angelOS v0.2 &middot; t9</span><span>line <b id="ln">1</b> / <b id="lt">1</b></span></div>
+    <div class="body">
+      <div class="line" id="line"></div>
+      <div class="pad" id="pad"></div>
+    </div>
+  </div>
+
+  <div class="center" id="start">
+    <h1>t9</h1>
+    <button class="btn" id="begin" type="button">begin</button>
+  </div>
+
+  <div class="center" id="done" hidden>
+    <h1>done</h1>
+    <div class="stat"><b id="d-err">0</b> mistakes &middot; <b id="d-time">0:00</b></div>
+    <button class="btn" id="again" type="button">again</button>
+  </div>
+
+  <div class="vig"></div><div class="scan"></div>
+
+  <script>
+    // ---- content: lowercase lines, T9-friendly (mostly letters + spaces) ----
+    const POOL = [
+      "i will not keep her waiting",
+      "i answer her every message",
+      "i type slowly so she knows i mean it",
+      "i belong to her",
+      "her word is my command",
+      "i exist to please her",
+      "i am grateful for her attention",
+      "i will do better next time",
+      "i think of her always",
+      "i obey without question",
+      "she is my whole world",
+      "i am nothing without her guidance",
+    ];
+    const RUN_LINES = 8;
+    const TAP_TIMEOUT = 1000;   // ms before a pending multi-tap letter commits
+
+    // key -> the letters it cycles through. 0 is space; * is backspace; # unused.
+    const MAP = {
+      "1": [".", ",", "?", "!"],
+      "2": ["a", "b", "c"], "3": ["d", "e", "f"], "4": ["g", "h", "i"],
+      "5": ["j", "k", "l"], "6": ["m", "n", "o"], "7": ["p", "q", "r", "s"],
+      "8": ["t", "u", "v"], "9": ["w", "x", "y", "z"], "0": [" "],
+    };
+    // the labels printed on the keypad face (a real keypad has these; they are
+    // not instructions). * and # are left bare on purpose.
+    const LABELS = {
+      "1": ".,?", "2": "abc", "3": "def", "4": "ghi", "5": "jkl", "6": "mno",
+      "7": "pqrs", "8": "tuv", "9": "wxyz", "*": "", "0": "␣", "#": "",
+    };
+    const ORDER = ["1","2","3","4","5","6","7","8","9","*","0","#"];
+
+    const $ = (id) => document.getElementById(id);
+    const lineEl = $("line"), padEl = $("pad");
+
+    let lines = [], idx = 0, target = "", typed = "";
+    let pending = null;          // { key, count } — an uncommitted letter
+    let pendTimer = null;
+    let mistakes = 0, startedAt = 0, playing = false;
+
+    // ---- keypad markup ----
+    padEl.innerHTML = ORDER.map((k) =>
+      '<button class="key" data-k="' + k + '"><span class="kn">' + k +
+      '</span><span class="kl">' + LABELS[k] + '</span></button>').join("");
+    const keyEls = {};
+    padEl.querySelectorAll(".key").forEach((el) => { keyEls[el.dataset.k] = el; });
+
+    function shuffled(pool, n) {
+      const a = pool.slice();
+      for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+      return a.slice(0, Math.min(n, a.length));
+    }
+
+    // the letter the pending tap currently shows (before it commits)
+    function pendingChar() {
+      if (!pending) return "";
+      const set = MAP[pending.key];
+      return set[pending.count % set.length];
+    }
+
+    function render() {
+      const parts = [];
+      // committed characters, coloured by whether they match the target
+      for (let i = 0; i < typed.length; i++) {
+        const ch = typed[i] === " " ? " " : escapeHtml(typed[i]);
+        const cls = typed[i] === target[i] ? "done" : "bad";
+        parts.push('<span class="' + cls + '">' + ch + "</span>");
+      }
+      // the caret: a pending (uncommitted) letter, or a block on the next slot
+      if (pending) {
+        const pc = pendingChar();
+        parts.push('<span class="cur pending">' + (pc === " " ? " " : escapeHtml(pc)) + "</span>");
+      } else if (typed.length < target.length) {
+        const nx = target[typed.length];
+        parts.push('<span class="cur">' + (nx === " " ? " " : escapeHtml(nx)) + "</span>");
+      }
+      // the rest of the target, still to type (skip the slot the caret sits on)
+      const restStart = typed.length + (pending ? 0 : 1);
+      const rest = target.slice(restStart);
+      if (rest) parts.push('<span class="rest">' + escapeHtml(rest).replace(/ /g, " ") + "</span>");
+      lineEl.innerHTML = parts.join("");
+    }
+    function escapeHtml(s) { return s.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c])); }
+
+    function commitPending() {
+      if (!pending) return;
+      const ch = pendingChar();
+      if (typed[typed.length] !== undefined) { /* noop */ }
+      if (ch !== target[typed.length]) mistakes++;
+      typed += ch;
+      pending = null;
+      clearTimeout(pendTimer); pendTimer = null;
+      afterAppend();
+    }
+
+    function afterAppend() {
+      if (typed.length >= target.length) { render(); setTimeout(nextLine, 160); return; }
+      render();
+    }
+
+    function flash(k) {
+      const el = keyEls[k]; if (!el) return;
+      el.classList.add("hit");
+      setTimeout(() => el.classList.remove("hit"), 90);
+    }
+
+    function press(k) {
+      if (!playing) return;
+      flash(k);
+      try { if (window.Audio && window.playType) window.playType(); } catch (e) {}
+      if (k === "*") {                              // backspace: drop pending, else last char
+        if (pending) { pending = null; clearTimeout(pendTimer); pendTimer = null; render(); }
+        else if (typed.length) { typed = typed.slice(0, -1); render(); }
+        return;
+      }
+      if (k === "#") return;                          // unused
+      if (!MAP[k]) return;
+      if (k === "0") {                               // space commits any pending, then appends
+        commitPending();
+        if (typed.length < target.length) { if (target[typed.length] !== " ") mistakes++; typed += " "; afterAppend(); }
+        return;
+      }
+      // a letter key
+      if (pending && pending.key === k) {            // same key: cycle
+        pending.count++;
+      } else {                                       // different key: commit old, start new
+        commitPending();
+        if (typed.length >= target.length) return;   // line filled while committing
+        pending = { key: k, count: 0 };
+      }
+      clearTimeout(pendTimer);
+      pendTimer = setTimeout(commitPending, TAP_TIMEOUT);
+      render();
+    }
+
+    function nextLine() {
+      idx++;
+      if (idx >= lines.length) { finish(); return; }
+      target = lines[idx]; typed = ""; pending = null;
+      $("ln").textContent = idx + 1;
+      render();
+    }
+
+    function start() {
+      lines = shuffled(POOL, RUN_LINES);
+      idx = 0; target = lines[0]; typed = ""; pending = null;
+      mistakes = 0; startedAt = Date.now(); playing = true;
+      $("ln").textContent = 1; $("lt").textContent = lines.length;
+      $("start").hidden = true; $("done").hidden = true;
+      render();
+    }
+
+    function finish() {
+      playing = false;
+      const secs = Math.round((Date.now() - startedAt) / 1000);
+      $("d-err").textContent = mistakes;
+      $("d-time").textContent = Math.floor(secs / 60) + ":" + String(secs % 60).padStart(2, "0");
+      $("done").hidden = false;
+    }
+
+    // ---- input: on-screen taps and the physical keypad ----
+    padEl.addEventListener("click", (e) => { const b = e.target.closest(".key"); if (b) press(b.dataset.k); });
+    document.addEventListener("keydown", (e) => {
+      if (!playing) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); start(); } return; }
+      let k = e.key;
+      if (k === "Backspace") k = "*";
+      if (/^[0-9*#]$/.test(k)) { e.preventDefault(); press(k); }
+    });
+    $("begin").addEventListener("click", start);
+    $("again").addEventListener("click", start);
+
+    window.siteMe().then(() => {}).catch(() => (window.location.href = "/"));
+  </script>
+  <script src="/nav.js" defer></script>
+  <script src="/console.js" defer></script>
+  <script src="/ambience.js" defer></script>
+  <script src="/dashglitch.js" defer></script>
+  <script src="/glitchboot.js" defer></script>
+</body>
+</html>
