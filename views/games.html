@@ -66,9 +66,24 @@
 
     /* ===================== bespoke card interiors ===================== */
 
-    /* SNAKE & DEATHROLL — placeholder cards for now */
-    .c-ph { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-      color: #7a8694; font-size: .92rem; letter-spacing: .08em; }
+    /* SNAKE — the real game screen, dimmed: the white countdown over the trail */
+    .c-snk { position: absolute; inset: 0; opacity: .75;
+      background: repeating-linear-gradient(0deg, rgba(210,15,5,.055) 0 1px, transparent 1px 4px); }
+    .c-snk svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .c-snk .timer { position: absolute; top: 10px; left: 0; right: 0; text-align: center; color: #fff;
+      font-variant-numeric: tabular-nums; text-shadow: 0 0 14px rgba(255,255,255,.35); }
+    .c-snk .timer .k { font-size: .5rem; letter-spacing: .26em; text-transform: uppercase;
+      color: var(--a); font-weight: 700; }
+    .c-snk .timer .t { font-size: 2rem; font-weight: 700; }
+
+    /* DEATHROLL — the play screen: the roll, whose turn it is, and the roll button */
+    .c-dr { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center;
+      justify-content: center; gap: .5rem; padding-bottom: 1.6rem; }
+    .c-dr .val { font-weight: 800; font-size: 3rem; line-height: .9; color: var(--a);
+      text-shadow: 0 0 26px rgba(193,18,8,.5); font-variant-numeric: tabular-nums; }
+    .c-dr .status { font-size: .58rem; letter-spacing: .06em; color: #e2a49e; }
+    .c-dr .pill { border: 1.5px solid var(--a); color: var(--a); font-size: .5rem; letter-spacing: .22em;
+      text-transform: uppercase; padding: .3rem .8rem; margin-top: .3rem; }
 
     /* MULTITAP — the flat old-phone keypad, one key lit */
     .c-mt { position: absolute; inset: 0; padding: .8rem .8rem 2rem; display: flex; align-items: center; justify-content: center; }
@@ -190,7 +205,7 @@
        wall. Each game names a bespoke interior "art" and its accent; every card
        shares the one macOS window frame. */
     const GAMES = [
-      { n: "snake",       href: "/snake",                 art: "snake", a: "#ff3b2f", wb: "linear-gradient(#1a0708, #05060a)",
+      { n: "snake",       href: "/snake",                 art: "snake", a: "#c11208", wb: "linear-gradient(#140506, #05060a)",
         tip: "Free-swimming serpent. Chase the fleeing heart and grow; die on your own tail." },
       { n: "penance",     href: "/writing",               art: "pen",   a: "#c11208", wb: "#0e0607",
         tip: "A typing drill of correction. Type each line exactly — falter and it corrupts." },
@@ -198,7 +213,7 @@
         tip: "A verse reader. Recite Her lines in turn. An account is required." },
       { n: "multitap",    href: "/t9",                    art: "t9",    a: "#00acdb", wb: "#050a10",
         tip: "A typing drill on an old-phone keypad. No hints — remember the taps." },
-      { n: "deathroll",   href: "/deathroll",             art: "death", a: "#ff3b2f", wb: "linear-gradient(#180708, #05060a)", multi: true,
+      { n: "deathroll",   href: "/deathroll",             art: "death", a: "#c11208", wb: "#0e0607", multi: true,
         tip: "Roll against another, each cap the next roll. Hit one and you lose. Account required." },
       { n: "dummy parse", href: "/dummyparse",            art: "parse", a: "#ff5a4a", wb: "#0a0608",
         tip: "A priest damage recount. Parse the dummy and chase a higher DPS." },
@@ -223,7 +238,12 @@
     const ART = {
       // snake & deathroll are placeholder cards for now — their art is still being
       // worked out. The games themselves are unchanged and still linked.
-      snake: () => `<div class="c-ph">placeholder card</div>`,
+      snake: () => `<div class="c-snk">
+        <svg viewBox="0 0 214 214" preserveAspectRatio="none">
+          <path d="M-6 168 C 60 168, 40 92, 112 100 C 176 108, 152 44, 224 52" fill="none"
+                stroke="var(--a)" stroke-width="13" opacity=".4" stroke-linecap="round"/>
+        </svg>
+        <div class="timer"><div class="k">time left</div><div class="t">0:48</div></div></div>`,
       t9: () => `<div class="c-mt"><div class="pad">${
         [["1",".,-"],["2","abc"],["3","def"],["4","ghi"],["5","jkl"],["6","mno"],
          ["7","pqrs"],["8","tuv"],["9","wxyz"],["*","⌫"],["0","␣"],["#","↵"]]
@@ -245,7 +265,10 @@
         <div class="v">I am not in control.</div>
         <div class="v">Her will is Divine. I will obey.</div>
         <div class="prog">verse 2 / 10</div></div>`,
-      death: () => `<div class="c-ph">placeholder card</div>`,
+      death: () => `<div class="c-dr">
+        <div class="val">240</div>
+        <div class="status">your turn</div>
+        <div class="pill">roll</div></div>`,
       // elysium: a laurel wreath around the real number of days the tree has been
       // tended (hydrated from /api/elysium's ageDays; a dash until it loads).
       elys: () => `<div class="c-elys-w"><svg viewBox="0 0 214 210" preserveAspectRatio="xMidYMid meet">${wreath()}
