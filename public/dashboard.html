@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+  <script src="/theme.js"></script>
   <script src="/me.js"></script>
   <script src="/dashglitch.js"></script>
   <style>
@@ -105,6 +106,10 @@
       font-family: inherit; font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; padding: 0.1rem 0; }
     .set-mute.off { border-color: var(--err); color: var(--err); }
     .set-note { color: var(--dim2); font-size: 0.62rem; line-height: 1.6; margin-top: 0.4rem; }
+    .swatches { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+    .swatch { width: 1.3rem; height: 1.3rem; border-radius: 50%; cursor: pointer; padding: 0;
+      border: 2px solid transparent; box-shadow: 0 0 0 1px rgba(255,255,255,0.25) inset; }
+    .swatch.on { border-color: var(--bright); }
 
     /* in-theme tooltips: the native title popup is unstyled OS chrome, so the
        game links carry data-tip and draw their own terminal panel instead */
@@ -264,6 +269,8 @@
           <label class="set-row set-check">
             <input type="checkbox" id="set-effects" /> <span>Flashing effects</span>
           </label>
+          <div class="set-row"><span class="set-k">Accent</span>
+            <div class="swatches" id="swatches"></div></div>
           <div class="set-row"><span class="set-k">Master</span>
             <input type="range" id="vol-master" min="0" max="100" />
             <button class="set-mute" id="mute-master" type="button">on</button></div>
@@ -326,6 +333,26 @@
       if (photosensitive) { box.checked = false; box.disabled = true; effectsOn = false; }
       else { box.checked = effectsOn; box.disabled = false; }
     }
+
+    // accent-colour swatches: default (blue) + the presets from theme.js
+    function buildSwatches() {
+      const box = document.getElementById("swatches");
+      if (!box || !window.Theme) return;
+      box.replaceChildren();
+      Object.keys(window.Theme.PRESETS).forEach((label) => {
+        const b = document.createElement("button");
+        b.type = "button"; b.className = "swatch"; b.dataset.color = label;
+        b.style.background = window.Theme.PRESETS[label];
+        b.title = label === "default" ? "default (blue)" : "#" + label;
+        b.addEventListener("click", () => { window.Theme.set(label); markSwatch(label); });
+        box.append(b);
+      });
+      markSwatch(window.Theme.get());
+    }
+    function markSwatch(label) {
+      document.querySelectorAll("#swatches .swatch").forEach((s) => s.classList.toggle("on", s.dataset.color === label));
+    }
+    buildSwatches();
 
     const h = new Date().getHours();
     document.getElementById("greeting").textContent =
@@ -416,6 +443,8 @@
         try { localStorage.setItem("photosensitive", photosensitive ? "1" : "0"); } catch (e) {}
         applyEffects();
         applyEffectsLock();
+        // the account's saved accent wins over the local cache; reflect it in the picker
+        if (window.Theme) { window.Theme.fromAccount(d.themeColor || "default"); markSwatch(window.Theme.get()); }
 
         const isHermione = Boolean(d.isAdmin ?? (d.username && d.username.toLowerCase() === "hermione"));
         const noEcon = Boolean(d.noEconomy) || isHermione;

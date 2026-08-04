@@ -471,6 +471,22 @@ app.post("/api/photosensitive", (req, res) => {
   res.json({ ok: true, photosensitive: true });
 });
 
+// The account's chosen accent colour (Settings). Guests keep it in localStorage
+// only (this 401s for them, which the client ignores). "" / "default" = blue.
+const THEME_COLORS = ["", "default", "ed0955", "710087", "0bdb00", "f7df00", "f78400", "ffa6c5"];
+app.post("/api/theme", (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  const color = String(req.body.color || "").replace(/^#/, "").toLowerCase();
+  if (!THEME_COLORS.includes(color)) return res.status(400).json({ error: "Unknown colour." });
+  const users = loadUsers();
+  const key = req.session.username.toLowerCase();
+  const user = users[key];
+  if (!user) return res.status(401).json({ error: "Not logged in." });
+  user.themeColor = color === "default" ? "" : color;
+  saveUsers(users);
+  res.json({ ok: true, themeColor: user.themeColor });
+});
+
 // --- currency ---
 // Points are the only currency. They used to be admin-granted only, with a
 // separate earned "dollars" balance; the two were merged 1:1, so points are now
@@ -649,6 +665,8 @@ app.get("/api/me", (req, res) => {
     createdAt: users[key].createdAt || null,
     // accounts predating the question have no flag; treat that as not flagged
     photosensitive: users[key].photosensitive === true,
+    // the accent colour this account chose (Settings); "" / absent = default blue
+    themeColor: users[key].themeColor || "",
     // a hand-made account must set a real password on first sign-in
     mustChangePassword: users[key].mustChangePassword === true,
     checkIn,
