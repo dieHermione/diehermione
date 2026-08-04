@@ -121,7 +121,7 @@
   <div class="pips" id="pips"></div>
 
   <div class="mid" id="mid">
-    <div class="setup">
+    <div class="setup" id="setup-screen">
       <h1>SKILL CHECK</h1>
       <p>A needle runs around the dial. Press the key drawn in the middle while the
         needle is inside the arc. Land your chosen number of checks <b>in a row</b> to finish.</p>
@@ -145,8 +145,15 @@
       </div>
       <p class="hint" id="hint">Simple: the space bar only. Demanding: any of ten keys.</p>
 
-      <p id="verdict" class="verdict"></p>
       <button class="btn" id="start" type="button">begin</button>
+    </div>
+    <div class="setup" id="results" hidden>
+      <h1>SKILL CHECK</h1>
+      <p id="verdict" class="verdict"></p>
+      <div class="row" style="justify-content:center; gap:.8rem; margin-top:1.4rem">
+        <button class="btn" id="again" type="button">again</button>
+        <button class="btn" id="to-settings" type="button">settings</button>
+      </div>
     </div>
   </div>
 
@@ -380,6 +387,12 @@
       }
     }
 
+    // settings and results are two separate screens inside .mid
+    function showScreen(which) {
+      document.getElementById("setup-screen").hidden = which !== "setup";
+      document.getElementById("results").hidden = which !== "results";
+    }
+
     function begin() {
       run = { streak: 0, best: 0, failed: 0 };
       document.getElementById("r-mode").textContent = mode;
@@ -391,10 +404,10 @@
     function finish() {
       clearTimeout(gapTimer);
       midEl.hidden = false;
+      showScreen("results");           // results are their own screen, not under the options
       const v = document.getElementById("verdict");
       v.innerHTML = "<span class='g'>" + reps + " in a row</span> &nbsp; " +
         "<span class='b'>" + run.failed + " missed</span> along the way";
-      document.getElementById("start").textContent = "again";
       paint();
     }
 
@@ -428,6 +441,9 @@
       window.AudioBus && window.AudioBus.ctx();   // the gesture that starts audio
       begin();
     });
+    // results screen: replay with the same settings, or go back to settings
+    document.getElementById("again").addEventListener("click", () => { window.AudioBus && window.AudioBus.ctx(); begin(); });
+    document.getElementById("to-settings").addEventListener("click", () => showScreen("setup"));
 
     document.addEventListener("keydown", (e) => {
       if (e.repeat) return;
