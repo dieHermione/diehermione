@@ -103,6 +103,9 @@
     }
     .chip:hover { color: var(--c); border-color: var(--dim); }
     .chip.on { border-color: var(--c); color: var(--bright); box-shadow: 0 0 14px var(--glow); }
+    .repin { width: 7rem; font-family: inherit; text-align: center; letter-spacing: .05em; }
+    .repin::placeholder { color: var(--dim2); }
+    .repin:focus { outline: none; border-color: var(--c); color: var(--bright); box-shadow: 0 0 14px var(--glow); }
     .hint { font-size: .82rem; color: var(--dim2); margin-top: 1rem; }
     .verdict { font-size: 1.1rem; color: var(--c); margin-top: .6rem; }
     .verdict .g { color: var(--ok); } .verdict .b { color: var(--err); }
@@ -121,9 +124,7 @@
     <div class="setup">
       <h1>SKILL CHECK</h1>
       <p>A needle runs around the dial. Press the key drawn in the middle while the
-        needle is inside the red arc. Too early, too late, or not at all: all three fail.
-        Land your chosen number of checks <b>in a row</b> to finish; a single miss sends
-        the count back to zero.</p>
+        needle is inside the arc. Land your chosen number of checks <b>in a row</b> to finish.</p>
 
       <div class="opt">
         <span class="ok">MODE</span>
@@ -139,9 +140,10 @@
           <button class="chip" type="button" data-reps="40">40</button>
           <button class="chip" type="button" data-reps="60">60</button>
           <button class="chip" type="button" data-reps="80">80</button>
+          <input class="chip repin" id="reps-custom" type="number" min="1" max="999" inputmode="numeric" placeholder="custom" />
         </div>
       </div>
-      <p class="hint" id="hint">Simple asks for space only. Demanding asks for any of ten keys. Same fast needle and tight zone either way.</p>
+      <p class="hint" id="hint">Simple: the space bar only. Demanding: any of ten keys.</p>
 
       <p id="verdict" class="verdict"></p>
       <button class="btn" id="start" type="button">begin</button>
@@ -159,12 +161,25 @@
       })),
     ];
 
-    // Chosen on the settings screen rather than fixed. The two modes differ only
-    // in the key set: simple = space, demanding = any of ten. Both use the same
-    // fast needle and tight zone, and any miss sends the count back to zero.
+    // Chosen on the settings screen rather than fixed. The two modes differ in the
+    // key set (simple = space, demanding = any of ten) AND the colour scheme:
+    // simple wears the dashboard blue/white, demanding wears Penance's red/white.
     let reps = 20;
     let mode = "simple";                  // "simple" | "demanding"
     let keyMode = "space";                // derived from mode: simple->space, demanding->all
+
+    const PALETTES = {
+      simple:    { c: "#00acdb", glow: "rgba(0,172,219,.34)" },
+      demanding: { c: "#c11208", glow: "rgba(193,18,8,.42)" },
+    };
+    let zoneColor = PALETTES.simple.c, zoneGlow = "rgba(0,172,219,.5)";
+    function applyMode() {
+      const p = PALETTES[mode] || PALETTES.simple;
+      ["--c", "--dim", "--dim2", "--accent"].forEach((v) => document.body.style.setProperty(v, p.c));
+      document.body.style.setProperty("--glow", p.glow);
+      zoneColor = p.c;
+      zoneGlow = mode === "demanding" ? "rgba(255,59,47,.5)" : "rgba(0,172,219,.5)";
+    }
 
     const GAP_MIN = 900, GAP_MAX = 5000;       // max between checks halved from before
     // a touch faster than before
@@ -240,12 +255,12 @@
       const zone = document.createElementNS(SVG, "path");
       zone.setAttribute("d", arcPath(cx, cy, r, c.zoneFrom, c.zoneFrom + c.zoneSize));
       zone.setAttribute("fill", "none");
-      zone.setAttribute("stroke", "#ff3b2f");
+      zone.setAttribute("stroke", zoneColor);
       zone.setAttribute("stroke-width", "11");
       zone.setAttribute("stroke-linecap", "butt");
-      // a crisp arc: a big blur made the visible red read several degrees wider
+      // a crisp arc: a big blur made the visible zone read several degrees wider
       // than the judged bounds, so presses near the glow felt wrongly graded
-      zone.setAttribute("filter", "drop-shadow(0 0 3px rgba(255,59,47,.5))");
+      zone.setAttribute("filter", "drop-shadow(0 0 3px " + zoneGlow + ")");
       dial.append(zone);
       c.zoneEl = zone;
 
@@ -262,7 +277,7 @@
       const inner = document.createElement("div");
       inner.textContent = c.key.label;
       const small = document.createElement("small");
-      small.textContent = "PRESS IN THE RED";
+      small.textContent = "PRESS IN THE ARC";
       inner.append(small);
       keyEl.append(inner);
     }
@@ -396,10 +411,17 @@
       mode = d.mode;
       keyMode = mode === "demanding" ? "all" : "space";
       document.getElementById("hint").textContent = mode === "demanding"
-        ? "Demanding: any of ten keys. Fast needle, tight zone, any miss resets to zero."
-        : "Simple: the space bar only. Fast needle, tight zone, any miss resets to zero.";
+        ? "Demanding: any of ten keys."
+        : "Simple: the space bar only.";
+      applyMode();                       // switch the colour scheme live
     });
-    chipGroup("opt-reps", (d) => { reps = Number(d.reps); });
+    chipGroup("opt-reps", (d) => { reps = Number(d.reps); document.getElementById("reps-custom").value = ""; });
+    // custom rep count: typing a number deselects the preset chips
+    document.getElementById("reps-custom").addEventListener("input", (e) => {
+      const n = Math.max(1, Math.min(999, parseInt(e.target.value, 10) || 0));
+      if (n) { reps = n; document.querySelectorAll("#opt-reps .chip").forEach((c) => c.classList.remove("on")); }
+    });
+    applyMode();                          // set the starting colour scheme
 
     document.getElementById("start").addEventListener("click", () => {
       window.AudioBus && window.AudioBus.ctx();   // the gesture that starts audio
