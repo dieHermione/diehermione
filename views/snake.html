@@ -8,19 +8,22 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/site.css" />
+  <script src="/theme.js"></script>
   <script src="/me.js"></script>
   <style>
     /* Snake — Blood Ritual skin, full window (dark-red terminal). Snake colours
        come from the CSS vars below so the existing draw code stays untouched. */
-    /* colour-matched to Penance: the same #c11208 red */
-    :root { --button-bg: #c11208; --heart-color: #ffffff;
-            --c:#c11208; --br:#c11208; --dim:#5e0f09; --bg:#000000; --glow:rgba(193,18,8,0.45); }
+    /* Follows the account's accent (theme.js writes --c/--dim/--glow inline on
+       <html>, which beats these). Everything else derives from --c so one swap
+       recolours the whole game; white stays white. */
+    :root { --c:#c11208; --dim:#c11208; --glow:rgba(193,18,8,0.45);
+            --button-bg: var(--c); --br: var(--c); --heart-color: #ffffff; --bg:#000000; }
     * { box-sizing: border-box; }
     [hidden] { display: none !important; }
     html, body { height: 100%; margin: 0; overflow: hidden; }
     body { background: #000; color: var(--c); font-family: "IBM Plex Mono", monospace; font-weight: 600; }
     #game { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; background:
-      repeating-linear-gradient(0deg, rgba(210,15,5,0.045) 0 1px, transparent 1px 4px); z-index: 1; touch-action: none; }
+      repeating-linear-gradient(0deg, color-mix(in srgb, var(--c) 6%, transparent) 0 1px, transparent 1px 4px); z-index: 1; touch-action: none; }
     .scan { position: fixed; inset: 0; z-index: 3; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(0,0,0,0.3) 0 1px, transparent 1px 3px); }
 
     .hud { position: fixed; z-index: 5; }
@@ -42,9 +45,9 @@
 
     .nav { position: fixed; bottom: 3vh; left: 50%; transform: translateX(-50%); z-index: 6; display: flex; gap: 1rem; }
     .nav button { font-family: inherit; cursor: pointer; font-size: 0.9rem; letter-spacing: 0.18em; text-transform: uppercase; font-weight: 700;
-      padding: 0.6rem 1.8rem; border: 1.5px solid var(--br); background: transparent; color: var(--br); box-shadow: 0 0 18px rgba(255,32,16,0.28); }
+      padding: 0.6rem 1.8rem; border: 1.5px solid var(--br); background: transparent; color: var(--br); box-shadow: 0 0 18px var(--glow); }
     .nav button:hover { background: var(--br); color: var(--bg); }
-    #back { border-color: var(--br); color: var(--br); box-shadow: 0 0 18px rgba(255,32,16,0.28); }
+    #back { border-color: var(--br); color: var(--br); box-shadow: 0 0 18px var(--glow); }
 
     /* the countdown — white, top centre */
     .tmr { position: fixed; top: 3vh; left: 50%; transform: translateX(-50%); z-index: 5; text-align: center;

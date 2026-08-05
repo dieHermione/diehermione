@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<script src="/theme.js"></script>
 <script src="/me.js"></script>
 <script src="/audio.js"></script>
 <style>
@@ -15,8 +16,8 @@
      sends the correct name until after an answer, so it is not in the DOM. */
   * { box-sizing: border-box; margin: 0; padding: 0; }
   [hidden] { display: none !important; }
-  :root { --c:#ffa6c5; --w:#eafaff; --err:#ff5a4a; --ok:#ffffff;
-          --glow:rgba(255,166,197,.30); --line:#3a2029; --panel:#0d0508; }
+  :root { --c:#ffa6c5; --glow:rgba(255,166,197,.30); --w:#eafaff; --err:#ff5a4a; --ok:#ffffff;
+          --line: color-mix(in srgb, var(--c) 22%, transparent); --panel: rgba(0,0,0,.45); }
   html, body { height: 100%; overflow: hidden; }
   body { background:#000; color:var(--c); font-family:"IBM Plex Mono",ui-monospace,monospace;
     -webkit-user-select:none; user-select:none; }
@@ -32,7 +33,7 @@
     justify-content:center; gap:1.4rem; }
 
   .photo { width:min(300px, 62vw); aspect-ratio:1; border:1px solid var(--line); border-radius:8px;
-    background:var(--panel) center/cover no-repeat; box-shadow:0 0 30px rgba(255,166,197,.12); flex-shrink:0; }
+    background:var(--panel) center/cover no-repeat; box-shadow:0 0 30px color-mix(in srgb, var(--c) 12%, transparent); flex-shrink:0; }
 
   .opts { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:.6rem; width:min(30rem, 86vw); }
   .opt { padding:.7rem .5rem; border:1px solid var(--line); background:var(--panel); color:var(--w);
@@ -64,7 +65,7 @@
   .chip.sel { background:var(--c); color:#12060a; border-color:var(--c); }
   .btn { border:1.5px solid var(--c); background:transparent; color:var(--w); font-family:inherit;
     font-size:.82rem; letter-spacing:.24em; text-transform:uppercase; padding:.7rem 1.8rem; cursor:pointer; }
-  .btn:hover:not(:disabled) { background:rgba(255,166,197,.14); box-shadow:0 0 18px var(--glow); }
+  .btn:hover:not(:disabled) { background:color-mix(in srgb, var(--c) 14%, transparent); box-shadow:0 0 18px var(--glow); }
   .btn:disabled { opacity:.35; cursor:not-allowed; }
   body { color:var(--c); }
 </style>

@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<script src="/theme.js"></script>
 <script src="/me.js"></script>
 <script src="/audio.js"></script>
 <style>
@@ -17,7 +18,8 @@
      (multitap is the green game, the way Penance is the red one). */
   * { box-sizing: border-box; margin: 0; padding: 0; }
   [hidden] { display: none !important; }
-  :root { --c:#0bdb00; --w:#eafaff; --err:#ff5a4a; --glow:rgba(11,219,0,.30); --line:#0e2b0a; --panel:#050d05; }
+  :root { --c:#0bdb00; --glow:rgba(11,219,0,.30); --w:#eafaff; --err:#ff5a4a;
+          --line: color-mix(in srgb, var(--c) 22%, transparent); --panel: rgba(0,0,0,.45); }
   html, body { height: 100%; overflow: hidden; }
   body { background:#000; color:var(--c); font-family:"IBM Plex Mono",ui-monospace,monospace;
     -webkit-user-select:none; user-select:none; }
@@ -56,7 +58,7 @@
     transition:background .06s, border-color .06s, box-shadow .06s; }
   .key .kn { color:var(--w); font-size:1.2rem; line-height:1; }
   .key .kl { color:var(--c); font-size:.62rem; letter-spacing:.16em; margin-top:.34rem; min-height:.7em; }
-  .key:active, .key.hit { border-color:var(--c); background:rgba(11,219,0,.16); box-shadow:0 0 16px var(--glow); }
+  .key:active, .key.hit { border-color:var(--c); background:color-mix(in srgb, var(--c) 16%, transparent); box-shadow:0 0 16px var(--glow); }
 
   /* completion + start overlays */
   /* settings and results are each their OWN screen — fully opaque, so the play
@@ -70,7 +72,7 @@
   .center .stat b { color:var(--w); font-weight:400; }
   .btn { border:1.5px solid var(--c); background:transparent; color:var(--w); font-family:inherit;
     font-size:.82rem; letter-spacing:.24em; text-transform:uppercase; padding:.7rem 1.8rem; cursor:pointer; }
-  .btn:hover { background:rgba(11,219,0,.14); box-shadow:0 0 18px var(--glow); }
+  .btn:hover { background:color-mix(in srgb, var(--c) 14%, transparent); box-shadow:0 0 18px var(--glow); }
   .btn:disabled { opacity:.35; cursor:not-allowed; }
   .btn:disabled:hover { background:transparent; box-shadow:none; }
 

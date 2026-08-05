@@ -16,22 +16,22 @@
     if (document.getElementById("boot-style")) return;
     var s = document.createElement("style"); s.id = "boot-style";
     s.textContent =
-      '#boot-overlay{position:fixed;inset:0;z-index:9999;background:#000;color:#00acdb;' +
+      '#boot-overlay{position:fixed;inset:0;z-index:9999;background:#000;color:var(--c, #00acdb);' +
       'font-family:"IBM Plex Mono",ui-monospace,monospace;opacity:0;transition:opacity .3s ease}' +
       '#boot-overlay.on{opacity:1}' +
       '#boot-overlay .scan{position:absolute;inset:0;pointer-events:none;z-index:4;background:repeating-linear-gradient(0deg,rgba(0,0,0,.3) 0 1px,transparent 1px 3px)}' +
       '#boot-overlay .top{position:absolute;top:0;left:0;right:0;z-index:2;display:flex;justify-content:space-between;' +
-      'padding:2.6vh 6vw 0;font-size:11px;letter-spacing:.32em;color:#00acdb;text-transform:uppercase}' +
+      'padding:2.6vh 6vw 0;font-size:11px;letter-spacing:.32em;color:var(--c, #00acdb);text-transform:uppercase}' +
       '#boot-overlay .console{position:absolute;inset:0;z-index:2;padding:6vh 6vw 5vh;overflow:hidden;' +
       'display:flex;flex-direction:column;justify-content:flex-end;font-size:clamp(12px,1.35vw,15px);line-height:1.62}' +
       '#boot-overlay .bl{white-space:pre-wrap;word-break:break-word}' +
-      '#boot-overlay .bl .dim{color:#00acdb}#boot-overlay .bl .ok{color:#eafaff}' +
-      '#boot-overlay .bl .amber{color:#eafaff}#boot-overlay .bl .acc{color:#00acdb}' +
+      '#boot-overlay .bl .dim{color:var(--c, #00acdb)}#boot-overlay .bl .ok{color:#eafaff}' +
+      '#boot-overlay .bl .amber{color:#eafaff}#boot-overlay .bl .acc{color:var(--c, #00acdb)}' +
       '#boot-overlay .bl .br{color:#eafaff}' +
-      '#boot-overlay .bl.pay{color:#00acdb}' +
-      '#boot-overlay .bl.pay .r{color:#eafaff;text-shadow:0 0 12px rgba(0,172,219,.4)}' +
-      '#boot-overlay .bl.pay .g{color:#00acdb}' +
-      '#boot-overlay .cur{display:inline-block;width:.55em;height:1.02em;background:#00acdb;' +
+      '#boot-overlay .bl.pay{color:var(--c, #00acdb)}' +
+      '#boot-overlay .bl.pay .r{color:#eafaff;text-shadow:0 0 12px var(--glow, rgba(0,172,219,.4))}' +
+      '#boot-overlay .bl.pay .g{color:var(--c, #00acdb)}' +
+      '#boot-overlay .cur{display:inline-block;width:.55em;height:1.02em;background:var(--c, #00acdb);' +
       'transform:translateY(2px);animation:bootbl 1s steps(1) infinite}' +
       '@keyframes bootbl{0%,50%{opacity:1}50.01%,100%{opacity:0}}';
     document.head.appendChild(s);

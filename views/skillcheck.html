@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="/theme.js"></script>
   <script src="/me.js"></script>
   <script src="/audio.js"></script>
   <style>
@@ -175,18 +176,14 @@
     let mode = "simple";                  // "simple" | "demanding"
     let keyMode = "space";                // derived from mode: simple->space, demanding->all
 
-    const PALETTES = {
-      simple:    { c: "#00acdb", glow: "rgba(0,172,219,.34)" },
-      demanding: { c: "#c11208", glow: "rgba(193,18,8,.42)" },
-    };
-    let zoneColor = PALETTES.simple.c, zoneGlow = "rgba(0,172,219,.5)";
-    function applyMode() {
-      const p = PALETTES[mode] || PALETTES.simple;
-      ["--c", "--dim", "--dim2", "--accent"].forEach((v) => document.body.style.setProperty(v, p.c));
-      document.body.style.setProperty("--glow", p.glow);
-      zoneColor = p.c;
-      zoneGlow = mode === "demanding" ? "rgba(255,59,47,.5)" : "rgba(0,172,219,.5)";
+    // BOTH difficulties follow the account's accent now — the mode changes the key
+    // set, not the colour. The dial is drawn from JS, so it reads the live theme
+    // value rather than baking a hex in. (Nothing may set --c on <body>: that
+    // would out-specify theme.js's inline value on <html>.)
+    function themeColor() {
+      return getComputedStyle(document.documentElement).getPropertyValue("--c").trim() || "#00acdb";
     }
+    function applyMode() { /* colour is the theme's; only the key set differs */ }
 
     const GAP_MIN = 900, GAP_MAX = 5000;       // max between checks halved from before
     // a touch faster than before
@@ -265,12 +262,12 @@
       const zone = document.createElementNS(SVG, "path");
       zone.setAttribute("d", arcPath(cx, cy, r, c.zoneFrom, c.zoneFrom + c.zoneSize));
       zone.setAttribute("fill", "none");
-      zone.setAttribute("stroke", zoneColor);
+      zone.setAttribute("stroke", themeColor());
       zone.setAttribute("stroke-width", "11");
       zone.setAttribute("stroke-linecap", "butt");
       // a crisp arc: a big blur made the visible zone read several degrees wider
       // than the judged bounds, so presses near the glow felt wrongly graded
-      zone.setAttribute("filter", "drop-shadow(0 0 3px " + zoneGlow + ")");
+      zone.setAttribute("filter", "drop-shadow(0 0 3px " + themeColor() + ")");
       dial.append(zone);
       c.zoneEl = zone;
 

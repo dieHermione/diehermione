@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cause:wght@400..700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/site.css" />
+  <script src="/theme.js"></script>
   <script src="/me.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap');
@@ -16,7 +17,8 @@
     /* Dual-tone, matching Penance: ONE red (#c11208) plus white. The old palette
        mixed a washed-out light red (#cf3730) and muted mid-tones (#7a2b27) with a
        bright #ff3b2f, which read as several different reds at once. */
-    :root { --c:#c11208; --br:#c11208; --dim:#c11208; --dim2:#c11208; --bg:#060102; --glow:rgba(193,18,8,0.42); }
+    :root { --c:#c11208; --dim:#c11208; --dim2:#c11208; --glow:rgba(193,18,8,0.42);
+            --br: var(--c); --bg:#060102; }
     * { box-sizing: border-box; }
     [hidden] { display: none !important; }
     html, body { min-height: 100vh; }
@@ -24,7 +26,7 @@
        as a white/grey box on a black page */
     :root { color-scheme: dark; }
     body { margin: 0; padding: 6vh 4vw; min-height: 100vh; background:
-        repeating-linear-gradient(0deg, rgba(193,18,8,0.05) 0 1px, transparent 1px 4px),
+        repeating-linear-gradient(0deg, color-mix(in srgb, var(--c) 6%, transparent) 0 1px, transparent 1px 4px),
         #000 fixed;
       color: var(--c); font-family: "IBM Plex Mono", monospace;
       display: flex; flex-direction: column; align-items: center; justify-content: center; }
@@ -36,9 +38,9 @@
       gap: 3vw; width: min(1500px, 96vw); z-index: 2; margin: auto 0; }
 
     .dr-grid > .card:not(.player-card) { grid-column: 2; z-index: 2; background: transparent; box-shadow: none; text-align: center; padding: 0; }
-    .player-card { grid-column: auto; width: 26vw; max-width: 340px; border: 1.5px solid var(--dim); background: rgba(30,6,5,0.5);
+    .player-card { grid-column: auto; width: 26vw; max-width: 340px; border: 1.5px solid var(--dim); background: rgba(0,0,0,0.45);
       padding: 2rem 1.6rem; text-align: center; position: relative; z-index: 2; }
-    .player-card.me { grid-column: 1; justify-self: end; border-color: var(--br); box-shadow: 0 0 30px rgba(193,18,8,0.28); }
+    .player-card.me { grid-column: 1; justify-self: end; border-color: var(--br); box-shadow: 0 0 30px var(--glow); }
     .player-card.them { grid-column: 3; justify-self: start; }
     .player-card .role { font-size: 0.72rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--dim); margin-bottom: 1rem; }
     .player-card .avatar, .player-card .avatar-fallback { width: 7vw; height: 7vw; max-width: 96px; max-height: 96px; margin: 0 auto 1rem; border-radius: 50%;
@@ -73,11 +75,11 @@
       text-shadow: 0 0 30px var(--glow); font-variant-numeric: tabular-nums; margin: 0.3rem 0; }
     .die.rolling .value { animation: drShake 0.14s steps(2) infinite; }
     @keyframes drShake { 0%{transform:translate(0,0)} 50%{transform:translate(-3px,2px)} 100%{transform:translate(2px,-2px)} }
-    .die.dead .value { color: #5e0f09; text-shadow: none; }
+    .die.dead .value { color: color-mix(in srgb, var(--c) 45%, transparent); text-shadow: none; }
 
     .actions { margin-top: 1.6rem; }
     .pill { font-family: inherit; cursor: pointer; font-size: 1rem; letter-spacing: 0.22em; text-transform: uppercase;
-      padding: 0.8rem 2.4rem; border: 1.5px solid var(--br); background: transparent; color: var(--br); box-shadow: 0 0 20px rgba(193,18,8,0.25); }
+      padding: 0.8rem 2.4rem; border: 1.5px solid var(--br); background: transparent; color: var(--br); box-shadow: 0 0 20px var(--glow); }
     .pill:hover { background: var(--br); color: var(--bg); }
     .pill:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
     .picker .pill { padding: 0.5rem 1.2rem; font-size: 0.85rem; letter-spacing: 0.1em; }
