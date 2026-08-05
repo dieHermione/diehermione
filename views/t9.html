@@ -156,7 +156,9 @@
       "1": [".", ",", "?", "!", "'", "-", "(", ")"],
       "2": ["a", "b", "c"], "3": ["d", "e", "f"], "4": ["g", "h", "i"],
       "5": ["j", "k", "l"], "6": ["m", "n", "o"], "7": ["p", "q", "r", "s"],
-      "8": ["t", "u", "v"], "9": ["w", "x", "y", "z"], "0": [" "],
+      "8": ["t", "u", "v"], "9": ["w", "x", "y", "z"],
+      // 0 is NOT listed: space is handled directly in press() so it can never
+      // become a *pending* character (one press confirms, a second enters a space)
     };
     // the labels printed on the keypad face (a real keypad has these; they are
     // not instructions). * = delete, # = confirm are labelled so they're findable.
@@ -216,15 +218,21 @@
     // Confirm the pending letter. Returns true only if it was committed correctly
     // AND the line is not yet finished (so the caller may start the next letter).
     // A WRONG letter sends the whole phrase back to the beginning.
-    function confirmCurrent() {
-      if (!pending) return true;                     // nothing to confirm
-      const ch = pendingChar(), pos = typed.length;
-      pending = null;
+    // Append one finalised character. Returns true only if the line is still
+    // running (a wrong character restarts the phrase; a full line completes it).
+    function commitChar(ch) {
+      const pos = typed.length;
       if (pos >= target.length) return false;        // already full; ignore
       if (ch !== target[pos]) { mistakes++; typed += ch; resetPhrase(); return false; }
       typed += ch;
       if (typed.length >= target.length) { lineComplete(); return false; }
       return true;
+    }
+    function confirmCurrent() {
+      if (!pending) return true;                     // nothing to confirm
+      const ch = pendingChar();
+      pending = null;
+      return commitChar(ch);
     }
     function lineComplete() {
       entryEl.classList.remove("wrong");
@@ -256,6 +264,14 @@
       try { if (window.playType) window.playType(); } catch (e) {}
       if (k === "*") { deleteOne(); return; }                 // delete
       if (k === "#") { confirmCurrent(); render(); return; }  // confirm the last letter
+      if (k === "0") {                                        // SPACE
+        // The FIRST press only confirms a pending letter. Only a press with
+        // nothing pending enters an actual space.
+        if (pending) { confirmCurrent(); render(); return; }
+        commitChar(" ");
+        render();
+        return;
+      }
       if (!MAP[k]) return;
       if (pending && pending.key === k) { pending.count++; render(); return; }  // same key cycles
       // any different key first CONFIRMS the current pending, then starts the new one
