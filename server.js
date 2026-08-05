@@ -493,7 +493,6 @@ app.post("/api/theme", (req, res) => {
 // Points are the only currency. They used to be admin-granted only, with a
 // separate earned "dollars" balance; the two were merged 1:1, so points are now
 // both granted and earned, and the leaderboard reflects both.
-const DAILY_CHECKIN_POINTS = 5;
 const SNAKE_FOOD_POINTS = 1;
 // The Devotion daily is fulfilled by completing this many Devotion lines in a day.
 // Snake pickups are reported by the browser, so they can't be trusted outright.
@@ -524,18 +523,7 @@ function todayKey(now = new Date()) {
   return shifted.toISOString().slice(0, 10);
 }
 
-// grants the daily points the first time an account is seen each day;
-// returns null otherwise
-function awardDailyCheckIn(users, key) {
-  const user = users[key];
-  if (!user) return null;
-  const today = todayKey();
-  if (user.lastCheckIn === today) return null;
-  user.lastCheckIn = today;
-  user.points = (user.points || 0) + DAILY_CHECKIN_POINTS;
-  saveUsers(users);
-  return { amount: DAILY_CHECKIN_POINTS, points: user.points };
-}
+// (the daily check-in and its +5 went with the dailies; nothing awards on login)
 
 app.post("/api/login", async (req, res) => {
   const { username, password } = req.body;
@@ -556,10 +544,9 @@ app.post("/api/login", async (req, res) => {
     });
   }
   req.session.username = user.username;
-  const checkIn = awardDailyCheckIn(users, user.username.toLowerCase());
   if (clearTitheLeftovers(users, user.username.toLowerCase())) saveUsers(users);
   saveUsers(users);
-  res.json({ ok: true, checkIn });
+  res.json({ ok: true });
 });
 
 app.post("/api/logout", (req, res) => {
@@ -639,7 +626,7 @@ app.get("/api/me", (req, res) => {
       touchGuest(req);
       return res.json({
         guest: true, username: req.session.guestName, isAdmin: false, rank: "Guest",
-        points: null, noEconomy: true, checkIn: null,
+        points: null, noEconomy: true,
       });
     }
     return res.status(401).json({ error: "Not logged in." });
@@ -651,8 +638,6 @@ app.get("/api/me", (req, res) => {
   if (isPending(users[key])) {
     return req.session.destroy(() => res.status(401).json({ error: "Not logged in." }));
   }
-  // sessions outlive a day, so check in on the first page view of each day too
-  const checkIn = awardDailyCheckIn(users, key);
   if (clearTitheLeftovers(users, key)) saveUsers(users);
   const rank = rankFor(users[key], key);
   // Hermione sits outside the points economy
@@ -671,7 +656,6 @@ app.get("/api/me", (req, res) => {
     themeColor: users[key].themeColor || "",
     // a hand-made account must set a real password on first sign-in
     mustChangePassword: users[key].mustChangePassword === true,
-    checkIn,
   });
 });
 
