@@ -270,7 +270,6 @@
       <div class="controls">
         <a id="admin-link" class="ctl-btn" href="/admin" hidden>Admin</a>
         <a href="/games" class="ctl-btn">Games</a>
-        <a id="elysium-link" class="ctl-btn" href="/elysium">Elysium</a>
         <a id="profile-link" class="ctl-btn" href="/profile">Profile</a>
         <button id="settings-toggle" class="ctl-btn" type="button" aria-expanded="false">Settings</button>
         <div class="settings" id="settings" hidden>
@@ -460,7 +459,6 @@
           document.querySelector(".dash").classList.add("no-panel", "is-guest");
           setGuestBalance();
           const pl = document.getElementById("profile-link"); if (pl) pl.hidden = true;
-          const el = document.getElementById("elysium-link"); if (el) el.hidden = true;
           const lo = document.getElementById("logout"); if (lo) lo.textContent = "Sign in or apply";
         } else if (isHermione) {
           setFakeBalance();

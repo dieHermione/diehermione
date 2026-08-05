@@ -45,7 +45,7 @@
     .rd.tr { top: 3vh; right: 3vw; text-align: right; }
     .rd.bl { bottom: 3vh; left: 3vw; }
     .rd.br { bottom: 3vh; right: 3vw; text-align: right; }
-    .rd.bl b { color: var(--err); }
+    /* FAILED is white like every other readout — red read as an error state */
 
     /* ---- the pips ---- */
     .pips {
@@ -195,6 +195,9 @@
     // there is time to react to it. Expressed in time, not degrees, because the
     // sweep varies. Larger now, so the zone opens farther ahead on average.
     const MIN_LEAD_MS = 520;
+    // Demanding asks you to read the key, find it and press it, so the needle
+    // gets a little grace: every sweep is 5% longer than it used to be.
+    const NEEDLE_EASE = 1.05;
 
     const dial = document.getElementById("dial");
     const wrap = document.getElementById("dialwrap");
@@ -306,7 +309,7 @@
       const y = Math.round((vh - size) / 2 + (Math.random() - 0.5) * vh * 0.26);
       // both modes use the tight zone and fast needle (the old "demanding" feel)
       const zoneSize = 18 + Math.random() * 12;
-      const sweep = (SWEEP_MIN + Math.random() * (SWEEP_MAX - SWEEP_MIN)) * 0.85;
+      const sweep = (SWEEP_MIN + Math.random() * (SWEEP_MAX - SWEEP_MIN)) * 0.85 * NEEDLE_EASE;
       // never on or just in front of the needle: leave at least MIN_LEAD_MS of
       // travel before the zone opens, and keep the whole arc on the dial
       const minFrom = (MIN_LEAD_MS / sweep) * 360;

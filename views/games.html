@@ -43,6 +43,15 @@
     .hdr > span:first-child { padding-left: 2.8rem; }   /* room for the back chevron */
     .hdr b { color: var(--bright); font-weight: 400; }
 
+    /* the wall is split into tabs; the strip below shows one tab at a time */
+    .tabs { display: flex; gap: .4rem; }
+    .tab { background: transparent; border: 1px solid var(--dim2); color: var(--dim);
+      font-family: inherit; font-size: 10px; letter-spacing: .3em; text-transform: uppercase;
+      padding: .3rem 1.1rem; cursor: pointer; border-radius: 3px; }
+    .tab:hover { color: var(--accent); border-color: var(--accent); }
+    .tab.on { color: var(--bright); border-color: var(--accent);
+      background: color-mix(in srgb, var(--accent) 14%, transparent); }
+
     /* The wall is always TWO rows deep and grows sideways: new games add columns,
        and the strip scrolls horizontally rather than wrapping onto a third row
        that gets cut off. `grid-auto-flow: column` fills down-then-across, which is
@@ -190,8 +199,6 @@
     .p:hover .tip, .p:focus-visible .tip { opacity: 1; visibility: visible; }
     .p.locked .tip { display: none; }   /* the lock note speaks for locked cards */
 
-    .foot { flex-shrink: 0; font-size: 10px; letter-spacing: .3em; color: var(--dim2);
-      margin-top: .8rem; text-align: center; }
 
     /* on a narrow screen the wall becomes a list */
     @media (max-width: 900px) {
@@ -210,11 +217,13 @@
   <div class="stage">
     <div class="hdr">
       <span>angelOS v0.2</span>
-      <span>SELECT</span>
+      <div class="tabs" id="tabs">
+        <button class="tab on" type="button" data-tab="main">games</button>
+        <button class="tab" type="button" data-tab="extra">extra</button>
+      </div>
       <span><b id="count">0</b> GAMES</span>
     </div>
     <div class="board" id="board"></div>
-    <div class="foot">ARROWS TO MOVE &nbsp;·&nbsp; ENTER TO OPEN</div>
   </div>
 <div class="scan"></div>
 
@@ -228,18 +237,20 @@
         tip: "Free-swimming serpent. Chase the fleeing heart and grow; die on your own tail." },
       { n: "penance",     href: "/writing",               art: "pen",   a: "#c11208", wb: "#0e0607",
         tip: "A typing drill of correction. Type each line exactly — falter and it corrupts." },
-      { n: "devotion",    href: "/writing?mode=devotion", art: "dev",   a: "#00acdb", wb: "#050a10", account: true,
+      { n: "devotion",    href: "/writing?mode=devotion", art: "dev",   a: "#00acdb", wb: "#050a10", account: true, tab: "extra",
         tip: "A verse reader. Recite Her lines in turn. An account is required." },
       { n: "multitap",    href: "/t9",                    art: "t9",    a: "#0bdb00", wb: "#050d05",
         tip: "A typing drill on an old-phone keypad. No hints — remember the taps." },
-      { n: "deathroll",   href: "/deathroll",             art: "death", a: "#c11208", wb: "#0e0607", multi: true,
+      { n: "deathroll",   href: "/deathroll",             art: "death", a: "#c11208", wb: "#0e0607", multi: true, tab: "extra",
         tip: "Roll against another, each cap the next roll. Hit one and you lose. Account required." },
-      { n: "dummy parse", href: "/dummyparse",            art: "parse", a: "#ff5a4a", wb: "#0a0608",
+      { n: "dummy parse", href: "/dummyparse",            art: "parse", a: "#ff5a4a", wb: "#0a0608", tab: "extra",
         tip: "A priest damage recount. Parse the dummy and chase a higher DPS." },
       { n: "skill check", href: "/skillcheck",            art: "skill", a: "#c11208", wb: "radial-gradient(120% 120% at 50% 46%, #200a0c, #050202 74%)",
         tip: "Stop the sweeping dial inside the good zone. Pure nerve." },
       { n: "ot12",        href: "/ot12",                  art: "ot12",  a: "#ffa6c5", wb: "#0d0508",
         tip: "Match the photo to the member. Twelve girls, four names, one right answer." },
+      { n: "elysium",     href: "/elysium",               art: "elysium", a: "#3f9f6a", wb: "#04100a", account: true, tab: "extra",
+        tip: "A tree you tend. It remembers how long you have kept it." },
       { n: "summary",     href: "/summary",               art: "sum",   a: "#00acdb", wb: "#050a10",
         tip: "Read a real Wikipedia article, then retell it in your own words." },
     ];
@@ -267,6 +278,7 @@
         <div class="timer"><div class="k">time left</div><div class="t">0:48</div></div></div>`,
       // ot12 is bones for now — a placeholder until its card is designed
       ot12: () => `<div class="c-ph">placeholder card</div>`,
+      elysium: () => `<div class="c-ph">placeholder card</div>`,
       t9: () => `<div class="c-mt"><div class="pad">${
         [["1",".,-"],["2","abc"],["3","def"],["4","ghi"],["5","jkl"],["6","mno"],
          ["7","pqrs"],["8","tuv"],["9","wxyz"],["*","⌫"],["0","␣"],["#","↵"]]
@@ -331,12 +343,16 @@
     // Placement is pure CSS now (a two-row, column-flow grid in .track), so
     // there is no manual layout pass to run or to redo on resize.
 
+    // Only the active tab's games are on the wall; `shown` is what every index
+    // (selection, arrow keys, open) refers to, not the full GAMES list.
+    let curTab = "main", shown = [];
     function build() {
       board.replaceChildren();
       const track = document.createElement("div");
       track.className = "track";
       board.append(track);
-      cards = GAMES.map((g, i) => {
+      shown = GAMES.filter((g) => (g.tab || "main") === curTab);
+      cards = shown.map((g, i) => {
         const a = document.createElement("a");
         a.className = "p";
         a.href = g.href;
@@ -359,7 +375,8 @@
         track.append(a);
         return a;
       });
-      document.getElementById("count").textContent = GAMES.length;
+      document.getElementById("count").textContent = shown.length;
+      board.scrollLeft = 0;
       setSel(0);
       hydrate();
     }
@@ -401,7 +418,8 @@
     }
 
     function setSel(i) {
-      sel = (i + GAMES.length) % GAMES.length;
+      if (!shown.length) return;
+      sel = (i + shown.length) % shown.length;
       cards.forEach((el, n) => el.classList.toggle("sel", n === sel));
     }
 
@@ -420,8 +438,9 @@
     }
 
     function open() {
-      const g = GAMES[sel];
-      if (guest && g.multi) return;
+      const g = shown[sel];
+      if (!g) return;
+      if (guest && (g.multi || g.account)) return;
       window.location.href = g.href;
     }
 
@@ -435,6 +454,13 @@
       else if (e.key === "Enter") { e.preventDefault(); open(); }
     });
 
+
+    document.getElementById("tabs").addEventListener("click", (e) => {
+      const b = e.target.closest(".tab"); if (!b || b.dataset.tab === curTab) return;
+      [...document.querySelectorAll("#tabs .tab")].forEach((t) => t.classList.toggle("on", t === b));
+      curTab = b.dataset.tab;
+      build();
+    });
 
     window.siteMe()
       .then((d) => { if (window.Theme) window.Theme.fromAccount(d.themeColor || "default", d.guest); guest = Boolean(d.guest); build(); })
