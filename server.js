@@ -2715,10 +2715,65 @@ app.post("/api/multitap", (req, res) => {
    The run is server-owned like every other game: the server picks the sequence
    and the answer options, and the correct name is NEVER sent to the client until
    after it has answered — otherwise the answer would be sitting in the DOM. */
-const OT12_MEMBERS = [
-  "HeeJin", "HyunJin", "HaSeul", "YeoJin", "ViVi", "Kim Lip",
-  "JinSoul", "Choerry", "Yves", "Chuu", "Go Won", "Olivia Hye",
+/* The member table. Stored now so later question types can be generated from it
+   ("who is between 160 and 165 cm", "whose animal is the owl", …) rather than
+   hand-written one at a time. Fields with no confirmed value are left
+   `undefined` on purpose — a generator must skip a member for a question whose
+   field it does not have, rather than inventing one or treating "" as an answer.
+   `OT12_MEMBERS` stays the canonical name order (reveal order). */
+const OT12_MEMBER_DATA = [
+  { name: "HeeJin", fullName: "Jeon Heejin", hangul: "희진", location: "Earth",
+    superpower: "Vision", revealMonth: "October", animal: "Rabbit",
+    color: "Bright pink", plant: "False shamrock", birthdate: "2000-10-19",
+    heightCm: 161, eyeColor: "Dark Brown", shape: "Square" },
+  { name: "HyunJin", fullName: "Kim Hyun-jin", hangul: "현진", location: "Earth",
+    superpower: undefined, revealMonth: "November", animal: "Cat",
+    color: "Yellow", plant: "Forget-me-not", birthdate: undefined,
+    heightCm: undefined, eyeColor: "Black", shape: undefined },
+  { name: "HaSeul", fullName: "Jo Ha-seul", hangul: "하슬", location: "Earth",
+    superpower: undefined, revealMonth: "December", animal: "White Bird",
+    color: "Green", plant: "Bird of Paradise", birthdate: undefined,
+    heightCm: undefined, eyeColor: "Green", shape: undefined },
+  { name: "YeoJin", fullName: "Im Yeo-jin", hangul: "여진", location: "Earth",
+    superpower: undefined, revealMonth: "January", animal: "Frog",
+    color: "Orange", plant: "Daisy", birthdate: undefined,
+    heightCm: undefined, eyeColor: undefined, shape: undefined },
+  { name: "ViVi", fullName: "Wong Ka Hei", hangul: "비비", location: "Earth",
+    superpower: undefined, revealMonth: "April", animal: "Deer",
+    color: "Pastel Rose", plant: "Gerbera", birthdate: undefined,
+    heightCm: undefined, eyeColor: "Pink", shape: undefined },
+  { name: "Kim Lip", fullName: "Kim Jung-eun", hangul: "김립", location: "Earth",
+    superpower: undefined, revealMonth: "May", animal: "Owl",
+    color: "Red", plant: "Rose", birthdate: undefined,
+    heightCm: undefined, eyeColor: "Red", shape: "Circle" },
+  { name: "JinSoul", fullName: "Jeong Jin-sol", hangul: "진솔", location: "Earth",
+    superpower: undefined, revealMonth: "June", animal: "Blue Betta",
+    color: "Blue", plant: "Blue Erica", birthdate: undefined,
+    heightCm: undefined, eyeColor: "Blue", shape: "Circle" },
+  { name: "Choerry", fullName: "Choi Ye-rim", hangul: "최예림", location: "Earth",
+    superpower: undefined, revealMonth: "July", animal: "Fruit Bat",
+    color: "Purple", plant: "Cosmos", birthdate: undefined,
+    heightCm: undefined, eyeColor: "Purple", shape: "Circle" },
+  // No data has been supplied for these four yet — names only, deliberately not
+  // filled in from memory, because a wrong value here becomes a wrong quiz answer.
+  { name: "Yves", fullName: undefined, hangul: undefined, location: undefined,
+    superpower: undefined, revealMonth: undefined, animal: undefined,
+    color: undefined, plant: undefined, birthdate: undefined,
+    heightCm: undefined, eyeColor: undefined, shape: undefined },
+  { name: "Chuu", fullName: undefined, hangul: undefined, location: undefined,
+    superpower: undefined, revealMonth: undefined, animal: undefined,
+    color: undefined, plant: undefined, birthdate: undefined,
+    heightCm: undefined, eyeColor: undefined, shape: undefined },
+  { name: "Go Won", fullName: undefined, hangul: undefined, location: undefined,
+    superpower: undefined, revealMonth: undefined, animal: undefined,
+    color: undefined, plant: undefined, birthdate: undefined,
+    heightCm: undefined, eyeColor: undefined, shape: undefined },
+  { name: "Olivia Hye", fullName: undefined, hangul: undefined, location: undefined,
+    superpower: undefined, revealMonth: undefined, animal: undefined,
+    color: undefined, plant: undefined, birthdate: undefined,
+    heightCm: undefined, eyeColor: undefined, shape: undefined },
 ];
+const OT12_MEMBERS = OT12_MEMBER_DATA.map((m) => m.name);
 const OT12_OPTIONS = 4;          // one right answer + three decoys
 const OT12_MAX_ROUNDS = 100;
 

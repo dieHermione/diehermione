@@ -130,7 +130,14 @@ the dashboard no longer lists them individually.
   *Site content → OT12 photos* (shrunk to 512px client-side, stored in
   `ot12.json`). The member list is fixed in `OT12_MEMBERS`. The correct name is
   never sent to the browser until after it answers, so it cannot be read out of
-  the DOM.
+  the DOM. **`OT12_MEMBER_DATA`** holds a per-member table (full name, hangul,
+  location, superpower, reveal month, animal, colour, plant, birthdate, height,
+  eye colour, shape) so later trivia can be *generated* from it — "who is between
+  160 and 165 cm", "whose animal is the owl" — rather than hand-written. Missing
+  values are `undefined` on purpose: a generator must **skip** a member for a
+  question whose field it lacks, never invent one or treat `""` as an answer.
+  Coverage is partial (superpower/birthdate/height 1 of 12; Yves, Chuu, Go Won and
+  Olivia Hye have names only), so any generator needs that skip logic from day one.
 - **Summary** a real Wikipedia article and a word limit. Topic pools: angels,
   feminism, Greek mythology, pre-18th-century history, **critical biblical
   scholarship** (`SUMMARY_TOPICS` / `KIND_LABEL` in `server.js`).
