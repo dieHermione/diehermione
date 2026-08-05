@@ -183,11 +183,14 @@ the admin panel **from the dashboard** (it lives on `/admin` now); the boot
 
 ---
 
-## Writing runs are server-owned (in progress)
+## Runs are server-owned
 
-The typing games used to be fully client-refereed: the browser picked the lines,
-counted its own progress, and posted a finished total the server took on trust.
-**Penance and Devotion no longer work that way.** The server owns the run:
+The games used to be fully client-refereed: the browser picked the lines, counted
+its own progress, and posted a finished total the server took on trust. **Penance,
+Devotion and Multitap no longer work that way** — all three run through the *same*
+endpoints, with `mode` selecting the line source (`penance` / `devotion` use named
+presets, `multitap` uses its flat pool; penance and multitap also accept the
+player's own lines). The server owns the run:
 
 | Endpoint | What it does |
 |---|---|
@@ -197,12 +200,19 @@ counted its own progress, and posted a finished total the server took on trust.
 | `POST /api/writing/complete` | Refuses unless the server's own count says the run is finished. Takes **nothing** from the body: category, preset, difficulty, passages, mistakes, accuracy, elapsed and letters are all derived from the run. One-shot — the run is deleted, so it cannot be logged twice |
 
 The run lives in `req.session.writing`, which is file-backed now, so it survives a
-restart; one run at a time per login, and nothing extra in `users.json`.
+restart; one run at a time per login, and nothing extra in `users.json`. Multitap
+logs under `category: "multitap"` alongside the other two.
 
-**Still to do:** Multitap reports nothing to the server yet, so its progress is
-not validated (and `pray skip_stage` there is still client-side). Snake is also
-still client-refereed, bounded by its daily cap and token bucket rather than
-validated.
+### Snake is bounded, not simulated
+Snake cannot be validated the same way: the server would have to simulate a 60fps
+action game to know a pickup was real, and the latency would change how the game
+feels. So the server owns the **run** instead of the pickups —
+`POST /api/snake/session` records the time limit and start, `/api/snake/food`
+refuses unless a run is live and its clock has not expired (2s grace), and
+`POST /api/snake/complete` returns the server's own count, which is what the
+results screen shows. The total is now bounded by the run's length rather than
+only by the token bucket. **Don't mistake this for full validation** — a client
+can still claim pickups it did not earn, just not unboundedly.
 
 ## Hiding versus access control
 

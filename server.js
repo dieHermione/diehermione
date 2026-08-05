@@ -1487,10 +1487,51 @@ app.get("/t9", requirePlayer, (req, res) => {
   res.sendFile(path.join(__dirname, "views", "t9.html"));
 });
 
+/* ---- server-owned snake runs ---------------------------------------------
+   Snake cannot be validated the way the typing games are — the server would have
+   to simulate a 60fps action game to know a pickup was real, and the latency
+   would change how the game feels. What the server CAN own is the run itself:
+   how long it lasts and how many pickups it is allowed to contain. A pickup now
+   needs a live run and is refused once the run's own clock has expired, so the
+   total is bounded by the time limit instead of only by the rate limiter. */
+const SNAKE_MAX_MINUTES = 999;
+const SNAKE_GRACE_MS = 2000;      // allow for the last frame + network lag
+
+app.post("/api/snake/session", (req, res) => {
+  const who = playerId(req);
+  if (!who) return res.status(401).json({ error: "Not logged in." });
+  const minutes = Math.max(1, Math.min(SNAKE_MAX_MINUTES, parseInt((req.body || {}).minutes, 10) || 0));
+  if (!minutes) return res.status(400).json({ error: "How long?" });
+  req.session.snakeRun = {
+    id: Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 8),
+    limitMs: minutes * 60 * 1000,
+    startedAt: Date.now(),
+    eaten: 0,
+  };
+  res.json({ id: req.session.snakeRun.id, minutes });
+});
+
+// Ends the run and reports the SERVER's count, which is what the results screen
+// shows — so the score on screen is the one the server actually recorded.
+app.post("/api/snake/complete", (req, res) => {
+  const run = req.session.snakeRun;
+  if (!run) return res.status(409).json({ error: "No run in progress." });
+  const eaten = run.eaten;
+  const elapsedMs = Math.max(0, Date.now() - run.startedAt);
+  delete req.session.snakeRun;
+  res.json({ ok: true, eaten, elapsedMs });
+});
+
 // $1 per snake food. The client reports each pickup, so a light floor on how
 // fast awards can arrive keeps a stuck key or a rapid script from printing money.
 app.post("/api/snake/food", (req, res) => {
   if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  // a pickup only counts inside a live run, and never past its time limit
+  const run = req.session.snakeRun;
+  if (!run) return res.status(409).json({ error: "No run in progress." });
+  if (Date.now() - run.startedAt > run.limitMs + SNAKE_GRACE_MS) {
+    return res.status(409).json({ error: "Run is over." });
+  }
   const users = loadUsers();
   const key = req.session.username.toLowerCase();
   const user = users[key];
@@ -1506,6 +1547,8 @@ app.post("/api/snake/food", (req, res) => {
   }
   req.session.snakeBucket = { tokens: refilled - 1, at: now };
 
+  run.eaten += 1;                               // this run (the server's own count)
+  req.session.snakeRun = run;
   user.foodEaten = (user.foodEaten || 0) + 1;   // lifetime
 
   // Every pickup pays. The completion bonus that went with the old daily
@@ -2043,6 +2086,9 @@ const WRITING_LOG_CAP = 25;
    The run lives in req.session (file-backed, so it survives a restart), which
    also means one run at a time per login and no bloat in users.json. */
 const WRITING_MAX_REPS = 1000;
+// Multitap runs through the same machinery: same session, same per-line
+// validation, same one-shot completion. Only the line source differs.
+const WRITING_MODES = ["penance", "devotion", "multitap"];
 
 function buildWritingSequence(lines, reps) {
   const first = lines[0];
@@ -2063,7 +2109,7 @@ app.post("/api/writing/session", (req, res) => {
   const who = playerId(req);
   if (!who) return res.status(401).json({ error: "Not logged in." });
   const body = req.body || {};
-  const mode = body.mode === "devotion" ? "devotion" : "penance";
+  const mode = WRITING_MODES.includes(body.mode) ? body.mode : "penance";
   if (mode === "devotion" && !req.session.username) {
     return res.status(403).json({ error: "Devotion needs an account." });
   }
@@ -2071,10 +2117,23 @@ app.post("/api/writing/session", (req, res) => {
   if (!reps) return res.status(400).json({ error: "How many repetitions?" });
 
   // Where the lines come from. A preset is resolved from the server's own pool,
-  // so the client cannot invent one. Penance also allows the player's own lines;
-  // that text is theirs, but the server still owns the sequence and the count.
+  // so the client cannot invent one. Penance and Multitap also allow the player's
+  // own lines; that text is theirs, but the server still owns the sequence and
+  // the count.
   let lines = [], presetName = "";
-  if (body.presetId) {
+  if (mode === "multitap") {
+    // multitap's pool is a flat list, not named presets
+    if (Array.isArray(body.ownLines) && body.ownLines.length) {
+      lines = body.ownLines
+        .map((l) => String(l).toLowerCase().replace(/[^a-z0-9 .,?!'()-]/g, "").trim().slice(0, 600))
+        .filter(Boolean).slice(0, 100);
+      presetName = "custom";
+      if (!lines.length) return res.status(400).json({ error: "Add at least one line." });
+    } else {
+      lines = loadMultitap().lines.slice();
+      presetName = "preset";
+    }
+  } else if (body.presetId) {
     const pool = mode === "devotion" ? loadDevotion() : loadPenance();
     const preset = (pool.presets || []).find((p) => p.id === String(body.presetId));
     if (!preset || !preset.lines || !preset.lines.length) {

@@ -135,6 +135,7 @@
   <div class="center" id="done" hidden>
     <h1>done</h1>
     <div class="stat"><b id="d-err">0</b> mistakes &middot; <b id="d-time">0:00</b></div>
+    <div class="stat" id="d-log" style="font-size:.72rem"></div>
     <button class="btn" id="again" type="button">again</button>
   </div>
 
@@ -182,12 +183,6 @@
     const keyEls = {};
     padEl.querySelectorAll(".key").forEach((el) => { keyEls[el.dataset.k] = el; });
 
-    function shuffled(pool, n) {
-      const a = pool.slice();
-      for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
-      return a.slice(0, Math.min(n, a.length));
-    }
-
     // the letter the pending tap currently shows (before it commits)
     function pendingChar() {
       if (!pending) return "";
@@ -234,10 +229,13 @@
       pending = null;
       return commitChar(ch);
     }
+    let lineMistakesAt = 0;        // `mistakes` when the current line began
     function lineComplete() {
       entryEl.classList.remove("wrong");
       render();
-      setTimeout(nextLine, 240);
+      // report to the server BEFORE moving on, so its count is up to date by the
+      // time the last line triggers /complete
+      reportLine(idx, target, mistakes - lineMistakesAt).then(() => setTimeout(nextLine, 240));
     }
     function resetPhrase() {
       typed = ""; pending = null;                    // one wrong letter = start over
@@ -284,15 +282,21 @@
       idx++;
       if (idx >= lines.length) { finish(); return; }
       target = lines[idx]; typed = ""; pending = null;
+      lineMistakesAt = mistakes;
       entryEl.classList.remove("wrong");
       $("ln").textContent = idx + 1;
       render();
     }
 
     // Admin console hook (`pray skip_stage`): drop the current line but still
-    // count it as progress, exactly as if it had been typed out.
-    window.__skipStage = function () {
+    // count it as progress. The SERVER counts it (and re-checks isAdmin), so a
+    // skipped line is real progress rather than a client-side fiction.
+    window.__skipStage = async function () {
       if (!playing) return false;
+      try {
+        const r = await fetch("/api/writing/skip", { method: "POST" });
+        if (!r.ok) { lineFailed = true; return false; }
+      } catch (e) { lineFailed = true; return false; }
       nextLine();
       return true;
     };
@@ -302,20 +306,7 @@
     let source = "preset";        // "preset" (the editable pool) | "custom" (own lines)
     let customLines = [];
 
-    // Build `n` lines from a pool: shuffle, and reshuffle each pass so a short
-    // pool repeats without an immediate repeat at the seam.
-    function buildSequence(pool, n) {
-      const out = [];
-      let bag = [];
-      while (out.length < n) {
-        if (!bag.length) {
-          bag = shuffled(pool, pool.length);
-          if (out.length && bag.length > 1 && bag[0] === out[out.length - 1]) bag.push(bag.shift());
-        }
-        out.push(bag.shift());
-      }
-      return out;
-    }
+    // (the sequence is built server-side now — see /api/writing/session)
 
     function activePool() {
       return source === "custom" ? customLines : POOL;
@@ -331,10 +322,32 @@
       refreshBegin();
     }
 
-    function start() {
+    // The SERVER owns the run: it builds the line sequence and counts the lines.
+    // The client renders what it is given and reports each finished line for
+    // validation. Same endpoints the writing games use (mode "multitap").
+    let runId = null, lineFailed = false;
+
+    async function start() {
       const pool = activePool();
       if (!pool.length) return;
-      lines = buildSequence(pool, reps);
+      const beginBtn = $("begin");
+      beginBtn.disabled = true;
+      let data;
+      try {
+        const res = await fetch("/api/writing/session", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ mode: "multitap", reps,
+            ownLines: source === "custom" ? customLines : undefined }),
+        });
+        data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || "Could not start.");
+      } catch (e) {
+        beginBtn.disabled = false;
+        return;
+      }
+      beginBtn.disabled = false;
+      runId = data.id; lineFailed = false;
+      lines = data.lines;                  // the server's sequence, not ours
       idx = 0; target = lines[0]; typed = ""; pending = null;
       entryEl.classList.remove("wrong");
       mistakes = 0; startedAt = Date.now(); playing = true;
@@ -343,12 +356,33 @@
       render();
     }
 
+    // Report one finished line; the server checks it against the line it expects.
+    async function reportLine(index, text, errs) {
+      if (!runId) return;
+      try {
+        const res = await fetch("/api/writing/line", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: runId, index, text, mistakes: errs }),
+        });
+        if (!res.ok) lineFailed = true;
+      } catch (e) { lineFailed = true; }
+    }
+
     function finish() {
       playing = false;
       const secs = Math.round((Date.now() - startedAt) / 1000);
       $("d-err").textContent = mistakes;
       $("d-time").textContent = Math.floor(secs / 60) + ":" + String(secs % 60).padStart(2, "0");
       $("done").hidden = false;
+      // Log the run. The server derives every number from the run it owns and
+      // refuses if its own count says the run is unfinished.
+      fetch("/api/writing/complete", { method: "POST" })
+        .then((r) => {
+          $("d-log").textContent = r.ok
+            ? "> logged to her record"
+            : (lineFailed ? "> not logged: the run could not be verified" : "> not logged");
+        })
+        .catch(() => { $("d-log").textContent = "> not logged"; });
     }
 
     // ---- input: MOUSE ONLY. The physical keyboard is deliberately ignored —

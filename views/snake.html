@@ -406,10 +406,25 @@
       document.getElementById("tmr").hidden = true;
       document.getElementById("results").hidden = false;
       draw();
+      // Close the run and show the SERVER's count, so the score on the results
+      // screen is the one the server actually recorded rather than ours.
+      fetch("/api/snake/complete", { method: "POST" })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => { if (d && typeof d.eaten === "number") document.getElementById("r-food").textContent = d.eaten; })
+        .catch(() => {});
     }
 
-    function start() {
+    // The server owns the run: it records the time limit and counts the pickups,
+    // and refuses any that arrive after the run's own clock has expired.
+    async function start() {
       const mins = Math.max(1, Math.min(999, parseInt(document.getElementById("minutes").value, 10) || 2));
+      try {
+        const res = await fetch("/api/snake/session", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ minutes: mins }),
+        });
+        if (!res.ok) return;
+      } catch (e) { return; }
       timeLimit = mins * 60; timeLeft = timeLimit;
       document.getElementById("settings").hidden = true;
       document.getElementById("results").hidden = true;
