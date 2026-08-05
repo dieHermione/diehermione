@@ -432,13 +432,36 @@
   }
 
   /* ---------- game ---------- */
-  function startGame() {
-    state.lines = DEVOTION
-      ? buildDevotionSequence((PRESETS[devPreset] || {}).lines || [], state.reps)
-      : pnPreset
-        ? buildDevotionSequence((PRESETS[pnPreset] || {}).lines || [], state.reps)
-        : parseLines();
-    if (!state.lines.length) return;
+  // The SERVER now owns the run: it builds the line sequence from its own pools
+  // and counts the lines. The client just renders what it is given and reports
+  // each finished line for validation. `runId` ties the two together.
+  let runId = null, lineFailed = false;
+
+  async function startGame() {
+    const presetId = DEVOTION ? devPreset : pnPreset;
+    const own = (!DEVOTION && !presetId) ? parseLines() : null;
+    if (!presetId && (!own || !own.length)) return;
+    const begin = $("begin");
+    begin.disabled = true;
+    let data;
+    try {
+      const res = await fetch("/api/writing/session", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode: MODE, reps: state.reps, difficulty: state.diff,
+          presetId: presetId || undefined, ownLines: own || undefined }),
+      });
+      data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Could not start.");
+    } catch (e) {
+      begin.disabled = false;
+      $("warn") && ($("warn").textContent = "! " + (e.message || "Could not start."));
+      return;
+    }
+    begin.disabled = false;
+    runId = data.id;
+    lineFailed = false;
+    state.lines = data.lines;              // the server's sequence, not ours
+    state.reps = data.reps;
     state.category = MODE;
     state.idx = 0; state.typed = 0; state.mistakes = 0; state.correct = 0; state.done = false;
     state.startedAt = Date.now();
@@ -447,9 +470,24 @@
     $("p-total").textContent = String(state.reps).padStart(2, "0");
     show("play"); startPassage();
   }
+
+  // Report one finished line. The server checks it against the line it expects
+  // and increments its own count; a rejection means the run will not log.
+  async function reportLine(index, text, mistakes) {
+    if (!runId) return;
+    try {
+      const res = await fetch("/api/writing/line", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: runId, index, text, mistakes }),
+      });
+      if (!res.ok) lineFailed = true;
+    } catch (e) { lineFailed = true; }
+  }
   function current() { return state.lines[state.idx % state.lines.length]; }
+  let lineMistakesAt = 0;      // state.mistakes when the current line began
   function startPassage() {
     state.typed = 0;
+    lineMistakesAt = state.mistakes;
     $("p-rep").textContent = String(state.idx + 1).padStart(2, "0");
     $("p-err").textContent = String(state.mistakes).padStart(2, "0");
     applyCorruption(); renderTarget();
@@ -505,17 +543,28 @@
     }
   });
 
-  function finishPassage() {
+  function advancePassage() {
     state.idx++;
     if (state.idx >= state.reps) { finishSession(); return; }
     startPassage();
   }
+  // Report the line to the server BEFORE moving on, so the server's count is
+  // always up to date by the time the last line triggers /complete.
+  async function finishPassage() {
+    await reportLine(state.idx, current(), state.mistakes - lineMistakesAt);
+    advancePassage();
+  }
 
   // Admin console hook (`pray skip_stage`): drop the current line but still count
-  // it as progress, exactly as if it had been typed out.
-  window.__skipStage = function () {
+  // it as progress. The SERVER does the counting (and re-checks isAdmin), so a
+  // skipped line is real progress rather than a client-side fiction.
+  window.__skipStage = async function () {
     if (!$("play").classList.contains("on") || state.done) return false;
-    finishPassage();
+    try {
+      const r = await fetch("/api/writing/skip", { method: "POST" });
+      if (!r.ok) { lineFailed = true; return false; }
+    } catch (e) { lineFailed = true; return false; }
+    advancePassage();
     return true;
   };
 
@@ -545,20 +594,16 @@
     });
     document.body.style.setProperty("--c", mix(PURE.c, FOUL.c, t));
     show("done");
-    // log the finished series so it appears under Hermione's "Lines Completed".
-    // Send everything the results screen shows (preset, difficulty, accuracy) so
-    // the admin panel carries the full picture, not a subset.
-    const letters = state.lines.reduce((a, l) => a + l.length, 0) * Math.ceil(state.reps / state.lines.length);
-    const presetName = (function () {
-      const id = DEVOTION ? devPreset : pnPreset;
-      if (!id) return DEVOTION ? "devotion" : "custom";
-      return (PRESETS[id] || {}).name || id;
-    })();
-    fetch("/api/writing/complete", {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ category: state.category, preset: presetName, difficulty: state.diff,
-        passages: state.reps, mistakes: state.mistakes, accuracy: acc, elapsedMs: elapsed, letters }),
-    }).then((r) => { $("r-log").textContent = r.ok ? "> logged to her record" : ""; }).catch(() => {});
+    // Log the finished series. The server derives every number from the run it
+    // owns (lines, count, mistakes, elapsed), so there is nothing to send and
+    // nothing to forge — it refuses if its own count says the run is unfinished.
+    fetch("/api/writing/complete", { method: "POST" })
+      .then((r) => {
+        $("r-log").textContent = r.ok
+          ? "> logged to her record"
+          : (lineFailed ? "> not logged: the run could not be verified" : "> not logged");
+      })
+      .catch(() => { $("r-log").textContent = "> not logged"; });
   }
 
   $("again").addEventListener("click", () => { show("select"); document.body.style.setProperty("--c", PURE.c); document.body.style.setProperty("--dim", PURE.dim); $("scan").classList.remove("heavy"); refreshBegin(); });

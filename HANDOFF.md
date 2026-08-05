@@ -183,6 +183,27 @@ the admin panel **from the dashboard** (it lives on `/admin` now); the boot
 
 ---
 
+## Writing runs are server-owned (in progress)
+
+The typing games used to be fully client-refereed: the browser picked the lines,
+counted its own progress, and posted a finished total the server took on trust.
+**Penance and Devotion no longer work that way.** The server owns the run:
+
+| Endpoint | What it does |
+|---|---|
+| `POST /api/writing/session` | Builds the line sequence from the server's OWN pools, stores it on the login session, returns it |
+| `POST /api/writing/line` | One finished line; the text must match the line the server expects, in order. The server increments its own count |
+| `POST /api/writing/skip` | Admin-only (`pray skip_stage`): advance without typing. **This is the real boundary** — the console's admin check is only cosmetic |
+| `POST /api/writing/complete` | Refuses unless the server's own count says the run is finished. Takes **nothing** from the body: category, preset, difficulty, passages, mistakes, accuracy, elapsed and letters are all derived from the run. One-shot — the run is deleted, so it cannot be logged twice |
+
+The run lives in `req.session.writing`, which is file-backed now, so it survives a
+restart; one run at a time per login, and nothing extra in `users.json`.
+
+**Still to do:** Multitap reports nothing to the server yet, so its progress is
+not validated (and `pray skip_stage` there is still client-side). Snake is also
+still client-refereed, bounded by its daily cap and token bucket rather than
+validated.
+
 ## Hiding versus access control
 
 Chess is the worked example and the pattern to copy. The two things only Hermione

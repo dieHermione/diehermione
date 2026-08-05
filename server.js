@@ -2026,6 +2026,119 @@ app.put("/api/writing/:id", (req, res) => {
 // client-refereed already (see the trust notes), so this is the same honest
 // boundary: the numbers are taken on trust and kept for Hermione to look at.
 const WRITING_LOG_CAP = 25;
+/* ---- server-owned writing runs -------------------------------------------
+   The typing games used to be fully client-refereed: the browser picked the
+   lines, counted its own progress and posted a finished total, which the server
+   took on trust. Progress is now owned here instead.
+
+     POST /api/writing/session  -> the server builds the line sequence from its
+                                   OWN pools and stores it on the login session
+     POST /api/writing/line     -> one completed line, validated against the
+                                   expected text; the server increments the count
+     POST /api/writing/skip     -> admin-only (`pray skip_stage`): advance without
+                                   submitting text
+     POST /api/writing/complete -> now refuses unless the server's own count says
+                                   the run is actually finished
+
+   The run lives in req.session (file-backed, so it survives a restart), which
+   also means one run at a time per login and no bloat in users.json. */
+const WRITING_MAX_REPS = 1000;
+
+function buildWritingSequence(lines, reps) {
+  const first = lines[0];
+  const pool = lines.slice(1);
+  const seq = [first];
+  let last = first;
+  while (seq.length < reps) {
+    if (!pool.length) { seq.push(first); last = first; continue; }
+    const sh = pool.slice();
+    for (let i = sh.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [sh[i], sh[j]] = [sh[j], sh[i]]; }
+    if (sh.length > 1 && sh[0] === last) { [sh[0], sh[1]] = [sh[1], sh[0]]; }
+    for (const l of sh) { if (seq.length >= reps) break; seq.push(l); last = l; }
+  }
+  return seq.slice(0, reps);
+}
+
+app.post("/api/writing/session", (req, res) => {
+  const who = playerId(req);
+  if (!who) return res.status(401).json({ error: "Not logged in." });
+  const body = req.body || {};
+  const mode = body.mode === "devotion" ? "devotion" : "penance";
+  if (mode === "devotion" && !req.session.username) {
+    return res.status(403).json({ error: "Devotion needs an account." });
+  }
+  const reps = Math.max(1, Math.min(WRITING_MAX_REPS, parseInt(body.reps, 10) || 0));
+  if (!reps) return res.status(400).json({ error: "How many repetitions?" });
+
+  // Where the lines come from. A preset is resolved from the server's own pool,
+  // so the client cannot invent one. Penance also allows the player's own lines;
+  // that text is theirs, but the server still owns the sequence and the count.
+  let lines = [], presetName = "";
+  if (body.presetId) {
+    const pool = mode === "devotion" ? loadDevotion() : loadPenance();
+    const preset = (pool.presets || []).find((p) => p.id === String(body.presetId));
+    if (!preset || !preset.lines || !preset.lines.length) {
+      return res.status(400).json({ error: "No such preset." });
+    }
+    lines = preset.lines.slice();
+    presetName = preset.name || preset.id;
+  } else if (mode === "penance" && Array.isArray(body.ownLines)) {
+    lines = body.ownLines.map((l) => String(l).trim().slice(0, 240)).filter(Boolean).slice(0, 100);
+    presetName = "custom";
+    if (!lines.length) return res.status(400).json({ error: "Add at least one line." });
+  } else {
+    return res.status(400).json({ error: "Nothing to type." });
+  }
+
+  const run = {
+    id: Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 8),
+    mode, presetName,
+    difficulty: String(body.difficulty || "").slice(0, 40),
+    reps,
+    lines: buildWritingSequence(lines, reps),
+    idx: 0,           // lines the SERVER has seen completed
+    mistakes: 0,
+    skipped: 0,
+    startedAt: Date.now(),
+  };
+  req.session.writing = run;
+  res.json({ id: run.id, reps: run.reps, lines: run.lines, preset: run.presetName });
+});
+
+// One finished line. The submitted text must match the line the server expects.
+app.post("/api/writing/line", (req, res) => {
+  const who = playerId(req);
+  if (!who) return res.status(401).json({ error: "Not logged in." });
+  const run = req.session.writing;
+  const body = req.body || {};
+  if (!run || run.id !== String(body.id || "")) return res.status(409).json({ error: "No run in progress." });
+  if (run.idx >= run.reps) return res.status(409).json({ error: "Run already finished." });
+  if (parseInt(body.index, 10) !== run.idx) {
+    return res.status(409).json({ error: "Out of step.", idx: run.idx });
+  }
+  if (String(body.text || "") !== run.lines[run.idx]) {
+    return res.status(400).json({ error: "That is not the line.", idx: run.idx });
+  }
+  run.idx += 1;
+  run.mistakes += Math.max(0, Math.min(10000, parseInt(body.mistakes, 10) || 0));
+  req.session.writing = run;
+  res.json({ ok: true, idx: run.idx, done: run.idx >= run.reps });
+});
+
+// Admin-only skip (`pray skip_stage`): counts the line without typing it. The
+// console gates this client-side too, but THIS is the real boundary.
+app.post("/api/writing/skip", (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });
+  const run = req.session.writing;
+  if (!run) return res.status(409).json({ error: "No run in progress." });
+  if (run.idx >= run.reps) return res.status(409).json({ error: "Run already finished." });
+  run.idx += 1;
+  run.skipped += 1;
+  req.session.writing = run;
+  res.json({ ok: true, idx: run.idx, done: run.idx >= run.reps });
+});
+
 app.post("/api/writing/complete", (req, res) => {
   if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
   const users = loadUsers();
@@ -2033,18 +2146,31 @@ app.post("/api/writing/complete", (req, res) => {
   const user = users[key];
   if (!user) return res.status(401).json({ error: "Not logged in." });
 
-  const clampInt = (v, hi) => Math.max(0, Math.min(hi, parseInt(v, 10) || 0));
+  // The run must exist here and the SERVER's own count must say it is finished.
+  // Nothing below is taken from the request body any more.
+  const run = req.session.writing;
+  if (!run) return res.status(409).json({ error: "No run in progress." });
+  if (run.idx < run.reps) {
+    return res.status(409).json({ error: "Run is not finished.", idx: run.idx, reps: run.reps });
+  }
+
+  const letters = run.lines.reduce((a, l) => a + l.length, 0);
+  const accuracy = letters > 0
+    ? Math.max(0, Math.min(100, Math.round(((letters - run.mistakes) / letters) * 100)))
+    : 100;
   const entry = {
     id: "wl-" + Date.now(),
-    category: String(req.body.category || "").slice(0, 120),
-    preset: String(req.body.preset || "").slice(0, 120),
-    difficulty: String(req.body.difficulty || "").slice(0, 40),
-    passages: clampInt(req.body.passages, 100000),
-    mistakes: clampInt(req.body.mistakes, 1000000),
-    accuracy: clampInt(req.body.accuracy, 100),
-    elapsedMs: clampInt(req.body.elapsedMs, 1000 * 60 * 60 * 24),
+    category: run.mode,
+    preset: run.presetName,
+    difficulty: run.difficulty,
+    passages: run.reps,
+    mistakes: run.mistakes,
+    accuracy,
+    skipped: run.skipped,
+    elapsedMs: Math.max(0, Math.min(1000 * 60 * 60 * 24, Date.now() - run.startedAt)),
     at: new Date().toISOString(),
   };
+  delete req.session.writing;      // one shot: the run cannot be logged twice
   // Seed the lifetime counters before the new entry joins the log, or the
   // backfill would count this series twice.
   writingCounters(user);
@@ -2054,7 +2180,7 @@ app.post("/api/writing/complete", (req, res) => {
 
   user.writingLog = [entry, ...(Array.isArray(user.writingLog) ? user.writingLog : [])].slice(0, WRITING_LOG_CAP);
   user.writingTasksCompleted = (user.writingTasksCompleted || 0) + 1;
-  user.lettersTyped = (user.lettersTyped || 0) + clampInt(req.body.letters, 100000000);
+  user.lettersTyped = (user.lettersTyped || 0) + letters;   // from the server's own sequence
 
   // The day's Devotion line count is still kept, because Hermione reads it.
   // The payout that used to come with crossing 50 is gone with the dailies.

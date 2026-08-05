@@ -162,7 +162,10 @@
         if (typeof window.__skipStage !== "function") {
           return Promise.resolve("Nothing to skip here.");
         }
-        return Promise.resolve(window.__skipStage() ? "Stage skipped." : "No line in progress.");
+        // the writing games skip server-side (async); multitap is still local
+        return Promise.resolve(window.__skipStage()).then(function (ok) {
+          return ok ? "Stage skipped." : "No line in progress.";
+        });
       },
     },
     launch: {

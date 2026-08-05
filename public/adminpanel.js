@@ -78,6 +78,7 @@ window.AdminPanel = (function () {
       '<div class="prow"><span class="pk">difficulty</span><span id="pt-diff"></span></div>' +
       '<div class="prow"><span class="pk">lines</span><span id="pt-lines"></span></div>' +
       '<div class="prow"><span class="pk">errors</span><span id="pt-err"></span></div>' +
+      '<div class="prow"><span class="pk">skipped</span><span id="pt-skip"></span></div>' +
       '<div class="prow"><span class="pk">accuracy</span><span id="pt-acc"></span></div>' +
       '<div class="prow"><span class="pk">time</span><span id="pt-time"></span></div>' +
       '<div class="prow"><span class="pk">when</span><span class="pdim" id="pt-when"></span></div>' +
@@ -100,6 +101,7 @@ window.AdminPanel = (function () {
     modal.querySelector("#pt-diff").textContent = e.difficulty || "—";
     modal.querySelector("#pt-lines").textContent = e.passages + " / " + e.passages;
     modal.querySelector("#pt-err").textContent = e.mistakes;
+    modal.querySelector("#pt-skip").textContent = e.skipped != null ? e.skipped : "—";
     modal.querySelector("#pt-acc").textContent = (e.accuracy != null ? e.accuracy : "—") + "%";
     modal.querySelector("#pt-time").textContent = fmt(e.elapsedMs);
     modal.querySelector("#pt-when").textContent = e.at ? new Date(e.at).toLocaleString() : "";
