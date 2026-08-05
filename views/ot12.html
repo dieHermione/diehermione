@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>OT12 - angeldom.me</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<script src="/me.js"></script>
+<script src="/audio.js"></script>
+<style>
+  /* OT12 — match the photo to the member. Self-contained, no site.css.
+     Dual-tone: one pink (#ffa6c5) + white. The server owns the run and never
+     sends the correct name until after an answer, so it is not in the DOM. */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  [hidden] { display: none !important; }
+  :root { --c:#ffa6c5; --w:#eafaff; --err:#ff5a4a; --ok:#ffffff;
+          --glow:rgba(255,166,197,.30); --line:#3a2029; --panel:#0d0508; }
+  html, body { height: 100%; overflow: hidden; }
+  body { background:#000; color:var(--c); font-family:"IBM Plex Mono",ui-monospace,monospace;
+    -webkit-user-select:none; user-select:none; }
+  .scan { position:fixed; inset:0; z-index:40; pointer-events:none;
+    background:repeating-linear-gradient(0deg, rgba(0,0,0,.28) 0 1px, transparent 1px 3px); }
+
+  .stage { position:fixed; inset:0; z-index:5; display:flex; flex-direction:column; padding:3vh 4vw; }
+  .hdr { display:flex; justify-content:space-between; font-size:11px; letter-spacing:.32em;
+    text-transform:uppercase; flex-shrink:0; padding-left:2.8rem; }
+  .hdr b { color:var(--w); font-weight:400; }
+
+  .body { flex:1; min-height:0; display:flex; flex-direction:column; align-items:center;
+    justify-content:center; gap:1.4rem; }
+
+  .photo { width:min(300px, 62vw); aspect-ratio:1; border:1px solid var(--line); border-radius:8px;
+    background:var(--panel) center/cover no-repeat; box-shadow:0 0 30px rgba(255,166,197,.12); flex-shrink:0; }
+
+  .opts { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:.6rem; width:min(30rem, 86vw); }
+  .opt { padding:.7rem .5rem; border:1px solid var(--line); background:var(--panel); color:var(--w);
+    font-family:inherit; font-size:.95rem; border-radius:4px; cursor:pointer; }
+  .opt:hover:not(:disabled) { border-color:var(--c); box-shadow:0 0 14px var(--glow); }
+  .opt:disabled { cursor:default; }
+  .opt.right { border-color:var(--ok); background:rgba(255,255,255,.14); color:#fff; }
+  .opt.wrong { border-color:var(--err); background:rgba(255,90,74,.14); color:var(--err); }
+
+  .verdict { min-height:1.4em; font-size:.9rem; letter-spacing:.04em; }
+  .verdict.good { color:var(--w); } .verdict.bad { color:var(--err); }
+
+  /* settings + results, each its own opaque screen */
+  .center { position:absolute; inset:0; z-index:6; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:1.4rem; background:#04060a; text-align:center;
+    padding:2rem 1rem; overflow-y:auto; }
+  .center h1 { font-size:clamp(1.6rem,4vw,2.6rem); color:var(--w); letter-spacing:.14em;
+    text-transform:uppercase; text-shadow:0 0 26px var(--glow); }
+  .center .stat { font-size:1rem; letter-spacing:.08em; }
+  .center .stat b { color:var(--w); font-weight:400; }
+  .note { font-size:.78rem; line-height:1.7; max-width:32rem; }
+  .form { display:flex; flex-direction:column; gap:1rem; width:min(30rem, 86vw); text-align:left; }
+  .field { display:flex; flex-direction:column; gap:.4rem; }
+  .flabel { font-size:.58rem; letter-spacing:.24em; text-transform:uppercase; }
+  .chips { display:flex; flex-wrap:wrap; gap:.5rem; }
+  .chip { cursor:pointer; padding:.35rem .9rem; border:1px solid var(--line); color:var(--c);
+    background:var(--panel); font-family:inherit; font-size:.86rem; border-radius:3px; }
+  .chip:hover { border-color:var(--c); }
+  .chip.sel { background:var(--c); color:#12060a; border-color:var(--c); }
+  .btn { border:1.5px solid var(--c); background:transparent; color:var(--w); font-family:inherit;
+    font-size:.82rem; letter-spacing:.24em; text-transform:uppercase; padding:.7rem 1.8rem; cursor:pointer; }
+  .btn:hover:not(:disabled) { background:rgba(255,166,197,.14); box-shadow:0 0 18px var(--glow); }
+  .btn:disabled { opacity:.35; cursor:not-allowed; }
+  body { color:var(--c); }
+</style>
+</head>
+<body class="has-top-nav">
+  <div class="stage">
+    <div class="hdr">
+      <span><span style="text-transform:none">angelOS</span> v0.2 &middot; ot12</span>
+      <span>round <b id="rn">1</b> / <b id="rt">1</b> &nbsp;&middot;&nbsp; <b id="sc">0</b></span>
+    </div>
+    <div class="body">
+      <div class="photo" id="photo"></div>
+      <div class="opts" id="opts"></div>
+      <div class="verdict" id="verdict"></div>
+    </div>
+  </div>
+
+  <div class="center" id="start">
+    <h1>ot12</h1>
+    <div class="form">
+      <div class="field">
+        <div class="flabel">rounds</div>
+        <div class="chips" id="round-opts">
+          <button class="chip sel" type="button" data-rounds="10">10</button>
+          <button class="chip" type="button" data-rounds="20">20</button>
+          <button class="chip" type="button" data-rounds="40">40</button>
+        </div>
+      </div>
+    </div>
+    <p class="note" id="status"></p>
+    <button class="btn" id="begin" type="button">begin</button>
+  </div>
+
+  <div class="center" id="done" hidden>
+    <h1>done</h1>
+    <div class="stat"><b id="d-score">0</b> / <b id="d-total">0</b> correct</div>
+    <button class="btn" id="again" type="button">again</button>
+  </div>
+
+  <div class="scan"></div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const photoEl = $("photo"), optsEl = $("opts"), verdictEl = $("verdict");
+    let runId = null, rounds = 10, index = 0, answering = false;
+
+    // ---- settings ----
+    $("round-opts").addEventListener("click", (e) => {
+      const b = e.target.closest(".chip"); if (!b) return;
+      [...$("round-opts").querySelectorAll(".chip")].forEach((c) => c.classList.toggle("sel", c === b));
+      rounds = Number(b.dataset.rounds);
+    });
+
+    // The pool is Hermione's to fill; say plainly when it isn't ready.
+    async function refreshStatus() {
+      try {
+        const d = await (await fetch("/api/ot12/status")).json();
+        if (!d.photos) {
+          $("status").textContent = "No photos yet. Hermione adds and tags them in the admin panel.";
+          $("begin").disabled = true;
+        } else if (d.membersCovered < 2) {
+          $("status").textContent = "At least two members need photos before this can be played.";
+          $("begin").disabled = true;
+        } else {
+          $("status").textContent = d.photos + " photo" + (d.photos === 1 ? "" : "s") +
+            " · " + d.membersCovered + " member" + (d.membersCovered === 1 ? "" : "s") + " tagged";
+          $("begin").disabled = false;
+        }
+      } catch (e) {
+        $("status").textContent = "Could not reach the archive.";
+        $("begin").disabled = true;
+      }
+    }
+
+    function showRound(round) {
+      index = round.index;
+      photoEl.style.backgroundImage = "url('" + round.img + "')";
+      $("rn").textContent = round.index + 1;
+      $("rt").textContent = round.total;
+      verdictEl.textContent = ""; verdictEl.className = "verdict";
+      optsEl.replaceChildren();
+      round.options.forEach((name) => {
+        const b = document.createElement("button");
+        b.className = "opt"; b.type = "button"; b.textContent = name;
+        b.addEventListener("click", () => answer(name, b));
+        optsEl.append(b);
+      });
+      answering = false;
+    }
+
+    async function answer(name, btn) {
+      if (answering) return;
+      answering = true;
+      let d;
+      try {
+        const res = await fetch("/api/ot12/answer", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: runId, index, name }),
+        });
+        d = await res.json();
+        if (!res.ok) throw new Error(d.error || "no");
+      } catch (e) { answering = false; return; }
+
+      [...optsEl.querySelectorAll(".opt")].forEach((o) => {
+        o.disabled = true;
+        if (o.textContent === d.answer) o.classList.add("right");
+      });
+      if (!d.correct) btn.classList.add("wrong");
+      verdictEl.textContent = d.correct ? "correct" : "it was " + d.answer;
+      verdictEl.className = "verdict " + (d.correct ? "good" : "bad");
+      $("sc").textContent = d.score;
+
+      setTimeout(() => {
+        if (d.done) finish();
+        else showRound(d.round);
+      }, d.correct ? 600 : 1100);
+    }
+
+    async function begin() {
+      $("begin").disabled = true;
+      let d;
+      try {
+        const res = await fetch("/api/ot12/session", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ rounds }),
+        });
+        d = await res.json();
+        if (!res.ok) throw new Error(d.error || "Could not start.");
+      } catch (e) {
+        $("status").textContent = e.message || "Could not start.";
+        $("begin").disabled = false;
+        return;
+      }
+      $("begin").disabled = false;
+      runId = d.id;
+      $("sc").textContent = "0";
+      $("start").hidden = true; $("done").hidden = true;
+      showRound(d.round);
+    }
+
+    async function finish() {
+      let d = null;
+      try { const r = await fetch("/api/ot12/complete", { method: "POST" }); if (r.ok) d = await r.json(); } catch (e) {}
+      $("d-score").textContent = d ? d.score : $("sc").textContent;
+      $("d-total").textContent = d ? d.total : rounds;
+      $("done").hidden = false;
+    }
+
+    $("begin").addEventListener("click", begin);
+    $("again").addEventListener("click", () => {
+      $("done").hidden = true; $("start").hidden = false; refreshStatus();
+    });
+
+    window.siteMe().then(refreshStatus).catch(() => (window.location.href = "/"));
+  </script>
+  <script src="/nav.js" defer></script>
+  <script src="/console.js" defer></script>
+  <script src="/ambience.js" defer></script>
+  <script src="/dashglitch.js" defer></script>
+  <script src="/glitchboot.js" defer></script>
+</body>
+</html>

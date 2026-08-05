@@ -1294,8 +1294,21 @@ document.addEventListener("keydown", (e) => {
 });
 
 /* ---------- run control ---------- */
-function pull() {
+let parseRunId = null;
+async function pull() {
   const mode = Number(document.getElementById("mode").value) || 0;
+  // The server owns the run: it locks the build and starts its own clock, and
+  // will not accept a parse that did not come from one.
+  parseRunId = null;
+  try {
+    const r = await fetch("/api/parse/session", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ mode: mode ? String(mode) : "free", build: points }),
+    });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) { document.getElementById("statusline").textContent = d.error || "could not start"; return; }
+    parseRunId = d.id;
+  } catch (e) { document.getElementById("statusline").textContent = "could not start"; return; }
   S = freshState();
   S.limit = mode;
   S.running = true;
@@ -1333,9 +1346,9 @@ async function end() {
     await fetch("/api/parse", {
       method:"POST", headers:{ "Content-Type":"application/json" },
       body: JSON.stringify({
-        cls:"priest", mode:String(S.limit || "free"), version: GAME_VERSION,
+        id: parseRunId,
+        cls:"priest", version: GAME_VERSION,
         duration:+ct.toFixed(2), total:S.total, dps,
-        build: Object.assign({}, points),
         byAbility: S.byAbility,
         // keepalive bodies are capped at 64KB; a long run's full event list blew
         // past that and the POST was silently dropped, so the parse never saved.

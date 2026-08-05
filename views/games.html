@@ -66,6 +66,10 @@
 
     /* ===================== bespoke card interiors ===================== */
 
+    /* a game whose card has not been designed yet */
+    .c-ph { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+      color: #7a8694; font-size: .92rem; letter-spacing: .08em; }
+
     /* SNAKE — the real game screen, dimmed: the white countdown over the trail */
     .c-snk { position: absolute; inset: 0; opacity: .75;
       background: repeating-linear-gradient(0deg, rgba(210,15,5,.055) 0 1px, transparent 1px 4px); }
@@ -220,6 +224,8 @@
         tip: "A priest damage recount. Parse the dummy and chase a higher DPS." },
       { n: "skill check", href: "/skillcheck",            art: "skill", a: "#c11208", wb: "radial-gradient(120% 120% at 50% 46%, #200a0c, #050202 74%)",
         tip: "Stop the sweeping dial inside the good zone. Pure nerve." },
+      { n: "ot12",        href: "/ot12",                  art: "ot12",  a: "#ffa6c5", wb: "#0d0508",
+        tip: "Match the photo to the member. Twelve girls, four names, one right answer." },
       { n: "summary",     href: "/summary",               art: "sum",   a: "#00acdb", wb: "#050a10",
         tip: "Read a real Wikipedia article, then retell it in your own words." },
     ];
@@ -245,6 +251,8 @@
                 stroke="var(--a)" stroke-width="13" opacity=".4" stroke-linecap="round"/>
         </svg>
         <div class="timer"><div class="k">time left</div><div class="t">0:48</div></div></div>`,
+      // ot12 is bones for now — a placeholder until its card is designed
+      ot12: () => `<div class="c-ph">placeholder card</div>`,
       t9: () => `<div class="c-mt"><div class="pad">${
         [["1",".,-"],["2","abc"],["3","def"],["4","ghi"],["5","jkl"],["6","mno"],
          ["7","pqrs"],["8","tuv"],["9","wxyz"],["*","⌫"],["0","␣"],["#","↵"]]

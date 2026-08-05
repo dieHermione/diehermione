@@ -549,6 +549,84 @@ window.AdminPanel = (function () {
     });
     tipsBar.append(tipsSave); tipsSec.append(tipsBar); wrap.append(foldable(tipsSec));
 
+    // OT12 photos: the matching game's pool. There is no automated image source
+    // on purpose — these are other people's copyrighted photos, so they are
+    // uploaded and tagged by hand here. Shrunk client-side before upload.
+    const otSec = document.createElement("div"); otSec.className = "adm-sec";
+    otSec.append(mk("h3", "OT12 photos"));
+    const otHint = mk("p", "Photos for the OT12 matching game. Pick the member the photo shows, then choose a file — it is shrunk to 512px before upload.");
+    otHint.className = "adm-empty"; otSec.append(otHint);
+    const otBar = document.createElement("div"); otBar.className = "adm-preset-bar";
+    const otSel = document.createElement("select"); otSel.className = "adm-select";
+    const otFile = document.createElement("input"); otFile.type = "file"; otFile.accept = "image/*"; otFile.style.display = "none";
+    const otPick = mkChip("+ Add photo", "ghost", () => { if (otSel.value) otFile.click(); });
+    otBar.append(otSel, otPick); otSec.append(otBar);
+    const otList = document.createElement("div"); otList.style.cssText = "display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.6rem";
+    otSec.append(otList, otFile);
+
+    function otThumb(p) {
+      const box = document.createElement("div");
+      box.style.cssText = "position:relative;width:64px;text-align:center";
+      const im = document.createElement("img");
+      im.src = p.img; im.alt = p.member;
+      im.style.cssText = "width:64px;height:64px;object-fit:cover;border:1px solid var(--dim2);display:block";
+      const nm = document.createElement("div");
+      nm.textContent = p.member;
+      nm.style.cssText = "font-size:.52rem;color:var(--dim);margin-top:.15rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis";
+      const x = document.createElement("button");
+      x.className = "adm-log-x"; x.textContent = "×"; x.title = "Remove";
+      x.style.cssText = "position:absolute;top:0;right:0;background:rgba(0,0,0,.7)";
+      x.addEventListener("click", async () => {
+        const r = await fetch("/api/ot12/photos/" + encodeURIComponent(p.id), { method: "DELETE" });
+        if (r.ok) box.remove();
+      });
+      box.append(im, nm, x);
+      return box;
+    }
+    function otLoad() {
+      fetch("/api/ot12/photos").then((r) => (r.ok ? r.json() : null)).then((d) => {
+        if (!d) return;
+        if (!otSel.options.length) {
+          (d.members || []).forEach((m) => {
+            const o = document.createElement("option"); o.value = m; o.textContent = m; otSel.append(o);
+          });
+        }
+        otList.replaceChildren();
+        (d.photos || []).forEach((p) => otList.append(otThumb(p)));
+        if (!d.photos || !d.photos.length) {
+          const e = mk("p", "No photos yet."); e.className = "adm-empty"; otList.append(e);
+        }
+      }).catch(() => {});
+    }
+    otFile.addEventListener("change", () => {
+      const file = otFile.files && otFile.files[0];
+      if (!file) return;
+      const img = new Image();
+      img.onload = async () => {
+        const size = 512;
+        const canvas = document.createElement("canvas");
+        canvas.width = canvas.height = size;
+        const ctx = canvas.getContext("2d");
+        const scale = Math.max(size / img.width, size / img.height);
+        const w = img.width * scale, h = img.height * scale;
+        ctx.drawImage(img, (size - w) / 2, (size - h) / 2, w, h);
+        URL.revokeObjectURL(img.src);
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.82);
+        otHint.textContent = "Uploading…";
+        const r = await fetch("/api/ot12/photos", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ member: otSel.value, img: dataUrl }),
+        });
+        const d = await r.json().catch(() => ({}));
+        otHint.textContent = r.ok ? "Added." : (d.error || "Could not add.");
+        otFile.value = "";
+        if (r.ok) otLoad();
+      };
+      img.src = URL.createObjectURL(file);
+    });
+    otLoad();
+    wrap.append(foldable(otSec));
+
     // screen glitch: fires on its own every 40 to 180 seconds, testable here
     const glSec = document.createElement("div"); glSec.className = "adm-sec";
     glSec.append(mk("h3", "Screen glitch"));
@@ -578,7 +656,7 @@ window.AdminPanel = (function () {
       { id: "members", label: "Members", match: ["Approvals", "Applications", "Accounts"] },
       { id: "writing", label: "Writing", match: ["Devotion presets", "Penance presets", "Multitap lines"] },
       { id: "completed", label: "Completed", match: ["Lines completed", "Summaries handed in"] },
-      { id: "content", label: "Site content", match: ["Onboarding intro", "Questionnaire descriptions", "Decrypt lines", "Game hover text", "Screen glitch"] },
+      { id: "content", label: "Site content", match: ["Onboarding intro", "Questionnaire descriptions", "Decrypt lines", "Game hover text", "OT12 photos", "Screen glitch"] },
       { id: "docs", label: "Docs & tools", match: ["Documentation"] },
     ];
     const tabFor = (sec) => {

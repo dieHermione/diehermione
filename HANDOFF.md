@@ -105,7 +105,7 @@ the dashboard no longer lists them individually.
 | `/manage` | admin-only, reached **from `/admin`**: create disciple accounts + review completed questionnaires; **tabbed** (Create account / Questionnaires); standard top-left back button leads to `/admin` |
 | `/commands` | admin-only: the `pray` command reference |
 | `/guide`, `/tech` | the manual and the technical notes |
-| `/snake` `/writing` `/wheel` `/deathroll` `/elysium` `/chess` `/dummyparse` `/skillcheck` `/summary` `/lottery` (`/slots` alias) | the games |
+| `/snake` `/writing` `/wheel` `/deathroll` `/elysium` `/chess` `/dummyparse` `/skillcheck` `/summary` `/t9` `/ot12` `/lottery` (`/slots` alias) | the games |
 
 ### Games
 - **Snake** free-swimming, no grid. Dies on its own tail. Food drifts at half
@@ -122,6 +122,15 @@ the dashboard no longer lists them individually.
 - **Chess** is ink wash. Hermione has STRIKE and REWIND (see below).
 - **Dummy Parse** priest damage sim; **versioned** (`GAME_VERSION`).
 - **Skill check** the pure dial, with a settings screen.
+- **OT12** (`/ot12`) a matching game over the twelve members of LOONA: a photo,
+  four names, one right answer. **Bones only** — the game loop, the server-owned
+  run and the admin uploader exist; it has a placeholder card and no payout.
+  There is deliberately **no automated image source**: the photos are other
+  people's copyrighted work, so Hermione uploads and tags them herself under
+  *Site content → OT12 photos* (shrunk to 512px client-side, stored in
+  `ot12.json`). The member list is fixed in `OT12_MEMBERS`. The correct name is
+  never sent to the browser until after it answers, so it cannot be read out of
+  the DOM.
 - **Summary** a real Wikipedia article and a word limit. Topic pools: angels,
   feminism, Greek mythology, pre-18th-century history, **critical biblical
   scholarship** (`SUMMARY_TOPICS` / `KIND_LABEL` in `server.js`).
@@ -202,6 +211,17 @@ player's own lines). The server owns the run:
 The run lives in `req.session.writing`, which is file-backed now, so it survives a
 restart; one run at a time per login, and nothing extra in `users.json`. Multitap
 logs under `category: "multitap"` alongside the other two.
+
+### Dummy Parse is bounded, not simulated
+Same shape as Snake. `POST /api/parse/session` locks the stat build (rejecting one
+that overspends the 300-point pool) and starts the server's clock;
+`POST /api/parse` then refuses unless it names that run, and checks the parse
+against it: you cannot report more combat time than has actually elapsed, a timed
+mode must have that mode's duration, and the DPS has to agree with the total it
+came from. The stored entry takes its **mode and build from the run, not the
+body**, and a run files exactly one parse. **The damage total is still
+client-reported** — validating it would mean running the whole damage simulation
+server-side.
 
 ### Snake is bounded, not simulated
 Snake cannot be validated the same way: the server would have to simulate a 60fps

@@ -24,6 +24,7 @@ const PENANCE_FILE = path.join(process.env.DATA_DIR || __dirname, "penance.json"
 const DECRYPT_FILE = path.join(process.env.DATA_DIR || __dirname, "decrypt.json");
 const GAMETIPS_FILE = path.join(process.env.DATA_DIR || __dirname, "gametips.json");
 const MULTITAP_FILE = path.join(process.env.DATA_DIR || __dirname, "multitap.json");
+const OT12_FILE = path.join(process.env.DATA_DIR || __dirname, "ot12.json");
 const PARSE_FILE = path.join(process.env.DATA_DIR || __dirname, "parses.json");
 const SUMMARY_FILE = path.join(process.env.DATA_DIR || __dirname, "summaries.json");
 const APPLICATIONS_FILE = path.join(process.env.DATA_DIR || __dirname, "applications.json");
@@ -1407,6 +1408,42 @@ function saveParses(list) {
 // A finished parse. Stored whole, including the event list, because the point
 // of a parse is the detail: a leaderboard can be built off dps later, but the
 // log is what makes a run auditable.
+/* ---- server-owned parse runs ---------------------------------------------
+   Like Snake, Dummy Parse cannot be fully validated without the server running
+   the whole damage simulation. What it CAN own is the run: the build is locked
+   when the pull starts, the clock is the server's, and a parse can only be filed
+   once, against a run that actually happened. The damage total is still reported
+   by the client — see HANDOFF. */
+const PARSE_STAT_POOL = 300;
+const PARSE_STATS = ["crit", "critDmg", "haste", "focus", "intellect", "fracture", "dot"];
+const PARSE_GRACE_S = 3;          // pre-pull + network slop
+
+function cleanParseBuild(raw) {
+  const build = {};
+  let spent = 0;
+  for (const k of PARSE_STATS) {
+    const v = Math.max(0, Math.min(PARSE_STAT_POOL, parseInt((raw || {})[k], 10) || 0));
+    build[k] = v;
+    spent += v;
+  }
+  return spent > PARSE_STAT_POOL ? null : build;
+}
+
+app.post("/api/parse/session", (req, res) => {
+  const who = playerId(req);
+  if (!who) return res.status(401).json({ error: "Not logged in." });
+  touchGuest(req);
+  const b = req.body || {};
+  const mode = ["30", "60"].includes(String(b.mode)) ? String(b.mode) : "free";
+  const build = cleanParseBuild(b.build);
+  if (!build) return res.status(400).json({ error: "That build spends more than the pool." });
+  req.session.parseRun = {
+    id: Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 8),
+    mode, build, startedAt: Date.now(),
+  };
+  res.json({ id: req.session.parseRun.id, mode });
+});
+
 app.post("/api/parse", (req, res) => {
   const who = playerId(req);
   if (!who) return res.status(401).json({ error: "Not logged in." });
@@ -1415,20 +1452,41 @@ app.post("/api/parse", (req, res) => {
   const duration = Number(b.duration), total = Number(b.total), dps = Number(b.dps);
   if (!Number.isFinite(duration) || duration <= 0) return res.status(400).json({ error: "Bad duration." });
   if (!Number.isFinite(total) || total < 0) return res.status(400).json({ error: "Bad total." });
+
+  // The run must exist, and the parse must be consistent with it.
+  const run = req.session.parseRun;
+  if (!run) return res.status(409).json({ error: "No run in progress." });
+  if (String(b.id || "") !== run.id) return res.status(409).json({ error: "Not this run." });
+  // you cannot report more combat time than has actually elapsed
+  const wallS = (Date.now() - run.startedAt) / 1000;
+  if (duration > wallS + PARSE_GRACE_S) {
+    return res.status(400).json({ error: "Duration is longer than the run." });
+  }
+  // a timed mode ends on its own clock, so the duration has to be that length
+  if (run.mode !== "free" && Math.abs(duration - Number(run.mode)) > 1.5) {
+    return res.status(400).json({ error: "Duration does not match the mode." });
+  }
+  // and the headline number has to agree with the total it came from
+  const derived = total / duration;
+  if (Number.isFinite(dps) && Math.abs(dps - derived) > Math.max(2, derived * 0.02)) {
+    return res.status(400).json({ error: "DPS does not match the total." });
+  }
+  delete req.session.parseRun;      // one shot: a run files exactly one parse
   const events = Array.isArray(b.events) ? b.events.slice(0, 4000) : [];
   const entry = {
     id: Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 7),
     player: who,
     guest: Boolean(req.session.guest),
     cls: String(b.cls || "priest").slice(0, 20),
-    // "free", "30" or "60"; only the timed ones are ever ranked
-    mode: ["30", "60"].includes(String(b.mode)) ? String(b.mode) : "free",
+    // "free", "30" or "60"; only the timed ones are ever ranked. Both this and
+    // the build come from the run the server locked at the pull, not the body.
+    mode: run.mode,
     version: String(b.version || "0").slice(0, 10),
     at: new Date().toISOString(),
     duration: +duration.toFixed(2),
     total: Math.round(total),
     dps: Math.round(Number.isFinite(dps) ? dps : total / duration),
-    build: b.build && typeof b.build === "object" ? b.build : {},
+    build: run.build,
     byAbility: b.byAbility && typeof b.byAbility === "object" ? b.byAbility : {},
     events,
   };
@@ -1485,6 +1543,12 @@ app.get("/snake", requirePlayer, (req, res) => {
 app.get("/t9", requirePlayer, (req, res) => {
   touchGuest(req);
   res.sendFile(path.join(__dirname, "views", "t9.html"));
+});
+
+// OT12 — match the photo to the LOONA member
+app.get("/ot12", requirePlayer, (req, res) => {
+  touchGuest(req);
+  res.sendFile(path.join(__dirname, "views", "ot12.html"));
 });
 
 /* ---- server-owned snake runs ---------------------------------------------
@@ -2591,6 +2655,7 @@ const GAMETIPS_DEFAULTS = {
     "penance": "A typing drill of correction. Type each line exactly — falter and it corrupts.",
     "devotion": "A verse reader. Recite Her lines in turn. An account is required.",
     "multitap": "A typing drill on an old-phone keypad. No hints — remember the taps.",
+    "ot12": "Match the photo to the member. Twelve girls, four names, one right answer.",
     "deathroll": "Roll against another, each cap the next roll. Hit one and you lose. Account required.",
     "dummy parse": "A priest damage recount. Parse the dummy and chase a higher DPS.",
     "skill check": "Stop the sweeping dial inside the good zone. Pure nerve.",
@@ -2654,6 +2719,140 @@ app.post("/api/multitap", (req, res) => {
   if (!lines.length) return res.status(400).json({ error: "Add at least one line." });
   fs.writeFileSync(MULTITAP_FILE, JSON.stringify({ lines }, null, 2));
   res.json({ ok: true, lines });
+});
+
+/* ---- OT12: match the photo to the member ---------------------------------
+   A matching game over the twelve members of LOONA. There is no automated image
+   source and there deliberately isn't one: the photos are other people's
+   copyrighted work, so Hermione uploads and tags them herself in /admin. The
+   member list below is fixed (it is just who is in the group); the photo pool is
+   a normal file-first editable pool.
+
+   The run is server-owned like every other game: the server picks the sequence
+   and the answer options, and the correct name is NEVER sent to the client until
+   after it has answered — otherwise the answer would be sitting in the DOM. */
+const OT12_MEMBERS = [
+  "HeeJin", "HyunJin", "HaSeul", "YeoJin", "ViVi", "Kim Lip",
+  "JinSoul", "Choerry", "Yves", "Chuu", "Go Won", "Olivia Hye",
+];
+const OT12_OPTIONS = 4;          // one right answer + three decoys
+const OT12_MAX_ROUNDS = 100;
+
+function loadOt12() {
+  try {
+    const d = JSON.parse(fs.readFileSync(OT12_FILE, "utf8"));
+    if (d && Array.isArray(d.photos)) return d;
+  } catch {}
+  return { photos: [] };
+}
+function saveOt12(d) { fs.writeFileSync(OT12_FILE, JSON.stringify(d, null, 2)); }
+
+app.get("/api/ot12/members", (req, res) => res.json({ members: OT12_MEMBERS }));
+
+// admin: the tagged photo pool (the only place the answers are listed)
+app.get("/api/ot12/photos", (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });
+  res.json({ photos: loadOt12().photos, members: OT12_MEMBERS });
+});
+app.post("/api/ot12/photos", (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });
+  const b = req.body || {};
+  const member = String(b.member || "");
+  if (!OT12_MEMBERS.includes(member)) return res.status(400).json({ error: "Unknown member." });
+  const img = String(b.img || "");
+  if (!/^data:image\/(png|jpeg|webp);base64,/.test(img)) return res.status(400).json({ error: "Not an image." });
+  if (img.length > 400000) return res.status(400).json({ error: "Image too large — shrink it first." });
+  const d = loadOt12();
+  d.photos.unshift({ id: Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 7), member, img });
+  saveOt12(d);
+  res.json({ ok: true, count: d.photos.length });
+});
+app.delete("/api/ot12/photos/:id", (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });
+  const d = loadOt12();
+  d.photos = d.photos.filter((p) => p.id !== req.params.id);
+  saveOt12(d);
+  res.json({ ok: true, count: d.photos.length });
+});
+
+// how many photos exist, so the game can say "not ready yet" honestly
+app.get("/api/ot12/status", (req, res) => {
+  const photos = loadOt12().photos;
+  const tagged = new Set(photos.map((p) => p.member));
+  res.json({ photos: photos.length, membersCovered: tagged.size, needed: OT12_OPTIONS });
+});
+
+function ot12Round(run) {
+  const photo = run.queue[run.idx];
+  // decoys are drawn from the other members, never repeating the answer
+  const others = OT12_MEMBERS.filter((m) => m !== photo.member);
+  for (let i = others.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [others[i], others[j]] = [others[j], others[i]]; }
+  const options = others.slice(0, Math.max(0, OT12_OPTIONS - 1)).concat(photo.member);
+  for (let i = options.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [options[i], options[j]] = [options[j], options[i]]; }
+  run.options = options;
+  return { index: run.idx, total: run.queue.length, img: photo.img, options };
+}
+
+app.post("/api/ot12/session", (req, res) => {
+  const who = playerId(req);
+  if (!who) return res.status(401).json({ error: "Not logged in." });
+  touchGuest(req);
+  const pool = loadOt12().photos;
+  if (!pool.length) return res.status(409).json({ error: "No photos have been added yet." });
+  if (new Set(pool.map((p) => p.member)).size < 2) {
+    return res.status(409).json({ error: "At least two members need photos." });
+  }
+  const rounds = Math.max(1, Math.min(OT12_MAX_ROUNDS, parseInt((req.body || {}).rounds, 10) || 10));
+  const bag = pool.slice();
+  for (let i = bag.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [bag[i], bag[j]] = [bag[j], bag[i]]; }
+  const queue = [];
+  while (queue.length < rounds) queue.push(bag[queue.length % bag.length]);
+
+  const run = {
+    id: Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 8),
+    queue, idx: 0, correct: 0, startedAt: Date.now(), options: [],
+  };
+  req.session.ot12 = run;
+  const round = ot12Round(run);
+  req.session.ot12 = run;
+  res.json({ id: run.id, round });
+});
+
+app.post("/api/ot12/answer", (req, res) => {
+  const who = playerId(req);
+  if (!who) return res.status(401).json({ error: "Not logged in." });
+  const run = req.session.ot12;
+  const b = req.body || {};
+  if (!run || run.id !== String(b.id || "")) return res.status(409).json({ error: "No round in progress." });
+  if (parseInt(b.index, 10) !== run.idx) return res.status(409).json({ error: "Out of step.", index: run.idx });
+  const picked = String(b.name || "");
+  if (!run.options.includes(picked)) return res.status(400).json({ error: "Not one of the options." });
+
+  const answer = run.queue[run.idx].member;
+  const correct = picked === answer;
+  if (correct) run.correct += 1;
+  run.idx += 1;
+  const done = run.idx >= run.queue.length;
+  const next = done ? null : ot12Round(run);
+  req.session.ot12 = run;
+  res.json({ correct, answer, score: run.correct, done, round: next });
+});
+
+app.post("/api/ot12/complete", (req, res) => {
+  const run = req.session.ot12;
+  if (!run) return res.status(409).json({ error: "No run in progress." });
+  if (run.idx < run.queue.length) return res.status(409).json({ error: "Run is not finished." });
+  const out = {
+    ok: true,
+    score: run.correct,
+    total: run.queue.length,
+    elapsedMs: Math.max(0, Date.now() - run.startedAt),
+  };
+  delete req.session.ot12;
+  res.json(out);
 });
 
 // (the subliminal and snake-taunt pools were removed with subliminals)
