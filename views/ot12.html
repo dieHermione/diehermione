@@ -35,13 +35,16 @@
   .photo { width:min(300px, 62vw); aspect-ratio:1; border:1px solid var(--line); border-radius:8px;
     background:var(--panel) center/cover no-repeat; box-shadow:0 0 30px color-mix(in srgb, var(--c) 12%, transparent); flex-shrink:0; }
 
-  .opts { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:.6rem; width:min(30rem, 86vw); }
-  .opt { padding:.7rem .5rem; border:1px solid var(--line); background:var(--panel); color:var(--w);
-    font-family:inherit; font-size:.95rem; border-radius:4px; cursor:pointer; }
+  /* the whole group is always on offer; a photo may show any number of them */
+  .opts { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:.45rem; width:min(44rem, 92vw); }
+  .opt { padding:.55rem .4rem; border:1px solid var(--line); background:var(--panel); color:var(--w);
+    font-family:inherit; font-size:.85rem; border-radius:4px; cursor:pointer; }
   .opt:hover:not(:disabled) { border-color:var(--c); box-shadow:0 0 14px var(--glow); }
   .opt:disabled { cursor:default; }
-  .opt.right { border-color:var(--ok); background:rgba(255,255,255,.14); color:#fff; }
+  .opt.picked { border-color:var(--c); background:color-mix(in srgb, var(--c) 20%, transparent); }
+  .opt.right { border-color:var(--ok); background:rgba(255,255,255,.16); color:#fff; }
   .opt.wrong { border-color:var(--err); background:rgba(255,90,74,.14); color:var(--err); }
+  @media (max-width: 640px) { .opts { grid-template-columns:repeat(3, minmax(0,1fr)); } }
 
   .verdict { min-height:1.4em; font-size:.9rem; letter-spacing:.04em; }
   .verdict.good { color:var(--w); } .verdict.bad { color:var(--err); }
@@ -77,8 +80,9 @@
       <span>round <b id="rn">1</b> / <b id="rt">1</b> &nbsp;&middot;&nbsp; <b id="sc">0</b></span>
     </div>
     <div class="body">
-      <div class="photo" id="photo"></div>
+      <img class="photo" id="photo" alt="" />
       <div class="opts" id="opts"></div>
+      <button class="btn" id="submit" type="button" disabled>submit</button>
       <div class="verdict" id="verdict"></div>
     </div>
   </div>
@@ -111,6 +115,7 @@
     const $ = (id) => document.getElementById(id);
     const photoEl = $("photo"), optsEl = $("opts"), verdictEl = $("verdict");
     let runId = null, rounds = 10, index = 0, answering = false;
+    let picked = new Set();     // the members currently selected for this round
 
     // ---- settings ----
     $("round-opts").addEventListener("click", (e) => {
@@ -142,47 +147,60 @@
 
     function showRound(round) {
       index = round.index;
-      photoEl.style.backgroundImage = "url('" + round.img + "')";
+      photoEl.src = round.img;
       $("rn").textContent = round.index + 1;
       $("rt").textContent = round.total;
       verdictEl.textContent = ""; verdictEl.className = "verdict";
+      picked = new Set();
+      $("submit").disabled = true;
       optsEl.replaceChildren();
       round.options.forEach((name) => {
         const b = document.createElement("button");
         b.className = "opt"; b.type = "button"; b.textContent = name;
-        b.addEventListener("click", () => answer(name, b));
+        // a photo can show several members, so these toggle rather than commit
+        b.addEventListener("click", () => {
+          if (answering) return;
+          if (picked.has(name)) picked.delete(name); else picked.add(name);
+          b.classList.toggle("picked", picked.has(name));
+          $("submit").disabled = picked.size === 0;
+        });
         optsEl.append(b);
       });
       answering = false;
     }
 
-    async function answer(name, btn) {
-      if (answering) return;
+    async function answer() {
+      if (answering || !picked.size) return;
       answering = true;
+      $("submit").disabled = true;
+      const names = [...picked];
       let d;
       try {
         const res = await fetch("/api/ot12/answer", {
           method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id: runId, index, name }),
+          body: JSON.stringify({ id: runId, index, names }),
         });
         d = await res.json();
         if (!res.ok) throw new Error(d.error || "no");
-      } catch (e) { answering = false; return; }
+      } catch (e) { answering = false; $("submit").disabled = false; return; }
 
+      const answers = Array.isArray(d.answer) ? d.answer : [d.answer];
       [...optsEl.querySelectorAll(".opt")].forEach((o) => {
         o.disabled = true;
-        if (o.textContent === d.answer) o.classList.add("right");
+        o.classList.remove("picked");
+        if (answers.includes(o.textContent)) o.classList.add("right");
+        else if (names.includes(o.textContent)) o.classList.add("wrong");   // picked but not in the photo
       });
-      if (!d.correct) btn.classList.add("wrong");
-      verdictEl.textContent = d.correct ? "correct" : "it was " + d.answer;
+      verdictEl.textContent = d.correct ? "correct" : "it was " + answers.join(", ");
       verdictEl.className = "verdict " + (d.correct ? "good" : "bad");
       $("sc").textContent = d.score;
 
       setTimeout(() => {
         if (d.done) finish();
         else showRound(d.round);
-      }, d.correct ? 600 : 1100);
+      }, d.correct ? 700 : 1400);
     }
+    $("submit").addEventListener("click", answer);
 
     async function begin() {
       $("begin").disabled = true;

@@ -554,13 +554,19 @@ window.AdminPanel = (function () {
     // uploaded and tagged by hand here. Shrunk client-side before upload.
     const otSec = document.createElement("div"); otSec.className = "adm-sec";
     otSec.append(mk("h3", "OT12 photos"));
-    const otHint = mk("p", "Photos for the OT12 matching game. Pick the member the photo shows, then choose a file — it is shrunk to 512px before upload.");
+    const otHint = mk("p", "Photos for the OT12 matching game. Tick everyone who appears in the photo (a photo may show several), then choose a file — it is shrunk to 512px on its longest side, keeping its aspect ratio.");
     otHint.className = "adm-empty"; otSec.append(otHint);
+    const otWho = document.createElement("div");
+    otWho.style.cssText = "display:flex;flex-wrap:wrap;gap:.3rem;margin:.4rem 0";
+    otSec.append(otWho);
     const otBar = document.createElement("div"); otBar.className = "adm-preset-bar";
-    const otSel = document.createElement("select"); otSel.className = "adm-select";
     const otFile = document.createElement("input"); otFile.type = "file"; otFile.accept = "image/*"; otFile.style.display = "none";
-    const otPick = mkChip("+ Add photo", "ghost", () => { if (otSel.value) otFile.click(); });
-    otBar.append(otSel, otPick); otSec.append(otBar);
+    const otSelected = new Set();
+    const otPick = mkChip("+ Add photo", "ghost", () => {
+      if (!otSelected.size) { otHint.textContent = "Tick at least one member first."; return; }
+      otFile.click();
+    });
+    otBar.append(otPick); otSec.append(otBar);
     const otList = document.createElement("div"); otList.style.cssText = "display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.6rem";
     otSec.append(otList, otFile);
 
@@ -568,11 +574,11 @@ window.AdminPanel = (function () {
       const box = document.createElement("div");
       box.style.cssText = "position:relative;width:64px;text-align:center";
       const im = document.createElement("img");
-      im.src = p.img; im.alt = p.member;
-      im.style.cssText = "width:64px;height:64px;object-fit:cover;border:1px solid var(--dim2);display:block";
+      im.src = p.img; im.alt = (p.members || []).join(", ");
+      im.style.cssText = "width:64px;height:64px;object-fit:contain;background:#000;border:1px solid var(--dim2);display:block";
       const nm = document.createElement("div");
-      nm.textContent = p.member;
-      nm.style.cssText = "font-size:.52rem;color:var(--dim);margin-top:.15rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis";
+      nm.textContent = (p.members || []).join(", ");
+      nm.style.cssText = "font-size:.52rem;color:var(--dim);margin-top:.15rem;overflow:hidden;text-overflow:ellipsis";
       const x = document.createElement("button");
       x.className = "adm-log-x"; x.textContent = "×"; x.title = "Remove";
       x.style.cssText = "position:absolute;top:0;right:0;background:rgba(0,0,0,.7)";
@@ -586,9 +592,13 @@ window.AdminPanel = (function () {
     function otLoad() {
       fetch("/api/ot12/photos").then((r) => (r.ok ? r.json() : null)).then((d) => {
         if (!d) return;
-        if (!otSel.options.length) {
+        if (!otWho.children.length) {
           (d.members || []).forEach((m) => {
-            const o = document.createElement("option"); o.value = m; o.textContent = m; otSel.append(o);
+            const b = mkChip(m, "ghost", () => {
+              if (otSelected.has(m)) { otSelected.delete(m); b.classList.add("ghost"); }
+              else { otSelected.add(m); b.classList.remove("ghost"); }
+            });
+            otWho.append(b);
           });
         }
         otList.replaceChildren();
@@ -603,19 +613,19 @@ window.AdminPanel = (function () {
       if (!file) return;
       const img = new Image();
       img.onload = async () => {
-        const size = 512;
+        // fit the longest side to 512 and KEEP the aspect ratio (no square crop)
+        const max = 512;
+        const scale = Math.min(1, max / Math.max(img.width, img.height));
         const canvas = document.createElement("canvas");
-        canvas.width = canvas.height = size;
-        const ctx = canvas.getContext("2d");
-        const scale = Math.max(size / img.width, size / img.height);
-        const w = img.width * scale, h = img.height * scale;
-        ctx.drawImage(img, (size - w) / 2, (size - h) / 2, w, h);
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
         URL.revokeObjectURL(img.src);
         const dataUrl = canvas.toDataURL("image/jpeg", 0.82);
         otHint.textContent = "Uploading…";
         const r = await fetch("/api/ot12/photos", {
           method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ member: otSel.value, img: dataUrl }),
+          body: JSON.stringify({ members: [...otSelected], img: dataUrl }),
         });
         const d = await r.json().catch(() => ({}));
         otHint.textContent = r.ok ? "Added." : (d.error || "Could not add.");

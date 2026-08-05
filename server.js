@@ -2774,13 +2774,19 @@ const OT12_MEMBER_DATA = [
     heightCm: undefined, eyeColor: "Black", shape: undefined },
 ];
 const OT12_MEMBERS = OT12_MEMBER_DATA.map((m) => m.name);
-const OT12_OPTIONS = 4;          // one right answer + three decoys
 const OT12_MAX_ROUNDS = 100;
 
 function loadOt12() {
   try {
     const d = JSON.parse(fs.readFileSync(OT12_FILE, "utf8"));
-    if (d && Array.isArray(d.photos)) return d;
+    if (d && Array.isArray(d.photos)) {
+      // a photo can show several members; records written before that are
+      // migrated on read so old uploads keep working
+      d.photos.forEach((p) => {
+        if (!Array.isArray(p.members)) p.members = p.member ? [p.member] : [];
+      });
+      return d;
+    }
   } catch {}
   return { photos: [] };
 }
@@ -2798,13 +2804,14 @@ app.post("/api/ot12/photos", (req, res) => {
   if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
   if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });
   const b = req.body || {};
-  const member = String(b.member || "");
-  if (!OT12_MEMBERS.includes(member)) return res.status(400).json({ error: "Unknown member." });
+  const raw = Array.isArray(b.members) ? b.members : (b.member ? [b.member] : []);
+  const members = [...new Set(raw.map(String))].filter((m) => OT12_MEMBERS.includes(m));
+  if (!members.length) return res.status(400).json({ error: "Tag at least one member." });
   const img = String(b.img || "");
   if (!/^data:image\/(png|jpeg|webp);base64,/.test(img)) return res.status(400).json({ error: "Not an image." });
-  if (img.length > 400000) return res.status(400).json({ error: "Image too large — shrink it first." });
+  if (img.length > 600000) return res.status(400).json({ error: "Image too large — shrink it first." });
   const d = loadOt12();
-  d.photos.unshift({ id: Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 7), member, img });
+  d.photos.unshift({ id: Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 7), members, img });
   saveOt12(d);
   res.json({ ok: true, count: d.photos.length });
 });
@@ -2820,19 +2827,17 @@ app.delete("/api/ot12/photos/:id", (req, res) => {
 // how many photos exist, so the game can say "not ready yet" honestly
 app.get("/api/ot12/status", (req, res) => {
   const photos = loadOt12().photos;
-  const tagged = new Set(photos.map((p) => p.member));
-  res.json({ photos: photos.length, membersCovered: tagged.size, needed: OT12_OPTIONS });
+  const tagged = new Set();
+  photos.forEach((p) => (p.members || []).forEach((m) => tagged.add(m)));
+  res.json({ photos: photos.length, membersCovered: tagged.size });
 });
 
 function ot12Round(run) {
   const photo = run.queue[run.idx];
-  // decoys are drawn from the other members, never repeating the answer
-  const others = OT12_MEMBERS.filter((m) => m !== photo.member);
-  for (let i = others.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [others[i], others[j]] = [others[j], others[i]]; }
-  const options = others.slice(0, Math.max(0, OT12_OPTIONS - 1)).concat(photo.member);
-  for (let i = options.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [options[i], options[j]] = [options[j], options[i]]; }
-  run.options = options;
-  return { index: run.idx, total: run.queue.length, img: photo.img, options };
+  // Every member is always on offer — a photo can show any number of them, so
+  // there is no decoy set to build and no count to leak.
+  run.options = OT12_MEMBERS.slice();
+  return { index: run.idx, total: run.queue.length, img: photo.img, options: run.options };
 }
 
 app.post("/api/ot12/session", (req, res) => {
@@ -2841,9 +2846,6 @@ app.post("/api/ot12/session", (req, res) => {
   touchGuest(req);
   const pool = loadOt12().photos;
   if (!pool.length) return res.status(409).json({ error: "No photos have been added yet." });
-  if (new Set(pool.map((p) => p.member)).size < 2) {
-    return res.status(409).json({ error: "At least two members need photos." });
-  }
   const rounds = Math.max(1, Math.min(OT12_MAX_ROUNDS, parseInt((req.body || {}).rounds, 10) || 10));
   const bag = pool.slice();
   for (let i = bag.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [bag[i], bag[j]] = [bag[j], bag[i]]; }
@@ -2867,11 +2869,13 @@ app.post("/api/ot12/answer", (req, res) => {
   const b = req.body || {};
   if (!run || run.id !== String(b.id || "")) return res.status(409).json({ error: "No round in progress." });
   if (parseInt(b.index, 10) !== run.idx) return res.status(409).json({ error: "Out of step.", index: run.idx });
-  const picked = String(b.name || "");
-  if (!run.options.includes(picked)) return res.status(400).json({ error: "Not one of the options." });
+  const picked = [...new Set((Array.isArray(b.names) ? b.names : [b.name]).map(String).filter(Boolean))];
+  if (!picked.length) return res.status(400).json({ error: "Pick at least one." });
+  if (picked.some((p) => !run.options.includes(p))) return res.status(400).json({ error: "Not one of the options." });
 
-  const answer = run.queue[run.idx].member;
-  const correct = picked === answer;
+  const answer = (run.queue[run.idx].members || []).slice();
+  // right only if the set matches exactly — no extras, none missed
+  const correct = picked.length === answer.length && picked.every((p) => answer.includes(p));
   if (correct) run.correct += 1;
   run.idx += 1;
   const done = run.idx >= run.queue.length;
