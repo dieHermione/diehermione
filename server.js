@@ -2754,24 +2754,24 @@ const OT12_MEMBER_DATA = [
     superpower: undefined, revealMonth: "July", animal: "Fruit Bat",
     color: "Purple", plant: "Cosmos", birthdate: undefined,
     heightCm: undefined, eyeColor: "Purple", shape: "Circle" },
-  // No data has been supplied for these four yet — names only, deliberately not
-  // filled in from memory, because a wrong value here becomes a wrong quiz answer.
-  { name: "Yves", fullName: undefined, hangul: undefined, location: undefined,
-    superpower: undefined, revealMonth: undefined, animal: undefined,
-    color: undefined, plant: undefined, birthdate: undefined,
-    heightCm: undefined, eyeColor: undefined, shape: undefined },
-  { name: "Chuu", fullName: undefined, hangul: undefined, location: undefined,
-    superpower: undefined, revealMonth: undefined, animal: undefined,
-    color: undefined, plant: undefined, birthdate: undefined,
-    heightCm: undefined, eyeColor: undefined, shape: undefined },
-  { name: "Go Won", fullName: undefined, hangul: undefined, location: undefined,
-    superpower: undefined, revealMonth: undefined, animal: undefined,
-    color: undefined, plant: undefined, birthdate: undefined,
-    heightCm: undefined, eyeColor: undefined, shape: undefined },
-  { name: "Olivia Hye", fullName: undefined, hangul: undefined, location: undefined,
-    superpower: undefined, revealMonth: undefined, animal: undefined,
-    color: undefined, plant: undefined, birthdate: undefined,
-    heightCm: undefined, eyeColor: undefined, shape: undefined },
+  // The yyxy four. Note their location is Eden, not Earth — that split is real
+  // data, not a typo, so a "who is from Eden" question can key off it.
+  { name: "Yves", fullName: "Ha Soo-young", hangul: "이브", location: "Eden",
+    superpower: undefined, revealMonth: "November", animal: "Swan",
+    color: "Burgundy", plant: "Tuberose", birthdate: undefined,
+    heightCm: undefined, eyeColor: "Dark Brown", shape: undefined },
+  { name: "Chuu", fullName: "Kim Ji-woo", hangul: "츄", location: "Eden",
+    superpower: undefined, revealMonth: "December", animal: "Penguin",
+    color: "Peach", plant: "Tulip", birthdate: undefined,
+    heightCm: undefined, eyeColor: "Black", shape: undefined },
+  { name: "Go Won", fullName: "Park Chae-won", hangul: "고원", location: "Eden",
+    superpower: undefined, revealMonth: "January", animal: "Butterfly",
+    color: "Eden Green", plant: "Plum Blossom", birthdate: undefined,
+    heightCm: undefined, eyeColor: "Black", shape: undefined },
+  { name: "Olivia Hye", fullName: "Son Hye-ju", hangul: "올리비아 혜", location: "Eden",
+    superpower: undefined, revealMonth: "March", animal: "Wolf",
+    color: "Silver", plant: "Lobelia", birthdate: undefined,
+    heightCm: undefined, eyeColor: "Black", shape: undefined },
 ];
 const OT12_MEMBERS = OT12_MEMBER_DATA.map((m) => m.name);
 const OT12_OPTIONS = 4;          // one right answer + three decoys

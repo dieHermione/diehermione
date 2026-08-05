@@ -136,8 +136,15 @@ the dashboard no longer lists them individually.
   160 and 165 cm", "whose animal is the owl" — rather than hand-written. Missing
   values are `undefined` on purpose: a generator must **skip** a member for a
   question whose field it lacks, never invent one or treat `""` as an answer.
-  Coverage is partial (superpower/birthdate/height 1 of 12; Yves, Chuu, Go Won and
-  Olivia Hye have names only), so any generator needs that skip logic from day one.
+  Complete for all twelve: full name, hangul, location, reveal month, animal,
+  colour, plant. **Still thin: superpower, birthdate and height (1 of 12 each)**,
+  so a height-range question cannot be generated yet; eye colour is 11, shape 4.
+  > **Values are not unique** — a "which member has X" question can have several
+  > right answers, so a multiple-choice generator must not assume one. Known
+  > collisions: location (Earth 8 / Eden 4 — the yyxy four are Eden, which is real
+  > data, not a typo), reveal month (November, December and January each cover two
+  > members, one per era), eye colour (Black covers four), shape (Circle covers
+  > three).
 - **Summary** a real Wikipedia article and a word limit. Topic pools: angels,
   feminism, Greek mythology, pre-18th-century history, **critical biblical
   scholarship** (`SUMMARY_TOPICS` / `KIND_LABEL` in `server.js`).
