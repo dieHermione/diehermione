@@ -59,17 +59,19 @@
        two-row wall, which had to fit two cards into that same space. */
     .board { position: relative; flex: 1; min-height: 0; margin-top: 1rem;
       overflow-x: auto; overflow-y: hidden; scrollbar-width: thin;
-      scrollbar-color: rgba(0,172,219,.35) transparent; }
+      scrollbar-color: rgba(0,172,219,.35) transparent; cursor: grab; }
+    .board.dragging { cursor: grabbing; user-select: none; }
     .board::-webkit-scrollbar { height: 7px; }
     .board::-webkit-scrollbar-thumb { background: rgba(0,172,219,.32); border-radius: 999px; }
     .track { display: grid; grid-auto-flow: column; grid-template-rows: 1fr;
       grid-auto-columns: max-content; gap: 30px; width: max-content; height: 100%;
-      align-content: stretch; padding: 0 2px 6px; }
+      align-content: stretch; align-items: center; padding: 0 2px 6px; }
 
     /* the poster is only a positioning / selection / lock wrapper; the frame fills it.
-       Height fills the single row; width follows from the aspect ratio, so cards
-       grow and shrink with the viewport instead of sitting at a fixed pixel size. */
-    .p { position: relative; height: 100%; aspect-ratio: 19 / 24; text-decoration: none; cursor: pointer; }
+       Height is a share of the single row (not the full row — that read too large
+       on a laptop); width follows from the aspect ratio, so cards grow and shrink
+       with the viewport instead of sitting at a fixed pixel size. */
+    .p { position: relative; height: 80%; aspect-ratio: 19 / 24; text-decoration: none; cursor: pointer; }
 
     /* ---------- the macOS window frame ---------- */
     .frame-mac { position: relative; width: 100%; height: 100%; border: 1px solid #26333f; border-radius: 9px;
@@ -365,7 +367,6 @@
     let sel = 0;
     let cards = [];
     let guest = false;
-    const ROWS = 2;   // the wall is two rows deep and grows sideways
 
     // Placement is pure CSS now (a two-row, column-flow grid in .track), so
     // there is no manual layout pass to run or to redo on resize.
@@ -474,13 +475,47 @@
     document.addEventListener("keydown", (e) => {
       const tag = (e.target && e.target.tagName || "").toLowerCase();
       if (tag === "input" || tag === "textarea") return;
-      if (e.key === "ArrowRight") { e.preventDefault(); setSel(sel + ROWS); cards[sel].focus(); }
-      else if (e.key === "ArrowLeft") { e.preventDefault(); setSel(sel - ROWS); cards[sel].focus(); }
-      else if (e.key === "ArrowDown") { e.preventDefault(); setSel(sel + 1); cards[sel].focus(); }
-      else if (e.key === "ArrowUp") { e.preventDefault(); setSel(sel - 1); cards[sel].focus(); }
+      // one row now, not two — every arrow just steps to the next/previous card
+      if (e.key === "ArrowRight" || e.key === "ArrowDown") { e.preventDefault(); setSel(sel + 1); cards[sel].focus(); }
+      else if (e.key === "ArrowLeft" || e.key === "ArrowUp") { e.preventDefault(); setSel(sel - 1); cards[sel].focus(); }
       else if (e.key === "Enter") { e.preventDefault(); open(); }
     });
 
+
+    // Vertical wheel scrolls the strip sideways (down = right, up = left) —
+    // only when the strip actually overflows, so the narrow-screen fallback
+    // (a normal wrapping list, no horizontal scroll) keeps its normal page
+    // scroll instead of being eaten here.
+    board.addEventListener("wheel", (e) => {
+      if (board.scrollWidth <= board.clientWidth) return;
+      e.preventDefault();
+      board.scrollLeft += e.deltaY;
+    }, { passive: false });
+
+    // Click-and-drag panning. A card is an <a>, so a real click must still
+    // navigate — only a drag past a small threshold suppresses it.
+    let dragging = false, dragged = false, dragX = 0, dragScroll = 0;
+    board.addEventListener("mousedown", (e) => {
+      if (board.scrollWidth <= board.clientWidth) return;
+      dragging = true; dragged = false;
+      dragX = e.pageX; dragScroll = board.scrollLeft;
+      board.classList.add("dragging");
+    });
+    window.addEventListener("mousemove", (e) => {
+      if (!dragging) return;
+      const dx = e.pageX - dragX;
+      if (Math.abs(dx) > 4) dragged = true;
+      board.scrollLeft = dragScroll - dx;
+    });
+    window.addEventListener("mouseup", () => {
+      dragging = false;
+      board.classList.remove("dragging");
+    });
+    // capture phase: get to the click before the anchor's own navigation
+    board.addEventListener("click", (e) => {
+      if (!dragged) return;
+      e.preventDefault(); e.stopPropagation(); dragged = false;
+    }, true);
 
     document.getElementById("tabs").addEventListener("click", (e) => {
       const b = e.target.closest(".tab"); if (!b || b.dataset.tab === curTab) return;
