@@ -1521,12 +1521,13 @@ app.get("/snake", requirePlayer, (req, res) => {
   res.sendFile(path.join(__dirname, "views", "snake.html"));
 });
 
-// T9 — a typing game on an old-phone multi-tap keypad. Deliberately unguided:
-// no on-screen hints about which key or how many taps. Self-refereed client-side
-// like the other typing games; no payout wired yet.
-app.get("/t9", requirePlayer, (req, res) => {
+// Multitap — a typing game on an old-phone multi-tap keypad. Deliberately
+// unguided: no on-screen hints about which key or how many taps. Self-refereed
+// client-side like the other typing games; no payout wired yet.
+// /t9 is kept as an alias — same route the wall used to link before the rename.
+app.get(["/multitap", "/t9"], requirePlayer, (req, res) => {
   touchGuest(req);
-  res.sendFile(path.join(__dirname, "views", "t9.html"));
+  res.sendFile(path.join(__dirname, "views", "multitap.html"));
 });
 
 // OT12 — match the photo to the LOONA member

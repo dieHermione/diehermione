@@ -98,9 +98,13 @@
     wheel: "/wheel", deathroll: "/deathroll", elysium: "/elysium",
     chess: "/chess", parse: "/dummyparse", dummyparse: "/dummyparse",
     skillcheck: "/skillcheck", summary: "/summary", lottery: "/lottery", slots: "/lottery",
+    multitap: "/multitap", ot12: "/ot12",
     // not games, but the two places people most want to get back to
     dashboard: "/dashboard", profile: "/profile", games: "/games",
   };
+  // admin-only launch targets, checked at run time (launch itself is not an
+  // admin command — everyone can launch a game — only these specific names are)
+  var ADMIN_ONLY_LAUNCH = { admin: "/admin" };
 
   var PRAY = {
     points: {
@@ -169,11 +173,18 @@
       },
     },
     launch: {
-      usage: "pray launch <" + Object.keys(GAMES).join("|") + ">",
+      usage: "pray launch <" + Object.keys(GAMES).concat(Object.keys(ADMIN_ONLY_LAUNCH)).join("|") + ">",
       run: function (args) {
         var name = String(args[0] || "").toLowerCase();
-        var href = GAMES[name];
+        var href = GAMES[name] || ADMIN_ONLY_LAUNCH[name];
         if (!href) return Promise.resolve(PRAY.launch.usage);
+        if (ADMIN_ONLY_LAUNCH[name]) {
+          return who().then(function (d) {
+            if (!d || !d.isAdmin) return "She saw that.";
+            setTimeout(function () { window.location.href = href; }, 220);
+            return "opening " + name + ".";
+          });
+        }
         setTimeout(function () { window.location.href = href; }, 220);
         return Promise.resolve("opening " + name + ".");
       },

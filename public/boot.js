@@ -294,6 +294,10 @@
       "Started Devotion Integrity Verifier", "Mounted /her/name", "Started Adoration Uplink Keeper",
       "Reached target Full Communion", "Started Final Vow Sealer"
     ];
+    // twice the dummy lines to scroll past — it's flavor text, not a real log,
+    // so a plain repeat is all it needs; the whole script still stretches to
+    // fit `duration`, so this just scrolls by faster/denser, not longer
+    UNITS = UNITS.concat(UNITS);
     // these indices used to render [WARN] lines; warns are removed entirely now
     var WARN_AT = { 8: 1, 21: 1, 33: 1, 47: 1, 59: 1, 72: 1, 88: 1, 101: 1 };
     UNITS.forEach(function (u, i) {
@@ -345,9 +349,13 @@
       if (vt >= endAt + HOLD) {
         document.removeEventListener("keydown", onKey);
         document.removeEventListener("keyup", onKey);
-        if (opts.navigateTo) { window.location.href = opts.navigateTo; return; }
-        ov.classList.remove("on");
-        setTimeout(function () { ov.remove(); if (typeof opts.onDone === "function") opts.onDone(); }, 360);
+        // sit on the finished screen for a beat before handing off — a
+        // real pause, not scaled by the virtual clock like the rest of this
+        if (opts.navigateTo) { setTimeout(function () { window.location.href = opts.navigateTo; }, 1500); return; }
+        setTimeout(function () {
+          ov.classList.remove("on");
+          setTimeout(function () { ov.remove(); if (typeof opts.onDone === "function") opts.onDone(); }, 360);
+        }, 1500);
         return;
       }
       raf = requestAnimationFrame(frame);

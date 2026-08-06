@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>T9 - angeldom.me</title>
+<title>Multitap - angeldom.me</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -11,7 +11,7 @@
 <script src="/me.js"></script>
 <script src="/audio.js"></script>
 <style>
-  /* T9: multi-tap typing on a flat keypad. Design 1 (classic stack). There is
+  /* Multitap: multi-tap typing on a flat keypad. Design 1 (classic stack). There is
      NO instructional text anywhere — no tap cues, no key hints, no footer. The
      player has to remember the layout and the tap counts. Being obtuse is the
      point. Self-contained, no site.css. Dual-tone: green #0bdb00 + white only
@@ -136,7 +136,7 @@
 
   <div class="center" id="done" hidden>
     <h1>done</h1>
-    <div class="stat"><b id="d-err">0</b> mistakes &middot; <b id="d-time">0:00</b></div>
+    <div class="stat"><b id="d-reps">0</b> reps &middot; <b id="d-err">0</b> mistakes &middot; <b id="d-time">0:00</b></div>
     <div class="stat" id="d-log" style="font-size:.72rem"></div>
     <button class="btn" id="again" type="button">again</button>
   </div>
@@ -373,6 +373,7 @@
     function finish() {
       playing = false;
       const secs = Math.round((Date.now() - startedAt) / 1000);
+      $("d-reps").textContent = lines.length;
       $("d-err").textContent = mistakes;
       $("d-time").textContent = Math.floor(secs / 60) + ":" + String(secs % 60).padStart(2, "0");
       $("done").hidden = false;

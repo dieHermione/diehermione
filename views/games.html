@@ -88,6 +88,13 @@
       font-weight: 700; letter-spacing: .05em; color: #fff; text-shadow: 0 0 12px var(--a); }
     .frame-mac .num { position: absolute; bottom: 13px; right: 13px; z-index: 6; font-size: 10px;
       letter-spacing: .24em; color: #3f5568; }
+    /* "unfinished" — an honest label, not a lock. The card underneath it is
+       still a live link; this never gets pointer-events, so it can never be
+       the thing a click lands on. */
+    .frame-mac .wip { position: absolute; top: 10px; right: 10px; z-index: 7; pointer-events: none;
+      background: rgba(24,14,0,.85); border: 1px solid #ffb020; color: #ffd27a;
+      font-size: .54rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase;
+      padding: .3rem .55rem; border-radius: 3px; text-shadow: 0 1px 4px rgba(0,0,0,.6); }
 
     /* ===================== bespoke card interiors ===================== */
 
@@ -171,13 +178,13 @@
       object-fit: cover; object-position: center 22%; }
     .c-ot12 .ot12-fade { position: absolute; inset: 0;
       background: linear-gradient(180deg, rgba(0,0,0,.4) 0%, rgba(0,0,0,0) 32%, rgba(0,0,0,.22) 60%, rgba(0,0,0,.78) 100%); }
-    .c-ot12 .ot12-logo { position: absolute; left: 0; right: 0; top: 9%; text-align: center;
-      font-family: "Bebas Neue", "IBM Plex Mono", sans-serif; font-size: 4.2rem; font-weight: 400;
-      letter-spacing: .18em; color: #fff;
-      text-shadow: 0 2px 20px rgba(0,0,0,.7), 0 0 40px rgba(255,166,197,.55); }
-    .c-ot12 .ot12-sub { position: absolute; left: 0; right: 0; top: calc(9% + 3.9rem);
-      text-align: center; font-family: "IBM Plex Mono", monospace; font-size: .52rem;
-      letter-spacing: .34em; text-transform: uppercase; color: #ffd6e6; text-shadow: 0 1px 8px rgba(0,0,0,.6); }
+    .c-ot12 .ot12-logo { position: absolute; left: 0; right: 0; top: 8%; text-align: center;
+      font-family: "Bebas Neue", "IBM Plex Mono", sans-serif; font-size: 7rem; font-weight: 400;
+      letter-spacing: .1em; color: #fff;
+      text-shadow: 0 2px 24px rgba(0,0,0,.7), 0 0 48px rgba(255,166,197,.55); }
+    .c-ot12 .ot12-sub { position: absolute; left: 0; right: 0; top: calc(8% + 6rem);
+      text-align: center; font-family: "IBM Plex Mono", monospace; font-size: 1rem;
+      letter-spacing: .3em; text-transform: uppercase; color: #ffd6e6; text-shadow: 0 1px 8px rgba(0,0,0,.6); }
 
     /* SUMMARY — a read-and-retell column with a word-limit rule */
     .c-sum { position: absolute; inset: 0; padding: .7rem .8rem; overflow: hidden; }
@@ -260,7 +267,7 @@
         tip: "A typing drill of correction. Type each line exactly — falter and it corrupts." },
       { n: "devotion",    href: "/writing?mode=devotion", art: "dev",   a: "#00acdb", wb: "#050a10", account: true, tab: "extra",
         tip: "A verse reader. Recite Her lines in turn. An account is required." },
-      { n: "multitap",    href: "/t9",                    art: "t9",    a: "#0bdb00", wb: "#050d05",
+      { n: "multitap",    href: "/multitap",              art: "t9",    a: "#0bdb00", wb: "#050d05",
         tip: "A typing drill on an old-phone keypad. No hints — remember the taps." },
       { n: "deathroll",   href: "/deathroll",             art: "death", a: "#c11208", wb: "#0e0607", multi: true, tab: "extra",
         tip: "Roll against another, each cap the next roll. Hit one and you lose. Account required." },
@@ -268,7 +275,7 @@
         tip: "A priest damage recount. Parse the dummy and chase a higher DPS." },
       { n: "skill check", href: "/skillcheck",            art: "skill", a: "#c11208", wb: "radial-gradient(120% 120% at 50% 46%, #200a0c, #050202 74%)",
         tip: "Stop the sweeping dial inside the good zone. Pure nerve." },
-      { n: "ot12",        href: "/ot12",                  art: "ot12",  a: "#ffa6c5", wb: "#0d0508",
+      { n: "ot12",        href: "/ot12",                  art: "ot12",  a: "#ffa6c5", wb: "#0d0508", wip: true,
         tip: "Match the photo to the member. Twelve girls, four names, one right answer." },
       { n: "elysium",     href: "/elysium",               art: "elysium", a: "#3f9f6a", wb: "#04100a", account: true, tab: "extra",
         tip: "A tree you tend. It remembers how long you have kept it." },
@@ -357,9 +364,12 @@
 
     function frameHTML(g, i) {
       const num = String(i + 1).padStart(2, "0");
+      // an "unfinished" notice, not a lock — the card stays fully playable,
+      // it just says so. Separate from the account/multi lock treatment below.
+      const wip = g.wip ? '<div class="wip">unfinished</div>' : "";
       return `<div class="frame-mac" style="--a:${g.a};--wb:${g.wb}">
         <div class="bar"><i class="r"></i><i class="y"></i><i class="g"></i><span class="t">${g.n}@angeldomme</span></div>
-        <div class="win">${ART[g.art]()}<div class="lbl">${g.n}</div><div class="num">${num}</div></div>
+        <div class="win">${ART[g.art]()}${wip}<div class="lbl">${g.n}</div><div class="num">${num}</div></div>
       </div>`;
     }
 
