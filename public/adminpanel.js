@@ -566,20 +566,61 @@ window.AdminPanel = (function () {
     const otBar = document.createElement("div"); otBar.className = "adm-preset-bar";
     const otFile = document.createElement("input"); otFile.type = "file"; otFile.accept = "image/*"; otFile.style.display = "none";
     const otSelected = new Set();
+    const otChips = {};              // member -> its toggle, so tags can be loaded in
+    let otEditing = null;            // photo id being re-tagged, or null when adding
+    const OT_ADD_HINT = "Photos for the OT12 matching game. Tick everyone who appears in the photo (a photo may show several), then choose a file — it is shrunk to 512px on its longest side, keeping its aspect ratio.";
+
+    function otSetChips(members) {
+      otSelected.clear();
+      (members || []).forEach((m) => otSelected.add(m));
+      Object.keys(otChips).forEach((m) => otChips[m].classList.toggle("ghost", !otSelected.has(m)));
+    }
+    // swap the bar between adding a new photo and re-tagging an existing one
+    function otMode(photo) {
+      otEditing = photo ? photo.id : null;
+      otSetChips(photo ? photo.members : []);
+      otPick.hidden = !!photo;
+      otSave.hidden = !photo;
+      otCancel.hidden = !photo;
+      otHint.textContent = photo
+        ? "Re-tagging this photo — tick everyone in it, then save."
+        : OT_ADD_HINT;
+      otList.querySelectorAll("[data-pid]").forEach((el) => {
+        el.style.outline = photo && el.dataset.pid === photo.id ? "2px solid var(--accent)" : "";
+      });
+    }
     const otPick = mkChip("+ Add photo", "ghost", () => {
       if (!otSelected.size) { otHint.textContent = "Tick at least one member first."; return; }
       otFile.click();
     });
-    otBar.append(otPick); otSec.append(otBar);
+    const otSave = mkChip("Save tags", "", async () => {
+      if (!otEditing) return;
+      if (!otSelected.size) { otHint.textContent = "Tick at least one member."; return; }
+      const r = await fetch("/api/ot12/photos/" + encodeURIComponent(otEditing), {
+        method: "PUT", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ members: [...otSelected] }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) { otHint.textContent = d.error || "Could not save."; return; }
+      otMode(null);
+      otHint.textContent = "Tags saved.";
+      otLoad();
+    });
+    const otCancel = mkChip("Cancel", "ghost", () => otMode(null));
+    otSave.hidden = true; otCancel.hidden = true;
+    otBar.append(otPick, otSave, otCancel); otSec.append(otBar);
     const otList = document.createElement("div"); otList.style.cssText = "display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.6rem";
     otSec.append(otList, otFile);
 
     function otThumb(p) {
       const box = document.createElement("div");
+      box.dataset.pid = p.id;
       box.style.cssText = "position:relative;width:64px;text-align:center";
       const im = document.createElement("img");
       im.src = p.img; im.alt = (p.members || []).join(", ");
-      im.style.cssText = "width:64px;height:64px;object-fit:contain;background:#000;border:1px solid var(--dim2);display:block";
+      im.title = "Click to re-tag";
+      im.style.cssText = "width:64px;height:64px;object-fit:contain;background:#000;border:1px solid var(--dim2);display:block;cursor:pointer";
+      im.addEventListener("click", () => otMode(p));
       const nm = document.createElement("div");
       nm.textContent = (p.members || []).join(", ");
       nm.style.cssText = "font-size:.52rem;color:var(--dim);margin-top:.15rem;overflow:hidden;text-overflow:ellipsis";
@@ -588,7 +629,9 @@ window.AdminPanel = (function () {
       x.style.cssText = "position:absolute;top:0;right:0;background:rgba(0,0,0,.7)";
       x.addEventListener("click", async () => {
         const r = await fetch("/api/ot12/photos/" + encodeURIComponent(p.id), { method: "DELETE" });
-        if (r.ok) box.remove();
+        if (!r.ok) return;
+        if (otEditing === p.id) otMode(null);
+        box.remove();
       });
       box.append(im, nm, x);
       return box;
@@ -602,6 +645,7 @@ window.AdminPanel = (function () {
               if (otSelected.has(m)) { otSelected.delete(m); b.classList.add("ghost"); }
               else { otSelected.add(m); b.classList.remove("ghost"); }
             });
+            otChips[m] = b;
             otWho.append(b);
           });
         }
@@ -632,9 +676,9 @@ window.AdminPanel = (function () {
           body: JSON.stringify({ members: [...otSelected], img: dataUrl }),
         });
         const d = await r.json().catch(() => ({}));
-        otHint.textContent = r.ok ? "Added." : (d.error || "Could not add.");
         otFile.value = "";
-        if (r.ok) otLoad();
+        if (r.ok) { otMode(null); otHint.textContent = "Added."; otLoad(); }
+        else otHint.textContent = d.error || "Could not add.";
       };
       img.src = URL.createObjectURL(file);
     });

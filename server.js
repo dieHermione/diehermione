@@ -2815,6 +2815,22 @@ app.post("/api/ot12/photos", (req, res) => {
   saveOt12(d);
   res.json({ ok: true, count: d.photos.length });
 });
+// re-tag an existing photo, so a mis-tag is a fix rather than a re-upload
+app.put("/api/ot12/photos/:id", (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });
+  const raw = Array.isArray((req.body || {}).members) ? req.body.members : [];
+  const members = [...new Set(raw.map(String))].filter((m) => OT12_MEMBERS.includes(m));
+  if (!members.length) return res.status(400).json({ error: "Tag at least one member." });
+  const d = loadOt12();
+  const photo = d.photos.find((p) => p.id === req.params.id);
+  if (!photo) return res.status(404).json({ error: "No such photo." });
+  photo.members = members;
+  delete photo.member;          // drop the pre-multi-member field if it lingers
+  saveOt12(d);
+  res.json({ ok: true, members });
+});
+
 app.delete("/api/ot12/photos/:id", (req, res) => {
   if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
   if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });
