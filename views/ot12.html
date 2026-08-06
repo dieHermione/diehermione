@@ -32,8 +32,10 @@
   .body { flex:1; min-height:0; display:flex; flex-direction:column; align-items:center;
     justify-content:center; gap:1.4rem; }
 
-  .photo { width:min(300px, 62vw); aspect-ratio:1; border:1px solid var(--line); border-radius:8px;
-    background:var(--panel) center/cover no-repeat; box-shadow:0 0 30px color-mix(in srgb, var(--c) 12%, transparent); flex-shrink:0; }
+  /* photos keep their own aspect ratio — contained, never cropped to a square */
+  .photo { max-width:min(420px, 76vw); max-height:38vh; border:1px solid var(--line); border-radius:8px;
+    background:var(--panel); object-fit:contain; flex-shrink:0;
+    box-shadow:0 0 30px color-mix(in srgb, var(--c) 12%, transparent); }
 
   /* the whole group is always on offer; a photo may show any number of them */
   .opts { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:.45rem; width:min(44rem, 92vw); }

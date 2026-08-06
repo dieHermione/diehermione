@@ -162,7 +162,11 @@ window.AdminPanel = (function () {
       ".adm-tab.active { color: var(--bright); border-color: var(--accent); background: rgba(0,172,219,0.09); }",
       ".adm-tab .badge { color: var(--err); margin-left: 0.4rem; }",
       ".adm-panel { display: none; }",
-      ".adm-panel.active { display: grid; }",
+      ".adm-subpanel { display: none; }",
+      ".adm-subpanel.active { display: grid; }",
+      ".adm-subtabs { margin: 0 0 1.2rem; }",
+      ".adm-panel.active { display: block; }",
+      ".adm-panel.active.adm { display: grid; }",
       ".adm h3 { color: var(--dim); font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 400; margin: 0.4rem 0 0.6rem; }",
       ".adm-sec { margin-bottom: 1.1rem; }",
       ".adm-empty { color: var(--dim2); font-size: 0.85rem; }",
@@ -662,28 +666,69 @@ window.AdminPanel = (function () {
 
     // Group the sections into a few top-left tabs so the panel shows one area at
     // a time instead of everything at once.
+    // Top-level tabs. A tab may declare `subs`, in which case its panel gets its
+    // own second row of tabs — Games does, one per game that has settings, with
+    // the shared hover-text editor sitting in the first (default) subtab.
     const TABS = [
       { id: "members", label: "Members", match: ["Approvals", "Applications", "Accounts"] },
-      { id: "writing", label: "Writing", match: ["Devotion presets", "Penance presets", "Multitap lines"] },
+      { id: "games", label: "Games", subs: [
+        { id: "general",  label: "General",  match: ["Game hover text"] },
+        { id: "penance",  label: "Penance",  match: ["Penance presets"] },
+        { id: "devotion", label: "Devotion", match: ["Devotion presets"] },
+        { id: "multitap", label: "Multitap", match: ["Multitap lines"] },
+        { id: "ot12",     label: "OT12",     match: ["OT12 photos"] },
+      ] },
       { id: "completed", label: "Completed", match: ["Lines completed", "Summaries handed in"] },
-      { id: "content", label: "Site content", match: ["Onboarding intro", "Questionnaire descriptions", "Decrypt lines", "Game hover text", "OT12 photos", "Screen glitch"] },
+      { id: "content", label: "Site content", match: ["Onboarding intro", "Questionnaire descriptions", "Decrypt lines", "Screen glitch"] },
       { id: "docs", label: "Docs & tools", match: ["Documentation"] },
     ];
-    const tabFor = (sec) => {
+    const secLabel = (sec) => {
       const h = sec.querySelector("h3");
       // strip the leading fold chevron (span.sc) so matching sees the real label
-      const t = (h ? h.textContent : "").replace(/^[^A-Za-z]+/, "").trim();
-      const hit = TABS.find((tab) => tab.match.some((m) => t.startsWith(m)));
-      return (hit || TABS[0]).id;
+      return (h ? h.textContent : "").replace(/^[^A-Za-z]+/, "").trim();
     };
+    // where a section belongs: [tabId, subId|null]
+    const homeFor = (sec) => {
+      const t = secLabel(sec);
+      for (const tab of TABS) {
+        if (tab.subs) {
+          const sub = tab.subs.find((sb) => sb.match.some((m) => t.startsWith(m)));
+          if (sub) return [tab.id, sub.id];
+        } else if ((tab.match || []).some((m) => t.startsWith(m))) {
+          return [tab.id, null];
+        }
+      }
+      return [TABS[0].id, null];
+    };
+
     const secs = [...wrap.querySelectorAll(":scope > .adm-sec")];
-    const panels = {};
+    const panels = {}, subPanels = {}, subBars = {};
     TABS.forEach((tab) => {
       const p = document.createElement("div");
-      p.className = "adm adm-panel"; p.dataset.tab = tab.id;
+      p.className = tab.subs ? "adm-panel" : "adm adm-panel";
+      p.dataset.tab = tab.id;
       panels[tab.id] = p;
+      if (tab.subs) {
+        const sbar = document.createElement("div"); sbar.className = "adm-tabs adm-subtabs";
+        p.append(sbar); subBars[tab.id] = sbar;
+        tab.subs.forEach((sb) => {
+          const sp = document.createElement("div");
+          sp.className = "adm adm-subpanel"; sp.dataset.sub = sb.id;
+          subPanels[tab.id + "/" + sb.id] = sp;
+          p.append(sp);
+        });
+      }
     });
-    secs.forEach((sec) => panels[tabFor(sec)].append(sec));
+    secs.forEach((sec) => {
+      const [tabId, subId] = homeFor(sec);
+      (subId ? subPanels[tabId + "/" + subId] : panels[tabId]).append(sec);
+    });
+
+    // a tab with subs counts as populated if any of its subpanels has content
+    const tabHasContent = (tab) => tab.subs
+      ? tab.subs.some((sb) => subPanels[tab.id + "/" + sb.id].children.length)
+      : panels[tab.id].children.length;
+
     const bar = document.createElement("div"); bar.className = "adm-tabs";
     const activate = (id) => {
       TABS.forEach((tab) => {
@@ -692,10 +737,19 @@ window.AdminPanel = (function () {
         if (btn) btn.classList.toggle("active", tab.id === id);
       });
     };
+    const activateSub = (tab, subId) => {
+      tab.subs.forEach((sb) => {
+        const sp = subPanels[tab.id + "/" + sb.id];
+        sp.classList.toggle("active", sb.id === subId);
+        const b = subBars[tab.id].querySelector('[data-sub="' + sb.id + '"]');
+        if (b) b.classList.toggle("active", sb.id === subId);
+      });
+    };
+
     wrap.replaceChildren(bar);
     TABS.forEach((tab) => {
       const panel = panels[tab.id];
-      if (!panel.children.length) return;               // hide tabs with nothing in them
+      if (!tabHasContent(tab)) return;                  // hide tabs with nothing in them
       const btn = document.createElement("button");
       btn.className = "adm-tab"; btn.dataset.tab = tab.id; btn.textContent = tab.label;
       const waiting = panel.querySelectorAll(".adm-row.pending").length;
@@ -703,6 +757,19 @@ window.AdminPanel = (function () {
       btn.addEventListener("click", () => activate(tab.id));
       bar.append(btn);
       wrap.append(panel);
+
+      if (tab.subs) {
+        tab.subs.forEach((sb) => {
+          if (!subPanels[tab.id + "/" + sb.id].children.length) return;
+          const sbtn = document.createElement("button");
+          sbtn.className = "adm-tab"; sbtn.dataset.sub = sb.id; sbtn.textContent = sb.label;
+          sbtn.addEventListener("click", () => activateSub(tab, sb.id));
+          subBars[tab.id].append(sbtn);
+        });
+        // the first subtab (General / hover text) is the default
+        const firstSub = subBars[tab.id].querySelector("[data-sub]");
+        if (firstSub) activateSub(tab, firstSub.dataset.sub);
+      }
     });
     const firstBtn = bar.querySelector(".adm-tab");
     if (firstBtn) activate(firstBtn.dataset.tab);
