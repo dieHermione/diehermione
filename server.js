@@ -2645,6 +2645,8 @@ const GAMETIPS_DEFAULTS = {
     "dummy parse": "A priest damage recount. Parse the dummy and chase a higher DPS.",
     "skill check": "Stop the sweeping dial inside the good zone. Pure nerve.",
     "summary": "Read a real Wikipedia article, then retell it in your own words.",
+    "elysium": "A tree you tend. It remembers how long you have kept it.",
+    "chess": "Ink-wash chess against Her. Win and you may STRIKE; lose and brace for REWIND.",
   },
 };
 function loadGameTips() {

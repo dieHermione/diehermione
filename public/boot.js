@@ -163,7 +163,12 @@
 
   function play(opts) {
     opts = opts || {};
-    var duration = opts.duration || 30000;   // long Arch-style cascade; hold Space to race it
+    // long Arch-style cascade; hold Space to race it. The whole script stretches
+    // to fill this budget (see `scale` below), so doubling the UNITS cascade
+    // without raising this too would have just crammed twice the lines into the
+    // same window instead of actually taking longer — this default is doubled
+    // to match, so per-line pacing stays put and the run itself takes ~2x as long.
+    var duration = opts.duration || 60000;
     var scale = 1;                          // set once the script length is known
     ensureStyle();
 

@@ -63,9 +63,14 @@
     .board.dragging { cursor: grabbing; user-select: none; }
     .board::-webkit-scrollbar { height: 7px; }
     .board::-webkit-scrollbar-thumb { background: rgba(0,172,219,.32); border-radius: 999px; }
+    /* Horizontal padding is not cosmetic here: every card's drop shadow
+       (.frame-mac's box-shadow, present whether selected or not) bleeds well
+       past its own box. An inner card's bleed just overlaps its neighbour, but
+       the first and last card have no neighbour on their outer side — only the
+       board's scroll boundary, which clips flush with no room for it. */
     .track { display: grid; grid-auto-flow: column; grid-template-rows: 1fr;
       grid-auto-columns: max-content; gap: 30px; width: max-content; height: 100%;
-      align-content: stretch; align-items: center; padding: 0 2px 6px; }
+      align-content: stretch; align-items: center; padding: 0 26px 6px; }
 
     /* the poster is only a positioning / selection / lock wrapper; the frame fills it.
        Height is a share of the single row (not the full row — that read too large
