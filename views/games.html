@@ -438,7 +438,9 @@
       fetch("/api/gametips").then((r) => (r.ok ? r.json() : null)).then((d) => {
         if (!d || !d.tips) return;
         cards.forEach((el, i) => {
-          const t = d.tips[GAMES[i].n];
+          // index into `shown` (this tab's games), not the full GAMES list —
+          // the two only line up on a tab that happens to hold every game
+          const t = d.tips[shown[i].n];
           const tipEl = el.querySelector(".tip");
           if (t && tipEl) tipEl.textContent = t;
         });
