@@ -364,6 +364,7 @@ app.post("/api/apply", (req, res) => {
     petnames[p] = v;
   }
   const limits = String(body.limits || "").trim().slice(0, LIMITS_MAX);
+  const otherKinks = String(body.otherKinks || "").trim().slice(0, LIMITS_MAX);
   const petnamesOther = String(body.petnamesOther || "").trim().slice(0, 120);
   const age = Math.max(0, Math.min(120, parseInt(body.age, 10) || 0));
   const brat = body.brat === "yes" ? "yes" : body.brat === "no" ? "no" : "";
@@ -372,7 +373,7 @@ app.post("/api/apply", (req, res) => {
     id: Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 7),
     at: new Date().toISOString(),
     authCode, age, brat,
-    kinks, limits, punishments, petnames, petnamesOther, flag: flagged,
+    kinks, limits, otherKinks, punishments, petnames, petnamesOther, flag: flagged,
   };
   const list = loadApplications();
   list.unshift(application);

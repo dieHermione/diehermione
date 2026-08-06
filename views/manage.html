@@ -184,6 +184,7 @@
             </div>
             <div class="rgroup"><h3>interests</h3>${kr}</div>
             <div class="rgroup"><h3>limits</h3><div class="ritem"><span class="k" style="white-space:pre-wrap">${esc(a.limits) || "<span style='color:var(--dim2)'>none given</span>"}</span></div></div>
+            <div class="rgroup"><h3>other kinks</h3><div class="ritem"><span class="k" style="white-space:pre-wrap">${esc(a.otherKinks) || "<span style='color:var(--dim2)'>none given</span>"}</span></div></div>
             <div class="rgroup"><h3>punishments</h3>${pr}</div>
             <div class="rgroup"><h3>petnames</h3>${nr}${a.petnamesOther ? `<div class="ritem"><span class="k">other</span><span class="v">${esc(a.petnamesOther)}</span></div>` : ""}</div>
           </div>`;
