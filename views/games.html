@@ -171,11 +171,11 @@
       object-fit: cover; object-position: center 22%; }
     .c-ot12 .ot12-fade { position: absolute; inset: 0;
       background: linear-gradient(180deg, rgba(0,0,0,.4) 0%, rgba(0,0,0,0) 32%, rgba(0,0,0,.22) 60%, rgba(0,0,0,.78) 100%); }
-    .c-ot12 .ot12-logo { position: absolute; left: 0; right: 0; top: 10%; text-align: center;
-      font-family: "Bebas Neue", "IBM Plex Mono", sans-serif; font-size: 2.5rem; font-weight: 400;
-      letter-spacing: .32em; color: #fff;
-      text-shadow: 0 2px 16px rgba(0,0,0,.65), 0 0 32px rgba(255,166,197,.55); }
-    .c-ot12 .ot12-sub { position: absolute; left: 0; right: 0; top: calc(10% + 2.5rem);
+    .c-ot12 .ot12-logo { position: absolute; left: 0; right: 0; top: 9%; text-align: center;
+      font-family: "Bebas Neue", "IBM Plex Mono", sans-serif; font-size: 4.2rem; font-weight: 400;
+      letter-spacing: .18em; color: #fff;
+      text-shadow: 0 2px 20px rgba(0,0,0,.7), 0 0 40px rgba(255,166,197,.55); }
+    .c-ot12 .ot12-sub { position: absolute; left: 0; right: 0; top: calc(9% + 3.9rem);
       text-align: center; font-family: "IBM Plex Mono", monospace; font-size: .52rem;
       letter-spacing: .34em; text-transform: uppercase; color: #ffd6e6; text-shadow: 0 1px 8px rgba(0,0,0,.6); }
 
@@ -304,7 +304,7 @@
         <img src="/img/ot12-loona.jpg" alt="" />
         <div class="ot12-fade"></div>
         <div class="ot12-logo">LOONA</div>
-        <div class="ot12-sub">name the member</div></div>`,
+        <div class="ot12-sub">fun trivia game</div></div>`,
       elysium: () => `<div class="c-ph">placeholder card</div>`,
       // chess: no bespoke art yet, same placeholder treatment as elysium
       chess: () => `<div class="c-ph">placeholder card</div>`,
@@ -488,6 +488,11 @@
     // scroll instead of being eaten here.
     board.addEventListener("wheel", (e) => {
       if (board.scrollWidth <= board.clientWidth) return;
+      // A trackpad's own two-finger horizontal swipe already scrolls the strip
+      // natively via deltaX — leave that alone, or preventDefault below blocks
+      // it without anything picking up the slack. Only remap a vertical-only
+      // wheel (deltaX ~ 0, a plain mouse wheel or a vertical two-finger swipe).
+      if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
       e.preventDefault();
       board.scrollLeft += e.deltaY;
     }, { passive: false });

@@ -228,8 +228,8 @@
     var cmd = PRAY[name];
     if (!cmd) { say("Command not recognized.", "no"); return; }
     who().then(function (d) {
-      // "Rejected." is reserved for a real command the caller may not run
-      if (cmd.admin && !(d && d.isAdmin)) { say("Rejected.", "no"); return; }
+      // reserved for a real command the caller may not run
+      if (cmd.admin && !(d && d.isAdmin)) { say("She saw that.", "no"); return; }
       Promise.resolve(cmd.run(parts.slice(2))).then(function (msg) {
         say(msg || "done.", "ok");
       });
