@@ -30,7 +30,7 @@
     .scan { position: fixed; inset: 0; z-index: 200; pointer-events: none;
       background: repeating-linear-gradient(0deg, rgba(0,0,0,.26) 0 1px, transparent 1px 3px); }
 
-    .shell { position: relative; z-index: 5; max-width: 760px; margin: 0 auto;
+    .shell { position: relative; z-index: 5; width: 100%;
       height: 100%; display: flex; flex-direction: column; padding: 4vh 5vw 3vh; }
     .top { display: flex; justify-content: space-between; align-items: baseline;
       font-size: 11px; letter-spacing: .3em; color: var(--dim); text-transform: uppercase; }
@@ -202,11 +202,19 @@
     const A = { kinks: {}, limits: "", punishments: {}, petnames: {}, petnamesOther: "", brat: "", age: "" };
     // A short application code the applicant DMs to Hermione so she can match a
     // Discord message to these answers before making the account by hand.
-    const AUTH = Array.from({ length: 6 }, () => "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"[Math.floor(Math.random() * 32)]).join("");
+    // Generated lazily — only once the age gate (bratage step) is actually
+    // passed, not eagerly at load, so a rejected under-18 never even gets one.
+    let AUTH = null;
+    function ensureAuth() {
+      if (!AUTH) AUTH = Array.from({ length: 6 }, () => "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"[Math.floor(Math.random() * 32)]).join("");
+      return AUTH;
+    }
     const KINK_BY = Object.fromEntries(KINKS.map((k) => [k.id, k]));
 
     // ---- step plan: one combined intro, three grouped interest slides (the
-    // last also carries hard limits), punishments, petnames, then the send slide.
+    // last also carries hard limits), punishments, petnames, brat+age, then
+    // the send slide. Age moved out of the send slide and combined with the
+    // brat question so it (and the age gate) resolve before the code exists.
     const STEPS = [
       { kind: "intro" },
       { kind: "kinks", ids: ["feet", "tasks", "degradation"] },
@@ -214,7 +222,7 @@
       { kind: "kinks", ids: ["petplay"], limits: true },
       { kind: "punishments" },
       { kind: "petnames" },
-      { kind: "brat" },
+      { kind: "bratage" },
       { kind: "finish" },
     ];
     let i = 0;
@@ -270,13 +278,7 @@
       return `<div class="step">
         <div class="eyebrow">final step</div>
         <h1>send it</h1>
-        <p class="lede">Accounts are made by hand. Send this application, then message Hermione on Discord with the code below so she can match it to your answers and set up your account.</p>
-        <div class="other" style="margin-top:1.2rem"><label>age</label>
-          <input type="text" id="age" inputmode="numeric" maxlength="3" placeholder="your age" value="${esc(A.age)}" /></div>
-        <div class="finishbox">
-          <div class="fb-row"><span class="fb-k">Hermione &middot; Discord</span><span class="fb-v">@a.ngelsocks</span></div>
-          <div class="fb-row"><span class="fb-k">your code</span><span class="fb-v code">${AUTH}</span></div>
-        </div>
+        <p class="lede">Accounts are made by hand. Once you send this, you'll get a code to message Hermione on Discord with, so she can match it to your answers and set up your account.</p>
       </div>`;
     }
     function twoChoiceStep(title, eyebrow, list, store, yesLabel, noLabel, yesVal, noVal, extraOther, note) {
@@ -300,17 +302,18 @@
         ${other}
       </div>`;
     }
-    function bratStep() {
+    function bratAgeStep() {
       const v = A.brat;
       return `<div class="step">
-        <div class="eyebrow">one more thing</div>
-        <h1>are you a <span class="hint-tip"><span class="hinted">brat</span><span class="tip">a sub who intentionally disobeys in order to elicit punishment</span></span>?</h1>
+        <h1 style="padding-bottom:.9rem">are you a <span class="hint-tip"><span class="hinted">brat</span><span class="tip">a sub who intentionally disobeys in order to elicit punishment</span></span>?</h1>
         <div class="rows" id="brat-opts">
           <div class="row2"><span class="name"></span>
             <button type="button" class="yes ${v === "yes" ? "on" : ""}" data-v="yes">Yes</button>
             <button type="button" class="no ${v === "no" ? "on" : ""}" data-v="no">No</button>
           </div>
         </div>
+        <div class="other" style="margin-top:1.4rem"><label>age</label>
+          <input type="text" id="age" inputmode="numeric" maxlength="3" placeholder="your age" value="${esc(A.age)}" /></div>
       </div>`;
     }
     function reviewStep() {
@@ -337,10 +340,16 @@
       </div>`;
     }
     function doneStep() {
+      // The only place the code and Discord contact are shown — the pre-submit
+      // slide used to show them too; now it's said once, here, after sending.
       return `<div class="step done">
         <div class="mark">✓</div>
         <h1>sent</h1>
-        <p class="lede">Your code is <b style="color:var(--gold);letter-spacing:.2em">${AUTH}</b> — message Hermione (@a.ngelsocks) with it.</p>
+        <p class="lede">Message Hermione on Discord with the code below so she can match it to your answers and set up your account.</p>
+        <div class="finishbox" style="margin-left:auto;margin-right:auto;text-align:left">
+          <div class="fb-row"><span class="fb-k">Hermione &middot; Discord</span><span class="fb-v">@a.ngelsocks</span></div>
+          <div class="fb-row"><span class="fb-k">your code</span><span class="fb-v code">${ensureAuth()}</span></div>
+        </div>
         <div style="margin-top:1.6rem"><a class="btn primary" href="/">go back</a></div>
       </div>`;
     }
@@ -384,7 +393,7 @@
         });
         const other = $("petother");
         if (other) other.addEventListener("input", (e) => { A.petnamesOther = e.target.value; });
-      } else if (step.kind === "brat") {
+      } else if (step.kind === "bratage") {
         document.querySelectorAll("#brat-opts button").forEach((btn) => {
           btn.addEventListener("click", () => {
             A.brat = btn.dataset.v;
@@ -392,7 +401,6 @@
             refreshNav();
           });
         });
-      } else if (step.kind === "finish") {
         const ageEl = $("age");
         if (ageEl) ageEl.addEventListener("input", (e) => {
           e.target.value = e.target.value.replace(/\D/g, "").slice(0, 3);   // digits only, no spinner
@@ -403,13 +411,16 @@
     }
 
     // ---- completeness gate ----
+    // Note bratage only requires a plausible-looking age to enable Next, not
+    // one that clears 18 — an under-18 answer is still "complete" enough to
+    // click Next; the actual 18+ check happens there and ends the session
+    // instead of just leaving the button disabled.
     function stepComplete(step) {
       if (step.kind === "kinks") return step.ids.every((id) => !!A.kinks[id]);
       if (step.kind === "punishments") return PUNISHMENTS.every((p) => A.punishments[p.id]);
       if (step.kind === "petnames") return PETNAMES.every((p) => A.petnames[p.id]);
-      if (step.kind === "brat") return A.brat === "yes" || A.brat === "no";
-      if (step.kind === "finish") return parseInt(A.age, 10) >= 18;   // an age is required to send
-      return true; // intro
+      if (step.kind === "bratage") return (A.brat === "yes" || A.brat === "no") && /^\d{1,3}$/.test(A.age);
+      return true; // intro, finish
     }
 
     function render() {
@@ -420,12 +431,12 @@
       else if (step.kind === "punishments") html = twoChoiceStep("Punishments", "acceptable, or not", PUNISHMENTS, A.punishments, "Acceptable", "hate", "acceptable", "hate", false,
         "These options are not for indicating what you find fun. They are for indicating what you are willing to do if you are disobedient.");
       else if (step.kind === "petnames") html = petnamesStep();
-      else if (step.kind === "brat") html = bratStep();
+      else if (step.kind === "bratage") html = bratAgeStep();
       else if (step.kind === "finish") html = finishStep();
       $("stage").innerHTML = html;
       bindStep(step);
 
-      const labels = { intro: "intro", kinks: "interests", punishments: "punishments", petnames: "petnames", brat: "brat", finish: "send" };
+      const labels = { intro: "intro", kinks: "interests", punishments: "punishments", petnames: "petnames", bratage: "brat + age", finish: "send" };
       $("proglabel").textContent = labels[step.kind] || "";
       $("progcount").textContent = (i + 1) + " / " + STEPS.length;
       $("progfill").style.width = (i / (STEPS.length - 1) * 100) + "%";
@@ -446,7 +457,7 @@
       try {
         const res = await fetch("/api/apply", {
           method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ authCode: AUTH, age: A.age, brat: A.brat, kinks: A.kinks, limits: A.limits, punishments: A.punishments, petnames: A.petnames, petnamesOther: A.petnamesOther }),
+          body: JSON.stringify({ authCode: ensureAuth(), age: A.age, brat: A.brat, kinks: A.kinks, limits: A.limits, punishments: A.punishments, petnames: A.petnames, petnamesOther: A.petnamesOther }),
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) { $("err").textContent = data.error || "Could not send. Check your answers."; $("next").disabled = false; return; }
@@ -459,10 +470,22 @@
       }
     }
 
+    // An under-18 answer doesn't just block Next — it ends the session outright.
+    // window.close() only works on a tab this script opened (rare here), so the
+    // redirect to login is the real fallback and fires right behind it.
+    function kickOutUnderage() {
+      try { window.close(); } catch (e) {}
+      window.location.href = "/";
+    }
+
     $("back").addEventListener("click", () => { if (i > 0) { i--; render(); } else { window.location.href = "/"; } });
     $("next").addEventListener("click", () => {
       const step = STEPS[i];
       if (!stepComplete(step)) return;
+      if (step.kind === "bratage") {
+        if (!(parseInt(A.age, 10) >= 18)) { kickOutUnderage(); return; }
+        ensureAuth();   // the age gate passed — only now does a code exist
+      }
       if (step.kind === "finish") { submit(); return; }
       if (i < STEPS.length - 1) { i++; render(); }
     });

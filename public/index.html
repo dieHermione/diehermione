@@ -133,7 +133,14 @@
     $("to-guest").addEventListener("click", () => startGuest("/dashboard"));
 
     async function startGuest(path) {
-      try { const r = await fetch("/api/guest", { method: "POST" }); if (r.ok) { window.location.href = path; return; } } catch (e) {}
+      try {
+        const r = await fetch("/api/guest", { method: "POST" });
+        if (r.ok) {
+          if (window.Boot) Boot.play({ navigateTo: path });
+          else window.location.href = path;
+          return;
+        }
+      } catch (e) {}
       err("couldn't start a guest session.");
     }
 
