@@ -1,90 +1,94 @@
-# Prompt for the next session
+# Next session
 
-Copy the block below into a fresh session.
+Written 2026-08-05, at the end of a long session. Everything described as done is
+committed and pushed to `main`. Read `HANDOFF.md` first — it holds the durable
+rules; this file is only "where we stopped".
 
 ---
 
-Hi Claude :3 New context window. This is the **angeldomme** project (the `.me` is
-part of the word, it reads "angel domme"). Railway auto-deploys on push to `main`;
-one Express `server.js`, JSON files on disk, no build step; the admin identity is
-`hermione`.
+## Unfinished: the rest of the current batch
 
-**Read `HANDOFF.md` first** - it was rewritten on 2026-07-30 and is current, not a
-pile of layered session notes. Then `mockups/README.md` for which designs are
-chosen. `/guide` and `/tech` were also rewritten and are accurate; only
-`README.md` is still stale.
+Four items from the last request were **not started**. They are the whole of
+what's left.
 
-## Before you touch anything
+### 1. Guide + Tech back button → `/admin` for Hermione
+`/guide` and `/tech` currently send everyone back the same way. For Hermione they
+should return to the **admin panel** (she reaches them from Docs & tools), while
+everyone else keeps the normal destination. `nav.js` injects the shared back
+chevron and already calls `siteMe()`, so the `isAdmin` branch belongs there or in
+a per-page `window.__navBack` hook (the writing game is the worked example of the
+hook).
 
-Reseed the sandbox (it does not persist) and run it on :57999:
+### 2. `/commands` back button is hand-rolled
+`views/commands.html` builds its own back link instead of using the site-wide
+chevron that `nav.js` injects. **Reformat it in the style of `/guide`** — i.e.
+delete the bespoke markup, give `<body>` the `has-top-nav` class and let `nav.js`
+provide the button. This is the "we do not create them like this" fix.
 
-```
-DATA_DIR=<scratch>/sandbox PORT=57999 SESSION_SECRET=sandbox node server.js
-```
+### 3. `pray launch list` + full launch coverage
+In `public/console.js`, `PRAY.launch` has a `GAMES` map of name → href.
+- Add a `list` argument that prints **every** page on the site.
+- Add launch entries for pages currently missing them (`/ot12`, `/t9`, `/manage`,
+  `/commands`, `/apply`, `/guide`, `/tech`, …).
+- **`admin` must only launch for Hermione.** The console's `admin: true` flag
+  gates a whole command, so a per-target check is needed inside `launch` — and
+  note `/admin` already redirects non-admins server-side, which is the real
+  boundary; the console check is only cosmetic.
+- `/commands` is hand-maintained: add anything new there too.
 
-Write a seed script that hashes with the repo's own `node_modules/bcryptjs` and
-seeds `hermione` (Princess, `sandboxpass123`), two approved subs, a Visitor and one
-`status:"pending"` user, each with `passwordHash`, `status`, `pronouns` and
-`createdAt`.
+### 4. OT12 photo pool has no bulk/edit affordances
+Not requested, just noticed: photos can only be added and deleted, not re-tagged.
+If Hermione mis-tags one she has to delete and re-upload.
 
-**Check for a leftover server first.** One from an earlier session holds the port,
-your new one dies with EADDRINUSE, and curl answers from the stale data.
-`lsof -nP -iTCP:57999 -sTCP:LISTEN` and kill that PID; `pkill` only gets the shell
-wrapper and leaves node holding the socket.
+---
 
-**Do not trust the Browser pane for layout.** It reported a 0x0 viewport for two
-entire sessions. DOM and JSON checks through `javascript_tool` are fine; every
-width, height and screenshot lied. Rebuild these two straight away, they pay for
-themselves within the hour:
+## Watch out for these (learned the hard way this session)
 
-- `scratchpad/shot.js` - drives headless Chrome over the DevTools protocol:
-  navigate, run arbitrary JS (click a tab, drive a game with synthetic
-  `KeyboardEvent`s, catch an animation mid-frame), then screenshot. Signature
-  `node shot.js <url> <out.png> [w] [h] ["<js>"] [settleBefore] [settleAfter]`.
-  `settleBefore` must outlast the login redirect or the eval is discarded with its
-  context.
-- `public/_shot.html` - logs in and redirects so authenticated pages can be shot.
-  `?u=seraph&p=testtest123&go=/chess`, or `?u=guest`. `.gitignore` already covers
-  `public/_*.html`.
+- **Scripted string replacements fail silently.** I broke the OT12 photo aspect
+  ratio exactly this way: the replacement targeted a string an earlier commit had
+  already changed, so it no-opped, and the commit message claimed a fix that
+  wasn't there. When editing with a node script, **assert the replacement landed**
+  (`if (s === before) throw`) or grep for the result afterwards.
+- **`theme.js` writes `--c` inline on `<html>`.** Nothing may set `--c` on
+  `<body>` — that out-specifies it and breaks theming for the whole page. The old
+  skill-check `applyMode()` did this.
+- **CSS `zoom` does not rescale `vh`/`vw`.** Measured: a 94vw/100vh layout
+  overflowed to 2026px on a 1512px screen. The dashboard scales via root
+  font-size instead; don't "simplify" it back to `zoom`.
+- **`shot.js` eval return values don't print**, and it stalls on rAF/canvas pages.
+  Verify via side effects + screenshot. Async work in an eval may not finish
+  before the capture — the settle argument has to cover it.
 
-Only `server.js` changes need a restart. **No em dashes anywhere.** Push after each
-chunk of work rather than batching, and pull/rebase first: the repo may be edited
-via Replit.
+---
 
-## What I want, in this order
+## State of the games
 
-**1. Dummy Parse.** The biggest piece, all of it outstanding:
-- The timer starts on the **first damage**, not on Pull, so buffs can be pre-cast.
-- The leaderboard needs full detail, not just dps and total.
-- **Melody is replaced by Whitefire**: a channelled damaging ability, cancellable
-  with Escape. Casting **Smite** has a 20% chance to grant *Embracing Divinity*,
-  which boosts Whitefire's damage by 300%. Fully channelling Whitefire while it is
-  up applies *Holy Precision*, boosting the next two Smites by 200%.
-- Turn the abilities into **visual icons** carrying the keybind, with the
-  description on mouseover.
-- Whitefire's button glows while Embracing Divinity is up; Smite's glows while
-  Holy Precision is up.
-- Rework the rotation tab visually.
+| Game | Run validation | Theme | Card |
+|---|---|---|---|
+| Penance / Devotion | **server-owned** (session/line/skip/complete) | untouched by request | real |
+| Multitap | **server-owned** (same endpoints, `mode: multitap`) | themed | real |
+| Snake | run bounded (time limit + live-run check), not simulated | themed | real |
+| Dummy Parse | run bounded (build locked, clock + consistency checks) | themed | real |
+| OT12 | server-owned (session/answer/complete) | themed | **placeholder** |
+| Skill check | n/a | themed (both difficulties) | real |
+| Elysium | n/a | not themed | **placeholder** |
 
-**2. Slots.** Build it. Design **5** is chosen: the printed scratch card
-(`mockups/slots.html?d=5`). Uses angelcoins. Symbols are still placeholder glyphs.
+Snake and Dummy Parse are **bounded, not validated** — a client can still claim
+some unearned progress, just not unboundedly. Say it that way; don't call them
+validated.
 
-**3. Mockups: 5 decrypt animations**, themed as a command-line PC startup.
+---
 
-**4. Mockups: 15 dashboards**, same terminal theme as now.
+## OT12 specifically
 
-## Things worth knowing before you start
-
-- Dailies, both daily bonuses, the tithe, tasks and the guestbook are all **gone**.
-  Do not reinstate them by accident.
-- Every game is reached from `/games`; the dashboard only links to the wall.
-- Console commands are prefixed **`pray`**, not `wing`.
-- Every page header reads `angelOS v0.2`. `ANGELDOM` is gone and should stay gone.
-- Chess is the pattern for anything only Hermione can do: the code lives in a file
-  behind a route that **404s** for everyone else so the other player's page has no
-  trace of it, *and* the endpoints check `isAdmin` on every call. The split is
-  about not spoiling the game; the server check is the actual boundary.
-- If I reject a mockup batch as "the same design again", change the organising
-  idea rather than the palette. If it is a physical object, **ask me for a
-  reference photo** instead of guessing: T9 took five attempts and the first four
-  were spent inventing a phone.
+- Photos are **Hermione-uploaded only** — deliberately no automated image source
+  (they're other people's copyrighted photos). Don't add scraping.
+- `OT12_MEMBER_DATA` in `server.js` holds the per-member table for future trivia.
+  Complete for name/hangul/location/reveal month/animal/colour/plant.
+  **superpower, birthdate and height are 1 of 12** — a height-range question
+  cannot be generated yet.
+- Field values are **not unique** (reveal month, eye colour, shape, location each
+  cover several members), so a multiple-choice generator must not assume one right
+  answer. Missing fields are `undefined`; a generator must skip, never invent.
+- The current game is one mode ("who is in this photo"); it was built expecting
+  more modes later.
