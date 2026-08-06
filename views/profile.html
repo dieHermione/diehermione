@@ -211,7 +211,7 @@
 </head>
 <body class="has-top-nav">
   <main class="mp">
-    <div class="top"><span id="hd-l">…</span><span>angelOS database</span><span id="hd-r">…</span></div>
+    <div class="top"><span>angelOS database</span></div>
 
     <div id="view-mode">
       <input type="file" id="quick-icon" accept="image/*" hidden />
@@ -397,8 +397,6 @@
     function renderProfile() {
       const name = profile.username;
       const manref = name.toUpperCase() + "(1)";
-      document.getElementById("hd-l").textContent = manref;
-      document.getElementById("hd-r").textContent = manref;
       document.getElementById("ft-r").textContent = manref;
 
       const slot = document.getElementById("portrait-slot");
@@ -432,7 +430,11 @@
 
       const joined = new Date(profile.createdAt);
       const joinedText = joined.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
-      document.getElementById("p-service").textContent = "In service since " + joinedText + ".";
+      // Hermione's own record reads differently — "created", not "in service" —
+      // this is about the account being displayed, not who is viewing it.
+      document.getElementById("p-service").textContent = name.toLowerCase() === "hermione"
+        ? "Created on " + joinedText
+        : "In service since " + joinedText + ".";
       document.getElementById("ft-mid").textContent = joinedText.toLowerCase();
 
       const counters = document.getElementById("p-counters");

@@ -193,6 +193,22 @@ window.AdminPanel = (function () {
       ".adm-chip { border: 1px solid var(--c); background: transparent; color: var(--c); font-family: inherit; font-size: 0.76rem; padding: 0.24rem 0.7rem; cursor: pointer; text-transform: uppercase; letter-spacing: 0.08em; }",
       ".adm-chip:hover { background: var(--c); color: var(--bg); }",
       ".adm-chip.ghost { border-color: var(--dim2); color: var(--dim); }",
+      /* a selected chip is FILLED, not just a dimmer border — --dim/--dim2 equal
+         --c site-wide now (dual-tone), so a border-colour-only toggle is invisible */
+      ".adm-chip.sel { background: var(--c); color: var(--bg); }",
+      /* OT12 photo tagger: spans the full row and runs larger than the rest of
+         the panel — there is a photo plus twelve names to see at once */
+      ".ot-wide { grid-column: 1 / -1; }",
+      ".adm-chip.ot-big { font-size: 0.95rem; padding: 0.45rem 1.05rem; }",
+      ".ot-stage { margin: 0.7rem 0; }",
+      ".ot-preview { display: block; max-width: 100%; max-height: 46vh; border: 1px solid var(--c); background: #000; }",
+      ".ot-who { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.6rem 0; }",
+      ".ot-list { display: flex; flex-wrap: wrap; gap: 0.9rem; margin-top: 0.8rem; }",
+      ".ot-thumb { position: relative; width: 128px; text-align: center; }",
+      ".ot-thumb img { width: 128px; height: 128px; object-fit: contain; background: #000; border: 1px solid var(--dim2); display: block; cursor: pointer; }",
+      ".ot-thumb.ot-current img { outline: 2px solid var(--accent); outline-offset: 2px; }",
+      ".ot-thumb-nm { font-size: 0.68rem; color: var(--dim); margin-top: 0.25rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }",
+      ".ot-thumb-x { position: absolute; top: 0; right: 0; background: rgba(0,0,0,0.7); }",
       ".adm-mini { border: 1px solid var(--dim2); background: transparent; color: var(--c); font-family: inherit; width: 1.5rem; height: 1.5rem; cursor: pointer; }",
       ".adm-mini:hover { border-color: var(--accent); color: var(--bright); }",
       ".adm-toggle { border: 1px solid var(--dim2); background: transparent; color: var(--dim); font-family: inherit; font-size: 0.74rem; padding: 0.2rem 0.6rem; cursor: pointer; text-transform: uppercase; }",
@@ -556,81 +572,107 @@ window.AdminPanel = (function () {
     // OT12 photos: the matching game's pool. There is no automated image source
     // on purpose — these are other people's copyrighted photos, so they are
     // uploaded and tagged by hand here. Shrunk client-side before upload.
-    const otSec = document.createElement("div"); otSec.className = "adm-sec";
+    // Runs larger than the rest of the panel (see .ot-wide) — there is a photo
+    // plus twelve names to see at once, and the panel's default column is too
+    // narrow for that. Tags are picked AFTER the photo is chosen, using the
+    // same tagger UI a re-tag uses, so adding and re-tagging are one flow.
+    const otSec = document.createElement("div"); otSec.className = "adm-sec ot-wide";
     otSec.append(mk("h3", "OT12 photos"));
-    const otHint = mk("p", "Photos for the OT12 matching game. Tick everyone who appears in the photo (a photo may show several), then choose a file — it is shrunk to 512px on its longest side, keeping its aspect ratio.");
+    const OT_ADD_HINT = "Choose a photo, then tick everyone who appears in it (a photo may show several) — it is shrunk to 512px on its longest side, keeping its aspect ratio.";
+    const otHint = mk("p", OT_ADD_HINT);
     otHint.className = "adm-empty"; otSec.append(otHint);
-    const otWho = document.createElement("div");
-    otWho.style.cssText = "display:flex;flex-wrap:wrap;gap:.3rem;margin:.4rem 0";
+
+    const otStage = document.createElement("div"); otStage.className = "ot-stage";
+    const otPreview = document.createElement("img");
+    otPreview.className = "ot-preview"; otPreview.style.display = "none";
+    otStage.append(otPreview); otSec.append(otStage);
+
+    const otWho = document.createElement("div"); otWho.className = "ot-who";
     otSec.append(otWho);
+
     const otBar = document.createElement("div"); otBar.className = "adm-preset-bar";
     const otFile = document.createElement("input"); otFile.type = "file"; otFile.accept = "image/*"; otFile.style.display = "none";
     const otSelected = new Set();
     const otChips = {};              // member -> its toggle, so tags can be loaded in
-    let otEditing = null;            // photo id being re-tagged, or null when adding
-    const OT_ADD_HINT = "Photos for the OT12 matching game. Tick everyone who appears in the photo (a photo may show several), then choose a file — it is shrunk to 512px on its longest side, keeping its aspect ratio.";
+    let otEditing = null;            // existing photo id being re-tagged, or null
+    let otPendingImg = null;         // dataURL staged for a brand-new photo, held until Save
 
     function otSetChips(members) {
       otSelected.clear();
       (members || []).forEach((m) => otSelected.add(m));
-      Object.keys(otChips).forEach((m) => otChips[m].classList.toggle("ghost", !otSelected.has(m)));
+      Object.keys(otChips).forEach((m) => otChips[m].classList.toggle("sel", otSelected.has(m)));
     }
-    // swap the bar between adding a new photo and re-tagging an existing one
-    function otMode(photo) {
-      otEditing = photo ? photo.id : null;
-      otSetChips(photo ? photo.members : []);
-      otPick.hidden = !!photo;
-      otSave.hidden = !photo;
-      otCancel.hidden = !photo;
-      otHint.textContent = photo
-        ? "Re-tagging this photo — tick everyone in it, then save."
-        : OT_ADD_HINT;
+    function otOutline(photoId) {
       otList.querySelectorAll("[data-pid]").forEach((el) => {
-        el.style.outline = photo && el.dataset.pid === photo.id ? "2px solid var(--accent)" : "";
+        el.classList.toggle("ot-current", Boolean(photoId) && el.dataset.pid === photoId);
       });
     }
-    const otPick = mkChip("+ Add photo", "ghost", () => {
-      if (!otSelected.size) { otHint.textContent = "Tick at least one member first."; return; }
-      otFile.click();
-    });
-    const otSave = mkChip("Save tags", "", async () => {
-      if (!otEditing) return;
+    // Exactly one of three states at a time: idle (the add button showing),
+    // staging a brand-new upload, or re-tagging an existing photo.
+    function otReset() {
+      otEditing = null; otPendingImg = null;
+      otSetChips([]);
+      otPreview.style.display = "none"; otPreview.src = "";
+      otPick.hidden = false; otSave.hidden = true; otCancel.hidden = true;
+      otHint.textContent = OT_ADD_HINT;
+      otOutline(null);
+    }
+    function otStageEdit(photo) {
+      otEditing = photo.id; otPendingImg = null;
+      otSetChips(photo.members);
+      otPreview.src = photo.img; otPreview.style.display = "block";
+      otPick.hidden = true; otSave.hidden = false; otCancel.hidden = false;
+      otHint.textContent = "Re-tagging this photo — tick everyone in it, then save.";
+      otOutline(photo.id);
+    }
+    function otStageAdd(dataUrl) {
+      otEditing = null; otPendingImg = dataUrl;
+      otSetChips([]);
+      otPreview.src = dataUrl; otPreview.style.display = "block";
+      otPick.hidden = true; otSave.hidden = false; otCancel.hidden = false;
+      otHint.textContent = "Tick everyone in this photo, then save.";
+      otOutline(null);
+    }
+    const otPick = mkChip("+ Add photo", "ghost ot-big", () => otFile.click());
+    const otSave = mkChip("Save tags", "ot-big", async () => {
       if (!otSelected.size) { otHint.textContent = "Tick at least one member."; return; }
-      const r = await fetch("/api/ot12/photos/" + encodeURIComponent(otEditing), {
-        method: "PUT", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ members: [...otSelected] }),
+      const adding = !otEditing;
+      const url = adding ? "/api/ot12/photos" : "/api/ot12/photos/" + encodeURIComponent(otEditing);
+      const body = adding ? { members: [...otSelected], img: otPendingImg } : { members: [...otSelected] };
+      otHint.textContent = adding ? "Uploading…" : "Saving…";
+      const r = await fetch(url, {
+        method: adding ? "POST" : "PUT", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
       });
       const d = await r.json().catch(() => ({}));
       if (!r.ok) { otHint.textContent = d.error || "Could not save."; return; }
-      otMode(null);
-      otHint.textContent = "Tags saved.";
+      otFile.value = "";
+      otReset();
+      otHint.textContent = adding ? "Added." : "Tags saved.";
       otLoad();
     });
-    const otCancel = mkChip("Cancel", "ghost", () => otMode(null));
+    const otCancel = mkChip("Cancel", "ghost ot-big", () => { otFile.value = ""; otReset(); });
     otSave.hidden = true; otCancel.hidden = true;
     otBar.append(otPick, otSave, otCancel); otSec.append(otBar);
-    const otList = document.createElement("div"); otList.style.cssText = "display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.6rem";
+    const otList = document.createElement("div"); otList.className = "ot-list";
     otSec.append(otList, otFile);
 
     function otThumb(p) {
       const box = document.createElement("div");
-      box.dataset.pid = p.id;
-      box.style.cssText = "position:relative;width:64px;text-align:center";
+      box.className = "ot-thumb"; box.dataset.pid = p.id;
       const im = document.createElement("img");
       im.src = p.img; im.alt = (p.members || []).join(", ");
       im.title = "Click to re-tag";
-      im.style.cssText = "width:64px;height:64px;object-fit:contain;background:#000;border:1px solid var(--dim2);display:block;cursor:pointer";
-      im.addEventListener("click", () => otMode(p));
+      im.addEventListener("click", () => otStageEdit(p));
       const nm = document.createElement("div");
-      nm.textContent = (p.members || []).join(", ");
-      nm.style.cssText = "font-size:.52rem;color:var(--dim);margin-top:.15rem;overflow:hidden;text-overflow:ellipsis";
+      nm.className = "ot-thumb-nm"; nm.textContent = (p.members || []).join(", ");
       const x = document.createElement("button");
-      x.className = "adm-log-x"; x.textContent = "×"; x.title = "Remove";
-      x.style.cssText = "position:absolute;top:0;right:0;background:rgba(0,0,0,.7)";
-      x.addEventListener("click", async () => {
+      x.className = "adm-log-x ot-thumb-x"; x.textContent = "×"; x.title = "Remove";
+      x.addEventListener("click", async (e) => {
+        e.stopPropagation();
         const r = await fetch("/api/ot12/photos/" + encodeURIComponent(p.id), { method: "DELETE" });
         if (!r.ok) return;
-        if (otEditing === p.id) otMode(null);
+        if (otEditing === p.id) otReset();
         box.remove();
       });
       box.append(im, nm, x);
@@ -641,9 +683,9 @@ window.AdminPanel = (function () {
         if (!d) return;
         if (!otWho.children.length) {
           (d.members || []).forEach((m) => {
-            const b = mkChip(m, "ghost", () => {
-              if (otSelected.has(m)) { otSelected.delete(m); b.classList.add("ghost"); }
-              else { otSelected.add(m); b.classList.remove("ghost"); }
+            const b = mkChip(m, "ot-big", () => {
+              if (otSelected.has(m)) otSelected.delete(m); else otSelected.add(m);
+              b.classList.toggle("sel", otSelected.has(m));
             });
             otChips[m] = b;
             otWho.append(b);
@@ -660,7 +702,7 @@ window.AdminPanel = (function () {
       const file = otFile.files && otFile.files[0];
       if (!file) return;
       const img = new Image();
-      img.onload = async () => {
+      img.onload = () => {
         // fit the longest side to 512 and KEEP the aspect ratio (no square crop)
         const max = 512;
         const scale = Math.min(1, max / Math.max(img.width, img.height));
@@ -669,19 +711,11 @@ window.AdminPanel = (function () {
         canvas.height = Math.round(img.height * scale);
         canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
         URL.revokeObjectURL(img.src);
-        const dataUrl = canvas.toDataURL("image/jpeg", 0.82);
-        otHint.textContent = "Uploading…";
-        const r = await fetch("/api/ot12/photos", {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ members: [...otSelected], img: dataUrl }),
-        });
-        const d = await r.json().catch(() => ({}));
-        otFile.value = "";
-        if (r.ok) { otMode(null); otHint.textContent = "Added."; otLoad(); }
-        else otHint.textContent = d.error || "Could not add.";
+        otStageAdd(canvas.toDataURL("image/jpeg", 0.82));
       };
       img.src = URL.createObjectURL(file);
     });
+    otReset();
     otLoad();
     wrap.append(foldable(otSec));
 

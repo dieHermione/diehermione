@@ -11,16 +11,16 @@
       align-items: center;
       justify-content: center;
     }
-    .notif-btn svg { width: 1.05rem; height: 1.05rem; display: block; }
+    .notif-btn svg { width: 0.26rem; height: 0.26rem; display: block; }
     .notif-dot {
       position: absolute;
-      top: 0.32rem;
-      right: 0.42rem;
-      width: 0.38rem;
-      height: 0.38rem;
+      top: 0.36rem;
+      right: 0.5rem;
+      width: 0.14rem;
+      height: 0.14rem;
       border-radius: 50%;
       background: #eafaff;
-      box-shadow: 0 0 8px rgba(0,172,219,0.7);
+      box-shadow: 0 0 4px rgba(0,172,219,0.7);
       display: none;
     }
     .notif-wrap.has-unread .notif-dot { display: block; }

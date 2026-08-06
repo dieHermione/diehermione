@@ -6,7 +6,7 @@
   <title>Games - angeldom.me</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Major+Mono+Display&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Major+Mono+Display&family=Bebas+Neue&display=swap" rel="stylesheet" />
   <script src="/theme.js"></script>
   <script src="/me.js"></script>
   <script src="/audio.js"></script>
@@ -43,8 +43,9 @@
     .hdr > span:first-child { padding-left: 2.8rem; }   /* room for the back chevron */
     .hdr b { color: var(--bright); font-weight: 400; }
 
-    /* the wall is split into tabs; the strip below shows one tab at a time */
-    .tabs { display: flex; gap: .4rem; }
+    /* the wall is split into tabs; the strip below shows one tab at a time.
+       Pinned top-left, under the angelOS header, not sharing its row. */
+    .tabs { display: flex; gap: .4rem; flex-shrink: 0; margin: .8rem 0 0; padding-left: 2.8rem; }
     .tab { background: transparent; border: 1px solid var(--dim2); color: var(--dim);
       font-family: inherit; font-size: 10px; letter-spacing: .3em; text-transform: uppercase;
       padding: .3rem 1.1rem; cursor: pointer; border-radius: 3px; }
@@ -52,21 +53,23 @@
     .tab.on { color: var(--bright); border-color: var(--accent);
       background: color-mix(in srgb, var(--accent) 14%, transparent); }
 
-    /* The wall is always TWO rows deep and grows sideways: new games add columns,
-       and the strip scrolls horizontally rather than wrapping onto a third row
-       that gets cut off. `grid-auto-flow: column` fills down-then-across, which is
-       the reading order a horizontal strip wants. */
-    .board { position: relative; flex: 1; min-height: 0; margin-top: 1.2rem;
+    /* The wall is a single strip, flush left, that scrolls sideways as games
+       are added rather than wrapping. `grid-auto-flow: column` with one row
+       lets every card stand at full board height — much larger than the old
+       two-row wall, which had to fit two cards into that same space. */
+    .board { position: relative; flex: 1; min-height: 0; margin-top: 1rem;
       overflow-x: auto; overflow-y: hidden; scrollbar-width: thin;
       scrollbar-color: rgba(0,172,219,.35) transparent; }
     .board::-webkit-scrollbar { height: 7px; }
     .board::-webkit-scrollbar-thumb { background: rgba(0,172,219,.32); border-radius: 999px; }
-    .track { display: grid; grid-auto-flow: column; grid-template-rows: repeat(2, 300px);
-      grid-auto-columns: 238px; gap: 26px 22px; width: max-content; height: 100%;
-      align-content: center; padding: 0 2px 6px; }
+    .track { display: grid; grid-auto-flow: column; grid-template-rows: 1fr;
+      grid-auto-columns: max-content; gap: 30px; width: max-content; height: 100%;
+      align-content: stretch; padding: 0 2px 6px; }
 
-    /* the poster is only a positioning / selection / lock wrapper; the frame fills it */
-    .p { position: relative; width: 238px; height: 300px; text-decoration: none; cursor: pointer; }
+    /* the poster is only a positioning / selection / lock wrapper; the frame fills it.
+       Height fills the single row; width follows from the aspect ratio, so cards
+       grow and shrink with the viewport instead of sitting at a fixed pixel size. */
+    .p { position: relative; height: 100%; aspect-ratio: 19 / 24; text-decoration: none; cursor: pointer; }
 
     /* ---------- the macOS window frame ---------- */
     .frame-mac { position: relative; width: 100%; height: 100%; border: 1px solid #26333f; border-radius: 9px;
@@ -79,9 +82,9 @@
     .frame-mac .win { position: relative; flex: 1; min-height: 0; overflow: hidden; background: var(--wb, #04060a); }
     .frame-mac .win::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 40%;
       background: linear-gradient(180deg, transparent, rgba(4,6,10,.92)); pointer-events: none; z-index: 4; }
-    .frame-mac .lbl { position: absolute; bottom: 8px; left: 11px; z-index: 6; font-size: 1.1rem;
+    .frame-mac .lbl { position: absolute; bottom: 10px; left: 13px; z-index: 6; font-size: 1.35rem;
       font-weight: 700; letter-spacing: .05em; color: #fff; text-shadow: 0 0 12px var(--a); }
-    .frame-mac .num { position: absolute; bottom: 10px; right: 11px; z-index: 6; font-size: 8px;
+    .frame-mac .num { position: absolute; bottom: 13px; right: 13px; z-index: 6; font-size: 10px;
       letter-spacing: .24em; color: #3f5568; }
 
     /* ===================== bespoke card interiors ===================== */
@@ -158,6 +161,22 @@
     /* SKILL CHECK — the dial and its good zone */
     .c-skill svg { position: absolute; inset: 0; width: 100%; height: 100%; }
 
+    /* OT12 / LOONA — the one card that breaks from the terminal minimalism on
+       purpose: a real photo of the group, full-bleed, under a stylised display
+       wordmark. Every other card is a dim in-theme readout; this one is a poster. */
+    .c-ot12 { position: absolute; inset: 0; overflow: hidden; background: #000; }
+    .c-ot12 img { position: absolute; inset: 0; width: 100%; height: 100%;
+      object-fit: cover; object-position: center 22%; }
+    .c-ot12 .ot12-fade { position: absolute; inset: 0;
+      background: linear-gradient(180deg, rgba(0,0,0,.4) 0%, rgba(0,0,0,0) 32%, rgba(0,0,0,.22) 60%, rgba(0,0,0,.78) 100%); }
+    .c-ot12 .ot12-logo { position: absolute; left: 0; right: 0; top: 10%; text-align: center;
+      font-family: "Bebas Neue", "IBM Plex Mono", sans-serif; font-size: 2.5rem; font-weight: 400;
+      letter-spacing: .32em; color: #fff;
+      text-shadow: 0 2px 16px rgba(0,0,0,.65), 0 0 32px rgba(255,166,197,.55); }
+    .c-ot12 .ot12-sub { position: absolute; left: 0; right: 0; top: calc(10% + 2.5rem);
+      text-align: center; font-family: "IBM Plex Mono", monospace; font-size: .52rem;
+      letter-spacing: .34em; text-transform: uppercase; color: #ffd6e6; text-shadow: 0 1px 8px rgba(0,0,0,.6); }
+
     /* SUMMARY — a read-and-retell column with a word-limit rule */
     .c-sum { position: absolute; inset: 0; padding: .7rem .8rem; overflow: hidden; }
     .c-sum .h { color: #eafaff; font-size: .82rem; letter-spacing: .02em; margin-bottom: .3rem; }
@@ -209,7 +228,7 @@
       .track { display: grid; grid-auto-flow: row; grid-template-rows: none;
         grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
         grid-auto-columns: auto; width: auto; height: auto; gap: 1.4rem; padding: 0; }
-      .p { width: auto; height: 300px; }
+      .p { width: auto; height: 300px; aspect-ratio: auto; }
     }
   </style>
 </head>
@@ -217,11 +236,11 @@
   <div class="stage">
     <div class="hdr">
       <span>angelOS v0.2</span>
-      <div class="tabs" id="tabs">
-        <button class="tab on" type="button" data-tab="main">games</button>
-        <button class="tab" type="button" data-tab="extra">extra</button>
-      </div>
       <span><b id="count">0</b> GAMES</span>
+    </div>
+    <div class="tabs" id="tabs">
+      <button class="tab on" type="button" data-tab="main">games</button>
+      <button class="tab" type="button" data-tab="extra">extra</button>
     </div>
     <div class="board" id="board"></div>
   </div>
@@ -253,6 +272,8 @@
         tip: "A tree you tend. It remembers how long you have kept it." },
       { n: "summary",     href: "/summary",               art: "sum",   a: "#00acdb", wb: "#050a10",
         tip: "Read a real Wikipedia article, then retell it in your own words." },
+      { n: "chess",       href: "/chess",                 art: "chess", a: "#a4322a", wb: "#0c0a08", tab: "extra",
+        tip: "Ink-wash chess against Her. Win and you may STRIKE; lose and brace for REWIND." },
     ];
 
     // a ring of laurel leaves, for the elysium card
@@ -276,9 +297,15 @@
                 stroke="var(--a)" stroke-width="13" opacity=".4" stroke-linecap="round"/>
         </svg>
         <div class="timer"><div class="k">time left</div><div class="t">0:48</div></div></div>`,
-      // ot12 is bones for now — a placeholder until its card is designed
-      ot12: () => `<div class="c-ph">placeholder card</div>`,
+      // ot12 / LOONA: the real group photo, full-bleed, under a display wordmark
+      ot12: () => `<div class="c-ot12">
+        <img src="/img/ot12-loona.jpg" alt="" />
+        <div class="ot12-fade"></div>
+        <div class="ot12-logo">LOONA</div>
+        <div class="ot12-sub">name the member</div></div>`,
       elysium: () => `<div class="c-ph">placeholder card</div>`,
+      // chess: no bespoke art yet, same placeholder treatment as elysium
+      chess: () => `<div class="c-ph">placeholder card</div>`,
       t9: () => `<div class="c-mt"><div class="pad">${
         [["1",".,-"],["2","abc"],["3","def"],["4","ghi"],["5","jkl"],["6","mno"],
          ["7","pqrs"],["8","tuv"],["9","wxyz"],["*","⌫"],["0","␣"],["#","↵"]]
