@@ -719,6 +719,127 @@ window.AdminPanel = (function () {
     otLoad();
     wrap.append(foldable(otSec));
 
+    // OT12 songs: which members appear in which song, framework only — there
+    // is no question type using this yet, it is just the storage + tagging UI
+    // (same "no automated source, Hermione tags it by hand" reasoning as
+    // photos), built ahead of the trivia that will eventually read it.
+    const songSec = document.createElement("div"); songSec.className = "adm-sec ot-wide";
+    songSec.append(mk("h3", "OT12 songs"));
+    const SONG_ADD_HINT = "Framework only for now — not used by the game yet. Name a song, tick who's in it.";
+    const songHint = mk("p", SONG_ADD_HINT);
+    songHint.className = "adm-empty"; songSec.append(songHint);
+
+    const songNameInput = document.createElement("input");
+    songNameInput.type = "text"; songNameInput.placeholder = "song name"; songNameInput.maxLength = 120;
+    songNameInput.style.cssText = "width:100%;max-width:24rem;margin:.6rem 0;padding:.5rem .7rem;background:rgba(0,172,219,.05);border:1px solid var(--dim2);color:var(--bright);font-family:inherit;font-size:.9rem";
+    songSec.append(songNameInput);
+
+    const songWho = document.createElement("div"); songWho.className = "ot-who";
+    songSec.append(songWho);
+
+    const songSelected = new Set();
+    const songChips = {};
+    let songEditing = null;   // existing song id being edited, or null when adding
+
+    function songSetChips(members) {
+      songSelected.clear();
+      (members || []).forEach((m) => songSelected.add(m));
+      Object.keys(songChips).forEach((m) => songChips[m].classList.toggle("sel", songSelected.has(m)));
+    }
+    function songOutline(songId) {
+      songList.querySelectorAll("[data-sid]").forEach((el) => {
+        el.classList.toggle("ot-current", Boolean(songId) && el.dataset.sid === songId);
+      });
+    }
+    function songReset() {
+      songEditing = null;
+      songNameInput.value = "";
+      songSetChips([]);
+      songSave.textContent = "Add song";
+      songCancel.hidden = true;
+      songHint.textContent = SONG_ADD_HINT;
+      songOutline(null);
+    }
+    function songStageEdit(song) {
+      songEditing = song.id;
+      songNameInput.value = song.name;
+      songSetChips(song.members);
+      songSave.textContent = "Save song";
+      songCancel.hidden = false;
+      songHint.textContent = "Editing “" + song.name + "” — tick everyone in it, then save.";
+      songOutline(song.id);
+    }
+    const songBar = document.createElement("div"); songBar.className = "adm-preset-bar";
+    const songSave = mkChip("Add song", "ot-big", async () => {
+      const name = songNameInput.value.trim();
+      if (!name) { songHint.textContent = "Name the song."; return; }
+      if (!songSelected.size) { songHint.textContent = "Tick at least one member."; return; }
+      const adding = !songEditing;
+      const url = adding ? "/api/ot12/songs" : "/api/ot12/songs/" + encodeURIComponent(songEditing);
+      const r = await fetch(url, {
+        method: adding ? "POST" : "PUT", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, members: [...songSelected] }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) { songHint.textContent = d.error || "Could not save."; return; }
+      songReset();
+      songHint.textContent = adding ? "Added." : "Saved.";
+      songLoad();
+    });
+    const songCancel = mkChip("Cancel", "ghost ot-big", () => songReset());
+    songCancel.hidden = true;
+    songBar.append(songSave, songCancel); songSec.append(songBar);
+
+    const songList = document.createElement("div"); songList.className = "ot-list";
+    songSec.append(songList);
+
+    function songRow(s) {
+      const box = document.createElement("div");
+      box.className = "ot-thumb"; box.dataset.sid = s.id;
+      box.style.cssText = "width:auto;min-width:160px;max-width:220px;text-align:left;padding:.5rem .7rem;border:1px solid var(--dim2);cursor:pointer";
+      const nm = document.createElement("div");
+      nm.style.cssText = "color:var(--bright);font-size:.85rem;margin-bottom:.2rem";
+      nm.textContent = s.name;
+      const mm = document.createElement("div");
+      mm.className = "ot-thumb-nm"; mm.style.whiteSpace = "normal";
+      mm.textContent = (s.members || []).join(", ");
+      const x = document.createElement("button");
+      x.className = "adm-log-x ot-thumb-x"; x.textContent = "×"; x.title = "Remove";
+      x.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        const r = await fetch("/api/ot12/songs/" + encodeURIComponent(s.id), { method: "DELETE" });
+        if (!r.ok) return;
+        if (songEditing === s.id) songReset();
+        box.remove();
+      });
+      box.addEventListener("click", () => songStageEdit(s));
+      box.append(nm, mm, x);
+      return box;
+    }
+    function songLoad() {
+      fetch("/api/ot12/songs").then((r) => (r.ok ? r.json() : null)).then((d) => {
+        if (!d) return;
+        if (!songWho.children.length) {
+          (d.members || []).forEach((m) => {
+            const b = mkChip(m, "ot-big", () => {
+              if (songSelected.has(m)) songSelected.delete(m); else songSelected.add(m);
+              b.classList.toggle("sel", songSelected.has(m));
+            });
+            songChips[m] = b;
+            songWho.append(b);
+          });
+        }
+        songList.replaceChildren();
+        (d.songs || []).forEach((s) => songList.append(songRow(s)));
+        if (!d.songs || !d.songs.length) {
+          const e = mk("p", "No songs yet."); e.className = "adm-empty"; songList.append(e);
+        }
+      }).catch(() => {});
+    }
+    songReset();
+    songLoad();
+    wrap.append(foldable(songSec));
+
     // screen glitch: fires on its own every 40 to 180 seconds, testable here
     const glSec = document.createElement("div"); glSec.className = "adm-sec";
     glSec.append(mk("h3", "Screen glitch"));
@@ -754,7 +875,7 @@ window.AdminPanel = (function () {
         { id: "penance",  label: "Penance",  match: ["Penance presets"] },
         { id: "devotion", label: "Devotion", match: ["Devotion presets"] },
         { id: "multitap", label: "Multitap", match: ["Multitap lines"] },
-        { id: "ot12",     label: "OT12",     match: ["OT12 photos"] },
+        { id: "ot12",     label: "OT12",     match: ["OT12 photos", "OT12 songs"] },
       ] },
       { id: "completed", label: "Completed", match: ["Lines completed", "Summaries handed in"] },
       { id: "content", label: "Site content", match: ["Onboarding intro", "Questionnaire descriptions", "Decrypt lines", "Screen glitch"] },

@@ -89,8 +89,6 @@
     .frame-mac .win { position: relative; flex: 1; min-height: 0; overflow: hidden; background: var(--wb, #04060a); }
     .frame-mac .win::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 40%;
       background: linear-gradient(180deg, transparent, rgba(4,6,10,.92)); pointer-events: none; z-index: 4; }
-    .frame-mac .lbl { position: absolute; bottom: 10px; left: 13px; z-index: 6; font-size: 1.35rem;
-      font-weight: 700; letter-spacing: .05em; color: #fff; text-shadow: 0 0 12px var(--a); }
     .frame-mac .num { position: absolute; bottom: 13px; right: 13px; z-index: 6; font-size: 10px;
       letter-spacing: .24em; color: #3f5568; }
     /* "unfinished" — an honest label, not a lock. The card underneath it is
@@ -218,21 +216,6 @@
       text-transform: uppercase; color: var(--c); }
     .p.locked .locknote { display: block; }
 
-    /* in-theme hover text: no native title chrome. Each card draws its own clipped
-       terminal panel (the same "// ..." treatment the dashboard game links used)
-       over its face on hover or keyboard focus. */
-    .p .tip { position: absolute; left: 0; top: 0; width: 15rem; max-width: 80vw;
-      z-index: 25; padding: .62rem .72rem; text-align: left; pointer-events: none;
-      background: rgba(0,0,0,.94); border: 1px solid var(--accent);
-      box-shadow: 0 0 22px color-mix(in srgb, var(--accent) 40%, transparent);
-      color: var(--bright); font-size: .72rem; line-height: 1.5; letter-spacing: .02em;
-      clip-path: polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 7px 100%, 0 calc(100% - 7px));
-      opacity: 0; visibility: hidden; transition: opacity .14s ease; }
-    .p .tip::before { content: "// "; color: var(--accent); }
-    .p:hover .tip, .p:focus-visible .tip { opacity: 1; visibility: visible; }
-    .p.locked .tip { display: none; }   /* the lock note speaks for locked cards */
-
-
     /* on a narrow screen the wall becomes a list */
     @media (max-width: 900px) {
       body { overflow: auto; }
@@ -266,28 +249,17 @@
        wall. Each game names a bespoke interior "art" and its accent; every card
        shares the one macOS window frame. */
     const GAMES = [
-      { n: "penance",     href: "/writing",               art: "pen",   a: "#c11208", wb: "#0e0607",
-        tip: "A typing drill of correction. Type each line exactly — falter and it corrupts." },
-      { n: "multitap",    href: "/multitap",              art: "t9",    a: "#0bdb00", wb: "#050d05",
-        tip: "A typing drill on an old-phone keypad. No hints — remember the taps." },
-      { n: "summary",     href: "/summary",               art: "sum",   a: "#00acdb", wb: "#050a10",
-        tip: "Read a real Wikipedia article, then retell it in your own words." },
-      { n: "skill check", href: "/skillcheck",            art: "skill", a: "#c11208", wb: "radial-gradient(120% 120% at 50% 46%, #200a0c, #050202 74%)",
-        tip: "Stop the sweeping dial inside the good zone. Pure nerve." },
-      { n: "ot12",        href: "/ot12",                  art: "ot12",  a: "#ffa6c5", wb: "#0d0508", wip: true,
-        tip: "Match the photo to the member. Twelve girls, four names, one right answer." },
-      { n: "snake",       href: "/snake",                 art: "snake", a: "#c11208", wb: "linear-gradient(#140506, #05060a)",
-        tip: "Free-swimming serpent. Chase the fleeing heart and grow; die on your own tail." },
-      { n: "devotion",    href: "/writing?mode=devotion", art: "dev",   a: "#00acdb", wb: "#050a10", account: true, tab: "extra",
-        tip: "A verse reader. Recite Her lines in turn. An account is required." },
-      { n: "deathroll",   href: "/deathroll",             art: "death", a: "#c11208", wb: "#0e0607", multi: true, tab: "extra",
-        tip: "Roll against another, each cap the next roll. Hit one and you lose. Account required." },
-      { n: "dummy parse", href: "/dummyparse",            art: "parse", a: "#ff5a4a", wb: "#0a0608", tab: "extra",
-        tip: "A priest damage recount. Parse the dummy and chase a higher DPS." },
-      { n: "elysium",     href: "/elysium",               art: "elysium", a: "#3f9f6a", wb: "#04100a", account: true, tab: "extra",
-        tip: "A tree you tend. It remembers how long you have kept it." },
-      { n: "chess",       href: "/chess",                 art: "chess", a: "#a4322a", wb: "#0c0a08", tab: "extra",
-        tip: "Ink-wash chess against Her. Win and you may STRIKE; lose and brace for REWIND." },
+      { n: "penance",     href: "/writing",               art: "pen",   a: "#c11208", wb: "#0e0607" },
+      { n: "multitap",    href: "/multitap",              art: "t9",    a: "#0bdb00", wb: "#050d05" },
+      { n: "summary",     href: "/summary",               art: "sum",   a: "#00acdb", wb: "#050a10" },
+      { n: "skill check", href: "/skillcheck",            art: "skill", a: "#c11208", wb: "radial-gradient(120% 120% at 50% 46%, #200a0c, #050202 74%)" },
+      { n: "ot12",        href: "/ot12",                  art: "ot12",  a: "#ffa6c5", wb: "#0d0508", wip: true },
+      { n: "snake",       href: "/snake",                 art: "snake", a: "#c11208", wb: "linear-gradient(#140506, #05060a)" },
+      { n: "devotion",    href: "/writing?mode=devotion", art: "dev",   a: "#00acdb", wb: "#050a10", account: true, tab: "extra" },
+      { n: "deathroll",   href: "/deathroll",             art: "death", a: "#c11208", wb: "#0e0607", multi: true, tab: "extra" },
+      { n: "dummy parse", href: "/dummyparse",            art: "parse", a: "#ff5a4a", wb: "#0a0608", tab: "extra" },
+      { n: "elysium",     href: "/elysium",               art: "elysium", a: "#3f9f6a", wb: "#04100a", account: true, tab: "extra" },
+      { n: "chess",       href: "/chess",                 art: "chess", a: "#a4322a", wb: "#0c0a08", tab: "extra" },
     ];
 
     // a ring of laurel leaves, for the elysium card
@@ -374,7 +346,7 @@
       const wip = g.wip ? '<div class="wip">unfinished</div>' : "";
       return `<div class="frame-mac" style="--a:${g.a};--wb:${g.wb}">
         <div class="bar"><i class="r"></i><i class="y"></i><i class="g"></i><span class="t">${g.n}@angeldomme</span></div>
-        <div class="win">${ART[g.art]()}${wip}<div class="lbl">${g.n}</div><div class="num">${num}</div></div>
+        <div class="win">${ART[g.art]()}${wip}<div class="num">${num}</div></div>
       </div>`;
     }
 
@@ -400,7 +372,7 @@
         a.className = "p";
         a.href = g.href;
         a.tabIndex = 0;
-        a.style.setProperty("--a", g.a);   // so the hover panel picks up the game's accent
+        a.style.setProperty("--a", g.a);   // so the selection glow picks up the game's accent
         // anything needing an account is pasted over for a guest
         const locked = guest && (g.multi || g.account);
         if (locked) {
@@ -408,12 +380,9 @@
           a.removeAttribute("href");
           a.setAttribute("aria-disabled", "true");
         }
-        const tip = g.tip ? `<div class="tip">${g.tip}</div>` : "";
-        a.innerHTML = frameHTML(g, i) + tip + (locked ? '<div class="locknote">sign in to play</div>' : "");
-        a.addEventListener("mouseenter", (e) => { setSel(i); positionTip(a, e.clientX, e.clientY); });
-        a.addEventListener("mousemove", (e) => positionTip(a, e.clientX, e.clientY));
-        // keyboard focus has no cursor, so anchor the panel to a sensible default
-        a.addEventListener("focus", () => { setSel(i); const t = a.querySelector(".tip"); if (t) { t.style.left = "12px"; t.style.top = "58%"; } });
+        a.innerHTML = frameHTML(g, i) + (locked ? '<div class="locknote">sign in to play</div>' : "");
+        a.addEventListener("mouseenter", () => setSel(i));
+        a.addEventListener("focus", () => setSel(i));
         a.addEventListener("click", (e) => { if (locked) e.preventDefault(); });
         track.append(a);
         return a;
@@ -448,38 +417,12 @@
         const days = d && d.tree && typeof d.tree.ageDays === "number" ? d.tree.ageDays : null;
         if (num && days != null) num.textContent = days;
       }).catch(() => {});
-      // Hover text is Hermione-editable in /admin; the g.tip strings above are just
-      // the fallback if this fetch fails. Override each card with the server value.
-      fetch("/api/gametips").then((r) => (r.ok ? r.json() : null)).then((d) => {
-        if (!d || !d.tips) return;
-        cards.forEach((el, i) => {
-          // index into `shown` (this tab's games), not the full GAMES list —
-          // the two only line up on a tab that happens to hold every game
-          const t = d.tips[shown[i].n];
-          const tipEl = el.querySelector(".tip");
-          if (t && tipEl) tipEl.textContent = t;
-        });
-      }).catch(() => {});
     }
 
     function setSel(i) {
       if (!shown.length) return;
       sel = (i + shown.length) % shown.length;
       cards.forEach((el, n) => el.classList.toggle("sel", n === sel));
-    }
-
-    // The hover panel is anchored to the cursor: it floats just off the pointer
-    // and flips to the other side near the viewport edges so it never runs off.
-    function positionTip(a, cx, cy) {
-      const t = a.querySelector(".tip");
-      if (!t) return;
-      const r = a.getBoundingClientRect();
-      const tw = 240, th = t.offsetHeight || 84, pad = 16;
-      let x = cx - r.left + pad, y = cy - r.top + pad;
-      if (cx + pad + tw > window.innerWidth) x = cx - r.left - tw - 8;
-      if (cy + pad + th > window.innerHeight) y = cy - r.top - th - 8;
-      t.style.left = x + "px";
-      t.style.top = y + "px";
     }
 
     function open() {

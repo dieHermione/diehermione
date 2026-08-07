@@ -2780,6 +2780,43 @@ const OT12_MEMBER_DATA = [
 const OT12_MEMBERS = OT12_MEMBER_DATA.map((m) => m.name);
 const OT12_MAX_ROUNDS = 100;
 
+// Trivia question types, generated straight from OT12_MEMBER_DATA rather than
+// hand-written. Each is "whose <field> is <value>?" — the same shape as a
+// photo round (options = every member, answer = whichever member(s) actually
+// have that value), so the answer-checking endpoint below needs no changes
+// at all to support them. A field left undefined on a member (see the table
+// above) just means that member never turns up as a value to ask about; the
+// pool is built once at startup since OT12_MEMBER_DATA is a static table.
+const OT12_TRAITS = [
+  { kind: "animal",  field: "animal",     prompt: (v) => `Whose animal is the ${v}?` },
+  { kind: "shape",   field: "shape",      prompt: (v) => `Whose shape is a ${v}?` },
+  { kind: "hangul",  field: "hangul",     prompt: (v) => `Whose name is ${v}?` },
+  { kind: "color",   field: "color",      prompt: (v) => `Whose colour is ${v}?` },
+  { kind: "plant",   field: "plant",      prompt: (v) => `Whose plant is the ${v}?` },
+  { kind: "height",  field: "heightCm",   prompt: (v) => `Who is ${v} cm tall?` },
+  { kind: "revealMonth", field: "revealMonth", prompt: (v) => `Who was revealed in ${v}?` },
+];
+function ot12TraitPool(field) {
+  const byValue = new Map();
+  OT12_MEMBER_DATA.forEach((m) => {
+    const v = m[field];
+    if (v === undefined || v === null || v === "") return;
+    if (!byValue.has(v)) byValue.set(v, []);
+    byValue.get(v).push(m.name);
+  });
+  return byValue;
+}
+const OT12_TRAIT_POOLS = Object.fromEntries(OT12_TRAITS.map((t) => [t.kind, ot12TraitPool(t.field)]));
+// only traits with at least one real value to ask about are ever offered —
+// a field nobody has (yet) just doesn't come up, same rule as the table above
+function ot12TraitKinds() { return OT12_TRAITS.filter((t) => OT12_TRAIT_POOLS[t.kind].size > 0); }
+function ot12RandomTraitRound(t) {
+  const pool = OT12_TRAIT_POOLS[t.kind];
+  const values = [...pool.keys()];
+  const v = values[Math.floor(Math.random() * values.length)];
+  return { kind: t.kind, prompt: t.prompt(v), members: pool.get(v).slice() };
+}
+
 function loadOt12() {
   try {
     const d = JSON.parse(fs.readFileSync(OT12_FILE, "utf8"));
@@ -2789,14 +2826,67 @@ function loadOt12() {
       d.photos.forEach((p) => {
         if (!Array.isArray(p.members)) p.members = p.member ? [p.member] : [];
       });
+      if (!Array.isArray(d.songs)) d.songs = [];
       return d;
     }
   } catch {}
-  return { photos: [] };
+  return { photos: [], songs: [] };
 }
 function saveOt12(d) { fs.writeFileSync(OT12_FILE, JSON.stringify(d, null, 2)); }
 
 app.get("/api/ot12/members", (req, res) => res.json({ members: OT12_MEMBERS }));
+
+// The song framework: which members appear in which song, for later trivia
+// ("who sings in Star" — not built yet). There is no automated source for
+// this either, same reasoning as the photos: hand-tagged by Hermione.
+app.get("/api/ot12/songs", (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });
+  res.json({ songs: loadOt12().songs, members: OT12_MEMBERS });
+});
+app.post("/api/ot12/songs", (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });
+  const b = req.body || {};
+  const name = String(b.name || "").trim().slice(0, 120);
+  if (!name) return res.status(400).json({ error: "Name the song." });
+  const raw = Array.isArray(b.members) ? b.members : [];
+  const members = [...new Set(raw.map(String))].filter((m) => OT12_MEMBERS.includes(m));
+  if (!members.length) return res.status(400).json({ error: "Tag at least one member." });
+  const d = loadOt12();
+  d.songs.push({ id: Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 7), name, members });
+  saveOt12(d);
+  res.json({ ok: true, count: d.songs.length });
+});
+app.put("/api/ot12/songs/:id", (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });
+  const b = req.body || {};
+  const d = loadOt12();
+  const song = d.songs.find((s) => s.id === req.params.id);
+  if (!song) return res.status(404).json({ error: "No such song." });
+  if (b.name !== undefined) {
+    const name = String(b.name || "").trim().slice(0, 120);
+    if (!name) return res.status(400).json({ error: "Name the song." });
+    song.name = name;
+  }
+  if (b.members !== undefined) {
+    const raw = Array.isArray(b.members) ? b.members : [];
+    const members = [...new Set(raw.map(String))].filter((m) => OT12_MEMBERS.includes(m));
+    if (!members.length) return res.status(400).json({ error: "Tag at least one member." });
+    song.members = members;
+  }
+  saveOt12(d);
+  res.json({ ok: true, song });
+});
+app.delete("/api/ot12/songs/:id", (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });
+  const d = loadOt12();
+  d.songs = d.songs.filter((s) => s.id !== req.params.id);
+  saveOt12(d);
+  res.json({ ok: true, count: d.songs.length });
+});
 
 // admin: the tagged photo pool (the only place the answers are listed)
 app.get("/api/ot12/photos", (req, res) => {
@@ -2844,33 +2934,58 @@ app.delete("/api/ot12/photos/:id", (req, res) => {
   res.json({ ok: true, count: d.photos.length });
 });
 
-// how many photos exist, so the game can say "not ready yet" honestly
+// how many photos exist, and how many trivia types are available, so the
+// game can say "not ready yet" honestly. Trivia is baked into the server (no
+// admin pool to run dry), so in practice this only ever gates on photos.
 app.get("/api/ot12/status", (req, res) => {
   const photos = loadOt12().photos;
   const tagged = new Set();
   photos.forEach((p) => (p.members || []).forEach((m) => tagged.add(m)));
-  res.json({ photos: photos.length, membersCovered: tagged.size });
+  res.json({ photos: photos.length, membersCovered: tagged.size, traitKinds: ot12TraitKinds().length });
 });
 
+// One round is either a tagged photo or a trait question; `members` is always
+// the correct-answer set either way, so answer-checking below never needs to
+// know which kind it's looking at.
+function ot12BuildQueue(rounds, photoPool) {
+  const traitKinds = ot12TraitKinds();
+  const bag = photoPool.slice();
+  for (let i = bag.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [bag[i], bag[j]] = [bag[j], bag[i]]; }
+  let photoCursor = 0;
+  const queue = [];
+  for (let i = 0; i < rounds; i++) {
+    // photos and "any trivia type" split the odds evenly, so one tagged photo
+    // isn't drowned out by seven trait kinds (or vice versa with none tagged)
+    const usePhoto = bag.length && (!traitKinds.length || Math.random() < 0.5);
+    if (usePhoto) {
+      const photo = bag[photoCursor % bag.length]; photoCursor++;
+      queue.push({ kind: "photo", img: photo.img, members: photo.members.slice() });
+    } else {
+      const t = traitKinds[Math.floor(Math.random() * traitKinds.length)];
+      queue.push(ot12RandomTraitRound(t));
+    }
+  }
+  return queue;
+}
+
 function ot12Round(run) {
-  const photo = run.queue[run.idx];
+  const r = run.queue[run.idx];
   // Every member is always on offer — a photo can show any number of them, so
   // there is no decoy set to build and no count to leak.
   run.options = OT12_MEMBERS.slice();
-  return { index: run.idx, total: run.queue.length, img: photo.img, options: run.options };
+  const round = { index: run.idx, total: run.queue.length, kind: r.kind, options: run.options };
+  if (r.kind === "photo") round.img = r.img; else round.prompt = r.prompt;
+  return round;
 }
 
 app.post("/api/ot12/session", (req, res) => {
   const who = playerId(req);
   if (!who) return res.status(401).json({ error: "Not logged in." });
   touchGuest(req);
-  const pool = loadOt12().photos;
-  if (!pool.length) return res.status(409).json({ error: "No photos have been added yet." });
+  const photoPool = loadOt12().photos;
+  if (!photoPool.length && !ot12TraitKinds().length) return res.status(409).json({ error: "No questions have been added yet." });
   const rounds = Math.max(1, Math.min(OT12_MAX_ROUNDS, parseInt((req.body || {}).rounds, 10) || 10));
-  const bag = pool.slice();
-  for (let i = bag.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [bag[i], bag[j]] = [bag[j], bag[i]]; }
-  const queue = [];
-  while (queue.length < rounds) queue.push(bag[queue.length % bag.length]);
+  const queue = ot12BuildQueue(rounds, photoPool);
 
   const run = {
     id: Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 8),

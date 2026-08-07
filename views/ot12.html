@@ -36,6 +36,9 @@
   .photo { max-width:min(420px, 76vw); max-height:38vh; border:1px solid var(--line); border-radius:8px;
     background:var(--panel); object-fit:contain; flex-shrink:0;
     box-shadow:0 0 30px color-mix(in srgb, var(--c) 12%, transparent); }
+  /* trivia rounds show a question instead of a photo */
+  .prompt { max-width:min(44rem, 92vw); text-align:center; color:var(--w); font-size:clamp(1.2rem,3vw,1.7rem);
+    letter-spacing:.02em; line-height:1.4; text-shadow:0 0 20px var(--glow); }
 
   /* the whole group is always on offer; a photo may show any number of them */
   .opts { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:.45rem; width:min(44rem, 92vw); }
@@ -83,6 +86,7 @@
     </div>
     <div class="body">
       <img class="photo" id="photo" alt="" />
+      <div class="prompt" id="prompt" hidden></div>
       <div class="opts" id="opts"></div>
       <button class="btn" id="submit" type="button" disabled>submit</button>
       <div class="verdict" id="verdict"></div>
@@ -115,7 +119,7 @@
 
   <script>
     const $ = (id) => document.getElementById(id);
-    const photoEl = $("photo"), optsEl = $("opts"), verdictEl = $("verdict");
+    const photoEl = $("photo"), promptEl = $("prompt"), optsEl = $("opts"), verdictEl = $("verdict");
     let runId = null, rounds = 10, index = 0, answering = false;
     let picked = new Set();     // the members currently selected for this round
 
@@ -126,19 +130,24 @@
       rounds = Number(b.dataset.rounds);
     });
 
-    // The pool is Hermione's to fill; say plainly when it isn't ready.
+    // Trivia questions are baked into the server, so they're always available;
+    // only the photo-matching side depends on what Hermione has tagged.
     async function refreshStatus() {
       try {
         const d = await (await fetch("/api/ot12/status")).json();
-        if (!d.photos) {
-          $("status").textContent = "No photos yet. Hermione adds and tags them in the admin panel.";
+        if (!d.photos && !d.traitKinds) {
+          $("status").textContent = "Nothing to play yet.";
           $("begin").disabled = true;
+        } else if (!d.photos) {
+          $("status").textContent = "Trivia only for now — no photos yet. Hermione adds and tags them in the admin panel.";
+          $("begin").disabled = false;
         } else if (d.membersCovered < 2) {
-          $("status").textContent = "At least two members need photos before this can be played.";
-          $("begin").disabled = true;
+          $("status").textContent = "Trivia only for now — at least two members need photos to unlock photo rounds.";
+          $("begin").disabled = false;
         } else {
           $("status").textContent = d.photos + " photo" + (d.photos === 1 ? "" : "s") +
-            " · " + d.membersCovered + " member" + (d.membersCovered === 1 ? "" : "s") + " tagged";
+            " · " + d.membersCovered + " member" + (d.membersCovered === 1 ? "" : "s") + " tagged" +
+            " · trivia included";
           $("begin").disabled = false;
         }
       } catch (e) {
@@ -149,7 +158,11 @@
 
     function showRound(round) {
       index = round.index;
-      photoEl.src = round.img;
+      const isPhoto = round.kind === "photo";
+      photoEl.hidden = !isPhoto;
+      promptEl.hidden = isPhoto;
+      if (isPhoto) photoEl.src = round.img;
+      else promptEl.textContent = round.prompt;
       $("rn").textContent = round.index + 1;
       $("rt").textContent = round.total;
       verdictEl.textContent = ""; verdictEl.className = "verdict";
