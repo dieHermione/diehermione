@@ -2787,10 +2787,19 @@ const OT12_MAX_ROUNDS = 100;
 // at all to support them. A field left undefined on a member (see the table
 // above) just means that member never turns up as a value to ask about; the
 // pool is built once at startup since OT12_MEMBER_DATA is a static table.
+// English plurals for the fixed, known set of animal values above — a real
+// pluralizing function would mishandle "Butterfly" and "Wolf" (-y and -f
+// endings), and this list never grows on its own, so a lookup is exact
+// where a rule-based one would just be wrong sometimes.
+const OT12_ANIMAL_PLURAL = {
+  Rabbit: "rabbits", Cat: "cats", "White Bird": "white birds", Frog: "frogs",
+  Deer: "deer", Owl: "owls", "Blue Betta": "blue bettas", "Fruit Bat": "fruit bats",
+  Swan: "swans", Penguin: "penguins", Butterfly: "butterflies", Wolf: "wolves",
+};
 const OT12_TRAITS = [
-  { kind: "animal",  field: "animal",     prompt: (v) => `Whose animal is the ${v}?` },
+  { kind: "animal",  field: "animal",     prompt: (v) => `Which member is associated with ${OT12_ANIMAL_PLURAL[v] || v.toLowerCase()}?` },
   { kind: "shape",   field: "shape",      prompt: (v) => `Whose shape is a ${v}?` },
-  { kind: "hangul",  field: "hangul",     prompt: (v) => `Whose name is ${v}?` },
+  { kind: "hangul",  field: "hangul",     prompt: (v) => `Which member is ${v}?` },
   { kind: "color",   field: "color",      prompt: (v) => `Whose colour is ${v}?` },
   { kind: "plant",   field: "plant",      prompt: (v) => `Whose plant is the ${v}?` },
   { kind: "height",  field: "heightCm",   prompt: (v) => `Who is ${v} cm tall?` },
@@ -3017,6 +3026,22 @@ app.post("/api/ot12/answer", (req, res) => {
   const next = done ? null : ot12Round(run);
   req.session.ot12 = run;
   res.json({ correct, answer, score: run.correct, done, round: next });
+});
+
+// admin-only (`pray skip_stage`): advance the round without answering it,
+// same shape as the writing games' skip — it counts as progress, not a hit
+app.post("/api/ot12/skip", (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });
+  const run = req.session.ot12;
+  if (!run) return res.status(409).json({ error: "No round in progress." });
+  if (run.idx >= run.queue.length) return res.status(409).json({ error: "Run already finished." });
+  run.idx += 1;
+  run.skipped = (run.skipped || 0) + 1;
+  const done = run.idx >= run.queue.length;
+  const next = done ? null : ot12Round(run);
+  req.session.ot12 = run;
+  res.json({ ok: true, done, round: next });
 });
 
 app.post("/api/ot12/complete", (req, res) => {
