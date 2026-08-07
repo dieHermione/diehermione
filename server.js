@@ -2506,12 +2506,12 @@ const PENANCE_DEFAULTS = {
       id: "correction",
       name: "correction",
       lines: [
+        "I am sorry, but sorry is not enough.",
         "I will not waste Her time.",
         "I was warned, and I did it anyway.",
         "I am writing this because I earned it.",
         "My comfort is not the point.",
         "I will do better because She expects it.",
-        "I am sorry, and sorry is not enough.",
       ],
     },
     {
