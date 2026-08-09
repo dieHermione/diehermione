@@ -27,23 +27,31 @@
     background:repeating-linear-gradient(0deg, rgba(0,0,0,.28) 0 1px, transparent 1px 3px); }
 
   .stage { position:fixed; inset:0; z-index:5; display:flex; flex-direction:column; padding:3vh 4vw; }
-  .hdr { display:flex; justify-content:space-between; font-size:11px; letter-spacing:.32em;
+  .hdr { display:flex; font-size:11px; letter-spacing:.32em;
     text-transform:uppercase; flex-shrink:0; padding-left:2.8rem; }
   .hdr b { color:var(--w); font-weight:400; }
 
-  /* the classic stack: line, then keypad, centred */
+  /* the classic stack: line counter, line, then keypad, centred */
   .body { flex:1; min-height:0; display:flex; flex-direction:column; align-items:center;
-    justify-content:center; gap:1.6rem; }
+    justify-content:center; gap:1.2rem; }
+
+  /* moved off the header and blown up 4x (11px -> 44px) so progress reads at a
+     glance; clamps down on short viewports so it never crowds the keypad out */
+  .linecount { font-size:clamp(28px, 4vw, 44px); letter-spacing:.28em; text-transform:uppercase; flex-shrink:0; }
+  .linecount b { color:var(--w); font-weight:400; }
 
   /* the example sentence to copy, shown plainly; long phrases scroll internally
      so the keypad always stays on screen */
   .example { font-size:clamp(.78rem, 1.6vw, 1.05rem); letter-spacing:.02em; line-height:1.4;
-    text-align:center; max-width:min(78ch, 90vw); max-height:26vh; overflow-y:auto; color:var(--c); }
-  /* the box you type into: committed letters, then the pending multi-tap caret */
-  .entry { width:min(78ch, 90vw); min-height:2.2rem; max-height:22vh; overflow-y:auto; padding:.5rem .8rem;
+    text-align:center; max-width:min(78ch, 90vw); max-height:22vh; overflow-y:auto; color:var(--c); }
+  /* the box you type into: committed letters, then the pending multi-tap caret.
+     Real spaces (not &nbsp;) so long lines WRAP instead of forcing a horizontal
+     scrollbar; overflow-y is a fallback for pathological custom lines, kept in
+     sync with the caret via a scroll-to-bottom in render(). */
+  .entry { width:min(78ch, 90vw); min-height:2.2rem; max-height:26vh; overflow-y:auto; padding:.5rem .8rem;
     border:1px solid var(--line); background:var(--panel); border-radius:6px;
     font-size:clamp(.78rem, 1.6vw, 1.05rem); letter-spacing:.02em; line-height:1.3;
-    text-align:left; color:var(--w); }
+    text-align:left; color:var(--w); overflow-wrap:break-word; }
   .entry.wrong { border-color:var(--err); box-shadow:0 0 16px rgba(255,90,74,.35); }
   .entry .done { color:var(--w); }
   .entry .bad { color:var(--err); text-decoration:line-through; }
@@ -99,8 +107,9 @@
 </head>
 <body class="has-top-nav">
   <div class="stage">
-    <div class="hdr"><span><span style="text-transform:none">angelOS</span> v0.2 &middot; multitap</span><span>line <b id="ln">1</b> / <b id="lt">1</b></span></div>
+    <div class="hdr"><span><span style="text-transform:none">angelOS</span> v0.2 &middot; multitap</span></div>
     <div class="body">
+      <div class="linecount">line <b id="ln">1</b> / <b id="lt">1</b></div>
       <div class="example" id="example"></div>
       <div class="entry" id="entry"></div>
       <div class="pad" id="pad"></div>
@@ -195,13 +204,19 @@
     function render() {
       exampleEl.textContent = target;
       const parts = [];
-      // committed characters, coloured by whether they match the target so far
+      // committed characters, coloured by whether they match the target so far.
+      // A real space (not &nbsp;) so the browser can wrap at word boundaries —
+      // &nbsp; here used to force one giant unbreakable line, which forced a
+      // horizontal scrollbar nothing auto-scrolled, burying the caret off-screen.
       for (let i = 0; i < typed.length; i++) {
-        const ch = typed[i] === " " ? "&nbsp;" : escapeHtml(typed[i]);
+        const ch = escapeHtml(typed[i]);
         const cls = typed[i] === target[i] ? "done" : "bad";
         parts.push('<span class="' + cls + '">' + ch + "</span>");
       }
-      // the caret: the pending (uncommitted) letter, or a blinking bar
+      // the caret: the pending (uncommitted) letter, or a blinking bar. This one
+      // stays as &nbsp; on purpose — it is always the very last glyph, so keeping
+      // it unbreakable does not affect wrapping, and it guarantees the blinking
+      // bar has width when there is no pending character.
       if (pending) {
         const pc = pendingChar();
         parts.push('<span class="cur">' + (pc === " " ? "&nbsp;" : escapeHtml(pc)) + "</span>");
@@ -209,6 +224,10 @@
         parts.push('<span class="caret">&nbsp;</span>');
       }
       entryEl.innerHTML = parts.join("");
+      // fallback for a custom line still too long to fit even at the larger max-
+      // height: keep the caret (always the last node) in view automatically
+      // instead of leaving the player to scroll for it.
+      entryEl.scrollTop = entryEl.scrollHeight;
     }
     function escapeHtml(s) { return s.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c])); }
 
