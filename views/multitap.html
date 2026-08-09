@@ -205,10 +205,15 @@
       exampleEl.textContent = target;
       const parts = [];
       // committed characters, coloured by whether they match the target so far.
-      // A real space (not &nbsp;) so the browser can wrap at word boundaries —
-      // &nbsp; here used to force one giant unbreakable line, which forced a
-      // horizontal scrollbar nothing auto-scrolled, burying the caret off-screen.
+      // A space is pushed as a bare text character, NOT wrapped in a <span> —
+      // it has no glyph to colour anyway, and a plain space sitting directly in
+      // the flow between inline elements is the one wrapping technique every
+      // engine (including older WebKit/Safari) is guaranteed to break a line at.
+      // The previous fix (space inside its own <span>) works in Chromium but
+      // was still reported stuck-scrolling on Safari; this removes that
+      // per-engine risk entirely rather than chasing which quirk caused it.
       for (let i = 0; i < typed.length; i++) {
+        if (typed[i] === " ") { parts.push(" "); continue; }
         const ch = escapeHtml(typed[i]);
         const cls = typed[i] === target[i] ? "done" : "bad";
         parts.push('<span class="' + cls + '">' + ch + "</span>");
