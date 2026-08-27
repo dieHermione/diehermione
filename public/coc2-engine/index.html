@@ -1,0 +1,1367 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="A read of the Corruption of Champions II engine as shipped: how its stats, combat, parser, saves and content pipeline actually fit together.">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Anatomy of the CoC II Engine">
+<meta property="og:description" content="A read of the Corruption of Champions II engine as shipped: how its stats, combat, parser, saves and content pipeline actually fit together.">
+<meta name="twitter:card" content="summary">
+<title>Anatomy of the CoC II Engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cardo:ital,wght@0,400;0,700;1,400&family=Archivo:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<style>
+:root{
+  --ground:#F3F6F3;
+  --surface:#FBFDFA;
+  --surface-2:#EAF0EB;
+  --ink:#141C18;
+  --ink-soft:#33413A;
+  --muted:#5A6A62;
+  --rule:#D3DDD5;
+  --rule-soft:#E2EAE3;
+  --accent:#1D6B58;
+  --accent-soft:#DCEBE4;
+  --hp:#A8362B;
+  --resolve:#2C5F91;
+  --warn:#8A6316;
+  --shadow:0 1px 2px rgba(20,28,24,.05),0 8px 24px -16px rgba(20,28,24,.28);
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --body:"Archivo",-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  --display:"Cardo","Iowan Old Style",Georgia,"Times New Roman",serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#0E1411;
+    --surface:#151C18;
+    --surface-2:#1B2420;
+    --ink:#E3EAE5;
+    --ink-soft:#C3CFC8;
+    --muted:#8FA097;
+    --rule:#243029;
+    --rule-soft:#1D2621;
+    --accent:#63C2A5;
+    --accent-soft:#17322A;
+    --hp:#E5786A;
+    --resolve:#84B3E0;
+    --warn:#D8AE55;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -16px rgba(0,0,0,.8);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0E1411;
+  --surface:#151C18;
+  --surface-2:#1B2420;
+  --ink:#E3EAE5;
+  --ink-soft:#C3CFC8;
+  --muted:#8FA097;
+  --rule:#243029;
+  --rule-soft:#1D2621;
+  --accent:#63C2A5;
+  --accent-soft:#17322A;
+  --hp:#E5786A;
+  --resolve:#84B3E0;
+  --warn:#D8AE55;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -16px rgba(0,0,0,.8);
+}
+
+*{box-sizing:border-box}
+body{
+  background:var(--ground);
+  color:var(--ink);
+  font-family:var(--body);
+  font-size:16.5px;
+  line-height:1.62;
+  -webkit-font-smoothing:antialiased;
+  margin:0;
+}
+
+/* ---------- shell ---------- */
+.shell{
+  max-width:1320px;
+  margin:0 auto;
+  padding:0 clamp(18px,4vw,44px) 96px;
+  display:grid;
+  grid-template-columns:1fr;
+  gap:0;
+}
+@media (min-width:1120px){
+  .shell{grid-template-columns:238px minmax(0,1fr);column-gap:56px}
+  .rail{grid-column:1;grid-row:2}
+  .masthead{grid-column:1 / -1}
+  .doc{grid-column:2;grid-row:2}
+}
+
+/* ---------- masthead ---------- */
+.masthead{padding:clamp(40px,7vw,80px) 0 34px;border-bottom:1px solid var(--rule)}
+.eyebrow{
+  font-family:var(--mono);
+  font-size:11.5px;
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  color:var(--accent);
+  margin:0 0 18px;
+  display:flex;
+  gap:10px;
+  align-items:center;
+  flex-wrap:wrap;
+}
+.eyebrow span::after{content:"&#183;";margin-left:10px;color:var(--muted)}
+.eyebrow span:last-child::after{content:none;margin:0}
+h1{
+  font-family:var(--display);
+  font-weight:700;
+  font-size:clamp(2.5rem,6.2vw,4.15rem);
+  line-height:1.02;
+  letter-spacing:-.012em;
+  margin:0 0 22px;
+  text-wrap:balance;
+  max-width:16ch;
+}
+.standfirst{
+  font-size:clamp(1.04rem,1.7vw,1.2rem);
+  color:var(--ink-soft);
+  max-width:62ch;
+  margin:0 0 34px;
+}
+.standfirst strong{font-weight:600;color:var(--ink)}
+
+/* spec grid */
+.spec{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(152px,1fr));
+  gap:9px;
+}
+.spec div{
+  background:var(--surface);
+  border:1px solid var(--rule);
+  border-radius:3px;
+  padding:13px 15px 15px;
+}
+.spec dt{
+  font-family:var(--mono);
+  font-size:10.5px;
+  letter-spacing:.11em;
+  text-transform:uppercase;
+  color:var(--muted);
+  margin:0 0 5px;
+}
+.spec dd{
+  margin:0;
+  font-family:var(--mono);
+  font-size:15px;
+  font-weight:500;
+  font-variant-numeric:tabular-nums;
+  color:var(--ink);
+  line-height:1.3;
+}
+.spec dd small{display:block;font-size:11.5px;font-weight:400;color:var(--muted);letter-spacing:0;margin-top:3px;font-family:var(--body)}
+
+/* ---------- rail ---------- */
+.rail{padding:38px 0 0}
+@media (min-width:1120px){
+  .rail{position:sticky;top:0;align-self:start;max-height:100vh;overflow-y:auto;padding:44px 0 40px}
+}
+.rail h2{
+  font-family:var(--mono);
+  font-size:10.5px;
+  letter-spacing:.15em;
+  text-transform:uppercase;
+  color:var(--muted);
+  margin:0 0 14px;
+  font-weight:500;
+}
+.rail ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px}
+.rail a{
+  display:grid;
+  grid-template-columns:26px 1fr;
+  gap:6px;
+  text-decoration:none;
+  color:var(--ink-soft);
+  padding:5px 8px 5px 0;
+  border-radius:2px;
+  font-size:13.5px;
+  line-height:1.35;
+}
+.rail a:hover{color:var(--accent)}
+.rail a b{font-family:var(--mono);font-weight:400;color:var(--muted);font-size:12px}
+.rail a:hover b{color:var(--accent)}
+@media (max-width:1119px){
+  .rail{border-bottom:1px solid var(--rule);padding-bottom:30px}
+  .rail ol{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0 22px}
+}
+
+/* ---------- document ---------- */
+.doc{padding-top:14px;min-width:0}
+section{padding:44px 0 4px;border-top:1px solid var(--rule-soft)}
+section:first-of-type{border-top:none}
+h2.sec{
+  font-family:var(--display);
+  font-weight:700;
+  font-size:clamp(1.72rem,3.1vw,2.3rem);
+  line-height:1.14;
+  letter-spacing:-.01em;
+  margin:0 0 6px;
+  text-wrap:balance;
+  max-width:24ch;
+}
+.secnum{
+  font-family:var(--mono);
+  font-size:11.5px;
+  letter-spacing:.14em;
+  color:var(--accent);
+  display:block;
+  margin-bottom:10px;
+  text-transform:uppercase;
+}
+h3{
+  font-family:var(--body);
+  font-weight:600;
+  font-size:1.06rem;
+  letter-spacing:.005em;
+  margin:36px 0 10px;
+  color:var(--ink);
+  max-width:52ch;
+  text-wrap:balance;
+}
+h4{
+  font-family:var(--mono);
+  font-weight:500;
+  font-size:11.5px;
+  letter-spacing:.13em;
+  text-transform:uppercase;
+  color:var(--muted);
+  margin:28px 0 9px;
+}
+p{margin:0 0 16px;max-width:68ch}
+.doc ul,.doc ol.body{margin:0 0 18px;padding-left:20px;max-width:68ch}
+.doc li{margin:0 0 8px}
+.lede{font-size:1.06rem;color:var(--ink-soft);max-width:64ch}
+
+a{color:var(--accent);text-underline-offset:2.5px;text-decoration-thickness:1px}
+
+code{
+  font-family:var(--mono);
+  font-size:.855em;
+  background:var(--surface-2);
+  padding:1px 4px;
+  border-radius:2px;
+  color:var(--ink);
+  word-break:break-word;
+}
+strong{font-weight:600}
+em{font-style:italic}
+
+/* code blocks */
+.code{
+  background:var(--surface);
+  border:1px solid var(--rule);
+  border-radius:3px;
+  margin:0 0 20px;
+  overflow:hidden;
+  box-shadow:var(--shadow);
+}
+.code figcaption{
+  font-family:var(--mono);
+  font-size:10.5px;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--muted);
+  padding:9px 14px;
+  border-bottom:1px solid var(--rule-soft);
+  background:var(--surface-2);
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  flex-wrap:wrap;
+}
+.code figcaption em{font-style:normal;color:var(--accent);letter-spacing:.06em}
+.code pre{
+  margin:0;
+  padding:14px;
+  overflow-x:auto;
+  font-family:var(--mono);
+  font-size:12.9px;
+  line-height:1.66;
+  color:var(--ink-soft);
+  tab-size:2;
+}
+.code pre b{color:var(--accent);font-weight:500}
+.code pre i{color:var(--muted);font-style:normal}
+.code pre u{text-decoration:none;color:var(--hp)}
+
+/* callout */
+.note{
+  border-left:2px solid var(--accent);
+  background:var(--accent-soft);
+  padding:14px 17px;
+  margin:0 0 22px;
+  border-radius:0 3px 3px 0;
+  max-width:68ch;
+}
+.note p{margin:0;font-size:.955rem}
+.note p + p{margin-top:10px}
+.note .tag{
+  font-family:var(--mono);
+  font-size:10.5px;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  color:var(--accent);
+  display:block;
+  margin-bottom:6px;
+}
+
+/* tables */
+.tw{overflow-x:auto;margin:0 0 22px;border:1px solid var(--rule);border-radius:3px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:13.6px;min-width:440px}
+th{
+  text-align:left;
+  font-family:var(--mono);
+  font-size:10.5px;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--muted);
+  font-weight:500;
+  padding:10px 14px;
+  border-bottom:1px solid var(--rule);
+  background:var(--surface-2);
+  white-space:nowrap;
+}
+td{padding:9px 14px;border-bottom:1px solid var(--rule-soft);vertical-align:top;color:var(--ink-soft)}
+tr:last-child td{border-bottom:none}
+td.n{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--ink)}
+td code{background:none;padding:0;font-size:12.6px}
+.chip{
+  display:inline-block;
+  font-family:var(--mono);
+  font-size:11px;
+  padding:1px 6px;
+  border-radius:2px;
+  border:1px solid currentColor;
+  line-height:1.5;
+}
+.chip.hp{color:var(--hp)}
+.chip.res{color:var(--resolve)}
+
+/* figures */
+figure.fig{
+  margin:0 0 24px;
+  background:var(--surface);
+  border:1px solid var(--rule);
+  border-radius:3px;
+  padding:20px 18px 14px;
+  box-shadow:var(--shadow);
+}
+figure.fig svg{display:block;max-width:100%;height:auto;margin:0 auto;color:var(--ink-soft)}
+figure.fig figcaption{
+  margin-top:14px;
+  padding-top:12px;
+  border-top:1px solid var(--rule-soft);
+  font-size:12.8px;
+  color:var(--muted);
+  max-width:66ch;
+}
+.figscroll{overflow-x:auto}
+
+/* token anatomy */
+.anat{
+  font-family:var(--mono);
+  font-size:clamp(13px,2.2vw,17px);
+  background:var(--surface-2);
+  border-radius:3px;
+  padding:16px 14px;
+  overflow-x:auto;
+  white-space:nowrap;
+  margin-bottom:14px;
+}
+.anat b{font-weight:700}
+.anat .t-obj{color:var(--accent)}
+.anat .t-attr{color:var(--hp)}
+.anat .t-pipe{color:var(--muted)}
+.anat .t-arg{color:var(--resolve)}
+.legend{display:flex;flex-wrap:wrap;gap:4px 22px;font-size:12.6px;color:var(--muted);margin:0 0 20px;max-width:none}
+.legend span{display:inline-flex;gap:7px;align-items:baseline}
+.legend b{font-family:var(--mono);font-weight:500;font-size:11.5px;white-space:nowrap}
+.legend .k-obj{color:var(--accent)}
+.legend .k-attr{color:var(--hp)}
+.legend .k-arg{color:var(--resolve)}
+
+/* button grid figure */
+.btngrid{
+  display:grid;
+  grid-template-columns:repeat(5,minmax(52px,84px));
+  gap:5px;
+  font-family:var(--mono);
+  font-size:11px;
+  margin:0 0 6px;
+}
+.btngrid div{
+  border:1px solid var(--rule);
+  border-radius:2px;
+  padding:8px 5px;
+  text-align:center;
+  color:var(--muted);
+  background:var(--surface-2);
+  line-height:1.35;
+}
+.btngrid div b{display:block;font-size:9.5px;color:var(--muted);opacity:.65;font-weight:400}
+.btngrid div.on{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+.btngrid div.on b{color:var(--accent);opacity:.7}
+
+footer{
+  margin-top:70px;
+  padding-top:26px;
+  border-top:1px solid var(--rule);
+  font-size:13px;
+  color:var(--muted);
+  max-width:68ch;
+}
+footer p{max-width:none}
+
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:2px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <header class="masthead">
+    <p class="eyebrow"><span>Corruption of Champions II</span><span>v0.9.5</span><span>Windows / Electron</span><span>Static analysis</span></p>
+    <h1>Anatomy of the CoC&nbsp;II Engine</h1>
+    <p class="standfirst">A tour of what's actually running under a 739&nbsp;MB text RPG: a <strong>single mutable global world</strong>, a class-registry object model, a hand-written bracket templating language, and a save format that stores only what differs from a freshly constructed object. Reconstructed by reading the shipped webpack bundles.</p>
+    <dl class="spec">
+      <div><dt>Shipped size</dt><dd>739 MB<small>3,979 files, ~911 MB unpacked</small></dd></div>
+      <div><dt>Engine JS</dt><dd>8.1 MB<small>across 5 core bundles</small></dd></div>
+      <div><dt>Content JS</dt><dd>88 MB<small>28 lazy-declared chunks</small></dd></div>
+      <div><dt>Creature classes</dt><dd>467<small>every NPC is a singleton</small></dd></div>
+      <div><dt>Scene functions</dt><dd>13,098<small>published onto <code>window</code></small></dd></div>
+      <div><dt>Rooms</dt><dd>1,019<small>across 92 map registrations</small></dd></div>
+    </dl>
+  </header>
+
+  <nav class="rail" aria-label="Contents">
+    <h2>Contents</h2>
+    <ol>
+      <li><a href="#s1"><b>&#167;1</b><span>Packaging &amp; boot</span></a></li>
+      <li><a href="#s2"><b>&#167;2</b><span>The global world</span></a></li>
+      <li><a href="#s3"><b>&#167;3</b><span>Creature</span></a></li>
+      <li><a href="#s4"><b>&#167;4</b><span>Attributes &amp; derived stats</span></a></li>
+      <li><a href="#s5"><b>&#167;5</b><span>Damage resolution</span></a></li>
+      <li><a href="#s6"><b>&#167;6</b><span>The combat loop</span></a></li>
+      <li><a href="#s7"><b>&#167;7</b><span>Powers</span></a></li>
+      <li><a href="#s8"><b>&#167;8</b><span>The four effect kinds</span></a></li>
+      <li><a href="#s9"><b>&#167;9</b><span>Items &amp; equipment</span></a></li>
+      <li><a href="#s10"><b>&#167;10</b><span>The parser</span></a></li>
+      <li><a href="#s11"><b>&#167;11</b><span>Scenes &amp; the menu loop</span></a></li>
+      <li><a href="#s12"><b>&#167;12</b><span>World, maps &amp; time</span></a></li>
+      <li><a href="#s13"><b>&#167;13</b><span>Quests, races &amp; trackers</span></a></li>
+      <li><a href="#s14"><b>&#167;14</b><span>Persistence</span></a></li>
+      <li><a href="#s15"><b>&#167;15</b><span>Failure handling</span></a></li>
+      <li><a href="#s16"><b>&#167;16</b><span>Content &amp; art pipeline</span></a></li>
+      <li><a href="#s17"><b>&#167;17</b><span>Observations</span></a></li>
+    </ol>
+  </nav>
+
+  <main class="doc">
+
+    <section id="method">
+      <p class="lede">Everything below comes from reading the shipped bundles. They are minified with mangled local identifiers, but webpack's export maps (<code>__webpack_require__.d</code>) survived intact, so class and function names are real, not guessed. A handful of modules kept their full webpack import names, which is how the save layer's dependencies could be read directly. Code shown here is de-minified and lightly renamed for legibility; the logic and constants are verbatim.</p>
+    </section>
+
+    <!-- ============ 1 ============ -->
+    <section id="s1">
+      <span class="secnum">&#167;1 &#8212; Packaging</span>
+      <h2 class="sec">A browser game in an Electron coat</h2>
+
+      <p>The Windows build is Electron with an almost comically thin native shell. <code>main.js</code> is 43 lines: open a 1920&#215;1200 <code>BrowserWindow</code>, load <code>index.html</code> off <code>file://</code>, and forward five IPC messages. The preload script exposes exactly six functions.</p>
+
+      <figure class="code">
+        <figcaption><span>resources/app/preload.js</span><em>verbatim</em></figcaption>
+<pre>contextBridge.exposeInMainWorld('electronAPI', {
+    exit:         () =&gt; ipcRenderer.send('exit'),
+    openFile:     () =&gt; ipcRenderer.send('dialog:openFile'),
+    fullscreen:   () =&gt; ipcRenderer.send('fullscreen'),
+    unfullscreen: () =&gt; ipcRenderer.send('unfullscreen'),
+    isFullscreen: () =&gt; !!ipcRenderer.sendSync('isFullscreen'),
+    <i>isSteam:      () =&gt; false,</i>
+});</pre>
+      </figure>
+
+      <p>That <code>isSteam: () =&gt; false</code> is the only difference between this build and the Steam one &#8212; the game asks it at startup and gates achievement reporting behind it. Notably, the app is <em>not</em> packed into an <code>app.asar</code>: <code>resources/app/</code> is plain files on disk, which makes the whole thing trivially modifiable.</p>
+
+      <p>The same code runs in three hosts. Alongside the Electron probe there's a Cordova check (<code>window.cordova</code>, a <code>deviceready</code> listener, a user-agent mobile sniff) and a plain-browser path. Storage, fullscreen, and cloud saves each branch on which host is present.</p>
+
+      <h3>Bundle layout</h3>
+      <p>Webpack, with aggressive module concatenation &#8212; bundle <code>673</code> is 6.6 MB but only 39 top-level modules, because scope hoisting merged hundreds of source files into a handful.</p>
+
+      <div class="tw"><table>
+        <thead><tr><th>Bundle</th><th>Size</th><th>Contents</th></tr></thead>
+        <tbody>
+          <tr><td class="n">manifest</td><td class="n">328 KB</td><td>core-js / babel-polyfill, plus the Sentry release hash</td></tr>
+          <tr><td class="n">main</td><td class="n">5 KB</td><td>webpack runtime; the chunk-name and content-hash tables</td></tr>
+          <tr><td class="n">673</td><td class="n">6.6 MB</td><td>the engine: bootstrap, managers, rooms, all 467 creature classes, powers, items</td></tr>
+          <tr><td class="n">505</td><td class="n">644 KB</td><td>core classes: <code>Creature</code>, <code>Power</code>, <code>Item</code>, <code>Parser</code>, <code>CombatHelper</code>, effects</td></tr>
+          <tr><td class="n">103</td><td class="n">438 KB</td><td><code>initUI</code> &#8212; the React layer and the gamepad manager</td></tr>
+          <tr><td class="n">473 / 737</td><td class="n">298 KB</td><td>vendor (Sentry, axios, localforage, lz-string)</td></tr>
+          <tr><td class="n">Content_*</td><td class="n">88 MB</td><td>28 chunks of prose, one per region or system</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>Boot order</h3>
+      <p>Two exported entry points do all the work: <code>initUI()</code> from bundle 103 and <code>initEngine()</code> from 81369, which immediately delegates to the real bootstrap in bundle 673. Roughly:</p>
+
+      <ol class="body">
+        <li><strong>Polyfills</strong> load, and a black splash <code>#loading</code> div with a <code>&lt;progress&gt;</code> element shows.</li>
+        <li><strong><code>initUI()</code></strong> constructs the UI controller, binds ~30 of its methods onto <code>window</code>, detects the host (Electron / Cordova / mobile), then preloads every UI sprite and vector icon by constructing <code>Image</code> objects and awaiting <code>onload</code>, ticking the progress bar per asset.</li>
+        <li><strong><code>initEngine()</code></strong> awaits all 28 content chunks <em>sequentially</em>, updating the splash text to "Loading Content/Khorminos&#8230;" as it goes.</li>
+        <li><strong>World construction</strong>: <code>flags = {}</code>, every manager is instantiated, all 467 NPCs are constructed as singletons, ~85 room-table builder functions run, and the stacks are initialised.</li>
+      </ol>
+
+      <div class="note">
+        <span class="tag">Worth noticing</span>
+        <p>The code-splitting is organisational, not lazy. Every content chunk is awaited during boot &#8212; the split exists so the build stays manageable and so the loading bar has something meaningful to count. On slower disks this is why the splash sits there for a while.</p>
+      </div>
+    </section>
+
+    <!-- ============ 2 ============ -->
+    <section id="s2">
+      <span class="secnum">&#167;2 &#8212; Object model</span>
+      <h2 class="sec">One mutable global world</h2>
+
+      <p>There is no module boundary at runtime. The engine assigns <strong>425 distinct globals</strong> onto <code>window</code>, and content authors write against them directly. This is the single most important thing to understand about the codebase: it is deliberately, thoroughly global.</p>
+
+      <p>The globals fall into recognisable families:</p>
+
+      <div class="tw"><table>
+        <thead><tr><th>Family</th><th>Members</th></tr></thead>
+        <tbody>
+          <tr><td>Registries</td><td><code>POWERS</code> <code>ITEMS</code> <code>KEYITEMS</code> <code>PERKS</code> <code>RACES</code> <code>BOONS</code> <code>SUMMONS</code> <code>CEFFECTS</code> <code>SEFFECTS</code> <code>CHAR_CLASSES</code> <code>Tf</code> <code>GLOBALS</code></td></tr>
+          <tr><td>Managers</td><td><code>CombatManager</code> <code>QuestManager</code> <code>PregManager</code> <code>RoomManager</code> <code>CodexManager</code> <code>TitleManager</code> <code>AchievementManager</code> <code>SentryManager</code> <code>GamepadManager</code> <code>CustomIconManager</code></td></tr>
+          <tr><td>World state</td><td><code>flags</code> <code>timestamp</code> <code>currentLocation</code> <code>inDungeon</code> <code>checkpoint</code> <code>PlayerParty</code> <code>CHARS</code></td></tr>
+          <tr><td>Character handles</td><td><code>pc</code>, plus ~160 named NPCs &#8212; <code>cait</code>, <code>arona</code>, <code>etheryn</code>, <code>kasyrra</code>&#8230;</td></tr>
+          <tr><td>UI verbs</td><td><code>output</code> <code>addButton</code> <code>clearMenu</code> <code>showBust</code> <code>navTo</code> <code>showNotification</code></td></tr>
+          <tr><td>Combat scratch</td><td><code>attacker</code> <code>target</code> <code>hitObj</code> <code>attackerParty</code> <code>targetParty</code> <code>finisher</code></td></tr>
+        </tbody>
+      </table></div>
+
+      <p>Derived state is exposed through <code>Object.defineProperty</code> getters rather than being recomputed by callers. The clock is one number &#8212; <code>timestamp</code>, in in-game minutes &#8212; and everything else reads off it:</p>
+
+      <figure class="code">
+        <figcaption><span>bootstrap &#8212; derived clock globals</span><em>reconstructed</em></figcaption>
+<pre>window.timestamp = 0;
+defineGetter('weeks',      () =&gt; Math.floor(timestamp / 10080));
+defineGetter('days',       () =&gt; Math.floor(timestamp / 1440));
+defineGetter('hours',      () =&gt; Math.floor(timestamp / 60) % 24);
+defineGetter('minutes',    () =&gt; timestamp % 60);
+defineGetter('night',      () =&gt; hours &lt; 6 || hours &gt;= 20);
+defineGetter('shopsOpen',  () =&gt; hours &gt;= 8 &amp;&amp; hours &lt; 19);</pre>
+      </figure>
+
+      <p>The same trick provides option shorthands (<code>silly</code>, <code>easy</code>, <code>darkMode</code>, <code>buttslut</code>), NPC nicknames (<code>ryn</code> &#8594; <code>etheryn</code>, <code>kas</code> &#8594; <code>kasyrra</code>, <code>bri</code> &#8594; whichever of <code>brint</code>/<code>brienne</code> currently applies), and situational lookups like <code>currentRoom</code>, <code>currentBedmate</code>, and <code>randComp</code>.</p>
+
+      <h3>Registries and the key trick</h3>
+      <p>Every registry is a plain object mapping a stable string key to a class. After the registries are assembled, one utility walks each of them and welds the key onto the prototype:</p>
+
+      <figure class="code">
+        <figcaption><span>injectKeys</span><em>verbatim</em></figcaption>
+<pre>window.injectKeys = function (registry) {
+  Object.entries(registry).forEach(([key, cls]) =&gt; {
+    cls.prototype.getKey = function () { return key; };
+  });
+};</pre>
+      </figure>
+
+      <p>This single function underpins the whole persistence design. Any instance can name itself &#8212; <code>new ITEMS.RustyKnife().getKey() === "RustyKnife"</code> &#8212; so saves never store object graphs, only keys. It also means <strong>renaming a registry key breaks every existing save</strong>, which is why the migration chain in &#167;14 is full of key rewrites.</p>
+
+      <p>Sizes, as shipped:</p>
+
+      <div class="tw"><table>
+        <thead><tr><th>Registry</th><th>Count</th><th>Registry</th><th>Count</th></tr></thead>
+        <tbody>
+          <tr><td><code>CHAR_CLASSES</code></td><td class="n">467</td><td><code>PERKS</code></td><td class="n">142</td></tr>
+          <tr><td><code>ITEMS</code></td><td class="n">~610</td><td><code>SEFFECTS</code></td><td class="n">60</td></tr>
+          <tr><td><code>POWERS</code></td><td class="n">~580</td><td><code>RACES</code></td><td class="n">38</td></tr>
+          <tr><td><code>Tf</code> (transformations)</td><td class="n">517</td><td><code>BOONS</code></td><td class="n">37</td></tr>
+          <tr><td><code>CEFFECTS</code></td><td class="n">170</td><td><code>SUMMONS</code></td><td class="n">35</td></tr>
+          <tr><td><code>KEYITEMS</code></td><td class="n">77</td><td><code>GLOBALS</code> constants</td><td class="n">~800</td></tr>
+        </tbody>
+      </table></div>
+
+      <p><code>GLOBALS</code> is one frozen object of enums: 14 damage types, 5 attack types, 25 power tags, 30 item tags, 8 creature taxa, 6 classes, 11 backgrounds, 135 achievement ids, 93 quest ids, 105 body-part constants, and a 50-entry bra-cup ladder that terminates in <code>"Jacques"</code> when it runs out of letters.</p>
+    </section>
+
+    <!-- ============ 3 ============ -->
+    <section id="s3">
+      <span class="secnum">&#167;3 &#8212; Creature</span>
+      <h2 class="sec">The god object</h2>
+
+      <p>One class models the player, every companion, and every enemy. <code>Creature</code> is 8,447 lines with roughly <strong>1,000 members</strong>, and its constructor sets about 170 fields before any subclass touches it.</p>
+
+      <p>The field groups:</p>
+
+      <div class="tw"><table>
+        <thead><tr><th>Group</th><th>Representative fields</th></tr></thead>
+        <tbody>
+          <tr><td>Identity</td><td><code>name</code> <code>cName</code> <code>taxa</code> <code>class</code> <code>background</code> <code>originalRace</code> <code>_race</code> <code>isPlural</code></td></tr>
+          <tr><td>Progression</td><td><code>level</code> <code>exp</code> <code>canGainExp</code> <code>{stat}Alloc</code> <code>{stat}Mod</code></td></tr>
+          <tr><td>Combat resource</td><td><code>hitPoints</code> <code>hitPointsMaxMod</code> <code>actionPoints</code> <code>threatMod</code> <code>ultimateUsed</code></td></tr>
+          <tr><td>Resistances</td><td>13 fields, <code>penetratingResist</code> &#8230; <code>mindResist</code></td></tr>
+          <tr><td>Loadout</td><td>13 equipment slots, <code>inventory</code>, <code>keyItems</code>, <code>set</code>, <code>credits</code></td></tr>
+          <tr><td>Abilities</td><td><code>powers</code> <code>equippedPowers[5]</code> <code>stance</code> <code>multiTurnAttack</code> <code>perks</code> <code>boon</code></td></tr>
+          <tr><td>Effects</td><td><code>combatEffects[]</code> <code>statusEffects[]</code></td></tr>
+          <tr><td>Body</td><td>~70 fields: types and tag arrays for hair, skin, tail, horns, wings, arms, legs, tongue, face, ears, eyes; <code>femininity</code> <code>tallness</code> <code>tone</code> <code>thickness</code>; hip/butt/belly raw+mod pairs</td></tr>
+          <tr><td>Reproductive</td><td><code>breastRows[]</code> <code>cocks[]</code> <code>vagina</code> <code>ass</code> <code>_balls</code>; fertility, virility, feracity, lactation, cum volume</td></tr>
+          <tr><td>Cosmetic</td><td><code>cosmetics[12]</code> &#8212; lipstick, eyeshadow, nail polish, and nine tattoo slots</td></tr>
+          <tr><td>Reagents</td><td>a 14-key map, one counter per transformation domain</td></tr>
+        </tbody>
+      </table></div>
+
+      <p>The <code>raw</code>/<code>mod</code> split shows up throughout: <code>hipRatingRaw</code> is the character's intrinsic value, <code>hipRatingMod</code> is the sum of temporary adjustments, and the public <code>hipRating()</code> combines and clamps them. Nothing outside the class touches the raw fields.</p>
+
+      <p>Sub-objects get their own classes &#8212; <code>BreastRow</code>, <code>Cock</code>, <code>Vagina</code>/<code>Ass</code> (one class, a boolean apart), <code>Race</code>, plus each of the effect kinds &#8212; and each implements <code>serialize()</code>/<code>deserialize()</code>. Subclassing is mostly declarative: an NPC class calls <code>super()</code> and then assigns its own name, taxa, class, level, body, powers and equipment.</p>
+
+      <h3>Identity comparison</h3>
+      <p>Because instances are constructed freely from registries, identity is never <code>===</code>. Everything uses <code>is()</code>, which accepts an instance, a constructor, or a key string, and for effects also walks an <code>extends[]</code> list so that, say, any variety of "Bleeding" can be matched generically.</p>
+    </section>
+
+    <!-- ============ 4 ============ -->
+    <section id="s4">
+      <span class="secnum">&#167;4 &#8212; Stats</span>
+      <h2 class="sec">Six attributes, twenty derived stats</h2>
+
+      <p>Six attributes &#8212; Strength, Toughness, Agility, Cunning, Willpower, Presence &#8212; plus Libido, which behaves differently. Each is stored only as an allocation count; the actual value is computed:</p>
+
+      <figure class="code">
+        <figcaption><span>Creature &#8212; attribute derivation</span><em>reconstructed</em></figcaption>
+<pre>regAttrBase(alloc)     { return 1 + this.level + 2 * alloc; }
+regAttrBaseMax()       { return 2 + 3 * this.level; }
+regAttrMax()           { return Math.floor(1.5 * this.regAttrBaseMax()); }
+
+strengthBase() {
+  let v = this.regAttrBase(this.strengthAlloc) + this.strengthModifier();
+  <i>// + a starting-bonus perk, then hard-clamped</i>
+  return Math.min(v, this.regAttrMax());
+}</pre>
+      </figure>
+
+      <p>So at level 9 the natural ceiling is 29 and the hard ceiling with gear and buffs is 43. Levelling grants three allocation points; <code>upgradeToLevel()</code> can auto-spend them, sorting the six stats by current allocation and topping up in <strong>affinity</strong> order &#8212; a per-race and per-class list of three preferred stats.</p>
+
+      <p>Every derived stat follows the same shape: a base formula, then a long unconditional chain of modifiers. <code>evasion()</code> checks 30 separate conditions; <code>attackPower()</code> checks 28; <code>armor()</code> 34. The pattern is invariably <code>cond &amp;&amp; (v += n)</code>, evaluated in source order, with clamping at the end.</p>
+
+      <div class="tw"><table>
+        <thead><tr><th>Derived stat</th><th>Base formula</th><th>Role</th></tr></thead>
+        <tbody>
+          <tr><td>HP&nbsp;max</td><td class="n">100 + 25&#183;level + 7.5&#183;Tough</td><td>the only health pool &#8212; see &#167;5</td></tr>
+          <tr><td>Accuracy</td><td class="n">3&#183;level + Agi</td><td>attack roll</td></tr>
+          <tr><td>Evasion</td><td class="n">Agi</td><td>defence vs. weapon attacks</td></tr>
+          <tr><td>Attack power</td><td class="n">3&#183;Str <span style="opacity:.7">+ leader's leadership</span></td><td>physical damage amp %</td></tr>
+          <tr><td>Spellpower</td><td class="n">3&#183;Will <span style="opacity:.7">+ leader's leadership</span></td><td>magical damage amp %</td></tr>
+          <tr><td>Sexiness</td><td class="n">presence-derived</td><td>tease damage amp %</td></tr>
+          <tr><td>Crit chance</td><td class="n">Cun</td><td>%, capped at 100</td></tr>
+          <tr><td>Crit effectiveness</td><td class="n">100 (ally) / 50 (enemy) + 3&#183;Cun</td><td>extra damage amp % on a crit</td></tr>
+          <tr><td>Penetration</td><td class="n">Str</td><td>reduces target's defence</td></tr>
+          <tr><td>Armor / Warding / Focus</td><td class="n">gear + Tough / Will</td><td>physical / magical / mental+sexual mitigation</td></tr>
+          <tr><td>Physical/Magic/Mental res</td><td class="n">Tough / Cun / &#8212;</td><td>to-hit defence, capped at 100</td></tr>
+          <tr><td>Base threat</td><td class="n">10&#183;level + 3&#183;Tough &#8722; 3&#183;Cun</td><td>aggro, floored at 10</td></tr>
+          <tr><td>Initiative</td><td class="n">rand(10) + bonus</td><td>rolled fresh every round</td></tr>
+        </tbody>
+      </table></div>
+
+      <div class="note">
+        <span class="tag">Party leadership</span>
+        <p>Both <code>attackPower()</code> and <code>spellpower()</code> add the party leader's <code>leadership()</code> to every <em>other</em> member. It's a quiet global buff that makes the leader slot mechanically meaningful without a UI for it.</p>
+      </div>
+
+      <p>Experience is capped rather than curved. <code>addExp()</code> refuses to let a companion's total pass the player's, and pays a catch-up multiplier of <code>1.5 + (pcLevel &#8722; myLevel)/2</code> to anyone behind. The level table is <code>[0, 500, 2000, 5000, 10000, 25000, 50000, 100000, 200000, 400000]</code>, and <code>maxLevel</code> is 9.</p>
+    </section>
+
+    <!-- ============ 5 ============ -->
+    <section id="s5">
+      <span class="secnum">&#167;5 &#8212; Damage</span>
+      <h2 class="sec">The damage pipeline</h2>
+
+      <p>Damage is a plain object: <code>{ attackType, damage: [{ type, amount }, &#8230;] }</code>. A single attack can carry several typed components, and every stage of the pipeline maps over the array rather than collapsing it. <code>CombatHelper</code> is a static class of ~90 methods that owns the whole thing.</p>
+
+      <h3>Hitting</h3>
+      <figure class="code">
+        <figcaption><span>CombatHelper &#8212; the core roll</span><em>verbatim logic</em></figcaption>
+<pre>attemptHit(accuracy, defence, bonus = 0) {
+  const n = accuracy + bonus - defence;
+  <i>// 1% fumble, but only when not overwhelmingly favoured</i>
+  if (n &lt;= 50 &amp;&amp; !rand(100)) return 0;
+  return rand(100) + 1 + n;
+}
+
+<i>// hit if score &gt; 15; crit if the score blows past 120, or the crit roll lands</i>
+const hit  = score &gt; 15;
+const crit = hit &amp;&amp; (score &gt;= 120 || isCrit(attacker, defender, bonus));</pre>
+      </figure>
+
+      <p>Which defence is used depends on the attack class: weapon and generic evasion attacks roll against <code>evasion()</code>, physical against <code>physicalRes()</code>, magical against <code>magicRes()</code>, mental and tease against <code>mentalRes()</code>. Tease attacks are literally mental attacks &#8212; <code>attemptTeaseHit</code> forwards straight to <code>attemptMentalHit</code>.</p>
+
+      <p>Crits have a counter-mechanic: <code>shieldChecks()</code> cancels an incoming critical outright if the defender has a shield equipped, is in <code>IceboundShield</code> stance, or has enough stacks of <code>ShieldingCapacitor</code>. Three specific shields consume a charge instead.</p>
+
+      <h3>Scaling and mitigation</h3>
+
+      <figure class="fig">
+        <div class="figscroll">
+        <svg viewBox="0 0 880 316" role="img" aria-label="Damage flows through amplification, defence versus penetration, per-type resistance, a shared variance roll, and a difficulty multiplier before landing on the health pool" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <polygon points="0,1 10,5 0,9" fill="currentColor"/>
+            </marker>
+          </defs>
+          <g fill="none" stroke="currentColor" stroke-width="1.1" opacity="0.9">
+            <rect x="14" y="54" width="126" height="60" rx="3"/>
+            <rect x="184" y="54" width="140" height="60" rx="3"/>
+            <rect x="368" y="54" width="140" height="60" rx="3"/>
+            <rect x="552" y="54" width="126" height="60" rx="3"/>
+            <rect x="722" y="54" width="140" height="60" rx="3"/>
+          </g>
+          <g font-family="'JetBrains Mono',monospace" font-size="12" fill="currentColor" text-anchor="middle">
+            <text x="77" y="79">base</text><text x="77" y="97">damage[]</text>
+            <text x="254" y="79">&#215; (1 + amp/100</text><text x="254" y="97">+ crit/100)</text>
+            <text x="438" y="79">&#215; f(defence</text><text x="438" y="97">&#8722; penetration)</text>
+            <text x="615" y="79">&#215; (1 &#8722; resist</text><text x="615" y="97">/100)</text>
+            <text x="792" y="79">&#215; variance</text><text x="792" y="97">&#215; difficulty</text>
+          </g>
+          <g font-family="'JetBrains Mono',monospace" font-size="10.5" fill="currentColor" opacity="0.62" text-anchor="middle">
+            <text x="77" y="40">WEAPON / SPELL</text>
+            <text x="254" y="40">AMPLIFY</text>
+            <text x="438" y="40">MITIGATE</text>
+            <text x="615" y="40">RESIST</text>
+            <text x="792" y="40">GLOBAL</text>
+          </g>
+          <g stroke="currentColor" stroke-width="1.1" marker-end="url(#ah)" fill="none">
+            <line x1="140" y1="84" x2="178" y2="84"/>
+            <line x1="324" y1="84" x2="362" y2="84"/>
+            <line x1="508" y1="84" x2="546" y2="84"/>
+            <line x1="678" y1="84" x2="716" y2="84"/>
+          </g>
+          <g font-family="'JetBrains Mono',monospace" font-size="10.5" fill="currentColor" opacity="0.72">
+            <text x="14" y="152">amp = attackPower | spellpower | sexiness | 0</text>
+            <text x="14" y="170">crit = critEffectiveness, only when the hit crit</text>
+            <text x="368" y="152">PHYSICAL &#8594; armor      MAGICAL &#8594; warding</text>
+            <text x="368" y="170">MENTAL, SEXUAL &#8594; focus</text>
+            <text x="368" y="188">f(x) = 100/(100+x)  when x &gt; 0</text>
+            <text x="368" y="206">f(x) = (100&#8722;x)/100  when x &#8804; 0, breaker perk only</text>
+            <text x="14" y="188">per-type resist is applied last, per component</text>
+          </g>
+          <g fill="none" stroke="currentColor" stroke-width="1.1">
+            <rect x="14" y="236" width="848" height="58" rx="3" opacity="0.9"/>
+          </g>
+          <g font-family="'JetBrains Mono',monospace" font-size="12" fill="currentColor">
+            <text x="34" y="261">every component sums into ONE number &#8594; target.HP(&#8722;total)</text>
+          </g>
+          <g font-family="'JetBrains Mono',monospace" font-size="10.5" fill="currentColor" opacity="0.62">
+            <text x="34" y="281">the [HP, resolve] pair survives in the signature, but resolve is always 0 &#8212; see below</text>
+          </g>
+        </svg>
+        </div>
+        <figcaption>How one attack becomes one number. Amplification is additive with the crit bonus rather than multiplicative, so a critical hit adds its <code>critEffectiveness</code> straight into the same percentage term as attack power.</figcaption>
+      </figure>
+
+      <p>Two details in that chain are worth pulling out. <strong>Variance is rolled once per attack, not per component</strong> &#8212; <code>rand(11)</code> produces a single multiplier in <code>[0.95, 1.05]</code> shared by every damage type in the array. And the <strong>difficulty multiplier</strong> is a two-column table indexed by the difficulty option:</p>
+
+      <div class="tw"><table>
+        <thead><tr><th>Setting</th><th>Index</th><th>Player deals</th><th>Player takes</th></tr></thead>
+        <tbody>
+          <tr><td>Easiest</td><td class="n">0</td><td class="n">&#215;1.60</td><td class="n">&#215;0.40</td></tr>
+          <tr><td>Easy</td><td class="n">1</td><td class="n">&#215;1.35</td><td class="n">&#215;0.75</td></tr>
+          <tr><td>Normal</td><td class="n">2</td><td class="n">&#215;1.00</td><td class="n">&#215;1.00</td></tr>
+          <tr><td>Dark</td><td class="n">3</td><td class="n">&#215;0.85</td><td class="n">&#215;1.20</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>HP and Resolve are the same pool</h3>
+
+      <p>The game presents two damage tracks &#8212; red numbers for physical harm, blue for lust and mental strain &#8212; and the API is full of paired <code>[hp, resolve]</code> tuples. Underneath, they resolve to one variable.</p>
+
+      <figure class="code">
+        <figcaption><span>Creature &#8212; the resolve accessors</span><em>verbatim</em></figcaption>
+<pre>resolve(v, absolute)  { return absolute ? 50 : this.HP(v); }
+resolveMax()          { return this.HPMax(); }
+RQ(v, absolute)       { return this.HPQ(v, absolute); }
+lust()                { return this.missingResolve(); }
+lustQ()               { return 1 - this.RQ(); }
+missingResolve()      { return this.resolveMax() - this.resolve(); }</pre>
+      </figure>
+
+      <p>Resolve <em>is</em> HP. Lust is missing HP. <code>calculateDamage</code> folds every component &#8212; tease, drug, pheromone and fatigue included &#8212; into slot 0 of its return tuple, and slot 1 is returned as a constant zero, so the blue number never renders from the standard attack path. <code>applyDamage</code> still faithfully calls <code>target.resolve(-r)</code> with that zero, which routes back into <code>HP()</code> anyway.</p>
+
+      <p>What survives of the distinction is <em>how</em> you lost:</p>
+
+      <figure class="code">
+        <figcaption><span>Creature &#8212; defeat classification</span><em>verbatim</em></figcaption>
+<pre>resDefeated() {
+  return this.HP() &lt;= 0 &amp;&amp; [
+    GLOBALS.DMG_TEASE, GLOBALS.DMG_DRUG,
+    GLOBALS.DMG_PHEROMONE, GLOBALS.DMG_FATIGUE
+  ].includes(this.lastReceivedDamType);
+}</pre>
+      </figure>
+
+      <p>Every hit stamps <code>lastReceivedDamType</code>. At zero HP the engine reads that stamp to decide whether you were beaten or seduced, and routes to a completely different defeat scene. So the two bars are a single resource wearing two coats, and the coat is decided by the last blow.</p>
+
+      <h3>Falling over</h3>
+      <p><code>HP()</code> is not a setter; it is a 30-line event. Writing to it can trigger shield bookkeeping, three separate death-saves (the <code>Unbreakable</code> effect, an equipped Senninbari, the <code>InfernalResolve</code> perk), an automatic entry into Frenzy stance below 60% health, an interrupt of any multi-turn attack, and finally <code>onDefeat()</code>.</p>
+    </section>
+
+    <!-- ============ 6 ============ -->
+    <section id="s6">
+      <span class="secnum">&#167;6 &#8212; Combat</span>
+      <h2 class="sec">The combat loop</h2>
+
+      <p><code>CombatManager</code> is a single reusable instance &#8212; <code>newCombat()</code> just re-invokes its own constructor to reset ~45 fields. An encounter is configured by assigning callbacks (<code>setVictoryFunc</code>, <code>setDefeatFunc</code>, <code>setFleeFunc</code>, plus condition predicates), pushing combatants in, and calling <code>startCombat()</code>.</p>
+
+      <h3>Turn order interleaves the sides</h3>
+      <p>This is the most interesting piece of combat scheduling in the engine. Each side's combatants are expanded by <code>turnsPerRound()</code> (so a two-action character appears twice), each entry rolls <code>initiative()</code> fresh, and the two lists are sorted independently. Then they are <em>merged</em> with a penalty that grows each time one side takes consecutive turns:</p>
+
+      <figure class="fig">
+        <div class="figscroll">
+        <svg viewBox="0 0 800 250" role="img" aria-label="Turn order merges two independently sorted initiative lists, applying a seven point penalty for each consecutive turn taken by the same side" xmlns="http://www.w3.org/2000/svg">
+          <g font-family="'JetBrains Mono',monospace" font-size="11" fill="currentColor" opacity="0.62">
+            <text x="14" y="26">ALLIES, SORTED</text>
+            <text x="14" y="118">ENEMIES, SORTED</text>
+            <text x="14" y="196">MERGED ORDER</text>
+          </g>
+          <g fill="none" stroke="currentColor" stroke-width="1.1">
+            <rect x="14" y="36" width="86" height="34" rx="3"/>
+            <rect x="110" y="36" width="86" height="34" rx="3"/>
+            <rect x="206" y="36" width="86" height="34" rx="3"/>
+            <rect x="14" y="128" width="86" height="34" rx="3"/>
+            <rect x="110" y="128" width="86" height="34" rx="3"/>
+          </g>
+          <g font-family="'JetBrains Mono',monospace" font-size="12" fill="currentColor" text-anchor="middle">
+            <text x="57" y="58">A &#183; 14</text><text x="153" y="58">B &#183; 11</text><text x="249" y="58">C &#183; 9</text>
+            <text x="57" y="150">X &#183; 12</text><text x="153" y="150">Y &#183; 6</text>
+          </g>
+          <g fill="none" stroke="currentColor" stroke-width="1.1">
+            <rect x="14" y="206" width="70" height="32" rx="3"/>
+            <rect x="92" y="206" width="70" height="32" rx="3"/>
+            <rect x="170" y="206" width="70" height="32" rx="3"/>
+            <rect x="248" y="206" width="70" height="32" rx="3"/>
+            <rect x="326" y="206" width="70" height="32" rx="3"/>
+          </g>
+          <g font-family="'JetBrains Mono',monospace" font-size="12" fill="currentColor" text-anchor="middle">
+            <text x="49" y="227">A</text><text x="127" y="227">X</text><text x="205" y="227">B</text><text x="283" y="227">Y</text><text x="361" y="227">C</text>
+          </g>
+          <g font-family="'JetBrains Mono',monospace" font-size="11" fill="currentColor" opacity="0.75">
+            <text x="430" y="44">take from whichever side has the higher</text>
+            <text x="430" y="62">effective initiative, where</text>
+            <text x="430" y="88">effective = initiative &#8722; 7 &#215; (consecutive</text>
+            <text x="430" y="106">turns already taken by that side)</text>
+            <text x="430" y="140">the counter resets to zero the moment</text>
+            <text x="430" y="158">the other side gets a turn</text>
+            <text x="430" y="192">once a side is exhausted the remainder</text>
+            <text x="430" y="210">of the other side is appended in order</text>
+          </g>
+        </svg>
+        </div>
+        <figcaption>Combatant ordering. B rolls 11 to X's 12, but A has already gone, so B is judged at 11 &#8722; 7 = 4 and X moves first. The effect is that neither side can chain many turns back-to-back regardless of how initiative fell.</figcaption>
+      </figure>
+
+      <p>The rest of the round is a straightforward driver. <code>doCombatRound()</code> increments the round, recomputes the order, and walks the list; each turn runs <code>preTurn</code> (effect procs, defeat checks, cooldowns) then <code>mainTurn</code> (multi-turn attack continuation, else <code>combatAI</code>). Because a player-controlled turn has to wait for a click, <code>mainTurn</code> returns a flag and the loop <em>returns out</em> &#8212; the button's callback re-enters via <code>continueCombat()</code>. The whole loop is therefore re-entrant rather than blocking.</p>
+
+      <p><code>combatFlow</code> decides who is at the wheel. <code>simTurn()</code> returns true &#8212; meaning "let the AI drive" &#8212; unless flow is set to full control and the combatant is a non-guest ally. When the player is driving, <code>combatAI</code> is overridden to paint the five equipped powers into buttons instead.</p>
+
+      <h3>The enemy AI</h3>
+      <p><code>powerPicker()</code> is a short priority cascade rather than any kind of search:</p>
+
+      <ol class="body">
+        <li>Below 40% health, use the highest-tier non-basic power available, sorted by power type, then level, then cooldown.</li>
+        <li>If allies are hurt (&#8804;55%) and a healing power is known: if more than 40% of the party is hurt, pick a heal by weighted roll; otherwise pick one at random.</li>
+        <li>If nobody is below 90%, drop healing powers from consideration entirely.</li>
+        <li>Otherwise weight by <code>level + 2</code> and roll, with special handling for multi-turn powers in a mid-health band.</li>
+      </ol>
+
+      <p>Aggro is real: <code>applyDamage</code> feeds <code>(hp + resolve)/2</code> of every hit back into the attacker's threat, and a handful of powers and perks scale threat generation directly. <code>threatTarget()</code> is what most enemies use to choose a victim.</p>
+
+      <h3>The alias stack</h3>
+      <p>Because the parser reads <code>window.attacker</code>, <code>window.target</code> and <code>window.hitObj</code>, any power that internally invokes another power would clobber those globals mid-sentence. The engine handles this with <code>pushAliases()</code>/<code>popAliases()</code> around <code>doCombatSaveAliases()</code> &#8212; an explicit save/restore stack for what are effectively dynamically-scoped variables.</p>
+    </section>
+
+    <!-- ============ 7 ============ -->
+    <section id="s7">
+      <span class="secnum">&#167;7 &#8212; Powers</span>
+      <h2 class="sec">Powers are classes that compose</h2>
+
+      <p>A power is a subclass of <code>Power</code>. The constructor declares metadata; <code>doCombat</code> does the work and returns a result object. That's the entire contract.</p>
+
+      <figure class="code">
+        <figcaption><span>POWERS.Rend</span><em>de-minified, abridged</em></figcaption>
+<pre>class Rend extends Power {
+  constructor(owner) {
+    super(owner);
+    this.name  = "Rend";
+    this.desc  = () =&gt; `You cut deep, striking with +50 Attack Power. &#8230;`;
+    this.class = GLOBALS.CLASS_WARRIOR;
+    this.type  = GLOBALS.POWER_RECHARGE;
+    this.tags  = [GLOBALS.POWER_TAG_WEAPON, GLOBALS.POWER_TAG_STEALABLE];
+    this.targeted = true;
+    this.cooldown = 2;
+    this.level = 1;
+  }
+
+  doCombat(allies, enemies, target, doOutput) {
+    <b>// delegate the whole attack to NormalAttack with +50 amp</b>
+    const r = window.hitObj = new POWERS.NormalAttack(this.owner)
+                .doCombatSaveAliases(allies, enemies, target, false, <b>50</b>);
+
+    const bleeds = r.hit
+      &amp;&amp; this.attemptPhysicalHit(this.owner, target).hit
+      &amp;&amp; CombatEffects.addBleeding(this.owner, target, 2, 10 + this.owner.strength());
+
+    if (doOutput) output(`&#8230;narrative with [attacker.CombatName] tokens&#8230;`);
+    return { ...r, bleeds };
+  }
+}</pre>
+      </figure>
+
+      <p>That delegation is the norm. Dozens of powers are "NormalAttack with a bonus, plus a rider effect", which keeps weapon handling, dual-wield, crit rules and the whole mitigation chain in exactly one place. There are <strong>522 <code>doCombat</code> overrides</strong> in the shipped code.</p>
+
+      <p>Four power types drive availability: <code>ATWILL</code> (no cooldown), <code>RECHARGE</code> (numeric cooldown), <code>ENCOUNTER</code> (once per fight &#8212; the cooldown is set to a sentinel <code>-2</code>), and <code>ULTIMATE</code> (once per fight, and only one ultimate across the whole loadout, tracked by <code>ultimateUsed</code>).</p>
+
+      <p>The 25 power tags do double duty as behaviour switches. <code>meetRequirement()</code> turns them into usability checks: <code>SPELL</code> and <code>CHARM</code> fail while Silenced, <code>WEAPON</code> fails while Disarmed or bare-fisted, <code>MELEE</code>/<code>RANGED</code>/<code>THROWN</code> check the equipped weapon's own tags, <code>DUALWIELD</code> and <code>SHIELD</code> check the loadout. <code>targetSelection()</code> reads <code>ALLY</code> and <code>OMNI</code> to decide which party is targetable. And <code>STEALABLE</code> is what lets the <code>MirrorStance</code> stance permanently learn a power that was just used on you.</p>
+
+      <p>Powers can also be multi-turn: setting <code>owner.multiTurnAttack</code> makes the combat loop re-enter the same power object each round, advancing an internal <code>stage</code>, until it completes or is interrupted by damage.</p>
+    </section>
+
+    <!-- ============ 8 ============ -->
+    <section id="s8">
+      <span class="secnum">&#167;8 &#8212; Effects</span>
+      <h2 class="sec">Four effect kinds, one base</h2>
+
+      <p>All effects share a base class holding <code>{ owner, name, description, duration, values[], negative, icon, extends[], additive, baseCollection }</code>. The <code>values</code> array is untyped scratch space &#8212; most effects stuff their magnitude, stack count or source reference in there. The four kinds differ mainly in what a "tick" means.</p>
+
+      <div class="tw"><table>
+        <thead><tr><th>Kind</th><th>Registry</th><th>Lives on</th><th>Duration in</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>Combat effect</td><td><code>CEFFECTS</code></td><td><code>combatEffects[]</code></td><td>turns</td><td>Has a <code>source</code>; can <code>proc()</code> at turn start and <code>activate()</code> on apply. 170 of them.</td></tr>
+          <tr><td>Status effect</td><td><code>SEFFECTS</code></td><td><code>statusEffects[]</code></td><td>in-game minutes</td><td>Persists outside combat; ticked by <code>processTime</code>. 60 of them.</td></tr>
+          <tr><td>Boon</td><td><code>BOONS</code></td><td><code>boon</code> &#8212; singular</td><td>minutes</td><td>A status effect you can only have one of. 37 of them.</td></tr>
+          <tr><td>Perk</td><td><code>PERKS</code></td><td><code>perks[]</code></td><td>permanent</td><td>Class, story or sex flavoured; can also <code>proc()</code>. 142 of them.</td></tr>
+        </tbody>
+      </table></div>
+
+      <p>Two behaviours are worth calling out. <code>handleDuplicateAdd()</code> decides what reapplication does: an <code>additive</code> effect sums the durations, everything else takes the max. And <code>extends[]</code> gives effects an inheritance chain independent of the JS class hierarchy &#8212; <code>is()</code> instantiates each listed class and recurses, so a query for a generic effect matches all of its specialisations.</p>
+
+      <p>A static helper class, <code>CombatEffects</code>, wraps the common applications so content authors never construct effects by hand: <code>addBleeding</code>, <code>addProne</code>, <code>addStunned</code>, <code>addSilenced</code>, <code>addBlinded</code>, twelve <code>add{Type}Resistance</code> variants, and so on &#8212; each with sensible default durations.</p>
+
+      <p>Effect procs run in <code>preTurn</code> as a flat sweep over <code>[...combatEffects, ...statusEffects, ...perks, ...equipment]</code>. If any proc returns true the combatant loses the turn. There's a special case first: a <code>Banished</code> creature only ticks its damage-over-time effects, then procs the banishment.</p>
+    </section>
+
+    <!-- ============ 9 ============ -->
+    <section id="s9">
+      <span class="secnum">&#167;9 &#8212; Items</span>
+      <h2 class="sec">Items, slots and sets</h2>
+
+      <p>Thirteen equipment slots, declared once in <code>GLOBALS.EQUIP_SLOTS</code>: <code>weaponPrimary</code>, <code>weaponSecondary</code>, <code>head</code>, <code>neck</code>, <code>shoulders</code>, <code>armorSet</code>, <code>topGarment</code>, <code>bottomGarment</code>, <code>waist</code>, <code>hands</code>, <code>feet</code>, <code>ring1</code>, <code>ring2</code>.</p>
+
+      <p>The <code>Item</code> base carries a stat block that the derived-stat chain sums over generically:</p>
+
+      <figure class="code">
+        <figcaption><span>Creature &#8212; generic gear aggregation</span><em>verbatim logic</em></figcaption>
+<pre>getStatForAllEquipment(stat) {
+  return this.equipmentAsArray().reduce((sum, item, i) =&gt; {
+    const v = item[stat] || 0;
+    <i>// a primary weapon held in the offhand contributes only 75%</i>
+    const offhandPenalty =
+      v &gt; 0 &amp;&amp; item.isPrimary() &amp;&amp;
+      GLOBALS.EQUIP_SLOTS[i] === "weaponSecondary" ? 0.75 : 1;
+    return sum + v * offhandPenalty;
+  }, 0);
+}</pre>
+      </figure>
+
+      <p>So <code>evasion()</code> can say <code>v += this.getStatForAllEquipment("evasion")</code> and every item in the game participates without registration. Thirty item tags cover material (<code>METAL</code>, <code>LEATHER</code>, <code>CLOTH</code>), handling (<code>TWOHAND</code>, <code>LIGHT</code>, <code>RANGED</code>, <code>THROWN</code>, <code>SHIELD</code>, <code>CATALYST</code>), exposure (<code>SKIMPY</code>, <code>EXPCHEST</code>, <code>EXPCROTCH</code>, <code>EXPASS</code>, <code>CONCEAL</code>) and economy (<code>UNSELLABLE</code>, <code>UNDROPPABLE</code>, <code>UNIQUE</code>).</p>
+
+      <p>Exposure tags feed straight back into the sexual-combat model &#8212; <code>isChestVisible()</code>, <code>isAssVisible()</code>, <code>isCrotchVisible()</code> and <code>hasSkimpyAttire()</code> read them, and tease damage and <code>sexiness()</code> read those. Conversely <code>hasHeavyArmor()</code> gates a dozen perks in the other direction. Dressing lightly is a mechanical build choice, not just flavour.</p>
+
+      <p>There are 45 equipment <strong>sets</strong> &#8212; a separate registry whose members count how many pieces of themselves are currently worn and grant scaling bonuses. Individual items reach for the set object directly, e.g. spellpower checks <code>new ITEMS.PyromancerSetPiece().numEquippedPieces(this)</code>.</p>
+
+      <p>Transformation items are a registry of their own: <strong>517</strong> <code>Tf</code> definitions, addressed by 14 <code>TF_*</code> domains (body, limbs, face, head, tail, cock, milk, balls, breasts, butt, pussy, cum, feracity, wings). Each creature carries a reagent counter per domain, and the body's <code>canTf*()</code> predicates gate what a given character will accept &#8212; Kitsune, for example, refuse most of them.</p>
+    </section>
+
+    <!-- ============ 10 ============ -->
+    <section id="s10">
+      <span class="secnum">&#167;10 &#8212; Parser</span>
+      <h2 class="sec">A bracket language for 88 MB of prose</h2>
+
+      <p>Every string that reaches the screen passes through <code>Parser.parse()</code>. It implements a small dynamically-scoped templating language whose entire syntax is square brackets and pipes &#8212; this is what lets one sentence describe a character whose body, gender, species and clothing are all runtime state.</p>
+
+      <div class="anat"><b><span class="t-pipe">[</span><span class="t-obj">pc</span>.<span class="t-attr">hasHair</span><span class="t-pipe">|</span><span class="t-arg">through your hair</span><span class="t-pipe">|</span><span class="t-arg">across your head</span><span class="t-pipe">]</span></b></div>
+      <p class="legend">
+        <span><b class="k-obj">pc</b> object &#8212; a global, an NPC handle, a quest, or a party</span>
+        <span><b class="k-attr">hasHair</b> attribute, method, or description token</span>
+        <span><b class="k-arg">&#8230;|&#8230;</b> pipe-separated branches</span>
+      </p>
+
+      <p>The tokenizer is hand-written rather than a regex, because arguments nest: it scans for an unescaped <code>[</code>, then walks forward counting bracket depth until it balances. Arguments containing whole nested tokens are re-parsed recursively.</p>
+
+      <h4>Dispatch order</h4>
+      <p>For each token the parser resolves the part before the first dot, in this order:</p>
+
+      <ol class="body">
+        <li><strong>Runtime overrides.</strong> A scene can register temporary tokens via <code>Parser.tempParser("word", fn, &#8230;)</code>, producing a child parser that shadows the global one for one block of output.</li>
+        <li><strong><code>flags</code>.</strong> <code>[flags.SOME_FLAG|yes|no]</code> is a boolean branch; with numeric arguments it becomes an exact match, and failing that a <em>range</em> match &#8212; <code>[flags.X 0 5 10|none|some|many]</code> picks by which threshold the flag has passed.</li>
+        <li><strong>Dotted objects.</strong> <code>party</code>, <code>eParty</code>, <code>aParty</code> and <code>QUEST_*</code> are special-cased; anything else is looked up on <code>window</code>. If the resolved object is a <code>Creature</code>, the parser remembers it as <code>lastChar</code>.</li>
+        <li><strong>Bare keywords.</strong> <code>dayNight</code>, <code>silly</code>, <code>easy</code>, <code>buttslut</code>, <code>plural</code>/<code>p</code>, <code>singular</code>/<code>s</code>, <code>tps</code>, <code>rand</code>, <code>weightedRand</code>, <code>hitMiss</code>, <code>critHitMiss</code>, <code>atCamp</code>, <code>atFH</code>, <code>atWF</code>, <code>outdoors</code>, <code>shopsOpen</code>, <code>hours</code>, <code>first</code>.</li>
+      </ol>
+
+      <p>A few of those are unusually neat. <code>[tps|is|are]</code> selects verb agreement using <code>lastChar</code>, so a sentence never has to know whether its subject is the player, a singular NPC, or a plural enemy group. <code>[first|first time text|later text]</code> reads a flag, emits the branch, <em>and sets the flag</em> in one token. And <code>[hitMiss|&#8230;|&#8230;]</code> reads <code>window.hitObj</code> &#8212; which is why powers assign to that global before writing narration.</p>
+
+      <p>On a <code>Creature</code>, the attribute is passed through <code>getDescription()</code>, which lowercases the first letter, coerces numeric and boolean arguments, dispatches into <code>simpleParse()</code>, and re-capitalises the result if the token was written capitalised. <strong>That one switch handles 341 tokens</strong> &#8212; every pronoun set (<code>heShe</code>, <code>hisHer</code>, <code>himHer</code>, <code>himselfHerself</code>, plus <code>combat*</code> variants that add colour markup), every kinship term, and every body-part noun and description.</p>
+
+      <h4>Post-processing</h4>
+      <p>After substitution the parser makes four passes over the finished string:</p>
+      <ul>
+        <li><code>[a]</code> / <code>[An]</code> are replaced by looking ahead to the next word and querying a compiled prefix trie for correct article selection, preserving the token's capitalisation.</li>
+        <li>Escaped <code>\[</code> and <code>\]</code> are unescaped.</li>
+        <li>Anything in double quotes is wrapped in <code>&lt;i&gt;</code> &#8212; dialogue is italicised globally, and <code>%"</code> is the escape hatch for a literal quote.</li>
+        <li>Runs of three or more newlines collapse to two.</li>
+      </ul>
+
+      <p>Scene text itself is authored as tagged template literals passed through a <code>textify()</code> helper that strips the leading and trailing newline and left-trims every line, so deeply-indented source produces flush prose.</p>
+
+      <div class="note">
+        <span class="tag">Security note</span>
+        <p>Parser overrides are <em>serialised into save files</em> as function source and restored with <code>eval()</code>. That is the reason <code>validateAndParseSave()</code> rejects any save containing <code>&lt;</code>, <code>&gt;</code>, or their escaped forms before it will parse the JSON &#8212; a blunt guard against script injection through a shared save file.</p>
+      </div>
+    </section>
+
+    <!-- ============ 11 ============ -->
+    <section id="s11">
+      <span class="secnum">&#167;11 &#8212; Scenes</span>
+      <h2 class="sec">Fifteen buttons and a stack of scenes</h2>
+
+      <p>The UI is React, but almost nothing knows that. <code>window.ui</code> is a plain controller holding a <code>state</code> object; <code>render()</code> is debounced and re-renders the React tree from that state. Content code calls free functions:</p>
+
+      <figure class="code">
+        <figcaption><span>the content-facing UI surface</span><em>bound onto window at boot</em></figcaption>
+<pre>output(text)                    <i>// append to the main pane</i>
+outputParsed(text, parser)      <i>// append, forcing a specific parser</i>
+clearOutput() / clearMenu() / clearAll()
+addButton(slot, label, fn, tooltipHead, tooltipBody)
+addDisabledButton(slot, label, ttH, ttB)
+addGatedButton(slot, label, fn, ttH, ttB, <b>condition</b>, offH, offB)
+addMainTextInput() / addSliderInput() / addDropdown()
+showBust() / showName() / author() / showNotification()</pre>
+      </figure>
+
+      <p>Buttons live in a fixed 15-slot array &#8212; <code>addButton</code> silently ignores any index above 14 &#8212; laid out as a 5&#215;3 grid. The navigation compass has permanent addresses in that grid:</p>
+
+      <figure class="fig">
+        <div class="figscroll">
+          <div class="btngrid">
+            <div><b>0</b>&#183;</div><div><b>1</b>&#183;</div><div><b>2</b>&#183;</div><div><b>3</b>&#183;</div><div><b>4</b>&#183;</div>
+            <div><b>5</b>Explore</div><div class="on"><b>6</b>North</div><div><b>7</b>Fight</div><div><b>8</b>&#183;</div><div><b>9</b>&#183;</div>
+            <div class="on"><b>10</b>West</div><div class="on"><b>11</b>South</div><div class="on"><b>12</b>East</div><div><b>13</b>Inventory</div><div><b>14</b>Wait</div>
+          </div>
+        </div>
+        <figcaption>The standing button layout. Slots 6, 10, 11 and 12 form a compass cross; 0&#8211;4 are the scene's own choices. <code>addGatedButton</code> is used for exits so a blocked direction still occupies its slot as a disabled control rather than reflowing the grid.</figcaption>
+      </figure>
+
+      <p><code>mainGameMenu()</code> is the hub every scene returns to, and it drains four queues in a strict order before it will draw a room:</p>
+
+      <ol class="body">
+        <li><strong><code>NotifyStack</code></strong> &#8212; deferred notifications, each with an optional confirm predicate; grouped by timestamp when shown.</li>
+        <li><strong><code>CallbackStack</code></strong> &#8212; one-shot continuations. Popped and run, then the function returns.</li>
+        <li><strong><code>NoDungeonSceneStack</code></strong> &#8212; scenes keyed so they can't double-queue, held back until you're out of a dungeon.</li>
+        <li><strong><code>SceneStack</code></strong> &#8212; the general queue that content pushes onto when it wants a scene to fire "next time the player is idle".</li>
+      </ol>
+
+      <p>Only if all four are empty does it print the room description, run the room's <code>runOnEnter</code> hook, paint the standing buttons, and take a checkpoint. All four stacks are <code>UniqueArray</code>s, so pushing the same scene twice is a no-op &#8212; that's the deduplication for events that several systems might trigger in the same tick.</p>
+
+      <p>Navigation is <code>navTo(room, travelMinutes)</code>: record <code>priorLocation</code>, set <code>currentLocation</code>, advance the clock, re-enter <code>mainGameMenu</code>. <code>hookedNavTo</code> is the same thing but consults a per-map travel-hook table first, which is how regions install ambush or random-encounter checks on movement.</p>
+    </section>
+
+    <!-- ============ 12 ============ -->
+    <section id="s12">
+      <span class="secnum">&#167;12 &#8212; World</span>
+      <h2 class="sec">Rooms, maps and the clock</h2>
+
+      <p>A room is a plain object. Regions register batches of them with a key prefix, which is prepended to both the room keys and their exits:</p>
+
+      <figure class="code">
+        <figcaption><span>a room definition</span><em>verbatim, from the Sorran Altar table</em></figcaption>
+<pre>e.R3 = {
+  tags: [],
+  description: "Here, one finds oneself at a fork in the trail &#8212; &#8230;",
+  eastExit:  "R2",
+  westExit:  "R4",
+  northExit: "R6",
+  southExit: "",
+  runOnEnter: SorranAltarGeneric,
+  status: GLOBALS.ROOM_STAT_NORMAL
+};
+
+<i>// later: RoomManager.addRooms(table, "Sorran Altar", "SORR_", tags)
+//   &#8594; keys become SORR_R3, exits become SORR_R2 &#8230;</i></pre>
+      </figure>
+
+      <p>There are 1,019 such definitions across 92 <code>addRooms</code> registrations. Each gets three empty encounter tables attached at registration (<code>combatEncounters</code>, <code>otherEncounters</code>, <code>priorityEncounters</code>) which content then fills.</p>
+
+      <p>Room state is not stored per room &#8212; it is <em>recomputed</em>. <code>RoomManager.processRooms()</code> runs on every clock tick and every menu return, reads a few dozen quest states and flags into locals, and reassigns descriptions, exits, markers and status across the world. It's a full world-state recalculation rather than an event system, which is slower but means room state can never drift out of sync with quest state.</p>
+
+      <p>Four room statuses gate movement &#8212; <code>INVIS</code>, <code>NOPATH</code>, <code>DISABLED</code>, <code>NORMAL</code> &#8212; and separately <code>flags.NAV_DISABLED</code> is a bitfield (N=1, E=2, S=4, W=8) that a scene can set to pin the player in place for one turn. Discovery has a pity timer:</p>
+
+      <figure class="code">
+        <figcaption><span>RoomManager.attemptRoomUnlock</span><em>verbatim</em></figcaption>
+<pre>attemptRoomUnlock(key) {
+  if (this.roomUnlocked(key)) return false;
+  const roll     = rand(100);
+  const attempts = (flags[key + "_ATT"] || 0) + 1;
+  <b>if (roll &lt;= 20 || attempts &gt;= 3) { this.unlockRoom(key); return true; }</b>
+  incFlag(key + "_ATT");
+  return false;
+}</pre>
+      </figure>
+
+      <h3>Two kinds of map</h3>
+      <p>Maps are drawn to a <code>&lt;canvas&gt;</code> with a second overlay canvas for fog. There are two rendering strategies:</p>
+      <ul>
+        <li><strong>Dungeon maps</strong> have no coordinates. The renderer recursively floods outward from the current room following exit links, placing tiles on a 100-unit grid as it goes. Rooms you haven't reached simply aren't reachable by the walk, so they aren't drawn.</li>
+        <li><strong>Area maps</strong> use explicit <code>x</code>/<code>y</code> on each room and draw the region directly.</li>
+      </ul>
+      <p>Fog of war, when enabled, paints an opaque overlay and punches a 140-unit circular hole around each room whose visited flag is set &#8212; <code>mainGameMenu</code> sets <code>flags[currentLocation] = 1</code> on entry purely for this.</p>
+
+      <h3>The clock</h3>
+      <p><code>processTime(minutes, jitter, sleeping, checkAchievements)</code> is the world's heartbeat. It recomputes rooms and camps, redraws the map, recomputes the player's race, then &#8212; gated on the tutorial being finished &#8212; advances <code>timestamp</code> and computes how many <em>hour and day boundaries</em> were crossed. Those two counts are passed down to every subscriber:</p>
+
+      <figure class="code">
+        <figcaption><span>processTime &#8212; the fan-out</span><em>reconstructed</em></figcaption>
+<pre>const daysCrossed  = Math.floor((timestamp + mins)/1440) - days;
+const hoursCrossed = Math.floor((timestamp + mins)/60) - Math.floor(timestamp/60);
+timestamp += mins;
+
+PregManager.processAll(mins);
+QuestManager.processAll(mins, hoursCrossed, daysCrossed);
+Object.values(CHARS).forEach(c =&gt; c.processTime(mins, hoursCrossed, daysCrossed, sleeping));</pre>
+      </figure>
+
+      <p>Passing boundary <em>counts</em> rather than raw minutes is what lets a twelve-hour <code>Wait</code> fire twelve hourly checks and one daily check without any subscriber having to track its own last-run timestamp. Each <code>Creature.processTime</code> then runs its own cum, hole, milk and pregnancy bookkeeping.</p>
+    </section>
+
+    <!-- ============ 13 ============ -->
+    <section id="s13">
+      <span class="secnum">&#167;13 &#8212; Trackers</span>
+      <h2 class="sec">Quests, races and the long tail</h2>
+
+      <h3>Quests are append-only state machines</h3>
+      <p>A quest holds <code>states[]</code> (a description per state index), <code>completedStates[]</code> and <code>failedStates[]</code> (terminal indices), and <code>currStates[]</code> &#8212; the <em>history</em> of states entered. The current state is the last element. Only <code>currStates</code> is persisted; everything else is rebuilt from the class.</p>
+
+      <p>Because it's a history rather than a scalar, a quest can ask "did this ever pass through state 4?" without any extra flags &#8212; which is how optional branches are tracked. <code>setState()</code> refuses to move a completed quest, records the transition, raises an alert flag, and returns a formatted "Side Quest Updated!" blurb for the caller to print. 93 quest ids are defined.</p>
+
+      <h3>The player's race is computed from their body</h3>
+      <p>NPCs match their race by name. The player does not &#8212; <code>PlayerCharacter.calculatedRace()</code> scores every one of the 38 races against the current body and takes the winner. <code>Race.score()</code> works by constructing a pristine clone of the character, applying the candidate race's <code>set()</code> template to it, and diffing:</p>
+
+      <div class="tw"><table>
+        <thead><tr><th>Comparison</th><th>Contribution</th></tr></thead>
+        <tbody>
+          <tr><td>Template has the trait, character has it</td><td class="n">+weight</td></tr>
+          <tr><td>Template has it, character lacks it</td><td class="n">&#8722;weight &#8260; 2</td></tr>
+          <tr><td>Character has it, template doesn't</td><td class="n">&#8722;weight</td></tr>
+        </tbody>
+      </table></div>
+
+      <p>Weights encode how diagnostic each trait is: <code>skinType</code> is worth 5, <code>armType</code>/<code>legType</code>/<code>faceType</code>/<code>wingType</code>/<code>milkType</code> 3, <code>hornType</code>/<code>earType</code>/<code>gillType</code> 2, <code>tailType</code>/<code>tongueType</code>/<code>nippleType</code>/<code>cumType</code> 1, and <code>hornLength</code>/<code>earLength</code> only 0.5. Because <code>updateRace()</code> is called on every clock tick, accumulating transformations flips your species the moment the balance tips &#8212; and your race in turn feeds your stat affinities.</p>
+
+      <h3>Pregnancy</h3>
+      <p><code>PregManager</code> holds keyed <code>Pregnancy</code> objects, each tracking its own start timestamp, mother, father, and whether it's a womb, butt or egg pregnancy. Conception runs through one shared curve:</p>
+
+      <figure class="code">
+        <figcaption><span>conception roll</span><em>verbatim</em></figcaption>
+<pre>healthyCurve = x =&gt; 1 - Math.exp(-0.25 * x);
+knockupCheck = (fertility, virility) =&gt;
+  !!fertility &amp;&amp; !!virility &amp;&amp;
+  10000 * healthyCurve((fertility + virility) / 2) &gt; rand(10000);</pre>
+      </figure>
+
+      <p>Saturating exponential: a combined score of 4 is already ~63%, 12 is ~95%. Either factor at zero is an automatic no.</p>
+
+      <h3>Codex, achievements, titles</h3>
+      <p>Three near-identical registries of unlockable entries &#8212; 58 codex entries (gameplay / race / lore), 135 achievements, 16 titles. Each tracks unlock state and an "unread" alert flag in <code>flags</code> under a derived key. Achievements only report outward when <code>isSteam()</code> is true, which in this build is hardcoded false, so the whole subsystem is inert here.</p>
+    </section>
+
+    <!-- ============ 14 ============ -->
+    <section id="s14">
+      <span class="secnum">&#167;14 &#8212; Persistence</span>
+      <h2 class="sec">Saves that store only the difference</h2>
+
+      <p>This is the cleverest part of the engine. A save never contains an object graph &#8212; it contains a registry key plus whatever has changed since construction.</p>
+
+      <figure class="code">
+        <figcaption><span>SaveLoad.saveChar</span><em>verbatim logic</em></figcaption>
+<pre>saveChar(char) {
+  <b>// serialise a brand-new instance of this character's own class</b>
+  const pristine = new (Object.values(CHAR_CLASSES)
+                          .find(C =&gt; char.is(C)))().serialize();
+  const current  = char.serialize();
+
+  <b>// keep only the fields that differ from the pristine default</b>
+  return Object.entries(current)
+    .filter(([k, v]) =&gt; JSON.stringify(v) !== JSON.stringify(pristine[k]))
+    .reduce((acc, [k, v]) =&gt; ({ ...acc, [k]: v }), {});
+}</pre>
+      </figure>
+
+      <p>An untouched NPC contributes an empty object. Loading reverses it: construct a fresh instance from the class, then apply the diff. Nested objects follow the same rule &#8212; an item serialises to <code>{ key, args }</code> where args is just its stack count (plus a colour or transformation type for a couple of item classes); an effect to <code>{ key, duration, values }</code>; a race to <code>{ key }</code> alone.</p>
+
+      <h3>The save object</h3>
+      <figure class="code">
+        <figcaption><span>SaveLoad.getSaveObject</span><em>verbatim</em></figcaption>
+<pre>{
+  savestamp:       Date.now(),
+  note, version,
+  flags,                                  <i>// the entire flag bag, verbatim</i>
+  currentLocation, timestamp, inDungeon,
+  options:  Options,
+  camps:    RoomManager.camps,
+  saveEnable: ui.state.saveEnable,
+  quests:   QuestManager.quests.map(q =&gt; q.currStates),
+  chars:    this.saveChars(),             <i>// key &#8594; diff</i>
+  party:    this.saveParty(),             <i>// arrays of key strings</i>
+  hash:     MD5(JSON.stringify(everythingAbove))
+}</pre>
+      </figure>
+
+      <p>It is then <code>JSON.stringify</code>'d, compressed with <code>lz-string</code>'s <code>compressToUTF16</code>, and written.</p>
+
+      <h3>Four storage tiers</h3>
+      <div class="tw"><table>
+        <thead><tr><th>Tier</th><th>Slots</th><th>Backing store</th></tr></thead>
+        <tbody>
+          <tr><td>Autosave</td><td class="n">20</td><td>localforage, used as a ring buffer with a rolling index</td></tr>
+          <tr><td>Local slots</td><td class="n">50</td><td>localforage (IndexedDB, falling back to localStorage)</td></tr>
+          <tr><td>Cloud slots</td><td class="n">10</td><td><code>POST /api/coc2/v1/index.php</code> &#8212; relative, so web builds only</td></tr>
+          <tr><td>File export</td><td class="n">&#8212;</td><td><code>.coc2</code> file, named <code>CoC2_{name}_{days}</code></td></tr>
+        </tbody>
+      </table></div>
+
+      <p>localforage is configured with <code>[INDEXEDDB, LOCALSTORAGE]</code> against a database named "Corruption of Champions 2"; the legacy plain-<code>localStorage</code> path is still read as a fallback and deleted on migration. A Cordova branch additionally persists to and restores from the device filesystem.</p>
+
+      <h3>Tamper detection</h3>
+      <p>The MD5 is checked on load by re-hashing the object with <code>hash</code> blanked. A mismatch doesn't block loading &#8212; it sets <code>taintedSave</code> and pops a warning. From then on the save is stamped with a sentinel instead of a real hash:</p>
+
+      <figure class="code">
+        <figcaption><span>the sentinel</span><em>verbatim</em></figcaption>
+<pre>cheaterHash = "vvhY_Y0u_g077a_ChE47_3wE_cH34t3r";
+...
+t.hash = taintedSave ? cheaterHash : MD5(JSON.stringify(t));</pre>
+      </figure>
+
+      <p>Once flagged, always flagged. The warning text itself has two variants &#8212; the polite one, and the one you get with Silly Mode on.</p>
+
+      <h3>Migration</h3>
+      <p><code>doFixes()</code> and <code>doPostFixes()</code> run roughly <strong>50 version-gated repairs</strong> on the raw object before and after deserialization, reaching back to save format 0.3.16. They rewrite renamed registry keys, re-prefix room ids, split a <code>rings</code> array into <code>ring1</code>/<code>ring2</code>, backfill equipment slots that didn't exist when the save was written, relocate the player if a map was reworked, and retroactively unlock codex entries. Because everything is stored by key, a migration is usually just a string rewrite.</p>
+    </section>
+
+    <!-- ============ 15 ============ -->
+    <section id="s15">
+      <span class="secnum">&#167;15 &#8212; Resilience</span>
+      <h2 class="sec">Designing for the crash</h2>
+
+      <p>A text game where a scene is an arbitrary function will eventually throw inside one. The engine treats this as expected and builds two recovery layers.</p>
+
+      <p><strong>Checkpoints.</strong> Every return to <code>mainGameMenu</code> takes one &#8212; a full save object held in memory as a JSON string. It's split in two for cost: the cheap half (flags, location, time, options, quests) is captured immediately, and the expensive half (all character diffs and the party) is deferred behind a 1-second debounce that verifies the clock hasn't moved before committing. Entering a dungeon snapshots the current checkpoint into <code>window.inDungeon</code>, giving a second, coarser restore point that survives the whole dungeon.</p>
+
+      <p><strong>The error screen.</strong> Uncaught exceptions land in <code>handleCriticalError()</code>, which resets the UI controller, prints the stack, and offers a menu:</p>
+
+      <ul>
+        <li><em>Reload Checkpoint</em> &#8212; gated on a checkpoint existing.</li>
+        <li><em>Reload Dungeon</em> &#8212; gated on being in one.</li>
+        <li><em>Submit Error</em> &#8212; only when error reporting is set to "prompt" and Sentry initialised.</li>
+        <li><em>Restart Game</em> &#8212; <code>window.location.reload()</code>.</li>
+      </ul>
+
+      <p>The recovery buttons wrap their own handlers in try/catch and recurse into the error screen on a second failure, with a distinct "Could Not Restore Checkpoint" message so the player isn't stuck in a loop.</p>
+
+      <p>The same instinct shows up in the parser: an unresolvable object or attribute emits <code>&lt;b&gt;ERROR: COULD NOT FIND ATTRIBUTE "x" FOR OBJ "y"&lt;/b&gt;</code> inline and keeps going, rather than throwing. A typo in a scene produces one visibly broken sentence instead of a dead game.</p>
+
+      <p>Error reporting is opt-in with three modes (off / automatic / prompt), pointed at a self-hosted Sentry instance and tagged with the build's release hash. It defaults to off.</p>
+    </section>
+
+    <!-- ============ 16 ============ -->
+    <section id="s16">
+      <span class="secnum">&#167;16 &#8212; Content</span>
+      <h2 class="sec">The content and art pipeline</h2>
+
+      <p>The 28 content chunks contain no exports. Each module simply assigns scene functions onto <code>window</code> &#8212; <strong>13,098 of them</strong> across the set. A scene is an ordinary function that clears the screen, outputs prose, and installs buttons:</p>
+
+      <figure class="code">
+        <figcaption><span>a scene function</span><em>verbatim shape, text abridged</em></figcaption>
+<pre>window.KalyseaStreamEvent = function () {
+  kalyClear();
+  output(textify`
+    "Oh?" Kalysea says, her ears pricking up. "I hear a stream nearby&#8230;"
+
+    Kalysea scoops water up to spill it [pc.hasHair
+        |through your hair, running her fingers through it
+        |across your head, running her fingers over it
+    ] in a &#8230;
+  `);
+  <i>// &#8230; addButton(&#8230;) calls follow</i>
+};</pre>
+      </figure>
+
+      <p>Rooms reference these by bare identifier (<code>runOnEnter: SorranAltarGeneric</code>) from inside the engine bundle. That only works because content is loaded before rooms are built, and because everything is global &#8212; the room tables in bundle 673 close over names that bundle 90 defines.</p>
+
+      <div class="tw"><table>
+        <thead><tr><th>Largest chunks</th><th>Size</th><th>Largest chunks</th><th>Size</th></tr></thead>
+        <tbody>
+          <tr><td>Wayfort</td><td class="n">9.96 MB</td><td>Misc</td><td class="n">8.23 MB</td></tr>
+          <tr><td>Khorminos</td><td class="n">9.47 MB</td><td>Companions</td><td class="n">7.99 MB</td></tr>
+          <tr><td>KitsuneDen</td><td class="n">9.05 MB</td><td>Dungeons</td><td class="n">5.02 MB</td></tr>
+          <tr><td>Hawkethorne</td><td class="n">8.30 MB</td><td>Frostwood</td><td class="n">4.47 MB</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>Art selection</h3>
+      <p>Character art is filename-addressed: <code>identifier.artist.variant.png</code>, as in <code>alante_bust.Moira.0.png</code> and <code>alissa_bust.DCL.0.png</code>. <code>imageResolver()</code> collects every file matching an identifier and picks one by:</p>
+      <ol class="body">
+        <li>an explicit per-character preference in <code>Options.systemOptions.imagePrefs</code>, if the player set one;</li>
+        <li>otherwise a ranked artist order, with a special ordering for a few centaur and marefolk portraits.</li>
+      </ol>
+      <p>A parallel pair of helpers, <code>croppedOrFull()</code> and <code>fullOrCropped()</code>, choose between the <code>crops/</code> and <code>fulls/</code> directories depending on context. The shipped art is 1,299 full portraits, 1,272 crops, 454 combat busts, 169 CG scenes, 279 achievement icons and 96 UI vectors.</p>
+
+      <p>On Electron the resolver additionally warms every portrait and CG by constructing <code>Image</code> objects at boot, trading startup time for no in-scene pop-in.</p>
+    </section>
+
+    <!-- ============ 17 ============ -->
+    <section id="s17">
+      <span class="secnum">&#167;17 &#8212; Observations</span>
+      <h2 class="sec">What the design gets right, and where it strains</h2>
+
+      <h3>The load-bearing ideas</h3>
+      <ul>
+        <li><strong>Classes as content, keys as data.</strong> <code>injectKeys</code> plus per-class <code>serialize</code> means saves are small, migrations are usually string rewrites, and a designer adds an item by writing a class &#8212; no schema, no registration step, no migration.</li>
+        <li><strong>Diff-against-pristine saves.</strong> Serialising a freshly-constructed instance to compute the delta is a genuinely elegant trick. It costs 467 object constructions per save and buys immunity to content additions: any field a new version introduces simply matches its own default and never appears in old saves.</li>
+        <li><strong>Recompute rather than subscribe.</strong> Room state, race, and every derived stat are computed on demand from primary state. Nothing can desync, at the cost of doing a lot of work per tick.</li>
+        <li><strong>Fail soft in prose.</strong> The parser printing an inline error instead of throwing is the right call for a game where content volume guarantees typos.</li>
+        <li><strong>Boundary-count time.</strong> Passing "hours crossed" and "days crossed" rather than elapsed minutes makes every periodic subscriber trivially correct across long waits.</li>
+      </ul>
+
+      <h3>Where it shows its age</h3>
+      <ul>
+        <li><strong>The globals are the API.</strong> 425 globals and 13,098 scene functions in one namespace. It's genuinely ergonomic for content authors &#8212; a writer never imports anything &#8212; but nothing is analysable, and the alias push/pop stack in combat exists purely to work around dynamically-scoped globals.</li>
+        <li><strong>The modifier chains.</strong> <code>armor()</code> is 34 sequential conditions naming specific perks, items and effects. Adding an item means editing a core stat method, so the coupling runs from the engine outward to content instead of the other way.</li>
+        <li><strong>Vestigial Resolve.</strong> The HP/Resolve merge left <code>[hp, resolve]</code> tuples threaded through the whole damage API, a <code>resolve(v, absolute)</code> that returns a hardcoded 50 on one branch, and a reduce in <code>calculateDamage</code> that computes <code>hitsResolve()</code> and discards the result. It's dead weight in the hottest path in the game.</li>
+        <li><strong>Eager "lazy" chunks.</strong> Every content chunk is awaited at boot, so the splitting buys build hygiene and a progress bar but no load-time benefit.</li>
+        <li><strong>Cloud saves are host-bound.</strong> The endpoint is a relative PHP path, which cannot resolve from an Electron <code>file://</code> page.</li>
+      </ul>
+
+      <h3>The unsurprising one</h3>
+      <p>For all the fantasy machinery, the shape underneath is a fairly ordinary early-2010s web app: a debounced React render over a mutable state bag, a manager per subsystem, and a templating layer. What's unusual is the scale it's been pushed to &#8212; a 1,000-member god object, 88 MB of prose, and 1,019 rooms &#8212; with almost no architectural change along the way.</p>
+    </section>
+
+    <footer>
+      <p>Compiled from static analysis of <code>CoC II-0.9.5-win.zip</code>. Identifiers come from surviving webpack export maps; code samples are de-minified for readability, with logic and constants unchanged. Line counts and registry sizes were measured against the shipped bundles.</p>
+    </footer>
+
+  </main>
+</div>
+</body>
+</html>
