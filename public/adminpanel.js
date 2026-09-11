@@ -661,6 +661,8 @@ window.AdminPanel = (function () {
     wrap.append(foldable(songSec));
 
     // screen glitch: fires on its own every 40 to 180 seconds, testable here
+    // (skipped entirely while the effects are hidden site-wide — see dashglitch.js)
+    const fxHidden = Boolean(window.DashGlitch && window.DashGlitch.hidden);
     const glSec = document.createElement("div"); glSec.className = "adm-sec";
     glSec.append(mk("h3", "Screen glitch"));
     const glHint = mk("p", "One is picked at random every 40 to 180 seconds.");
@@ -673,7 +675,7 @@ window.AdminPanel = (function () {
     glBar.append(glSel);
     glBar.append(mkChip("Play", "ghost", () => window.DashGlitch && window.DashGlitch.play(Number(glSel.value))));
     glBar.append(mkChip("Random", "ghost", () => window.DashGlitch && window.DashGlitch.glitch()));
-    glSec.append(glBar); wrap.append(foldable(glSec));
+    glSec.append(glBar); if (!fxHidden) wrap.append(foldable(glSec));
 
     // her tools (the guide/tech pages and account management were retired; the
     // one document is HANDOFF.md in the repo)

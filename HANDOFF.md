@@ -42,6 +42,20 @@ before, so don't conclude a build failed too early.
 This file. Plain markdown, not styled to the site. Update it with the change,
 not afterwards.
 
+### Direction: off the terminal aesthetic, toward one page
+Decided 2026-09-11: the site is **moving away from the terminal look** and
+toward a **single-page format like ThroneLogs**. Nothing is redesigned yet;
+in preparation **every screen effect is hidden** — the glitches, every
+scanline overlay (`.scan`, the boot overlay's, the console panel's) — by one
+switch, `HIDDEN = true` at the top of `public/dashglitch.js`, which every
+terminal page loads. The dashboard's Flashing effects box and the admin Screen
+glitch triggers hide themselves when `DashGlitch.hidden` is set. The code is
+still there; flip the flag to get it all back, delete it when the redesign
+lands. The boot cascade still plays (it is the entrance, not an effect) —
+first candidate to go when the new look arrives. Game cards are being replaced
+one at a time by **generated posters** (`public/img/card-<game>.jpg`, 3:4,
+cover-fit into the card box with no bottom fade); Devotion is the first.
+
 ### Image generation is available
 GPT image 2 is available. **Suggest it wherever pure CSS/SVG isn't enough** —
 placeholder game cards, poster art, textures, materials — with a concrete brief
@@ -134,7 +148,7 @@ frame; cards hydrate real data (pool lines, elysium age). Order and tabs:
 
 | Tab | Game | Card | Accent | Notes |
 |---|---|---|---|---|
-| games | devotion | real (verse list) | blue | |
+| games | devotion | **generated poster** (`card-devotion.jpg`) | blue | the first of the new cards |
 | games | multitap | real (flat keypad) | green | |
 | games | summary | real | blue | |
 | games | skill check | real (dial) | red | |
@@ -146,8 +160,10 @@ frame; cards hydrate real data (pool lines, elysium age). Order and tabs:
 | extra | chess | **placeholder** | red-brown | |
 
 No card is locked any more (the `account`/`multi` flags are gone with
-accounts). Elysium and chess are the two remaining placeholder cards —
-candidates for image generation. Hover text over each card comes from
+accounts). A generated card is `ART.<name>: () => \`<div class="c-img"><img
+src="/img/card-<name>.jpg"></div>\`` — full-bleed, cover-fit, the frame's bottom
+fade suppressed. The other ten cards are still CSS-drawn and are next; elysium
+and chess are placeholders. Hover text over each card comes from
 `gametips.json`.
 
 ### The games
@@ -187,7 +203,7 @@ Say "bounded, not validated" for Snake and Dummy Parse.
 
 - **`audio.js`** — one AudioContext; gain per channel (music / ambience / typing) under a master; one localStorage key, cross-tab via `storage`, BroadcastChannel lock so two visible tabs don't both play. **`ambience.js`** — room tone and interface sounds on the bus (hover sounds ride the typing channel).
 - **`console.js`** — backtick/`~` opens it; commands are `pray <cmd>`; bare `pray` just acknowledges ("she hears you"). **`pray login`** is the only way to Hermione's sign-in page. Also holds `CODES` — placeholder secret phrases (`her eyes`, `static`, `bleed`, `collapse`, `quiet`, `listen`) that trigger glitch/audio effects. Full command list in the `/commands` table below.
-- **`dashglitch.js`** + **`glitchboot.js`** — the screen distortion: tear / dropout / bloom / contrast-crush / comb on a weighted 2.5–8s scheduler; contrast crush swaps palette variables (never the background) and inverts accent↔white. Every terminal page runs it except Elysium. Gated off by the photosensitive flag and the "Flashing effects" toggle.
+- **`dashglitch.js`** + **`glitchboot.js`** — the screen distortion: tear / dropout / bloom / contrast-crush / comb on a weighted 2.5–8s scheduler; contrast crush swaps palette variables (never the background) and inverts accent↔white. Every terminal page loads it except Elysium. **Currently `HIDDEN = true`** (see Direction above): nothing fires and the module also injects the rule that hides every scanline overlay. When live it is gated off by the photosensitive flag and the "Flashing effects" toggle.
 - **`boot.js`** — the decrypt/POST cascade on a **virtual clock**: hold **Space** for 8x, **M** skips. Lines from `decrypt.json`; also plays for guests. No `[WARN]` lines, no vignette.
 - **`theme.js`** — the accent colour. Writes `--c/--dim/--dim2/--accent/--glow` **inline on `<html>`** (so nothing may set `--c` on `<body>`, which out-specifies it). Load in `<head>` before the page's `<style>`. Presets: default `#00acdb`, `ed0955`, `710087`, `0bdb00`, `f7df00`, `f78400`, `ffa6c5`; guests keep it in localStorage (the `/api/theme` write 401s for them and is ignored), hermione's is saved on her record. Every game page follows the theme except Elysium.
 - **`nav.js`** — injects the back chevron on `has-top-nav` pages (`/games` → dashboard, everything else → `/games`, or wherever `<body data-back>` says — `/commands` → `/admin`), runs the signed-out redirect, and honours a page's `window.__navBack()` hook (writing and skillcheck use it: mid-run back goes to the game's settings screen first). `/admin` still hand-rolls its own chevron — next to convert.
@@ -203,7 +219,8 @@ went with points. ENTER lists **Games · Settings** for a guest; Hermione also
 sees **Admin** and **Log out** (which returns to `/`, i.e. a fresh guest
 session). There is deliberately **no sign-in button**. Settings panel: Accent
 swatches, Master / Music / Ambience / Typing volume + mute, Flashing effects
-(locked off for a photosensitive account), password change (hers). The two
+(hidden while effects are hidden; locked off for a photosensitive account),
+password change (hers). The two
 lines of copy are editable in place by Hermione (pencils) — `{name}` becomes
 the guest's name.
 
@@ -221,8 +238,9 @@ flag, notifications).
 ### Admin panel (`/admin`, `public/adminpanel.js`)
 Tabs: **Games** (subtabs General = hover text · Devotion presets · Multitap
 lines · OT12 photos + songs) · **Completed** (Lines
-completed · Summaries handed in) · **Site content** (Decrypt lines · Screen
-glitch) · **Tools** (Commands `/commands`). The Members tab, onboarding-intro
+completed · Summaries handed in) · **Site content** (Decrypt lines; the Screen
+glitch triggers hide while effects are hidden) · **Tools** (Commands
+`/commands`). The Members tab, onboarding-intro
 and questionnaire editors went with accounts.
 
 ### Editable pools
@@ -281,7 +299,8 @@ notifications; the admin panel on the dashboard; the boot vignette and
 `[WARN]` lines; edge-burn glitch; the in-site `/guide` and `/tech` pages.
 
 ## Open items
-- Elysium and chess placeholder cards → **image generation** briefs.
+- The remaining ten CSS cards → generated posters like Devotion's (elysium and chess first; they are placeholders).
+- The redesign itself: off the terminal look, single page (ThroneLogs-style). Then delete the hidden effects code and the boot.
 - Elysium is short of *events*, not features (ideas below).
 - OT12 payout is moot now (no points); song-based questions; fill the thin member fields before a height question.
 - A photosensitivity toggle in Settings for guests would have to be localStorage-only (nothing identifies them); today a fresh browser gets the effects until Flashing effects is unticked.

@@ -133,12 +133,13 @@
 
 
     /* DEVOTION — a verse reader: real lines, the current one lit, a small progress */
-    .c-dev { position: absolute; inset: 0; padding: .8rem .85rem 2rem; display: flex; flex-direction: column; gap: .42rem;
-      font-size: .76rem; line-height: 1.35; }
-    .c-dev .v { color: #00acdb; }
-    .c-dev .v.on { color: #eafaff; text-shadow: 0 0 10px var(--a); }
-    .c-dev .v.on::before { content: "▸ "; color: var(--a); }
-    .c-dev .prog { margin-top: auto; font-size: .56rem; letter-spacing: .18em; color: #00acdb; text-transform: uppercase; }
+    /* A generated poster, full-bleed. The first of the new cards (Devotion,
+       2026-09-11); the CSS-drawn ones are being replaced by these one at a time.
+       The image is 3:4 and the box is a little squarer, so it is cover-fit,
+       centred. No bottom fade over it: the art is complete as delivered. */
+    .c-img { position: absolute; inset: 0; overflow: hidden; }
+    .c-img img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center; }
+    .frame-mac .win:has(> .c-img)::after { display: none; }
 
     /* ELYSIUM — a laurel wreath around the real days-tended count */
     .c-elys-w { position: absolute; inset: 0; padding: .8rem .8rem 2.2rem; display: flex; flex-direction: column;
@@ -284,13 +285,8 @@
           .map(([n,l],i) => `<div class="key${i===5?" on":""}"><b>${n}</b><s>${l}</s></div>`).join("")
       }</div></div>`,
 
-      // devotion: a verse reader on real lines from the devotion pool (hydrated).
-      dev: () => `<div class="c-dev">
-        <div class="v">Hermione is my guardian angel.</div>
-        <div class="v on">I belong at Her feet.</div>
-        <div class="v">I am not in control.</div>
-        <div class="v">Her will is Divine. I will obey.</div>
-        <div class="prog">verse 2 / 10</div></div>`,
+      // devotion: the generated poster (public/img/card-devotion.jpg)
+      dev: () => `<div class="c-img"><img src="/img/card-devotion.jpg" alt="" /></div>`,
       death: () => `<div class="c-dr">
         <div class="val">240</div>
         <div class="status">your turn</div>
@@ -371,16 +367,9 @@
       hydrate();
     }
 
-    // The devotion and elysium cards show real state, not invented copy: pool
-    // lines for the writing game, and the tree's actual days-tended.
+    // The elysium card shows real state, not invented copy: the tree's actual
+    // days-tended. (Devotion's pool-line hydration went with its CSS card.)
     function hydrate() {
-      fetch("/api/devotion/presets").then((r) => (r.ok ? r.json() : null)).then((d) => {
-        const p = d && d.presets && d.presets[0], lines = p && p.lines;
-        const dev = board.querySelector(".c-dev");
-        if (!lines || !lines.length || !dev) return;
-        dev.querySelectorAll(".v").forEach((v, i) => { v.textContent = lines[i] || ""; v.hidden = !lines[i]; });
-        const prog = dev.querySelector(".prog"); if (prog) prog.textContent = "verse 2 / " + lines.length;
-      }).catch(() => {});
       fetch("/api/elysium").then((r) => (r.ok ? r.json() : null)).then((d) => {
         const num = board.querySelector(".c-elys-w .ew-num");
         const days = d && d.tree && typeof d.tree.ageDays === "number" ? d.tree.ageDays : null;

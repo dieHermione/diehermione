@@ -25,6 +25,25 @@
 window.DashGlitch = (function () {
   "use strict";
 
+  /* HIDDEN: the site is moving off the terminal aesthetic (2026-09-11). Every
+     screen effect is switched off here rather than deleted, from the one place
+     all the terminal pages load: the glitches never fire, and the scanline
+     overlay every page carries (`.scan`) is hidden by an injected rule. Flip
+     this to false to get them all back; pages read DashGlitch.hidden to hide
+     their own controls for it (the dashboard's Flashing effects box, the admin
+     Screen glitch triggers). */
+  var HIDDEN = true;
+  if (HIDDEN) {
+    var hide = function () {
+      if (document.getElementById("fx-hidden")) return;
+      var st = document.createElement("style"); st.id = "fx-hidden";
+      // every page's .scan overlay, the boot overlay's, and the console panel's own
+      st.textContent = ".scan,#boot-overlay .scan{display:none!important} #console::after{display:none!important}";
+      (document.head || document.documentElement).appendChild(st);
+    };
+    if (document.head) hide(); else document.addEventListener("DOMContentLoaded", hide);
+  }
+
   var RED = {
     "--c": "#ff6a58", "--dim": "#a33a30", "--dim2": "#70271f",
     "--bright": "#ffe4df", "--accent": "#ff7361", "--glow": "rgba(255,90,74,0.32)",
@@ -227,7 +246,7 @@ window.DashGlitch = (function () {
   }
 
   function play(which) {
-    if (!enabled) return;
+    if (HIDDEN || !enabled) return;
     ensure(); clearFx();
     var fx = EFFECTS[typeof which === "number" ? which : 0] || EFFECTS[0];
     var total = fx.run() || 900;
@@ -250,7 +269,7 @@ window.DashGlitch = (function () {
     { run: comb,      w: 4 },
   ];
   function playRun(runFn) {
-    if (!enabled) return 0;
+    if (HIDDEN || !enabled) return 0;
     ensure(); clearFx();
     var total = runFn() || 900;
     at(total, clearFx);
@@ -273,7 +292,7 @@ window.DashGlitch = (function () {
   }
   function startTears() {}   // folded into the weighted scheduler; kept for the API
   function stopTears() {}
-  function startRandom() { if (!enabled || randomTimer) return; scheduleNext(); }
+  function startRandom() { if (HIDDEN || !enabled || randomTimer) return; scheduleNext(); }
   function stopRandom() { clearTimeout(randomTimer); randomTimer = null; }
   function setEnabled(v) {
     enabled = Boolean(v);
@@ -287,5 +306,6 @@ window.DashGlitch = (function () {
     tear: playTear, startTears: startTears, stopTears: stopTears,
     startRandom: startRandom, stopRandom: stopRandom, setEnabled: setEnabled,
     effects: EFFECTS.map(function (e) { return e.name; }),
+    hidden: HIDDEN,
   };
 })();

@@ -164,7 +164,7 @@
         <a href="/games" class="ctl-btn">Games</a>
         <button id="settings-toggle" class="ctl-btn" type="button" aria-expanded="false">Settings</button>
         <div class="settings" id="settings" hidden>
-          <label class="set-row set-check">
+          <label class="set-row set-check" id="set-effects-row">
             <input type="checkbox" id="set-effects" /> <span>Flashing effects</span>
           </label>
           <div class="set-row"><span class="set-k">Accent</span>
@@ -397,6 +397,8 @@
       // Flashing effects: on by default, off if you de-tick it; the choice is
       // remembered. Photosensitive accounts have it locked off (applyEffectsLock).
       const fx = document.getElementById("set-effects");
+      // the effects are hidden site-wide for now (see dashglitch.js); so is the box
+      if (window.DashGlitch && window.DashGlitch.hidden) document.getElementById("set-effects-row").hidden = true;
       applyEffectsLock();
       fx.addEventListener("change", () => {
         if (photosensitive) { fx.checked = false; return; }
