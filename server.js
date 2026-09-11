@@ -19,14 +19,13 @@ const DEATHROLL_FILE = path.join(process.env.DATA_DIR || __dirname, "deathroll.j
 const SITE_FILE = path.join(process.env.DATA_DIR || __dirname, "site.json");
 const ELYSIUM_FILE = path.join(process.env.DATA_DIR || __dirname, "elysium.json");
 const DEVOTION_FILE = path.join(process.env.DATA_DIR || __dirname, "devotion.json");
-const PENANCE_FILE = path.join(process.env.DATA_DIR || __dirname, "penance.json");
 const DECRYPT_FILE = path.join(process.env.DATA_DIR || __dirname, "decrypt.json");
 const GAMETIPS_FILE = path.join(process.env.DATA_DIR || __dirname, "gametips.json");
 const MULTITAP_FILE = path.join(process.env.DATA_DIR || __dirname, "multitap.json");
 const OT12_FILE = path.join(process.env.DATA_DIR || __dirname, "ot12.json");
 const PARSE_FILE = path.join(process.env.DATA_DIR || __dirname, "parses.json");
 const SUMMARY_FILE = path.join(process.env.DATA_DIR || __dirname, "summaries.json");
-// finished writing runs (penance / devotion / multitap), for Hermione's Completed tab
+// finished writing runs (devotion / multitap), for Hermione's Completed tab
 const COMPLETED_FILE = path.join(process.env.DATA_DIR || __dirname, "completed.json");
 
 // --- JSON-file user store. Only hermione's record matters now: accounts were
@@ -1296,7 +1295,7 @@ app.post("/api/slots/buy", requirePlayer, (req, res) => {
 const WRITING_MAX_REPS = 1000;
 // Multitap runs through the same machinery: same session, same per-line
 // validation, same one-shot completion. Only the line source differs.
-const WRITING_MODES = ["penance", "devotion", "multitap"];
+const WRITING_MODES = ["devotion", "multitap"];
 
 function buildWritingSequence(lines, reps) {
   const first = lines[0];
@@ -1317,17 +1316,14 @@ app.post("/api/writing/session", (req, res) => {
   const who = playerId(req);
   if (!who) return res.status(401).json({ error: "Not logged in." });
   const body = req.body || {};
-  const mode = WRITING_MODES.includes(body.mode) ? body.mode : "penance";
-  if (mode === "devotion" && !req.session.username) {
-    return res.status(403).json({ error: "Devotion needs an account." });
-  }
+  const mode = WRITING_MODES.includes(body.mode) ? body.mode : "devotion";
   const reps = Math.max(1, Math.min(WRITING_MAX_REPS, parseInt(body.reps, 10) || 0));
   if (!reps) return res.status(400).json({ error: "How many repetitions?" });
 
   // Where the lines come from. A preset is resolved from the server's own pool,
-  // so the client cannot invent one. Penance and Multitap also allow the player's
-  // own lines; that text is theirs, but the server still owns the sequence and
-  // the count.
+  // so the client cannot invent one. Both games also allow the player's own
+  // lines; that text is theirs, but the server still owns the sequence and the
+  // count.
   let lines = [], presetName = "";
   if (mode === "multitap") {
     // multitap's pool is a flat list, not named presets
@@ -1342,14 +1338,14 @@ app.post("/api/writing/session", (req, res) => {
       presetName = "preset";
     }
   } else if (body.presetId) {
-    const pool = mode === "devotion" ? loadDevotion() : loadPenance();
+    const pool = loadDevotion();
     const preset = (pool.presets || []).find((p) => p.id === String(body.presetId));
     if (!preset || !preset.lines || !preset.lines.length) {
       return res.status(400).json({ error: "No such preset." });
     }
     lines = preset.lines.slice();
     presetName = preset.name || preset.id;
-  } else if (mode === "penance" && Array.isArray(body.ownLines)) {
+  } else if (Array.isArray(body.ownLines)) {
     lines = body.ownLines.map((l) => String(l).trim().slice(0, 240)).filter(Boolean).slice(0, 100);
     presetName = "custom";
     if (!lines.length) return res.status(400).json({ error: "Add at least one line." });
@@ -1573,43 +1569,6 @@ function saveDevotion(data) {
 }
 
 // Any player (accounts or guests) may read the presets to play Devotion.
-/* Penance gets preset line-sets too, stored and edited exactly like Devotion's.
-   Penance keeps its own free-text box as well: a preset is an alternative to
-   writing your own lines, not a replacement for it. */
-const PENANCE_DEFAULTS = {
-  presets: [
-    {
-      id: "correction",
-      name: "correction",
-      lines: [
-        "I am sorry, but sorry is not enough.",
-        "I will not waste Her time.",
-        "I was warned, and I did it anyway.",
-        "I am writing this because I earned it.",
-        "My comfort is not the point.",
-        "I will do better because She expects it.",
-      ],
-    },
-    {
-      id: "obedience",
-      name: "obedience",
-      lines: [
-        "I do not decide what happens to me.",
-        "I asked for this and I will finish it.",
-        "Her patience is not infinite.",
-        "I will not argue with Her judgement.",
-        "I exist to be corrected.",
-      ],
-    },
-  ],
-};
-function loadPenance() {
-  try {
-    const data = JSON.parse(fs.readFileSync(PENANCE_FILE, "utf8"));
-    if (data && Array.isArray(data.presets) && data.presets.length) return data;
-  } catch {}
-  return JSON.parse(JSON.stringify(PENANCE_DEFAULTS));
-}
 
 // one validator for both games' presets
 function cleanPresets(incoming, fallbackName) {
@@ -1626,20 +1585,6 @@ function cleanPresets(incoming, fallbackName) {
   return presets;
 }
 
-app.get("/api/penance/presets", (req, res) => {
-  if (!req.session.username && !req.session.guest) return res.status(401).json({ error: "Not logged in." });
-  res.json({ presets: loadPenance().presets });
-});
-app.post("/api/penance/presets", (req, res) => {
-  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
-  if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });
-  const incoming = Array.isArray(req.body.presets) ? req.body.presets : null;
-  if (!incoming) return res.status(400).json({ error: "presets must be an array." });
-  const presets = cleanPresets(incoming, "penance");
-  if (!presets.length) return res.status(400).json({ error: "Add at least one preset with a line." });
-  fs.writeFileSync(PENANCE_FILE, JSON.stringify({ presets }, null, 2));
-  res.json({ ok: true, presets });
-});
 
 app.get("/api/devotion/presets", (req, res) => {
   if (!req.session.username && !req.session.guest) return res.status(401).json({ error: "Not logged in." });
@@ -1714,7 +1659,6 @@ app.post("/api/decrypt", (req, res) => {
 const GAMETIPS_DEFAULTS = {
   tips: {
     "snake": "Free-swimming serpent. Chase the fleeing heart and grow; die on your own tail.",
-    "penance": "A typing drill of correction. Type each line exactly — falter and it corrupts.",
     "devotion": "A verse reader. Recite Her lines in turn. An account is required.",
     "multitap": "A typing drill on an old-phone keypad. No hints — remember the taps.",
     "ot12": "Match the photo to the member. Twelve girls, four names, one right answer.",

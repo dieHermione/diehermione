@@ -53,11 +53,11 @@ Every blue-and-white surface uses exactly two text colours: the accent
 (default **`#00acdb`**) and white **`#eafaff`**. No dim/mid blue for text;
 `--dim` and `--dim2` resolve to the accent. **No text transparency anywhere** —
 never `rgba()` with alpha or `opacity<1` on visible text (`--glow`, borders and
-backgrounds may keep alpha). Applies to dashboard, login, boot, onboarding,
-summary, admin, manage, commands, profile, and to the devotion and summary
-cards. **Penance is red** (card and screen), dual-tone as one red + white.
-The accent is themeable per account (see `theme.js`) — the rule is "two
-colours", not "blue".
+backgrounds may keep alpha). Applies to dashboard, login, boot, summary,
+admin, commands, and to the devotion and summary cards. The red games (skill
+check, deathroll, snake) are dual-tone the same way: one red `#c11208` + white.
+The accent is themeable (see `theme.js`) — the rule is "two colours", not
+"blue".
 
 ### UI rules for games
 - **Never `<input type="number">`.** Use `<input type="text" inputmode="numeric" maxlength="N">` and strip non-digits.
@@ -118,7 +118,7 @@ dashboard; everything else is a view in `views/` behind a route.
 | `/login` | anyone | Hermione's sign-in form; reached only by `pray login`; redirects an existing login to the dashboard |
 | `/admin` | admin | the tabbed admin panel (`public/adminpanel.js`) |
 | `/commands` | admin | the `pray` reference, hand-maintained; back → `/admin` |
-| `/snake` `/writing` (`?mode=devotion`) `/multitap` (`/t9` alias) `/summary` `/skillcheck` `/ot12` `/deathroll` `/dummyparse` `/elysium` (`/tree` alias) `/chess` | player | the games on the wall |
+| `/snake` `/writing` (devotion) `/multitap` (`/t9` alias) `/summary` `/skillcheck` `/ot12` `/deathroll` `/dummyparse` `/elysium` (`/tree` alias) `/chess` | player | the games on the wall |
 | `/wheel` `/lottery` (`/slots` alias) | player | still routed, **not linked from the wall** (free play, pay nothing) |
 | `/coc2-engine/` | anyone (static) | a hosted writeup, unrelated to the site's own docs |
 | `/chess-extra.js` | admin, 404 otherwise | Hermione's chess controls |
@@ -134,13 +134,12 @@ frame; cards hydrate real data (pool lines, elysium age). Order and tabs:
 
 | Tab | Game | Card | Accent | Notes |
 |---|---|---|---|---|
-| games | penance | real | red | |
+| games | devotion | real (verse list) | blue | |
 | games | multitap | real (flat keypad) | green | |
 | games | summary | real | blue | |
 | games | skill check | real (dial) | red | |
 | games | ot12 | real (group photo) | pink | flagged `wip` — "unfinished" label, still playable |
 | games | snake | real | red | |
-| extra | devotion | real | blue | |
 | extra | deathroll | real | red | Hermione vs a guest |
 | extra | dummy parse | real | orange-red | |
 | extra | elysium | **placeholder** | green | |
@@ -154,7 +153,7 @@ candidates for image generation. Hover text over each card comes from
 ### The games
 
 - **Snake** — free-swimming, no grid; dies on its own tail; food drifts at half speed and flees. **Shift** boosts (~5s per full meter at 1.9x, refills ~16s), **Space** pauses. Time limit chosen on the settings screen (up to 999 min). Food is counted, not paid.
-- **Penance / Devotion** (`/writing`) — typed lines from Hermione-editable presets (`penance.json`, `devotion.json`; `lines[0]` always first, the rest shuffled). Penance is red, keeps its own-lines box, and corrupts the text but stays legible. Devotion is blue.
+- **Devotion** (`/writing`) — type a line, again and again: blue, calm, no difficulty; a slip restarts the current line. Lines come from one of Hermione's presets (`devotion.json`; `lines[0]` always first, the rest shuffled, no immediate repeat) **or from the "custom" box** (your own, one per row, ≤100 lines of ≤240 chars). Settings → play → results. **Penance was folded into it on 2026-09-11** — the red corrupting sibling with a difficulty picker is gone; `penance` is now an alias of `devotion` in the console and old `completed.json` entries keep their `penance` category.
 - **Multitap** (`/multitap`, renamed from T9) — typing on an old-phone multi-tap keypad, green/white, deliberately unguided. Any other key commits the pending letter; `#` confirms; `*` deletes; one press of `0` confirms, a second enters a space. Settings screen picks preset or custom lines and a repetition count. Pool is `multitap.json`. Logs as `category: "multitap"`.
 - **Summary** — a real Wikipedia article (action API plain-text extract, trimmed) and a word limit that scales with the source. Pools in `SUMMARY_TOPICS`/`KIND_LABEL`: angels, feminism, Greek mythology, pre-18th-century history, critical biblical scholarship. Handed-in summaries → `summaries.json`, read in Admin → Completed.
 - **Skill check** — the pure dial, settings screen, presets 10/20/35/50, two difficulties, themed.
@@ -170,7 +169,7 @@ candidates for image generation. Hover text over each card comes from
 
 | Game | Model |
 |---|---|
-| Penance / Devotion / Multitap | **server-owned.** `POST /api/writing/session` builds the line sequence from the server's own pools (`mode` = `penance` / `devotion` / `multitap`; penance and multitap also accept the player's own lines) and stores it on the login session; `POST /api/writing/line` must match the expected line in order; `POST /api/writing/skip` is admin-only (`pray skip_stage`) and is the real boundary; `POST /api/writing/complete` takes **nothing** from the body and refuses unless the server's count says finished — one-shot. The run lives in `req.session.writing` (file-backed, survives restarts). |
+| Devotion / Multitap | **server-owned.** `POST /api/writing/session` builds the line sequence from the server's own pools (`mode` = `devotion` / `multitap`; both also accept the player's own `ownLines`) and stores it on the login session; `POST /api/writing/line` must match the expected line in order; `POST /api/writing/skip` is admin-only (`pray skip_stage`) and is the real boundary; `POST /api/writing/complete` takes **nothing** from the body and refuses unless the server's count says finished — one-shot. The run lives in `req.session.writing` (file-backed, survives restarts). |
 | OT12 | **server-owned.** `/api/ot12/session` → `/answer` → `/skip` (admin) → `/complete`; the correct set is never sent until after the answer. |
 | Dummy Parse | **bounded.** `/api/parse/session` locks the build (300-point pool) and starts the clock; `/api/parse` refuses more combat time than has elapsed, a wrong duration for a timed mode, or a DPS that disagrees with the total; mode and build come from the run. **Damage total is still client-reported.** |
 | Snake | **bounded.** `/api/snake/session` records the limit; `/api/snake/food` refuses outside a live run (2s grace) and rate-limits (burst 8, refill 2s); `/api/snake/complete` returns the server's count, which the results screen shows. A client can still claim pickups it didn't earn, just not unboundedly. |
@@ -220,8 +219,8 @@ leftover session from a retired account is destroyed on its next `/api/me`.
 flag, notifications).
 
 ### Admin panel (`/admin`, `public/adminpanel.js`)
-Tabs: **Games** (subtabs General = hover text · Penance presets · Devotion
-presets · Multitap lines · OT12 photos + songs) · **Completed** (Lines
+Tabs: **Games** (subtabs General = hover text · Devotion presets · Multitap
+lines · OT12 photos + songs) · **Completed** (Lines
 completed · Summaries handed in) · **Site content** (Decrypt lines · Screen
 glitch) · **Tools** (Commands `/commands`). The Members tab, onboarding-intro
 and questionnaire editors went with accounts.
@@ -231,7 +230,7 @@ and questionnaire editors went with accounts.
 | File (under `DATA_DIR`) | What | API | Editor |
 |---|---|---|---|
 | `decrypt.json` | boot cascade lines | `/api/decrypt` | Site content |
-| `penance.json` / `devotion.json` | writing presets `{id,name,lines[]}` | `/api/penance/presets`, `/api/devotion/presets` | Games |
+| `devotion.json` | writing presets `{id,name,lines[]}` | `/api/devotion/presets` | Games → Devotion |
 | `multitap.json` | flat sentence pool (lowercase, keypad-typeable) | `/api/multitap` | Games |
 | `gametips.json` | wall hover text, keyed by game name | `/api/gametips` | Games → General |
 | `ot12.json` | tagged photos + songs | `/api/ot12/photos`, `/api/ot12/songs` | Games → OT12 |
@@ -242,8 +241,8 @@ records ignored), `games.json` (chess), `deathroll.json`, `elysium.json`
 (keyed by player), `parses.json`, `summaries.json`, `completed.json`
 (finished writing runs), `sessions.json` + `.session-secret` (persistent
 sessions: file-backed `FileSessionStore`, flushed once a second, 30-day
-rolling cookie). Old `applications.json`, `questionnaire.json`, `writing.json`
-on the volume are orphans; nothing reads them.
+rolling cookie). Old `applications.json`, `questionnaire.json`, `writing.json`,
+`penance.json` on the volume are orphans; nothing reads them.
 
 ### `pray` commands (`public/console.js`; mirror any change on `/commands`)
 
@@ -251,10 +250,10 @@ on the volume are orphans; nothing reads them.
 |---|---|---|
 | `pray` | anyone | acknowledges |
 | `pray login` | anyone | opens `/login` (Hermione's sign-in); "you are already here." if she runs it |
-| `pray launch <target>` | anyone | navigates; the `LAUNCH` table in `console.js` lists every game and page, with aliases (`t9`, `slots`, `dummyparse`, `tree`, `writing`); `admin` / `commands` are hers only, checked per target |
+| `pray launch <target>` | anyone | navigates; the `LAUNCH` table in `console.js` lists every game and page, with aliases (`t9`, `slots`, `dummyparse`, `tree`, `writing`, `penance`); `admin` / `commands` are hers only, checked per target |
 | `pray launch list` | anyone | prints every launch target with a word each; her two only appear for her |
 | `pray reload` / `pray quit` | anyone | |
-| `pray skip_stage` | admin | penance / devotion / multitap / ot12 — server-side skip |
+| `pray skip_stage` | admin | devotion / multitap / ot12 — server-side skip |
 
 Also in `console.js`: `CODES`, placeholder secret phrases (`her eyes`,
 `static`, `bleed`, `collapse`, `quiet`, `listen`) that trigger glitch/audio
@@ -271,6 +270,10 @@ auto-guests; `/login` is reached only by `pray login`), the dashboard's
 sign-in/apply button, `pray points/set_points/delete_account/manage/open`,
 the tasks feature, the writing categories shelf, `/cardnav`, the
 photosensitive endpoint (the flag on her record still gates effects).
+**Penance** (2026-09-11): folded into Devotion — its red palette, corruption /
+tear / glitch effects, difficulty picker (easy / exacting / merciless),
+`penance.json` and `/api/penance/presets`. Devotion gained the custom-lines box
+instead. Don't rebuild a second writing game; add to this one.
 Earlier: dailies and both daily bonuses; tithe; the guestbook; light/dark
 toggle; the top pill nav; subliminals entirely (`glitch.js`, `subliminal.json`,
 the `pray` word-flash); angelcoins; the Visitor account type; member-facing

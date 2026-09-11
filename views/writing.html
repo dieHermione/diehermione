@@ -3,26 +3,21 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Penance - angeldom.me</title>
+<title>Devotion - angeldom.me</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
-<!-- set the mode before first paint so the terminal never flashes the wrong palette -->
-<script>document.documentElement.dataset.mode = new URLSearchParams(location.search).get("mode") === "devotion" ? "devotion" : "penance";</script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   [hidden] { display: none !important; }
   html, body { height: 100%; overflow: hidden; }
-  /* Penance is a dark-red terminal at rest (corrupts toward hotter red in JS).
-     Devotion is the blue sibling and never corrupts. These are the resting
-     palettes; JS lerps --c/--dim toward the corruption target during play. */
-  :root { --c: #c11208; --dim: #c11208; --ok: #ffffff; --err: #ff2a20; --glow: rgba(193,18,8,0.42); }
-  :root[data-mode="devotion"] { --c: #00acdb; --dim: #00acdb; --ok: #ffffff; --err: #e0543a; --glow: rgba(0,172,219,0.4); }
+  /* Devotion: the blue terminal. (Penance, its red corrupting sibling, was
+     folded into it on 2026-09-11 — one game, presets or your own lines.) */
+  :root { --c: #00acdb; --dim: #00acdb; --ok: #ffffff; --err: #e0543a; --glow: rgba(0,172,219,0.4); }
   body { font-family: "IBM Plex Mono", monospace; background: #04060a; color: var(--c); }
   #app { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; padding: 4vh 5vw; }
   .scan { position: fixed; inset: 0; pointer-events: none; z-index: 40;
     background: repeating-linear-gradient(0deg, rgba(0,0,0,0.22) 0 1px, transparent 1px 3px); }
-  .scan.heavy { background: repeating-linear-gradient(0deg, rgba(0,0,0,0.45) 0 1px, transparent 1px 2px); }
   .screen { width: min(880px, 92vw); position: relative; z-index: 2; display: none; }
   .screen.on { display: block; }
   /* the game itself is scaled up ~50% (the settings screens are left alone) */
@@ -59,7 +54,6 @@
     border-radius: 2px; font-size: 0.9rem; letter-spacing: 0.04em; transition: background 0.12s, color 0.12s, border-color 0.12s; }
   .opt:hover { border-color: var(--c); }
   .opt.sel { background: var(--c); color: #04060a; border-color: var(--c); }
-  .opt.danger.sel { background: var(--err); border-color: var(--err); }
   .diffnote { color: var(--dim); font-size: 12px; margin-top: 0.45rem; min-height: 1.2em; }
   input.term, textarea.term { width: 100%; background: rgba(0,0,0,0.35); border: 1px solid var(--dim); color: var(--c);
     font-family: inherit; font-size: 1rem; padding: 0.6rem 0.7rem; border-radius: 2px; }
@@ -74,41 +68,10 @@
 
   /* play */
   #play .status { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
-  #play .warn { color: var(--err); min-height: 1.3em; margin: 0.4rem 0; }
-  #play .hex { color: var(--dim); font-size: 11px; line-height: 1.7; white-space: pre; min-height: 1.2em; }
+  .warn { color: var(--err); min-height: 1.3em; margin: 0.4rem 0; }
   #play .target { position: relative; }
-  /* corruption = chromatic slice glitch: two ghost clones flash in offset
-     horizontal bands, intermittently. No continuous wobble. */
-  #play .target.split { text-shadow: 1px 0 rgba(255,50,40,0.4), -1px 0 rgba(90,200,255,0.28); }
-  #play .target.split::before, #play .target.split::after {
-    content: attr(data-t); position: absolute; left: 0; top: 0; width: 100%; pointer-events: none; }
-  #play .target.split::before { color: #ff2f24; clip-path: inset(0 0 100% 0); animation: gSliceA 2.2s steps(1,end) infinite; }
-  #play .target.split::after  { color: #8a0f07; clip-path: inset(0 0 100% 0); animation: gSliceB 2.9s steps(1,end) infinite; }
   #play .bar { margin-top: 1.2rem; }
   .barfill { display: inline-block; letter-spacing: -1px; }
-  .tear { position: absolute; left: -6vw; right: -6vw; height: 5px; background: #ff2a20; opacity: 0.16; pointer-events: none; }
-  /* active corruption glitch, hooked into the game (not a screen overlay) */
-  /* slice keyframes: hidden most of the cycle, brief offset bands (jitter, not wobble) */
-  @keyframes gSliceA {
-    0%, 58%, 100% { clip-path: inset(0 0 100% 0); transform: translateX(0); }
-    60% { clip-path: inset(10% 0 66% 0); transform: translateX(-7px); }
-    64% { clip-path: inset(46% 0 32% 0); transform: translateX(6px); }
-    68% { clip-path: inset(72% 0 10% 0); transform: translateX(-4px); }
-    70% { clip-path: inset(0 0 100% 0); transform: translateX(0); }
-  }
-  @keyframes gSliceB {
-    0%, 40%, 100% { clip-path: inset(0 0 100% 0); transform: translateX(0); }
-    43% { clip-path: inset(28% 0 46% 0); transform: translateX(9px); }
-    47% { clip-path: inset(58% 0 24% 0); transform: translateX(-7px); }
-    49% { clip-path: inset(0 0 100% 0); transform: translateX(0); }
-  }
-  /* very occasional one-frame snap of the whole line (a tick, not a wobble) */
-  #play.glitch .big { animation: gSnap 3.3s steps(1,end) infinite; }
-  @keyframes gSnap { 0%, 91%, 100% { transform: translateX(0); } 93% { transform: translateX(2px); } 95% { transform: translateX(-2px); } 97% { transform: translateX(1px); } }
-  /* red signal flicker overlay (stationary colour flash) */
-  #play.glitch::before { content:""; position:absolute; inset:-4vh -6vw; pointer-events:none; z-index:1;
-    background: rgba(255,30,20,0.05); animation: gRed 1.1s steps(1,end) infinite; }
-  @keyframes gRed { 0%,100%{opacity:0.18} 18%{opacity:0.5} 20%{opacity:0.12} 55%{opacity:0.38} 57%{opacity:0.1} }
   #play .actions { margin-top: 1.6rem; display: flex; gap: 1.4rem; }
   .tbtn { background: none; border: none; color: var(--dim); cursor: pointer; font-size: 0.85rem; letter-spacing: 0.1em;
     text-transform: uppercase; text-decoration: underline; text-underline-offset: 4px; }
@@ -134,7 +97,7 @@
 
     <!-- selection -->
     <section class="screen md" id="select">
-      <div class="c cap" style="font-size:1.1rem">:: configure penance ::</div>
+      <div class="c cap" style="font-size:1.1rem">:: configure devotion ::</div>
       <hr class="d" />
       <div class="field">
         <div class="flabel">repetitions</div>
@@ -147,34 +110,25 @@
         </div>
       </div>
       <div class="field">
-        <div class="flabel">difficulty</div>
-        <div class="opts" id="diff-opts">
-          <button class="opt" data-diff="easy">easy</button>
-          <button class="opt sel" data-diff="exacting">exacting</button>
-          <button class="opt danger" data-diff="merciless">merciless</button>
-        </div>
-        <div class="diffnote" id="diffnote"></div>
+        <div class="flabel">lines</div>
+        <!-- Hermione's presets, then "custom": your own lines, one per row -->
+        <div class="opts" id="preset-opts"><button class="opt" data-preset="">custom</button></div>
+        <textarea class="term" id="lines" rows="3" maxlength="600" placeholder="Her will is Divine. I will obey." style="display:none"></textarea>
+        <div class="diffnote">at your own pace. a slip restarts the line.</div>
       </div>
-      <div class="field">
-        <div class="flabel">your lines · one per row</div>
-        <textarea class="term" id="lines" rows="3" maxlength="600" placeholder="I must be forgiven."></textarea>
-      </div>
+      <div class="sm warn" id="sel-warn"></div>
       <button class="begin" id="begin" disabled>begin</button>
     </section>
 
     <!-- typing -->
     <section class="screen" id="play">
       <div class="sm dim cap status">
-        <span id="p-cat">penance</span>
+        <span id="p-cat">devotion</span>
         <span>rep <span id="p-rep">00</span> / <span id="p-total">00</span></span>
-        <span>diff <span id="p-diff">exacting</span></span>
         <span>err <span id="p-err">00</span></span>
       </div>
-      <div class="sm warn" id="p-warn"></div>
-      <div class="hex" id="p-hex1"></div>
       <div class="big"><span class="c">&gt; </span><span class="target" id="target"></span></div>
-      <div class="hex" id="p-hex2"></div>
-      <div class="bar sm"><span class="barfill" id="p-barfill"></span> <span class="dim" id="p-barlabel">signal clean</span></div>
+      <div class="bar sm"><span class="barfill" id="p-barfill"></span></div>
     </section>
 
     <!-- results -->
@@ -185,7 +139,6 @@
       <div class="row"><span class="k">errors</span><span id="r-err">0</span></div>
       <div class="row"><span class="k">time</span><span id="r-time">0:00</span></div>
       <div class="row"><span class="k">accuracy</span><span id="r-acc">100%</span></div>
-      <div class="row" id="r-integrity-row" hidden><span class="k">integrity</span><span class="err">frayed</span></div>
       <hr class="d" />
       <div class="dim sm cap">transcript · in your own words</div>
       <div class="transcript" id="r-transcript"></div>
@@ -202,93 +155,25 @@
   const $ = (id) => document.getElementById(id);
   function show(id) { document.querySelectorAll(".screen").forEach((s) => s.classList.toggle("on", s.id === id)); }
 
-  // Devotion is the gentle sibling of Penance: same code, no difficulty (never
-  // corrupts), preset line-sets instead of free text, and it feeds the dailies.
-  const MODE = new URLSearchParams(location.search).get("mode") === "devotion" ? "devotion" : "penance";
-  const DEVOTION = MODE === "devotion";
-  // Preset line-sets are Hermione-editable and loaded from the server.
-  // Each preset is { id, name, lines[] }: lines[0] is always typed first, and
-  // lines[1..] are the shuffle pool (randomised each cycle, no immediate repeat).
-  let PRESETS = {};          // keyed by preset id, filled from the mode's preset API
-  let pnPreset = null;       // Penance only: null means "my own lines"
-  let devPreset = null;
-  function shuffle(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
-  function buildDevotionSequence(lines, reps) {
-    const first = lines[0];
-    const pool = lines.slice(1);
-    const seq = [first]; let last = first;
-    while (seq.length < reps) {
-      if (!pool.length) { seq.push(first); continue; }
-      const sh = shuffle(pool);
-      if (sh.length > 1 && sh[0] === last) { [sh[0], sh[1]] = [sh[1], sh[0]]; }
-      for (const l of sh) { if (seq.length >= reps) break; seq.push(l); last = l; }
-    }
-    return seq.slice(0, reps);
-  }
+  // Devotion: type a line, again and again. The lines come from one of
+  // Hermione's presets (server-stored, editable in /admin) or from the box —
+  // your own, one per row. Either way the SERVER owns the run: it builds the
+  // sequence, checks each finished line, and counts.
+  const MODE = "devotion";
+  let PRESETS = {};          // keyed by preset id, filled from /api/devotion/presets
+  let preset = null;         // chosen preset id; null means "custom" (the box)
 
-  /* ---------- corruption model ---------- */
-  // Only merciless corrupts now; easy and exacting hold the pure colour.
-  const DIFF_BASE = { easy: 0, exacting: 0, merciless: 0.85 };
-  // Per-mode palette. Penance rests on a dark red and corrupts toward hotter
-  // red; Devotion is blue and never leaves it (corruption() is pinned to 0).
-  const PAL = {
-    penance:  { pure: { c: "#c11208", dim: "#c11208", glow: "rgba(193,18,8,0.42)" },
-                foul: { c: "#7a0c04", dim: "#4d0803", glow: "rgba(122,12,4,0.5)" } },
-    devotion: { pure: { c: "#00acdb", dim: "#00acdb", glow: "rgba(0,172,219,0.4)" },
-                foul: { c: "#00acdb", dim: "#00acdb", glow: "rgba(0,172,219,0.4)" } },
-  };
-  const PURE = PAL[MODE].pure, FOUL = PAL[MODE].foul;
-  function lerp(a, b, t) { return Math.round(a + (b - a) * t); }
-  function hex2rgb(h) { return [parseInt(h.slice(1,3),16), parseInt(h.slice(3,5),16), parseInt(h.slice(5,7),16)]; }
-  function mix(h1, h2, t) { const a = hex2rgb(h1), b = hex2rgb(h2); return "rgb(" + lerp(a[0],b[0],t) + "," + lerp(a[1],b[1],t) + "," + lerp(a[2],b[2],t) + ")"; }
-  function corruption() {
-    if (DEVOTION) return 0;                 // Devotion stays clean and blue
-    const base = DIFF_BASE[state.diff] || 0;
-    const ramp = Math.min(0.6, state.mistakes * 0.03);
-    return Math.min(1, base + ramp);
-  }
-  function applyCorruption() {
-    const t = corruption();
-    document.body.style.setProperty("--c", mix(PURE.c, FOUL.c, t));
-    document.body.style.setProperty("--dim", mix(PURE.dim, FOUL.dim, t));
-    if (!DEVOTION) document.body.style.setProperty("--err", "#ff2a20");
-    $("scan").classList.toggle("heavy", t > 0.6);
-    // hex noise + tears at higher corruption
-    $("p-hex1").textContent = t > 0.35 ? hexline() : "";
-    $("p-hex2").textContent = t > 0.35 ? hexline() : "";
-    document.querySelectorAll("#play .tear").forEach((n) => n.remove());
-    if (t > 0.7) { addTear(0.34); addTear(0.62); }
-    const warn = t > 0.7 ? "!! SIGNAL DEGRADED — HER PATIENCE THINS"
-      : t > 0.4 ? "! signal loss — realign input" : "";
-    $("p-warn").textContent = warn;
-    setAmbience(t); updateGlitch(t);
-  }
-  function addTear(pos) {
-    const d = document.createElement("div"); d.className = "tear";
-    d.style.top = (pos * 100) + "%"; $("play").appendChild(d);
-  }
-
-  /* ---------- audio: old-keyboard clicks + harshening ambience ---------- */
-  let actx = null, ambGain = null, ambFilt = null, ambStarted = false;
+  /* ---------- audio: old-keyboard clicks over a soft hum ---------- */
+  let actx = null, ambGain = null, ambStarted = false;
   function audio() { if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} } if (actx && actx.state === "suspended") actx.resume(); return actx; }
   function startAmbience() {
     const a = audio(); if (!a || ambStarted) return; ambStarted = true;
-    // Penance's corruption static was too harsh, so it is gone entirely; only
-    // Devotion keeps its soft low hum. setAmbience() no-ops without ambGain.
-    if (!DEVOTION) return;
     const size = 2 * a.sampleRate, buf = a.createBuffer(1, size, a.sampleRate), d = buf.getChannelData(0);
     for (let i = 0; i < size; i++) d[i] = Math.random() * 2 - 1;
     const n = a.createBufferSource(); n.buffer = buf; n.loop = true;
-    ambFilt = a.createBiquadFilter(); ambFilt.type = "lowpass"; ambFilt.frequency.value = 360;
-    ambGain = a.createGain(); ambGain.gain.value = DEVOTION ? 0.012 : 0.0018;
-    n.connect(ambFilt).connect(ambGain).connect(a.destination); n.start();
-  }
-  function setAmbience(t) {
-    if (!ambGain || !actx) return; const now = actx.currentTime;
-    // Penance static has been cut twice now; it sits under everything else
-    ambGain.gain.setTargetAtTime((DEVOTION ? 0.012 : 0.0018) + t * 0.004, now, 0.3);
-    ambFilt.frequency.setTargetAtTime(360 + t * 2800, now, 0.3);
-    ambFilt.type = t > 0.6 ? "highpass" : "lowpass";
+    const f = a.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = 360;
+    ambGain = a.createGain(); ambGain.gain.value = 0.012;
+    n.connect(f).connect(ambGain).connect(a.destination); n.start();
   }
   function keyClick(bad) {
     const a = audio(); if (!a) return; const now = a.currentTime;
@@ -303,32 +188,16 @@
     o.connect(og).connect(a.destination); o.start(now); o.stop(now + 0.06);
   }
 
-  /* active glitch loop: reshuffles the corrupt glyphs while corrupted */
-  let glitchTimer = null, glitchTick = 0;
-  function updateGlitch(t) {
-    const on = t > 0.5 && $("play").classList.contains("on") && !state.done;
-    $("play").classList.toggle("glitch", on);
-    // nothing left to reshuffle now the glyphs are gone; the class alone
-    // drives the chromatic split in CSS
-    if (!on && glitchTimer) { clearInterval(glitchTimer); glitchTimer = null; }
-  }
-  let hexSeed = 0x51;
-  function hexline() {
-    let s = "0x" + (0x7F2A).toString(16).toUpperCase() + "  ";
-    for (let j = 0; j < 12; j++) { hexSeed = (hexSeed * 1103515245 + 12345) & 0x7fffffff; s += (hexSeed % 256).toString(16).padStart(2, "0").toUpperCase() + " "; }
-    return s;
-  }
-
   /* ---------- state ---------- */
-  const state = { reps: 50, diff: "exacting", category: "devotion", lines: [], idx: 0, typed: 0, mistakes: 0, correct: 0, startedAt: 0, done: false };
+  const state = { reps: 50, lines: [], idx: 0, typed: 0, mistakes: 0, correct: 0, startedAt: 0, done: false };
 
   /* ---------- boot ---------- */
   const BOOT = [
     ["angelOS", " v0.2  ", "session 0x1F3A"],
     ["> power-on self test .............. ", "OK"],
-    ["> mounting /" + MODE + " .............. ", "OK"],
+    ["> mounting /devotion .............. ", "OK"],
     ["> establishing link to Her ........ ", "OK"],
-    ["> " + MODE + " module .............. ", "READY"],
+    ["> devotion module ................. ", "READY"],
   ];
   function runBoot() {
     const log = $("boot-log"); log.innerHTML = "";
@@ -342,18 +211,13 @@
       setTimeout(step, 260);
     })();
   }
-  function leaveBoot() { if ($("boot").classList.contains("on")) { show("select"); refreshBegin(); $("lines").focus(); } }
+  function leaveBoot() { if ($("boot").classList.contains("on")) { show("select"); refreshBegin(); } }
   document.addEventListener("keydown", (e) => { if ($("boot").classList.contains("on")) { e.preventDefault(); leaveBoot(); } }, true);
   // mobile has no keyboard for "press any key" — a tap dismisses the boot too
   document.addEventListener("pointerdown", () => { if ($("boot").classList.contains("on")) leaveBoot(); }, true);
   $("boot").addEventListener("click", leaveBoot);
 
   /* ---------- selection ---------- */
-  const DIFF_NOTE = {
-    easy: "mistakes are counted but not punished.",
-    exacting: "a mistake restarts the current repetition",
-    merciless: "a mistake restarts the entire exercise.",
-  };
   function pickGroup(container, attr, value) {
     container.querySelectorAll(".opt").forEach((b) => b.classList.toggle("sel", b.dataset[attr] === value));
   }
@@ -363,98 +227,63 @@
     pickGroup($("reps-opts"), "reps", b.dataset.reps);
   });
   $("reps-custom").addEventListener("input", (e) => {
+    e.target.value = e.target.value.replace(/\D/g, "");
     const n = parseInt(e.target.value);
     if (Number.isInteger(n) && n > 0) { state.reps = Math.min(9999, n); $("reps-opts").querySelectorAll(".opt").forEach((b) => b.classList.remove("sel")); }
   });
-  $("diff-opts").addEventListener("click", (e) => {
-    const b = e.target.closest("[data-diff]"); if (!b) return;
-    state.diff = b.dataset.diff; pickGroup($("diff-opts"), "diff", state.diff);
-    $("diffnote").textContent = DIFF_NOTE[state.diff];
-  });
-  $("diffnote").textContent = DIFF_NOTE.exacting;
   function parseLines() { return $("lines").value.split("\n").map((l) => l.trim()).filter(Boolean); }
   function refreshBegin() {
-    $("begin").disabled = DEVOTION ? !devPreset : (!pnPreset && parseLines().length === 0);
+    $("begin").disabled = preset ? false : parseLines().length === 0;
   }
   $("lines").addEventListener("input", refreshBegin);
   $("begin").addEventListener("click", startGame);
 
-  // apply the mode: labels everywhere, and Devotion's calmer selection screen
-  document.title = (DEVOTION ? "Devotion" : "Penance") + " - angeldom.me";
-  document.querySelector("#select .cap").textContent = ":: configure " + MODE + " ::";
-  $("p-cat").textContent = MODE;
-  if (!DEVOTION) {
-    // Penance keeps its own-lines box; the presets sit above it as an
-    // alternative, and picking one hides the box.
-    const lf = $("lines").closest(".field");
-    const po = document.createElement("div"); po.className = "opts"; po.id = "preset-opts";
-    lf.insertBefore(po, $("lines"));
-    const own = document.createElement("button");
-    own.className = "opt sel"; own.dataset.preset = ""; own.textContent = "custom";
-    po.append(own);
-    po.addEventListener("click", (e) => {
-      const b = e.target.closest("[data-preset]"); if (!b) return;
-      pnPreset = b.dataset.preset || null;
-      po.querySelectorAll(".opt").forEach((o) => o.classList.toggle("sel", o === b));
-      $("lines").style.display = pnPreset ? "none" : "";
-      refreshBegin();
+  // presets first, "custom" last; picking custom reveals the box
+  const po = $("preset-opts");
+  po.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-preset]"); if (!b) return;
+    preset = b.dataset.preset || null;
+    po.querySelectorAll(".opt").forEach((o) => o.classList.toggle("sel", o === b));
+    $("lines").style.display = preset ? "none" : "";
+    if (!preset) $("lines").focus();
+    refreshBegin();
+  });
+  // presets come from the server (Hermione-editable); the first one is the
+  // default. If none load, custom is the only option and gets selected.
+  fetch("/api/devotion/presets").then((r) => r.json()).then((data) => {
+    const custom = po.querySelector('[data-preset=""]');
+    (data.presets || []).forEach((p, i) => {
+      PRESETS[p.id] = p;
+      const b = document.createElement("button"); b.className = "opt" + (i === 0 ? " sel" : "");
+      b.dataset.preset = p.id; b.textContent = p.name; po.insertBefore(b, custom);
+      if (i === 0) preset = p.id;
     });
-    fetch("/api/penance/presets").then((r) => r.json()).then((data) => {
-      (data.presets || []).forEach((p) => {
-        PRESETS[p.id] = p;
-        const b = document.createElement("button");
-        b.className = "opt"; b.dataset.preset = p.id; b.textContent = p.name;
-        po.append(b);
-      });
-    }).catch(() => {});
-  }
-
-  if (DEVOTION) {
-    state.diff = "easy";                    // never corrupts
-    $("diff-opts").closest(".field").style.display = "none";
-    const lf = $("lines").closest(".field");
-    lf.querySelector(".flabel").textContent = "line set";
-    $("lines").style.display = "none";
-    const po = document.createElement("div"); po.className = "opts"; po.id = "preset-opts";
-    lf.append(po);
-    po.addEventListener("click", (e) => { const b = e.target.closest("[data-preset]"); if (!b) return; devPreset = b.dataset.preset; po.querySelectorAll(".opt").forEach((o) => o.classList.toggle("sel", o === b)); refreshBegin(); });
-    const note = document.createElement("div"); note.className = "diffnote"; note.textContent = "at your own pace. complete 50 to fulfil today's devotion."; lf.append(note);
-    // presets come from the server (Hermione-editable); until they load, begin stays disabled
-    fetch("/api/devotion/presets").then((r) => r.json()).then((data) => {
-      (data.presets || []).forEach((p, i) => {
-        PRESETS[p.id] = p;
-        const b = document.createElement("button"); b.className = "opt" + (i === 0 ? " sel" : "");
-        b.dataset.preset = p.id; b.textContent = p.name; po.append(b);
-        if (i === 0) devPreset = p.id;
-      });
-      refreshBegin();
-    }).catch(() => {});
-  }
+    if (!preset) { custom.classList.add("sel"); $("lines").style.display = ""; }
+    refreshBegin();
+  }).catch(() => { po.querySelector('[data-preset=""]').classList.add("sel"); $("lines").style.display = ""; refreshBegin(); });
 
   /* ---------- game ---------- */
-  // The SERVER now owns the run: it builds the line sequence from its own pools
-  // and counts the lines. The client just renders what it is given and reports
-  // each finished line for validation. `runId` ties the two together.
+  // The SERVER owns the run: it builds the line sequence from its own pool (or
+  // the box's lines) and counts the lines. The client renders what it is given
+  // and reports each finished line for validation. `runId` ties the two.
   let runId = null, lineFailed = false;
 
   async function startGame() {
-    const presetId = DEVOTION ? devPreset : pnPreset;
-    const own = (!DEVOTION && !presetId) ? parseLines() : null;
-    if (!presetId && (!own || !own.length)) return;
+    const own = preset ? null : parseLines();
+    if (!preset && !own.length) return;
     const begin = $("begin");
-    begin.disabled = true;
+    begin.disabled = true; $("sel-warn").textContent = "";
     let data;
     try {
       const res = await fetch("/api/writing/session", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mode: MODE, reps: state.reps, difficulty: state.diff,
-          presetId: presetId || undefined, ownLines: own || undefined }),
+        body: JSON.stringify({ mode: MODE, reps: state.reps, presetId: preset || undefined, ownLines: own || undefined }),
       });
       data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "Could not start.");
     } catch (e) {
       begin.disabled = false;
-      $("warn") && ($("warn").textContent = "! " + (e.message || "Could not start."));
+      $("sel-warn").textContent = "! " + (e.message || "Could not start.");
       return;
     }
     begin.disabled = false;
@@ -462,11 +291,8 @@
     lineFailed = false;
     state.lines = data.lines;              // the server's sequence, not ours
     state.reps = data.reps;
-    state.category = MODE;
     state.idx = 0; state.typed = 0; state.mistakes = 0; state.correct = 0; state.done = false;
     state.startedAt = Date.now();
-    $("p-cat").textContent = state.category;
-    $("p-diff").textContent = state.diff;
     $("p-total").textContent = String(state.reps).padStart(2, "0");
     show("play"); startPassage();
   }
@@ -490,31 +316,20 @@
     lineMistakesAt = state.mistakes;
     $("p-rep").textContent = String(state.idx + 1).padStart(2, "0");
     $("p-err").textContent = String(state.mistakes).padStart(2, "0");
-    applyCorruption(); renderTarget();
+    renderTarget();
   }
   function renderTarget() {
-    const text = current(), t = corruption();
+    const text = current();
     const el = $("target");
     const done = text.slice(0, state.typed);
     const cur = text.slice(state.typed, state.typed + 1);
     const rest = text.slice(state.typed + 1);
-    let restHtml = "";
-    for (let i = 0; i < rest.length; i++) {
-      // Upcoming letters used to be scrambled into block glyphs at high
-      // corruption. It made the line genuinely hard to read rather than
-      // atmospheric, so the text is always legible now.
-      restHtml += escapeHtml(rest[i]);
-    }
-    el.className = "target" + (t > 0.55 ? " split" : "");
-    el.setAttribute("data-t", text);
     el.innerHTML = '<span class="dim">' + escapeHtml(done) + '</span>' +
-      '<span class="cur">' + escapeHtml(cur || " ") + "</span>" + restHtml;
-    // progress bar
+      '<span class="cur">' + escapeHtml(cur || " ") + "</span>" + escapeHtml(rest);
+    // progress through the line
     const frac = state.typed / text.length;
     const width = 20, filled = Math.round(frac * width);
     $("p-barfill").textContent = "█".repeat(filled) + "░".repeat(width - filled);
-    $("p-barlabel").textContent = t > 0.7 ? "degrading" : t > 0.4 ? "unstable" : "signal clean";
-    $("p-barfill").style.color = "var(--c)";
   }
   function escapeHtml(s) { return s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
 
@@ -533,13 +348,11 @@
       if (state.typed >= text.length) { finishPassage(); return; }
       renderTarget();
     } else {
+      // a slip restarts the current line
       state.mistakes++; keyClick(true);
       $("p-err").textContent = String(state.mistakes).padStart(2, "0");
-      // merciless (Penance only): a slip throws you back to the very first rep
-      if (state.diff === "merciless" && !DEVOTION) { state.idx = 0; startPassage(); return; }
-      // exacting and Devotion both restart the current line on a slip; meek Penance is forgiving
-      if (state.diff === "exacting" || DEVOTION) state.typed = 0;
-      applyCorruption(); renderTarget();
+      state.typed = 0;
+      renderTarget();
     }
   });
 
@@ -572,17 +385,12 @@
 
   function finishSession() {
     state.done = true;
-    if (glitchTimer) { clearInterval(glitchTimer); glitchTimer = null; }
-    $("play").classList.remove("glitch");
     const elapsed = Date.now() - state.startedAt;
-    const t = corruption();
-    $("done-title").innerHTML = t > 0.6 ? ':: s<span class="err">█</span>ssion c<span class="err">░</span>mplete :: <span class="err sm">[signal recovered]</span>' : ":: session complete ::";
     $("r-lines").textContent = state.reps; $("r-total").textContent = state.reps;
     $("r-err").textContent = state.mistakes;
     $("r-time").textContent = fmtTime(elapsed);
     const acc = state.correct + state.mistakes > 0 ? Math.round(state.correct / (state.correct + state.mistakes) * 100) : 100;
     $("r-acc").textContent = acc + "%";
-    $("r-integrity-row").hidden = t <= 0.6;
     // transcript lists each unique line once with how many times it was typed
     const counts = new Map();
     for (let i = 0; i < state.reps; i++) { const l = state.lines[i % state.lines.length]; counts.set(l, (counts.get(l) || 0) + 1); }
@@ -592,7 +400,6 @@
       d.innerHTML = '"' + escapeHtml(l) + '"  <span class="n">× ' + c + "</span>";
       tr.appendChild(d);
     });
-    document.body.style.setProperty("--c", mix(PURE.c, FOUL.c, t));
     show("done");
     // Log the finished series. The server derives every number from the run it
     // owns (lines, count, mistakes, elapsed), so there is nothing to send and
@@ -606,7 +413,7 @@
       .catch(() => { $("r-log").textContent = "> not logged"; });
   }
 
-  $("again").addEventListener("click", () => { show("select"); document.body.style.setProperty("--c", PURE.c); document.body.style.setProperty("--dim", PURE.dim); $("scan").classList.remove("heavy"); refreshBegin(); });
+  $("again").addEventListener("click", () => { show("select"); refreshBegin(); });
 
   // no pasting; it would defeat the exercise
   ["paste", "drop"].forEach((evt) => document.addEventListener(evt, (e) => {
@@ -619,12 +426,7 @@
     const atStart = $("select").classList.contains("on") || $("boot").classList.contains("on");
     if (atStart) { window.location.href = "/games"; return true; }
     state.done = true;
-    if (glitchTimer) { clearInterval(glitchTimer); glitchTimer = null; }
-    $("play").classList.remove("glitch");
     show("select");
-    document.body.style.setProperty("--c", PURE.c);
-    document.body.style.setProperty("--dim", PURE.dim);
-    $("scan").classList.remove("heavy");
     refreshBegin();
     return true;
   };

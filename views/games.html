@@ -21,12 +21,6 @@
       --c: #aee3ff; --dim: #4f7ea0; --dim2: #2c4a5e; --bright: #eafaff;
       --accent: #8fd0ff; --glow: rgba(0,172,219,.32);
       --red: #ff3b2f; --deep: #c11208; --err: #ff5a4a;
-      /* Penance red, shared with the skill-check card so the two read as one game
-         family. This IS the penance game's actual text colour (#c11208 — the
-         `--c` every line, cursor and label uses in writing.html); the card is
-         monochrome in it, exactly like the game. An earlier lighter coral read as
-         washed-out, which is the opposite of the game's deep blood red. */
-      --pen-red: #c11208; --pen-hot: #c11208; --pen-mid: #c11208; --pen-low: #c11208;
     }
     html, body { height: 100%; }
     body {
@@ -137,16 +131,6 @@
     .c-mt .key s { color: var(--a); font-size: .7rem; letter-spacing: .1em; text-decoration: none; margin-top: .3rem; min-height: .5em; }
     .c-mt .key.on { border-color: var(--a); background: color-mix(in srgb, var(--a) 16%, transparent); box-shadow: 0 0 10px var(--a); }
 
-    /* PENANCE — a typing drill: one line, the caret mid-word, and the counters */
-    .c-pen { position: absolute; inset: 0; padding: 1.1rem .95rem 2rem; display: flex; flex-direction: column;
-      justify-content: center; gap: .75rem; }
-    .c-pen .meta { font-size: .58rem; letter-spacing: .2em; text-transform: uppercase; color: var(--pen-hot); }
-    .c-pen .phrase { font-size: .98rem; line-height: 1.5; color: var(--pen-low); }
-    .c-pen .phrase b { color: var(--pen-hot); font-weight: 400; }
-    .c-pen .phrase .cur { background: var(--pen-red); color: #120607; }
-    .c-pen .pbar { height: 4px; background: #3a0d09; }
-    .c-pen .pbar b { display: block; height: 100%; width: 24%; background: var(--pen-red); }
-    .c-pen .stat { font-size: .6rem; letter-spacing: .1em; color: var(--pen-hot); }
 
     /* DEVOTION — a verse reader: real lines, the current one lit, a small progress */
     .c-dev { position: absolute; inset: 0; padding: .8rem .85rem 2rem; display: flex; flex-direction: column; gap: .42rem;
@@ -252,13 +236,12 @@
        wall. Each game names a bespoke interior "art" and its accent; every card
        shares the one macOS window frame. */
     const GAMES = [
-      { n: "penance",     href: "/writing",               art: "pen",   a: "#c11208", wb: "#0e0607" },
+      { n: "devotion",    href: "/writing",               art: "dev",   a: "#00acdb", wb: "#050a10" },
       { n: "multitap",    href: "/multitap",              art: "t9",    a: "#0bdb00", wb: "#050d05" },
       { n: "summary",     href: "/summary",               art: "sum",   a: "#00acdb", wb: "#050a10" },
       { n: "skill check", href: "/skillcheck",            art: "skill", a: "#c11208", wb: "radial-gradient(120% 120% at 50% 46%, #200a0c, #050202 74%)" },
       { n: "ot12",        href: "/ot12",                  art: "ot12",  a: "#ffa6c5", wb: "#0d0508", wip: true },
       { n: "snake",       href: "/snake",                 art: "snake", a: "#c11208", wb: "linear-gradient(#140506, #05060a)" },
-      { n: "devotion",    href: "/writing?mode=devotion", art: "dev",   a: "#00acdb", wb: "#050a10", tab: "extra" },
       { n: "deathroll",   href: "/deathroll",             art: "death", a: "#c11208", wb: "#0e0607", tab: "extra" },
       { n: "dummy parse", href: "/dummyparse",            art: "parse", a: "#ff5a4a", wb: "#0a0608", tab: "extra" },
       { n: "elysium",     href: "/elysium",               art: "elysium", a: "#3f9f6a", wb: "#04100a", tab: "extra" },
@@ -301,14 +284,6 @@
           .map(([n,l],i) => `<div class="key${i===5?" on":""}"><b>${n}</b><s>${l}</s></div>`).join("")
       }</div></div>`,
 
-      // penance: a typing drill on a real line from the penance pool. Hydrated
-      // from /api/penance/presets; the literal below is a real pool line as a
-      // fallback if the fetch fails.
-      pen: () => `<div class="c-pen">
-        <div class="meta">line 12 / 50</div>
-        <div class="phrase"><b>I am sorry, but sorry </b><span class="cur">i</span>s not enough.</div>
-        <div class="pbar"><b></b></div>
-        <div class="stat">3 errors · 41 wpm</div></div>`,
       // devotion: a verse reader on real lines from the devotion pool (hydrated).
       dev: () => `<div class="c-dev">
         <div class="v">Hermione is my guardian angel.</div>
@@ -396,18 +371,9 @@
       hydrate();
     }
 
-    // The penance, devotion and elysium cards show real state, not invented copy:
-    // pool lines for the two writing games, and the tree's actual days-tended.
+    // The devotion and elysium cards show real state, not invented copy: pool
+    // lines for the writing game, and the tree's actual days-tended.
     function hydrate() {
-      fetch("/api/penance/presets").then((r) => (r.ok ? r.json() : null)).then((d) => {
-        const p = d && d.presets && d.presets[0], line = p && p.lines && p.lines[0];
-        const el = board.querySelector(".c-pen .phrase");
-        if (!line || !el) return;
-        const cut = Math.max(4, Math.round(line.length * 0.62));
-        const b = document.createElement("b"); b.textContent = line.slice(0, cut);
-        const cur = document.createElement("span"); cur.className = "cur"; cur.textContent = line.slice(cut, cut + 1) || " ";
-        el.replaceChildren(b, cur, document.createTextNode(line.slice(cut + 1)));
-      }).catch(() => {});
       fetch("/api/devotion/presets").then((r) => (r.ok ? r.json() : null)).then((d) => {
         const p = d && d.presets && d.presets[0], lines = p && p.lines;
         const dev = board.querySelector(".c-dev");

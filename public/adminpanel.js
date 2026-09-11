@@ -47,10 +47,10 @@ window.AdminPanel = (function () {
     return modal;
   }
 
-  // Penance-style modal showing a finished series
+  // modal showing a finished series
   function showResult(name, e, fmt) {
     const modal = ensurePmodal();
-    const mode = (e.category || "penance");
+    const mode = (e.category || "devotion");
     modal.querySelector("#pt-title").textContent = ":: " + mode + " complete ::";
     modal.querySelector("#pt-who").textContent = name;
     modal.querySelector("#pt-mode").textContent = mode;
@@ -220,7 +220,7 @@ window.AdminPanel = (function () {
     };
 
 
-    // lines completed (Penance / Devotion series), clickable to view
+    // lines completed (Devotion / Multitap series), clickable to view
     const logSec = document.createElement("div"); logSec.className = "adm-sec";
     logSec.append(mk("h3", "Lines completed"));
     const logList = document.createElement("div");
@@ -292,8 +292,6 @@ window.AdminPanel = (function () {
 
     await presetEditor("Devotion presets", "/api/devotion/presets", "devotion",
       "The first line is always typed first; the rest are shuffled (no immediate repeat). One line per row. Removing saves straight away.");
-    await presetEditor("Penance presets", "/api/penance/presets", "penance",
-      "Offered on the Penance selection screen alongside the player's own lines. Same shuffle rule as Devotion. Removing saves straight away.");
 
     // multitap sentences: the example lines the multitap game asks you to type.
     // One per row; lowercase, letters/spaces/basic punctuation only.
@@ -694,7 +692,6 @@ window.AdminPanel = (function () {
     const TABS = [
       { id: "games", label: "Games", subs: [
         { id: "general",  label: "General",  match: ["Game hover text"] },
-        { id: "penance",  label: "Penance",  match: ["Penance presets"] },
         { id: "devotion", label: "Devotion", match: ["Devotion presets"] },
         { id: "multitap", label: "Multitap", match: ["Multitap lines"] },
         { id: "ot12",     label: "OT12",     match: ["OT12 photos", "OT12 songs"] },

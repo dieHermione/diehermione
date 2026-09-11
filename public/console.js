@@ -101,8 +101,7 @@
   var LAUNCH = [
     // games
     ["snake",      "/snake",                 "snake"],
-    ["penance",    "/writing",               "penance lines"],
-    ["devotion",   "/writing?mode=devotion", "devotion lines (account)"],
+    ["devotion",   "/writing",               "devotion lines"],
     ["multitap",   "/multitap",              "multitap keypad typing"],
     ["summary",    "/summary",               "summarise an article"],
     ["skillcheck", "/skillcheck",            "the dial"],
@@ -121,7 +120,7 @@
     ["commands",   "/commands",              "this command list",  true],
   ];
   // aliases: old or alternate names for the same target
-  var LAUNCH_ALIAS = { dummyparse: "parse", slots: "lottery", t9: "multitap", tree: "elysium", writing: "penance" };
+  var LAUNCH_ALIAS = { dummyparse: "parse", slots: "lottery", t9: "multitap", tree: "elysium", writing: "devotion", penance: "devotion" };
   function launchTarget(name) {
     name = LAUNCH_ALIAS[name] || name;
     for (var i = 0; i < LAUNCH.length; i++) if (LAUNCH[i][0] === name) return LAUNCH[i];
@@ -153,7 +152,7 @@
       admin: true,
       usage: "pray skip_stage",
       run: function () {
-        // The page provides the hook (penance/devotion and multitap do); it skips
+        // The page provides the hook (devotion and multitap do); it skips
         // the current line but still counts it toward the run's progress.
         if (typeof window.__skipStage !== "function") {
           return Promise.resolve("Nothing to skip here.");

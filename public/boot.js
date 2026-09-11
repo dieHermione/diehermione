@@ -265,7 +265,7 @@
       "Reached target Sockets", "Started Devotion Keyring Daemon", "Started Obedience Core Supervisor",
       "Started Ambient Sound Server", "Started Glyph Renderer", "Reached target Sanctum",
       "Started Sacrament Scheduler", "Started Kneel Watchdog", "Mounted Cryogenic Cache",
-      "Started Confession Log Rotator", "Started Penance Queue Manager", "Started Rank Registry",
+      "Started Confession Log Rotator", "Started Devotion Queue Manager", "Started Rank Registry",
       "Reached target Network", "Started Handshake // angeldom.me", "Started Session Manager",
       "Started Time Synchronization", "Started Soul Bind Service", "Reached target Multi-User",
       "Started Login Service", "Started Notification Bus", "Started Elysium Groundskeeper",
