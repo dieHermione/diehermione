@@ -123,7 +123,7 @@
         </div>
         <div class="paytable" id="paytable"></div>
         <div class="right">
-          <div class="k" id="balline">balance &mdash;</div>
+          <div class="k" id="balline">free play</div>
           <button class="buy" id="buy" disabled>&mdash;</button>
         </div>
       </div>
@@ -140,7 +140,7 @@
     const serialEl = document.getElementById("serial");
     const paytableEl = document.getElementById("paytable");
 
-    let stake = 10;
+    let stake = 0;
     let canPlay = false;
     let unlimited = false;
     let active = false;          // a card is bought and being scratched
@@ -152,7 +152,7 @@
 
     function setBuyLabel() {
       if (active) { buyBtn.textContent = "scratch to reveal"; buyBtn.disabled = true; return; }
-      buyBtn.textContent = "scratch a card · " + stake;
+      buyBtn.textContent = "scratch a card";
       buyBtn.disabled = !canPlay;
     }
 
@@ -297,7 +297,6 @@
     function finish() {
       active = false;
       const d = pending; pending = null;
-      if (d.balance !== undefined) balEl.textContent = "balance " + fmt(d.balance);
       // highlight only the symbols that form the winning match, so a losing card
       // (three different symbols) reads as neutral rather than all-red.
       const counts = {};
@@ -306,11 +305,9 @@
         panel.classList.toggle("win", d.won > 0 && counts[d.panels[i]] >= 2);
       });
       if (d.won > 0) {
-        resultEl.textContent = fmt(d.won) + " ANGELCOINS";
+        resultEl.textContent = fmt(d.won) + " ✦";
         resultEl.classList.add("hit");
-        const net = d.net;
-        setMsg(net > 0 ? ("A winner. Up " + fmt(net) + " on the card.")
-                       : ("Paid " + fmt(d.won) + ", but the card cost " + stake + "."));
+        setMsg("A winner. " + fmt(d.won) + " on the card.");
       } else {
         resultEl.textContent = "NO WIN";
         resultEl.classList.remove("hit");
@@ -318,7 +315,6 @@
       }
       canPlay = d.canPlay;
       setBuyLabel();
-      if (!canPlay && !unlimited) setMsg("Not enough angelcoins for another card.", true);
     }
 
     function serial() {
@@ -340,12 +336,8 @@
         stake = state.stake;
         canPlay = state.canPlay;
         unlimited = state.unlimited;
-        balEl.textContent = "balance " + fmt(state.balance);
         renderPaytable(state.paytable);
         setBuyLabel();
-        if (!canPlay && !unlimited) {
-          setMsg("You need at least " + stake + " angelcoins to play. Win some on the wheel.", true);
-        }
       })
       .catch(() => { window.location.href = "/"; });
   </script>

@@ -15,7 +15,6 @@ const PORT = process.env.PORT || 3000;
 const BUILD_ID = String(Date.now());
 const USERS_FILE = path.join(process.env.DATA_DIR || __dirname, "users.json");
 const GAMES_FILE = path.join(process.env.DATA_DIR || __dirname, "games.json");
-const WRITING_FILE = path.join(process.env.DATA_DIR || __dirname, "writing.json");
 const DEATHROLL_FILE = path.join(process.env.DATA_DIR || __dirname, "deathroll.json");
 const SITE_FILE = path.join(process.env.DATA_DIR || __dirname, "site.json");
 const ELYSIUM_FILE = path.join(process.env.DATA_DIR || __dirname, "elysium.json");
@@ -27,33 +26,20 @@ const MULTITAP_FILE = path.join(process.env.DATA_DIR || __dirname, "multitap.jso
 const OT12_FILE = path.join(process.env.DATA_DIR || __dirname, "ot12.json");
 const PARSE_FILE = path.join(process.env.DATA_DIR || __dirname, "parses.json");
 const SUMMARY_FILE = path.join(process.env.DATA_DIR || __dirname, "summaries.json");
-const APPLICATIONS_FILE = path.join(process.env.DATA_DIR || __dirname, "applications.json");
+// finished writing runs (penance / devotion / multitap), for Hermione's Completed tab
+const COMPLETED_FILE = path.join(process.env.DATA_DIR || __dirname, "completed.json");
 
-// --- simple JSON-file user store (fine for testing; swap for a DB later) ---
+// --- JSON-file user store. Only hermione's record matters now: accounts were
+// dropped in favour of guests, and login accepts her alone. Old records may
+// still sit in the file; nothing reads them. ---
 function loadUsers() {
-  let users;
   try {
-    users = JSON.parse(fs.readFileSync(USERS_FILE, "utf8"));
+    return JSON.parse(fs.readFileSync(USERS_FILE, "utf8"));
   } catch {
     return {};
   }
-  return migrateDollars(users);
 }
 
-// Dollars and points were merged into a single currency at 1:1. Folds any
-// leftover balance into points and drops the key. Idempotent: once no record
-// carries `dollars` it does nothing and never writes.
-function migrateDollars(users) {
-  let changed = false;
-  for (const user of Object.values(users)) {
-    if (!user || user.dollars === undefined) continue;
-    user.points = (user.points || 0) + (user.dollars || 0);
-    delete user.dollars;
-    changed = true;
-  }
-  if (changed) saveUsers(users);
-  return users;
-}
 function saveUsers(users) {
   fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
 }
@@ -142,6 +128,14 @@ app.use(
     cookie: { httpOnly: true, sameSite: "lax", maxAge: 1000 * 60 * 60 * 24 * 30 },
   })
 );
+// The front door. There is no login screen any more: a fresh visitor becomes a
+// guest and boots straight into the dashboard (index.html does that), and
+// anyone who already has a session skips the boot. Registered before the static
+// middleware so it wins over public/index.html. Hermione signs in at /login.
+app.get("/", (req, res) => {
+  if (req.session.username || req.session.guest) return res.redirect("/dashboard");
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
 app.use(express.static(path.join(__dirname, "public")));
 
 function requireLogin(req, res, next) {
@@ -153,11 +147,6 @@ function isAdmin(req) {
   return req.session.username && req.session.username.toLowerCase() === "hermione";
 }
 
-// A guest is a not-really-logged-in session: no account, no points, no dailies,
-// and no multiplayer. It only exists to let someone try the single-player games.
-function isGuest(req) {
-  return Boolean(req.session.guest) && !req.session.username;
-}
 
 // Like requireLogin, but a guest session passes too. Used for the game pages a
 // guest may reach; account pages keep requireLogin.
@@ -167,245 +156,12 @@ function requirePlayer(req, res, next) {
 }
 
 // --- routes ---
-app.post("/api/register", async (req, res) => {
-  const { username, password } = req.body;
-  if (!username || !password) {
-    return res.status(400).json({ error: "Username and password are required." });
-  }
-  if (username.length < 3 || username.length > 30) {
-    return res.status(400).json({ error: "Username must be 3-30 characters." });
-  }
-  if (password.length < 8) {
-    return res.status(400).json({ error: "Password must be at least 8 characters." });
-  }
-  const pronouns = canonical(req.body.pronouns, PRONOUN_OPTIONS);
-  if (!pronouns) {
-    return res.status(400).json({ error: "Pick your pronouns." });
-  }
-  const signupChoice = canonical(req.body.rank, SIGNUP_RANKS);
-  if (!signupChoice) {
-    return res.status(400).json({ error: "Pick an account type." });
-  }
-  // "Sub" is only the registration label; a sub account starts at the lowest
-  // ladder rank, Servant, and Hermione promotes from there.
-  const rank = signupChoice === "Sub" ? "Servant" : signupChoice;
-  // Photosensitivity gates the flashing effects, so it needs a deliberate
-  // answer rather than an unchecked box that quietly means "no".
-  if (req.body.photosensitive !== true && req.body.photosensitive !== false) {
-    return res.status(400).json({ error: "Answer the photosensitivity question." });
-  }
-  const photosensitive = req.body.photosensitive === true;
-  const intro = String(req.body.intro || "").trim();
-  if (!intro) {
-    return res.status(400).json({ error: "Tell Hermione who you are." });
-  }
-  if (intro.length > INTRO_MAX) {
-    return res.status(400).json({ error: "Keep it under " + INTRO_MAX + " characters." });
-  }
-  const users = loadUsers();
-  const key = username.toLowerCase();
-  if (users[key]) {
-    return res.status(409).json({ error: "That username is already taken." });
-  }
-  users[key] = {
-    username,
-    passwordHash: await bcrypt.hash(password, 10),
-    createdAt: new Date().toISOString(),
-    pronouns,
-    rank,
-    points: 0,
-    photosensitive,
-    // Registration does not sign you in. The account waits here until hermione
-    // approves it from the admin panel; login is refused until then.
-    status: "pending",
-    intro,
-  };
-  const hermione = users["hermione"];
-  if (hermione) {
-    pushNotification(
-      hermione,
-      "signup-" + key,
-      username + " has asked to join. Approve or turn them away in the admin panel.",
-      "/admin"
-    );
-  }
-  saveUsers(users);
-  // deliberately no req.session.username here
-  // A "disciple" (the Sub signup) fills out the onboarding questionnaire before
-  // Hermione reviews them. Grant a limited onboarding credential (not a login) so
-  // the still-pending account can reach and submit the questionnaire once.
-  if (signupChoice === "Sub") {
-    req.session.onboarding = key;
-    return res.json({ ok: true, pending: true, onboarding: true });
-  }
-  res.json({ ok: true, pending: true });
-});
 
-// An account is usable only once hermione has approved it. Records that predate
-// approval have no status and are treated as already approved.
-const INTRO_MAX = 500;
-function isPending(user) {
-  return Boolean(user) && user.status === "pending";
-}
-
-// --- disciple onboarding questionnaire ---
-// A Sub ("disciple") signup is handed a one-shot onboarding credential at
-// registration (req.session.onboarding = key) and sent to /onboarding to fill
-// this out. The answers are stored on the account for Hermione to read before
-// she approves. Feet and Tasks/Chores are load-bearing: if either is rated below
-// 4, the pending account's approval card is flagged red.
-const ONBOARDING_KINKS = ["feet", "tasks", "degradation",
-  "masochism", "chastity", "worship", "petplay"];
-const ONBOARDING_PUNISHMENTS = ["lines_physical", "lines_typing", "voice_memos",
-  "ignoring", "onsite_games_hard"];
-const ONBOARDING_PETNAMES = ["dog", "good", "doll", "pet", "bitch", "loser", "dummy"];
-const LIMITS_MAX = 1000;
-
-function onboardingCtx(req) {
-  const key = req.session.onboarding;
-  if (!key) return null;
-  const users = loadUsers();
-  const user = users[key];
-  if (!user || !isPending(user)) return null;
-  return { key, user, users };
-}
-
-app.get("/onboarding", (req, res) => {
-  if (!onboardingCtx(req)) return res.redirect("/");
-  res.sendFile(path.join(__dirname, "views", "onboarding.html"));
-});
-
-app.get("/api/onboarding", (req, res) => {
-  const ctx = onboardingCtx(req);
-  if (!ctx) return res.status(401).json({ error: "No onboarding in progress." });
-  const site = loadSite();
-  res.json({
-    username: ctx.user.username,
-    about: site.onboardingAbout,
-    purpose: site.onboardingPurpose,
-  });
-});
-
-app.post("/api/onboarding", (req, res) => {
-  const ctx = onboardingCtx(req);
-  if (!ctx) return res.status(401).json({ error: "No onboarding in progress." });
-  const body = req.body || {};
-  const kinks = {};
-  for (const k of ONBOARDING_KINKS) {
-    const v = Math.round(Number((body.kinks || {})[k]));
-    if (!(v >= 1 && v <= 5)) return res.status(400).json({ error: "Answer every interest question." });
-    kinks[k] = v;
-  }
-  const punishments = {};
-  for (const p of ONBOARDING_PUNISHMENTS) {
-    const v = String((body.punishments || {})[p] || "");
-    if (v !== "acceptable" && v !== "hate") return res.status(400).json({ error: "Answer every punishment." });
-    punishments[p] = v;
-  }
-  const petnames = {};
-  for (const p of ONBOARDING_PETNAMES) {
-    const v = String((body.petnames || {})[p] || "");
-    if (v !== "like" && v !== "hate") return res.status(400).json({ error: "Answer every petname." });
-    petnames[p] = v;
-  }
-  const limits = String(body.limits || "").trim().slice(0, LIMITS_MAX);
-  const petnamesOther = String(body.petnamesOther || "").trim().slice(0, 120);
-  const flagged = kinks.feet < 4 || kinks.tasks < 4;
-  ctx.user.onboarding = {
-    kinks, limits, punishments, petnames, petnamesOther,
-    submittedAt: new Date().toISOString(),
-  };
-  ctx.user.onboardingFlag = flagged;
-  saveUsers(ctx.users);
-  delete req.session.onboarding;   // one shot
-  res.json({ ok: true });
-});
-
-// --- applications (the questionnaire is now an account-less application) ---
-// Applicants no longer create accounts. They fill the questionnaire (with a
-// Discord contact) and Hermione reviews it and creates the account by hand.
-function loadApplications() {
-  try { const d = JSON.parse(fs.readFileSync(APPLICATIONS_FILE, "utf8")); return Array.isArray(d.applications) ? d.applications : []; }
-  catch { return []; }
-}
-function saveApplications(list) {
-  fs.writeFileSync(APPLICATIONS_FILE, JSON.stringify({ applications: list.slice(0, 500) }, null, 2));
-}
-
-app.get("/apply", (req, res) => res.sendFile(path.join(__dirname, "views", "onboarding.html")));
-
-app.get("/api/apply", (req, res) => {
-  const site = loadSite();
-  res.json({ about: site.onboardingAbout, purpose: site.onboardingPurpose });
-});
-
-app.post("/api/apply", (req, res) => {
-  const body = req.body || {};
-  // Registration is fully manual now: no contact field. The applicant carries a
-  // short code and DMs Hermione with it; she matches it to these answers.
-  const authCode = String(body.authCode || "").trim().toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 12);
-  if (authCode.length < 4) return res.status(400).json({ error: "Missing application code. Reload and try again." });
-  const kinks = {};
-  for (const k of ONBOARDING_KINKS) {
-    const v = Math.round(Number((body.kinks || {})[k]));
-    if (!(v >= 1 && v <= 5)) return res.status(400).json({ error: "Answer every interest question." });
-    kinks[k] = v;
-  }
-  const punishments = {};
-  for (const p of ONBOARDING_PUNISHMENTS) {
-    const v = String((body.punishments || {})[p] || "");
-    if (v !== "acceptable" && v !== "hate") return res.status(400).json({ error: "Answer every punishment." });
-    punishments[p] = v;
-  }
-  const petnames = {};
-  for (const p of ONBOARDING_PETNAMES) {
-    const v = String((body.petnames || {})[p] || "");
-    if (!["love", "indifferent", "hate"].includes(v)) return res.status(400).json({ error: "Answer every petname." });
-    petnames[p] = v;
-  }
-  const limits = String(body.limits || "").trim().slice(0, LIMITS_MAX);
-  const otherKinks = String(body.otherKinks || "").trim().slice(0, LIMITS_MAX);
-  const petnamesOther = String(body.petnamesOther || "").trim().slice(0, 120);
-  const age = Math.max(0, Math.min(120, parseInt(body.age, 10) || 0));
-  const brat = body.brat === "yes" ? "yes" : body.brat === "no" ? "no" : "";
-  const flagged = kinks.feet < 4 || kinks.tasks < 4;
-  const application = {
-    id: Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 7),
-    at: new Date().toISOString(),
-    authCode, age, brat,
-    kinks, limits, otherKinks, punishments, petnames, petnamesOther, flag: flagged,
-  };
-  const list = loadApplications();
-  list.unshift(application);
-  saveApplications(list);
-  const users = loadUsers();
-  const hermione = users["hermione"];
-  if (hermione) {
-    pushNotification(hermione, "application-" + application.id, "New questionnaire · code " + authCode + ". Review it in account management.", "/manage");
-    saveUsers(users);
-  }
-  res.json({ ok: true });
-});
-
-app.get("/api/admin/applications", (req, res) => {
-  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
-  if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });
-  res.json({ applications: loadApplications() });
-});
-
-app.delete("/api/admin/applications/:id", (req, res) => {
-  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
-  if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });
-  saveApplications(loadApplications().filter((a) => a.id !== req.params.id));
-  res.json({ ok: true });
-});
-
-// --- Hermione creates accounts by hand (`pray manage` -> /manage) ---
-// She hands the account out with a dummy password; it is forced to set a real
-// one the first time it signs in.
-app.get("/manage", (req, res) => {
-  if (!isAdmin(req)) return res.redirect("/dashboard");
-  res.sendFile(path.join(__dirname, "views", "manage.html"));
+// --- Hermione's pages. /login is where `pray login` sends her; nothing on the
+// site links to it. Anyone already signed in is sent on to the dashboard. ---
+app.get("/login", (req, res) => {
+  if (req.session.username) return res.redirect("/dashboard");
+  res.sendFile(path.join(__dirname, "views", "login.html"));
 });
 
 app.get("/commands", (req, res) => {
@@ -413,31 +169,6 @@ app.get("/commands", (req, res) => {
   res.sendFile(path.join(__dirname, "views", "commands.html"));
 });
 
-app.post("/api/admin/accounts", async (req, res) => {
-  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
-  if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });
-  const username = String(req.body.username || "").trim();
-  const password = String(req.body.password || "");
-  const typeChoice = "Sub";   // accounts are all disciples now; visitor was retired (guests cover that role)
-  if (username.length < 3 || username.length > 30) return res.status(400).json({ error: "Username must be 3-30 characters." });
-  if (password.length < 8) return res.status(400).json({ error: "The dummy password must be at least 8 characters." });
-  const users = loadUsers();
-  const key = username.toLowerCase();
-  if (users[key]) return res.status(409).json({ error: "That username is already taken." });
-  users[key] = {
-    username,
-    passwordHash: await bcrypt.hash(password, 10),
-    createdAt: new Date().toISOString(),
-    pronouns: canonical(req.body.pronouns, PRONOUN_OPTIONS) || "",
-    rank: "Servant",
-    points: 0,
-    photosensitive: false,
-    status: "approved",
-    mustChangePassword: true,
-  };
-  saveUsers(users);
-  res.json({ ok: true, username, type: typeChoice });
-});
 
 // Set (or first-time change) a password. A must-change account may set one this
 // session without the old password; otherwise the current password is required.
@@ -461,18 +192,6 @@ app.post("/api/password", async (req, res) => {
   res.json({ ok: true });
 });
 
-// Turn on photosensitivity protection. Deliberately one-way: once an account is
-// marked photosensitive the flashing effects can never be turned back on for it.
-app.post("/api/photosensitive", (req, res) => {
-  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
-  const users = loadUsers();
-  const key = req.session.username.toLowerCase();
-  const user = users[key];
-  if (!user) return res.status(401).json({ error: "Not logged in." });
-  user.photosensitive = true;
-  saveUsers(users);
-  res.json({ ok: true, photosensitive: true });
-});
 
 // The account's chosen accent colour (Settings). Guests keep it in localStorage
 // only (this 401s for them, which the client ignores). "" / "default" = blue.
@@ -490,63 +209,23 @@ app.post("/api/theme", (req, res) => {
   res.json({ ok: true, themeColor: user.themeColor });
 });
 
-// --- currency ---
-// Points are the only currency. They used to be admin-granted only, with a
-// separate earned "dollars" balance; the two were merged 1:1, so points are now
-// both granted and earned, and the leaderboard reflects both.
-const SNAKE_FOOD_POINTS = 1;
-// The Devotion daily is fulfilled by completing this many Devotion lines in a day.
-// Snake pickups are reported by the browser, so they can't be trusted outright.
-// These bound the damage: a daily ceiling makes farming pointless, and a token
-// bucket caps the sustained rate while still allowing honest bursts (food can
-// spawn right in front of the snake and be eaten on the very next 120ms tick).
-const SNAKE_BURST = 8;
-const SNAKE_REFILL_MS = 2000;
-
-// The daily bonus resets at 6am Eastern. Read the Eastern wall clock (which
-// already accounts for EST/EDT), then step back RESET_HOUR so the date label
-// only flips at that hour rather than at midnight.
-const RESET_ZONE = "America/New_York";
-const RESET_HOUR = 6;
-function todayKey(now = new Date()) {
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: RESET_ZONE,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    hourCycle: "h23",
-  }).formatToParts(now);
-  const get = (type) => Number(parts.find((p) => p.type === type).value);
-  const shifted = new Date(
-    Date.UTC(get("year"), get("month") - 1, get("day"), get("hour") - RESET_HOUR)
-  );
-  return shifted.toISOString().slice(0, 10);
-}
-
-// (the daily check-in and its +5 went with the dailies; nothing awards on login)
 
 app.post("/api/login", async (req, res) => {
   const { username, password } = req.body;
   if (!username || !password) {
     return res.status(400).json({ error: "Username and password are required." });
   }
+  // Hermione's is the only account that signs in. Other records may still be
+  // in users.json; they are not accepted, and get the same error as a wrong
+  // password so nothing is revealed about them.
   const users = loadUsers();
-  const user = users[username.toLowerCase()];
+  const key = String(username).toLowerCase();
+  const user = key === "hermione" ? users[key] : null;
   if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
     return res.status(401).json({ error: "Invalid username or password." });
   }
-  // Checked after the password so a wrong guess can't reveal that the account
-  // exists and is waiting.
-  if (isPending(user)) {
-    return res.status(403).json({
-      error: "Hermione hasn't approved this account yet. Try again once she has.",
-      pending: true,
-    });
-  }
   req.session.username = user.username;
-  if (clearTitheLeftovers(users, user.username.toLowerCase())) saveUsers(users);
-  saveUsers(users);
+  req.session.guest = false;
   res.json({ ok: true });
 });
 
@@ -580,6 +259,10 @@ function dropPlayerGames(name) {
   try {
     const rolls = loadRolls();
     if (rolls[name]) { delete rolls[name]; saveRolls(rolls); }
+  } catch {}
+  try {
+    const trees = loadTrees();
+    if (trees[name]) { delete trees[name]; saveTrees(trees); }
   } catch {}
 }
 function claimGuestName() {
@@ -625,31 +308,19 @@ app.get("/api/me", (req, res) => {
         req.session.guestName = claimGuestName();
       }
       touchGuest(req);
-      return res.json({
-        guest: true, username: req.session.guestName, isAdmin: false, rank: "Guest",
-        points: null, noEconomy: true,
-      });
+      return res.json({ guest: true, username: req.session.guestName, isAdmin: false });
     }
     return res.status(401).json({ error: "Not logged in." });
   }
   const users = loadUsers();
   const key = req.session.username.toLowerCase();
-  if (!users[key]) return res.status(401).json({ error: "Not logged in." });
-  // an account put back to pending loses its existing session on the next view
-  if (isPending(users[key])) {
+  // a session left over from a retired account is signed out on its next view
+  if (key !== "hermione" || !users[key]) {
     return req.session.destroy(() => res.status(401).json({ error: "Not logged in." }));
   }
-  if (clearTitheLeftovers(users, key)) saveUsers(users);
-  const rank = rankFor(users[key], key);
-  // Hermione sits outside the points economy
-  const noEconomy = key === "hermione";
   res.json({
     username: req.session.username,
-    isAdmin: isAdmin(req),
-    rank,
-    noEconomy,
-    points: noEconomy ? null : users[key].points || 0,
-    angelcoins: users[key].angelcoins || 0,
+    isAdmin: true,
     createdAt: users[key].createdAt || null,
     // accounts predating the question have no flag; treat that as not flagged
     photosensitive: users[key].photosensitive === true,
@@ -672,279 +343,8 @@ app.get("/dashboard", requirePlayer, (req, res) => {
   res.sendFile(path.join(__dirname, "public", "dashboard.html"));
 });
 
-// --- profiles: viewable by any logged-in user, editable by the owner or hermione ---
-const PRONOUN_OPTIONS = ["She/Her", "He/Him", "They/Them"];
-// Rank replaces the old domme/sub role and the old Princess/User badge. One
-// value covers both. Princess is hermione's alone and isn't offered at signup.
-// The ladder, highest first. Rank 2 is deliberately unnamed for now.
-const RANK_LADDER = [
-  { name: "Angel", note: "" },
-  { name: "??", note: "", unassignable: true },
-  { name: "Disciple", note: "" },
-  { name: "Worshipper", note: "" },
-  { name: "Devoted", note: "" },
-  { name: "Follower", note: "" },
-  { name: "Servant", note: "" },
-];
-// Visitor was retired; guests fill that role now. Legacy visitor values are
-// folded into the entry rank so old accounts still resolve to something real.
-const RANK_ASIDE = null;
-const RANK_OPTIONS = [...RANK_LADDER.map((r) => r.name)];
-const SIGNUP_RANKS = ["Sub"];
-// "Citizen"/"domme"/"visitor" were old rank values; map them onto a real rank.
-const LEGACY_RANKS = { domme: "Servant", sub: "Servant", citizen: "Servant", visitor: "Servant" };
-
-// what hermione may hand out: everything except Princess and the unnamed rank
-const ASSIGNABLE_RANKS = [
-  ...RANK_LADDER.filter((r) => r.name !== "Angel" && !r.unassignable).map((r) => r.name),
-];
-
-app.get("/api/ranks", (req, res) => {
-  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
-  res.json({
-    ladder: RANK_LADDER.map((r, i) => ({ position: i + 1, name: r.name, note: r.note })),
-    aside: RANK_ASIDE,   // null now that Visitor is gone
-    assignable: ASSIGNABLE_RANKS,
-  });
-});
-
-// tolerate legacy free-text values like "she/her" from before these were dropdowns
-function canonical(value, options) {
-  const v = String(value || "").trim().toLowerCase();
-  return options.find((o) => o.toLowerCase() === v) || "";
-}
-
-function rankFor(user, key) {
-  if (key === "hermione") return "Angel";
-  const raw = String((user && (user.rank || user.role)) || "").trim();
-  return canonical(raw, RANK_OPTIONS) || LEGACY_RANKS[raw.toLowerCase()] || "";
-}
-
-function canEditProfile(req, key) {
-  return isAdmin(req) || req.session.username.toLowerCase() === key;
-}
-
-// Lifetime writing counters. They were added after the fact, so an account that
-// predates them is seeded once from its (capped) writingLog: partial history,
-// but better than starting a long-standing account back at zero. Seeding is
-// idempotent, so calling this on a read-only path costs nothing.
-function writingCounters(user) {
-  if (user.linesCompleted === undefined) {
-    const log = Array.isArray(user.writingLog) ? user.writingLog : [];
-    user.linesCompleted = log.reduce((n, e) => n + (e.passages || 0), 0);
-    user.penanceSeries = log.filter((e) => e.category === "penance").length;
-    user.devotionSeries = log.filter((e) => e.category === "devotion").length;
-  }
-  return {
-    linesCompleted: user.linesCompleted || 0,
-    penanceSeries: user.penanceSeries || 0,
-    devotionSeries: user.devotionSeries || 0,
-  };
-}
-
-app.get("/api/profile/:username", (req, res) => {
-  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
-  const users = loadUsers();
-  const key = req.params.username.toLowerCase();
-  const user = users[key];
-  if (!user) return res.status(404).json({ error: "No such account." });
-  res.json({
-    profile: {
-      username: user.username,
-      rank: rankFor(user, key),
-      icon: user.icon || "",
-      bio: user.bio || "",
-      pronouns: canonical(user.pronouns, PRONOUN_OPTIONS),
-      points: key === "hermione" ? null : user.points || 0,   // hermione doesn't keep points
-      angelcoins: key === "hermione" ? null : user.angelcoins || 0,
-      stats: {
-        foodEaten: user.foodEaten || 0,
-        lettersTyped: user.lettersTyped || 0,
-        writingTasksCompleted: user.writingTasksCompleted || 0,
-        customTasksCompleted: user.customTasksCompleted || 0,
-        ...writingCounters(user),
-      },
-      createdAt: user.createdAt,
-      canEdit: canEditProfile(req, key),
-      // the disciple's onboarding answers, only ever sent to Hermione
-      onboarding: isAdmin(req) ? (user.onboarding || null) : undefined,
-      onboardingFlag: isAdmin(req) ? !!user.onboardingFlag : undefined,
-    },
-  });
-});
-
-app.put("/api/profile/:username", (req, res) => {
-  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
-  const users = loadUsers();
-  const key = req.params.username.toLowerCase();
-  const user = users[key];
-  if (!user) return res.status(404).json({ error: "No such account." });
-  if (!canEditProfile(req, key)) {
-    return res.status(403).json({ error: "You can only edit your own profile." });
-  }
-  const fields = [["bio", 500]];
-  for (const [name, max] of fields) {
-    if (req.body[name] === undefined) continue;
-    const value = String(req.body[name]).trim();
-    if (value.length > max) {
-      return res.status(400).json({ error: name + " must be " + max + " characters or fewer." });
-    }
-    user[name] = value;
-  }
-  if (req.body.pronouns !== undefined) {
-    const raw = String(req.body.pronouns).trim();
-    const value = canonical(raw, PRONOUN_OPTIONS);
-    if (raw !== "" && !value) {
-      return res.status(400).json({ error: "Pick one of the listed pronoun options." });
-    }
-    user.pronouns = value;
-  }
-  // rank is picked at registration; only hermione can change it afterwards
-  if (req.body.rank !== undefined) {
-    if (!isAdmin(req)) {
-      return res.status(403).json({ error: "Only Hermione can change that." });
-    }
-    const raw = String(req.body.rank).trim();
-    const value = canonical(raw, RANK_OPTIONS);
-    if (raw !== "" && !value) {
-      return res.status(400).json({ error: "Rank must be visitor, citizen or princess." });
-    }
-    user.rank = value;
-    delete user.role; // retire the old field as accounts are touched
-  }
-  if (req.body.icon !== undefined) {
-    const icon = String(req.body.icon);
-    if (icon !== "" && !/^data:image\/(png|jpe?g|gif|webp);base64,[A-Za-z0-9+/=]+$/.test(icon)) {
-      return res.status(400).json({ error: "The picture must be an image file." });
-    }
-    if (icon.length > 2500000) {
-      return res.status(400).json({ error: "That image is too large." });
-    }
-    user.icon = icon;
-  }
-  saveUsers(users);
-  res.json({ ok: true });
-});
-
-
-app.get("/api/users", (req, res) => {
-  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
-  if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });
-  const users = loadUsers();
-  res.json({
-    users: Object.values(users).map((u) => ({
-      username: u.username,
-      createdAt: u.createdAt,
-      points: u.username.toLowerCase() === "hermione" ? null : u.points || 0,
-      flagged: !!u.flagged,
-      pending: isPending(u),
-      pronouns: canonical(u.pronouns, PRONOUN_OPTIONS),
-      intro: u.intro || "",
-      // the disciple onboarding answers, for Hermione's review before approval
-      onboarding: u.onboarding || null,
-      onboardingFlag: !!u.onboardingFlag,
-    })),
-  });
-});
-
-// --- approving new accounts ---
-app.post("/api/users/:username/approve", (req, res) => {
-  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
-  if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });
-  const users = loadUsers();
-  const key = req.params.username.toLowerCase();
-  const user = users[key];
-  if (!user) return res.status(404).json({ error: "No such account." });
-  if (!isPending(user)) {
-    return res.status(400).json({ error: "That account is already approved." });
-  }
-  delete user.status;
-  const hermione = users["hermione"];
-  if (hermione) dropNotification(hermione, "signup-" + key);
-  saveUsers(users);
-  res.json({ ok: true, username: user.username });
-});
-
-app.get("/api/leaderboard", (req, res) => {
-  if (!req.session.username && !req.session.guest) return res.status(401).json({ error: "Not logged in." });
-  const users = loadUsers();
-  const board = Object.values(users)
-    .filter((u) => u.flagged && u.username.toLowerCase() !== "hermione")
-    .map((u) => ({ username: u.username, points: u.points || 0 }))
-    .sort((a, b) => b.points - a.points || a.username.localeCompare(b.username));
-  res.json({ users: board });
-});
-
-// Set a balance outright, rather than nudging it. Used by `pray set_points`.
-app.put("/api/users/:username/points", (req, res) => {
-  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
-  if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });
-  const value = Number(req.body.value);
-  if (!Number.isInteger(value) || value < 0) {
-    return res.status(400).json({ error: "Value must be a whole number, zero or more." });
-  }
-  const key = req.params.username.toLowerCase();
-  if (key === "hermione") return res.status(400).json({ error: "Hermione doesn't collect points." });
-  const users = loadUsers();
-  if (!users[key]) return res.status(404).json({ error: "No such account." });
-  users[key].points = value;
-  saveUsers(users);
-  res.json({ ok: true, points: value });
-});
-
-app.post("/api/users/:username/points", (req, res) => {
-  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
-  if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });
-  const amount = Number(req.body.amount);
-  if (!Number.isInteger(amount)) {
-    return res.status(400).json({ error: "Amount must be a whole number." });
-  }
-  if (req.params.username.toLowerCase() === "hermione") {
-    return res.status(400).json({ error: "Hermione doesn't collect points." });
-  }
-  const users = loadUsers();
-  const key = req.params.username.toLowerCase();
-  if (!users[key]) return res.status(404).json({ error: "No such account." });
-  users[key].points = (users[key].points || 0) + amount;
-  // (member-facing point notifications were removed; notifications are Hermione-only now)
-  saveUsers(users);
-  res.json({ ok: true, points: users[key].points });
-});
-
-app.post("/api/users/:username/flag", (req, res) => {
-  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
-  if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });
-  const users = loadUsers();
-  const key = req.params.username.toLowerCase();
-  if (!users[key]) return res.status(404).json({ error: "No such account." });
-  users[key].flagged = !!req.body.flagged;
-  saveUsers(users);
-  res.json({ ok: true, flagged: users[key].flagged });
-});
-
-app.delete("/api/users/:username", (req, res) => {
-  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
-  if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });
-  const key = req.params.username.toLowerCase();
-  if (key === "hermione") {
-    return res.status(400).json({ error: "The admin account can't be deleted." });
-  }
-  const users = loadUsers();
-  if (!users[key]) return res.status(404).json({ error: "No such account." });
-  delete users[key];
-  // also clears the signup request if this is how a pending account was refused
-  if (users["hermione"]) dropNotification(users["hermione"], "signup-" + key);
-  saveUsers(users);
-  const games = loadGames();
-  if (games[key]) {
-    delete games[key];
-    saveGames(games);
-  }
-  res.json({ ok: true });
-});
 
 // --- chess: every game is player (white) vs the hermione account (pink) ---
-
 // Rewind needs somewhere to rewind to. Replaying `history` is not enough,
 // because a strike changes the position without adding a move, so every
 // mutation snapshots the whole state first. Games that predate this simply
@@ -1102,18 +502,14 @@ app.get("/api/chess/games", (req, res) => {
   if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
   if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });
   const games = loadGames();
-  const users = loadUsers();
-  // Every approved account belongs in the list, not just the ones that happen
-  // to have opened /chess already: a game is only created lazily on that first
-  // visit, so listing games alone hid everyone who had never been.
+  // Every live guest belongs in the list, not just the ones who have opened
+  // /chess already: a game is only created lazily on that first visit. Games
+  // left by a reclaimed guest are dropped with the name, so nothing lingers.
   const keys = new Set(Object.keys(games));
-  for (const [key, u] of Object.entries(users)) {
-    if (key === "hermione" || isPending(u)) continue;
-    keys.add(key);
-  }
+  for (const g of listActiveGuests()) keys.add(g);
   const describe = (key) => {
     const entry = games[key];
-    const name = users[key] ? users[key].username : key;
+    const name = key;
     if (!entry) return { opponent: name, key, turn: null, gameOver: false, started: false };
     const chess = new Chess(entry.fen);
     return {
@@ -1143,14 +539,12 @@ app.get("/admin", requireLogin, (req, res) => {
   res.sendFile(path.join(__dirname, "views", "admin.html"));
 });
 
-// Demo surface for the reusable card navigator (see public/cardnav.js).
-app.get("/cardnav", requireLogin, (req, res) => {
-  res.sendFile(path.join(__dirname, "views", "cardnav.html"));
-});
 
-// --- Elysium: the tree-care game (account-bound state, server-simulated) ---
-// State lives in one JSON file keyed by username; the engine owns the clock so
-// every device viewing an account agrees on the tree.
+// --- Elysium: the tree-care game (server-simulated) ---
+// State lives in one JSON file keyed by player: hermione, or a guest's transient
+// name. A guest's tree lives exactly as long as the guest name does (it is
+// dropped with the name after three quiet hours), so it is a short game for
+// them by construction. The engine owns the clock so every device agrees.
 function loadTrees() {
   try {
     return JSON.parse(fs.readFileSync(ELYSIUM_FILE, "utf8"));
@@ -1168,14 +562,15 @@ function getTree(key) {
   return { trees, state: trees[key] };
 }
 
-app.get("/elysium", requireLogin, (req, res) => {
+app.get("/elysium", requirePlayer, (req, res) => {
   res.sendFile(path.join(__dirname, "views", "elysium.html"));
 });
 // old path kept alive; the game was renamed Tree -> Elysium
-app.get("/tree", requireLogin, (req, res) => res.redirect("/elysium"));
+app.get("/tree", requirePlayer, (req, res) => res.redirect("/elysium"));
 
-app.get("/api/elysium", requireLogin, (req, res) => {
-  const key = req.session.username.toLowerCase();
+app.get("/api/elysium", requirePlayer, (req, res) => {
+  touchGuest(req);
+  const key = playerId(req);
   const { trees, state } = getTree(key);
   elysium.simulate(state, Date.now());
   trees[key] = state;
@@ -1184,12 +579,13 @@ app.get("/api/elysium", requireLogin, (req, res) => {
 });
 
 const ELYSIUM_ACTIONS = ["water", "mist", "trim", "fertilize", "inspect"];
-app.post("/api/elysium/action", requireLogin, (req, res) => {
+app.post("/api/elysium/action", requirePlayer, (req, res) => {
   const action = String(req.body.action || "");
   if (!ELYSIUM_ACTIONS.includes(action)) {
     return res.status(400).json({ error: "Unknown action." });
   }
-  const key = req.session.username.toLowerCase();
+  touchGuest(req);
+  const key = playerId(req);
   const { trees, state } = getTree(key);
   const { state: next, result } = elysium.applyAction(state, action, Date.now());
   trees[key] = next;
@@ -1574,19 +970,20 @@ app.post("/api/snake/complete", (req, res) => {
 
 // $1 per snake food. The client reports each pickup, so a light floor on how
 // fast awards can arrive keeps a stuck key or a rapid script from printing money.
+// Snake pickups are reported by the browser, so they can't be trusted outright.
+// A token bucket caps the sustained rate while still allowing honest bursts
+// (food can spawn right in front of the snake and be eaten on the next tick).
+const SNAKE_BURST = 8;
+const SNAKE_REFILL_MS = 2000;
 app.post("/api/snake/food", (req, res) => {
-  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  if (!playerId(req)) return res.status(401).json({ error: "Not logged in." });
+  touchGuest(req);
   // a pickup only counts inside a live run, and never past its time limit
   const run = req.session.snakeRun;
   if (!run) return res.status(409).json({ error: "No run in progress." });
   if (Date.now() - run.startedAt > run.limitMs + SNAKE_GRACE_MS) {
     return res.status(409).json({ error: "Run is over." });
   }
-  const users = loadUsers();
-  const key = req.session.username.toLowerCase();
-  const user = users[key];
-  if (!user) return res.status(404).json({ error: "No such account." });
-  const visitor = false;   // visitor rank retired; every account earns snake points
   // rate limit: refill one token every SNAKE_REFILL_MS, up to SNAKE_BURST
   const now = Date.now();
   const bucket = req.session.snakeBucket || { tokens: SNAKE_BURST, at: now };
@@ -1599,27 +996,8 @@ app.post("/api/snake/food", (req, res) => {
 
   run.eaten += 1;                               // this run (the server's own count)
   req.session.snakeRun = run;
-  user.foodEaten = (user.foodEaten || 0) + 1;   // lifetime
-
-  // Every pickup pays. The completion bonus that went with the old daily
-  // objective is gone along with the dailies themselves.
-  const today = todayKey();
-  if (user.snakeDay !== today) {
-    user.snakeDay = today;
-    user.snakeToday = 0;
-  }
-  user.snakeToday += 1;
-  // angelcoins were removed; snake food now pays points (what the HUD shows)
-  if (!visitor) user.points = (user.points || 0) + SNAKE_FOOD_POINTS;
-  saveUsers(users);
-  res.json({
-    ok: true,
-    earned: SNAKE_FOOD_POINTS,
-    bonus: 0,
-    points: user.points,
-    angelcoins: user.angelcoins || 0,
-    eaten: user.snakeToday,
-  });
+  // nothing is paid out: points went with accounts. The count is the score.
+  res.json({ ok: true, eaten: run.eaten });
 });
 
 // --- deathroll: hermione picks a number, then the two players alternate
@@ -1676,7 +1054,6 @@ app.get("/api/deathroll/games", (req, res) => {
   if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
   if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });
   const games = loadRolls();
-  const users = loadUsers();
   const row = (key, label, guest) => ({
     username: label,
     guest: Boolean(guest),
@@ -1685,11 +1062,8 @@ app.get("/api/deathroll/games", (req, res) => {
     over: Boolean(games[key] && games[key].over),
   });
   res.json({
-    players: [
-      ...Object.keys(users).filter((k) => k !== "hermione").map((k) => row(k, users[k].username, false)),
-      // guests are playable opponents too, for as long as their session lasts
-      ...listActiveGuests().map((g) => row(g, g, true)),
-    ],
+    // every live guest is a playable opponent, for as long as their name lasts
+    players: listActiveGuests().map((g) => row(g, g, true)),
   });
 });
 
@@ -1699,10 +1073,8 @@ app.post("/api/deathroll/start", (req, res) => {
   if (!isAdmin(req)) return res.status(403).json({ error: "Only Hermione starts a deathroll." });
   const key = deathrollKeyFor(req, req.body.opponent);
   if (!key) return res.status(400).json({ error: "Pick an opponent." });
-  const users = loadUsers();
-  const isGuest = !users[key] && activeGuests.has(key);
-  if (!users[key] && !isGuest) return res.status(404).json({ error: "No such player." });
-  const opponentName = users[key] ? users[key].username : key;
+  if (!activeGuests.has(key)) return res.status(404).json({ error: "No such player." });
+  const opponentName = key;
   const sides = Number(req.body.sides);
   if (!Number.isInteger(sides) || sides < DEATHROLL_MIN_SIDES || sides > DEATHROLL_MAX_SIDES) {
     return res.status(400).json({
@@ -1771,11 +1143,10 @@ app.post("/api/deathroll/roll", (req, res) => {
   res.json({ game: deathrollState(game, admin), rolled: result });
 });
 
-// --- wheel: one spin a day for everyone except hermione ---
-// The server picks the winning wedge; the page only animates to it.
-// The wheel pays angelcoins, not points. Thirty outcomes from 1 to 200, heavily
-// biased low: weights sum to 1000, so 1 lands 20% of the time and 200 lands
-// 0.1%. The tail is long enough to be worth chasing and rare enough to matter.
+// --- wheel: unlimited spins, pays nothing (angelcoins went, then accounts) ---
+// The server picks the winning wedge; the page only animates to it. Thirty
+// outcomes from 1 to 200, heavily biased low: weights sum to 1000, so 1 lands
+// 20% of the time and 200 lands 0.1%. Not linked from the wall.
 const WHEEL_SEGMENTS = [
   { label: "1", coins: 1, weight: 200 },
   { label: "2", coins: 2, weight: 140 },
@@ -1819,77 +1190,25 @@ function pickSegment() {
   return WHEEL_SEGMENTS.length - 1;
 }
 
-function wheelState(user, key) {
-  const unlimited = key === "hermione";
-  return {
-    segments: WHEEL_SEGMENTS.map((s) => ({ label: s.label, coins: s.coins, weight: s.weight })),
-    unlimited,
-    spunToday: user.wheelDay === todayKey(),
-    canSpin: unlimited || user.wheelDay !== todayKey(),
-  };
-}
-
-// Guests get the wheel too, with unlimited spins: they keep no currency, and
-// the game is only for testers, so there is nothing to gate.
-const wheelSegmentsPayload = () => WHEEL_SEGMENTS.map((s) => ({ label: s.label, coins: s.coins, weight: s.weight }));
-
 app.get("/api/wheel", (req, res) => {
   if (!playerId(req)) return res.status(401).json({ error: "Not logged in." });
-  if (req.session.guest && !req.session.username) {
-    touchGuest(req);
-    return res.json({ segments: wheelSegmentsPayload(), unlimited: true, spunToday: false, canSpin: true });
-  }
-  const users = loadUsers();
-  const key = req.session.username.toLowerCase();
-  const user = users[key];
-  if (!user) return res.status(401).json({ error: "Not logged in." });
-  res.json(wheelState(user, key));
+  touchGuest(req);
+  res.json({ segments: wheelSegmentsPayload(), unlimited: true, spunToday: false, canSpin: true });
 });
 
 app.post("/api/wheel/spin", (req, res) => {
   if (!playerId(req)) return res.status(401).json({ error: "Not logged in." });
-  // guest: unlimited spins, no persistence, no currency kept
-  if (req.session.guest && !req.session.username) {
-    touchGuest(req);
-    const gi = pickSegment();
-    const gp = WHEEL_SEGMENTS[gi];
-    return res.json({ ok: true, index: gi, label: gp.label, won: gp.coins, angelcoins: 0, canSpin: true });
-  }
-  const users = loadUsers();
-  const key = req.session.username.toLowerCase();
-  const user = users[key];
-  if (!user) return res.status(401).json({ error: "Not logged in." });
-  const unlimited = key === "hermione";
-  if (!unlimited && user.wheelDay === todayKey()) {
-    return res.status(429).json({ error: "You've already spun today." });
-  }
+  touchGuest(req);
   const index = pickSegment();
   const prize = WHEEL_SEGMENTS[index];
-  // hermione still records the day so the daily objective completes; it just
-  // doesn't gate her next spin
-  user.wheelDay = todayKey();
-  // angelcoins were removed; the wheel no longer credits anything (it is also
-  // unlinked from the game wall now)
-  saveUsers(users);
-  res.json({
-    ok: true,
-    index,
-    label: prize.label,
-    won: prize.coins,
-    points: user.points,
-    angelcoins: user.angelcoins || 0,
-    canSpin: unlimited,
-  });
+  res.json({ ok: true, index, label: prize.label, won: prize.coins, canSpin: true });
 });
 
-// --- slots: the ANGELCOIN INSTANT scratch card ---
-// One card, three panels, match three. A card costs SLOTS_STAKE angelcoins; the
-// outcome is rolled here (never on the client) so the panels the player scratches
-// off only reveal a result that is already decided. Symbols carry a three-of-a-
-// kind payout; any two matching pays a small consolation. Weights are out of 1000
-// and tuned to about a 76% return, so it is a gentle coin sink with wins frequent
-// enough to be worth the scratch.
-const SLOTS_STAKE = 10;
+// --- slots (the Lottery): the INSTANT scratch card, free ---
+// One card, three panels, match three. The outcome is rolled here (never on the
+// client) so the panels the player scratches off only reveal a result that is
+// already decided. It used to stake angelcoins; with no currency left it is a
+// free card and the "payout" is just the number on it. Not linked from the wall.
 const SLOTS_SYMBOLS = ["✦", "☾", "✚", "❖", "♛", "♣"];
 const SLOTS_TWO_PAYS = 6;
 // outcome table: three-of-a-kind tiers, any-two, and lose. weights sum to 1000.
@@ -1945,180 +1264,19 @@ function slotsPanels(outcome) {
   return [a, b, c];
 }
 
-function slotsState(user, key) {
-  const unlimited = key === "hermione";
-  return {
-    stake: SLOTS_STAKE,
-    paytable: SLOTS_PAYTABLE,
-    balance: unlimited ? null : user.angelcoins || 0,
-    unlimited,
-    canPlay: unlimited || (user.angelcoins || 0) >= SLOTS_STAKE,
-  };
-}
-
 app.get("/api/slots", requirePlayer, (req, res) => {
-  const users = loadUsers();
-  const key = req.session.username && req.session.username.toLowerCase();
-  const user = (key && users[key]) || {};
-  res.json(slotsState(user, key));
+  touchGuest(req);
+  res.json({ stake: 0, paytable: SLOTS_PAYTABLE, balance: null, unlimited: true, canPlay: true });
 });
 
 app.post("/api/slots/buy", requirePlayer, (req, res) => {
-  const users = loadUsers();
-  const key = req.session.username && req.session.username.toLowerCase();
-  const user = key && users[key];
-  const unlimited = key === "hermione";
-  // A guest has no wallet to stake from, so they cannot play for keeps.
-  if (!user) {
-    return res.status(403).json({ error: "This game needs an account with angelcoins." });
-  }
-  const balance = user.angelcoins || 0;
-  if (!unlimited && balance < SLOTS_STAKE) {
-    return res.status(402).json({ error: "Not enough angelcoins for a card." });
-  }
+  touchGuest(req);
   const outcome = pickSlotsOutcome();
   const panels = slotsPanels(outcome);
-  const won = outcome.pays;
-  if (!unlimited) {
-    user.angelcoins = balance - SLOTS_STAKE + won;
-    saveUsers(users);
-  }
-  res.json({
-    ok: true,
-    panels,
-    won,
-    stake: SLOTS_STAKE,
-    net: won - SLOTS_STAKE,
-    balance: unlimited ? null : user.angelcoins,
-    canPlay: unlimited || (user.angelcoins || 0) >= SLOTS_STAKE,
-  });
+  res.json({ ok: true, panels, won: outcome.pays, stake: 0, net: outcome.pays, balance: null, canPlay: true });
 });
 
-// The dailies panel and its API were removed: the objectives were busywork.
-// The payouts they used to advertise (the Snake completion bonus, the
-// Devotion 50-line reward) still fire; they are just no longer presented
-// as a checklist.
 
-// --- writing: categories of passages, typed one after another ---
-// The player only sees the category; what's inside is shuffled per attempt.
-const DEFAULT_CATEGORIES = [
-  {
-    id: "main",
-    title: "Main",
-    passages: Array.from({ length: 9 }, (_, i) => ({
-      id: "main-" + (i + 1),
-      text: "This is placeholder passage number " + (i + 1) +
-        ". Type it exactly as it appears, with no mistakes and no going back.",
-    })),
-  },
-  ...[1, 2, 3].map((n) => ({
-    id: "placeholder-" + n,
-    title: "Placeholder " + n,
-    passages: [
-      {
-        id: "placeholder-" + n + "-1",
-        text: "Placeholder category " + n + ", first passage. Replace this with something worth writing.",
-      },
-    ],
-  })),
-];
-
-// The stored file is authoritative once it exists. On the very first read we
-// seed it from the in-code defaults and write it to disk, so from then on
-// Hermione's edits are the only source and can never be shadowed or reverted by
-// the defaults. Deep-cloned so the DEFAULT_CATEGORIES constant is never mutated.
-function loadCategories() {
-  try {
-    const stored = JSON.parse(fs.readFileSync(WRITING_FILE, "utf8"));
-    if (Array.isArray(stored) && stored.length && stored.every((c) => Array.isArray(c.passages))) {
-      return stored;
-    }
-  } catch {}
-  const seeded = JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
-  try { saveCategories(seeded); } catch {}
-  return seeded;
-}
-
-function saveCategories(categories) {
-  fs.writeFileSync(WRITING_FILE, JSON.stringify(categories, null, 2));
-}
-
-function shuffled(list) {
-  const out = [...list];
-  for (let i = out.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [out[i], out[j]] = [out[j], out[i]];
-  }
-  return out;
-}
-
-// the shelf: titles and counts only, never the passages themselves
-app.get("/api/writing", (req, res) => {
-  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
-  res.json({
-    categories: loadCategories().map((c) => ({
-      id: c.id,
-      title: c.title,
-      description: c.description || "",
-      count: c.passages.length,
-    })),
-  });
-});
-
-// starting a category hands over its passages in a fresh random order
-app.get("/api/writing/:id", (req, res) => {
-  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
-  const category = loadCategories().find((c) => c.id === req.params.id);
-  if (!category) return res.status(404).json({ error: "No such category." });
-  res.json({
-    category: { id: category.id, title: category.title },
-    passages: shuffled(category.passages),
-  });
-});
-
-// hermione edits a whole category at once
-app.put("/api/writing/:id", (req, res) => {
-  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
-  if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });
-  const categories = loadCategories();
-  const category = categories.find((c) => c.id === req.params.id);
-  if (!category) return res.status(404).json({ error: "No such category." });
-
-  if (req.body.title !== undefined) {
-    const title = String(req.body.title).trim();
-    if (!title) return res.status(400).json({ error: "Give it a title." });
-    // count by code point so decorative/astral unicode is not double-counted
-    if ([...title].length > 120) return res.status(400).json({ error: "Title must be 120 characters or fewer." });
-    category.title = title;
-  }
-  if (req.body.description !== undefined) {
-    const description = String(req.body.description).trim();
-    if ([...description].length > 200) {
-      return res.status(400).json({ error: "Description must be 200 characters or fewer." });
-    }
-    category.description = description;
-  }
-  if (req.body.passages !== undefined) {
-    if (!Array.isArray(req.body.passages)) {
-      return res.status(400).json({ error: "Passages must be a list." });
-    }
-    const cleaned = req.body.passages
-      .map((t) => String(t).replace(/\r\n/g, "\n").trim())
-      .filter(Boolean);
-    if (!cleaned.length) return res.status(400).json({ error: "A category needs at least one passage." });
-    if (cleaned.some((t) => t.length > 2000)) {
-      return res.status(400).json({ error: "Each passage must be 2000 characters or fewer." });
-    }
-    category.passages = cleaned.map((text, i) => ({ id: category.id + "-" + (i + 1), text }));
-  }
-  saveCategories(categories);
-  res.json({ ok: true, category: { id: category.id, title: category.title, description: category.description || "", count: category.passages.length } });
-});
-
-// A finished writing series, reported by the client. The Writing game is
-// client-refereed already (see the trust notes), so this is the same honest
-// boundary: the numbers are taken on trust and kept for Hermione to look at.
-const WRITING_LOG_CAP = 25;
 /* ---- server-owned writing runs -------------------------------------------
    The typing games used to be fully client-refereed: the browser picked the
    lines, counted its own progress and posted a finished total, which the server
@@ -2248,12 +1406,21 @@ app.post("/api/writing/skip", (req, res) => {
   res.json({ ok: true, idx: run.idx, done: run.idx >= run.reps });
 });
 
+// Finished runs are kept in one global log (completed.json) for the Completed
+// tab: guests have no record to hang them on. Newest first, capped.
+const COMPLETED_CAP = 200;
+function loadCompleted() {
+  try { const d = JSON.parse(fs.readFileSync(COMPLETED_FILE, "utf8")); return Array.isArray(d.entries) ? d.entries : []; }
+  catch { return []; }
+}
+function saveCompleted(list) {
+  fs.writeFileSync(COMPLETED_FILE, JSON.stringify({ entries: list.slice(0, COMPLETED_CAP) }, null, 2));
+}
+
 app.post("/api/writing/complete", (req, res) => {
-  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
-  const users = loadUsers();
-  const key = req.session.username.toLowerCase();
-  const user = users[key];
-  if (!user) return res.status(401).json({ error: "Not logged in." });
+  const who = playerId(req);
+  if (!who) return res.status(401).json({ error: "Not logged in." });
+  touchGuest(req);
 
   // The run must exist here and the SERVER's own count must say it is finished.
   // Nothing below is taken from the request body any more.
@@ -2268,7 +1435,9 @@ app.post("/api/writing/complete", (req, res) => {
     ? Math.max(0, Math.min(100, Math.round(((letters - run.mistakes) / letters) * 100)))
     : 100;
   const entry = {
-    id: "wl-" + Date.now(),
+    id: "wl-" + Date.now() + "-" + Math.random().toString(36).slice(2, 6),
+    player: who,
+    guest: Boolean(req.session.guest && !req.session.username),
     category: run.mode,
     preset: run.presetName,
     difficulty: run.difficulty,
@@ -2279,85 +1448,41 @@ app.post("/api/writing/complete", (req, res) => {
     elapsedMs: Math.max(0, Math.min(1000 * 60 * 60 * 24, Date.now() - run.startedAt)),
     at: new Date().toISOString(),
   };
+  entry.letters = letters;         // from the server's own sequence
   delete req.session.writing;      // one shot: the run cannot be logged twice
-  // Seed the lifetime counters before the new entry joins the log, or the
-  // backfill would count this series twice.
-  writingCounters(user);
-  user.linesCompleted += entry.passages;
-  if (entry.category === "penance") user.penanceSeries += 1;
-  if (entry.category === "devotion") user.devotionSeries += 1;
-
-  user.writingLog = [entry, ...(Array.isArray(user.writingLog) ? user.writingLog : [])].slice(0, WRITING_LOG_CAP);
-  user.writingTasksCompleted = (user.writingTasksCompleted || 0) + 1;
-  user.lettersTyped = (user.lettersTyped || 0) + letters;   // from the server's own sequence
-
-  // The day's Devotion line count is still kept, because Hermione reads it.
-  // The payout that used to come with crossing 50 is gone with the dailies.
-  const today = todayKey();
-  if (entry.category === "devotion") {
-    if (user.devotionDay !== today) { user.devotionDay = today; user.devotionCount = 0; }
-    user.devotionCount = (user.devotionCount || 0) + entry.passages;
-  }
+  const list = loadCompleted();
+  list.unshift(entry);
+  saveCompleted(list);
 
   // tell Hermione, but never about her own practice runs
-  const hermione = users["hermione"];
-  if (hermione && key !== "hermione") {
-    pushNotification(
-      hermione,
-      "writing-" + key,
-      user.username + " finished a writing series" + (entry.category ? " (" + entry.category + ")" : "") + ".",
-      "/admin"
-    );
+  if (who !== "hermione") {
+    const users = loadUsers();
+    const hermione = users["hermione"];
+    if (hermione) {
+      pushNotification(
+        hermione,
+        "writing-" + who,
+        who + " finished a writing series" + (entry.category ? " (" + entry.category + ")" : "") + ".",
+        "/admin"
+      );
+      saveUsers(users);
+    }
   }
-  saveUsers(users);
   res.json({ ok: true });
 });
 
-// Hermione reads a player's writing history
-app.get("/api/users/:username/writing", (req, res) => {
+// Admin-only: the finished runs, newest first, and dismissing one.
+app.get("/api/admin/writing", (req, res) => {
   if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
   if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });
-  const users = loadUsers();
-  const u = users[req.params.username.toLowerCase()];
-  if (!u) return res.status(404).json({ error: "No such account." });
-  res.json({ log: Array.isArray(u.writingLog) ? u.writingLog : [] });
+  res.json({ entries: loadCompleted() });
 });
-
-// Hermione dismisses a finished-series entry so the list doesn't pile up.
-app.delete("/api/users/:username/writing/:id", (req, res) => {
+app.delete("/api/admin/writing/:id", (req, res) => {
   if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
   if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });
-  const users = loadUsers();
-  const u = users[req.params.username.toLowerCase()];
-  if (!u) return res.status(404).json({ error: "No such account." });
-  const before = Array.isArray(u.writingLog) ? u.writingLog.length : 0;
-  u.writingLog = (Array.isArray(u.writingLog) ? u.writingLog : []).filter((e) => e.id !== req.params.id);
-  if (u.writingLog.length !== before) saveUsers(users);
+  saveCompleted(loadCompleted().filter((e) => e.id !== req.params.id));
   res.json({ ok: true });
 });
-
-// --- tithe: REMOVED ---
-// Tithing is deprecated. The button came off the dashboard, but settleTithe()
-// was still running on login and on every /api/me, so accounts were quietly
-// still being docked 25 points a day and told so in their notifications. Both
-// the penalty and the /api/tithe route are gone.
-//
-// This sweeps up what the old system already left behind: the stale
-// "You did not tithe" notification, and the bookkeeping fields it kept. It
-// runs once per account, the next time that account is loaded.
-function clearTitheLeftovers(users, key) {
-  const user = users[key];
-  if (!user) return false;
-  let changed = false;
-  if (Array.isArray(user.notifications)) {
-    const kept = user.notifications.filter((n) => n.id !== "tithe-miss");
-    if (kept.length !== user.notifications.length) { user.notifications = kept; changed = true; }
-  }
-  for (const f of ["tithedOn", "titheCheckedOn"]) {
-    if (f in user) { delete user[f]; changed = true; }
-  }
-  return changed;
-}
 
 // --- editable site copy ---
 // Two audiences, so hermione can word her own dashboard differently from
@@ -2367,9 +1492,6 @@ const SITE_DEFAULTS = {
   welcomeUser: "Welcome, {name}!",
   messageAdmin: "mirror mirror on the wall.",
   messageUser: "There is no text here yet.",
-  // the two intro slides a disciple reads at the top of the onboarding questionnaire
-  onboardingAbout: "placeholder. This is where Hermione introduces herself: who she is, how she runs things, and what a disciple can expect. Editable from the admin panel.",
-  onboardingPurpose: "placeholder. What angeldom.me is for, what the account gives you, and what this questionnaire is used for. Your answers are sent to Hermione, who reviews them before your account is approved.",
 };
 
 function loadSite() {
@@ -2383,59 +1505,15 @@ function saveSite(site) {
   fs.writeFileSync(SITE_FILE, JSON.stringify(site, null, 2));
 }
 
-// Editable sub-text under each questionnaire (kink) option on /apply. File-first
-// like every other pool; the built-in copy is only the fallback. Empty is allowed
-// (several options carry no description).
-const QUESTIONNAIRE_FILE = path.join(process.env.DATA_DIR || __dirname, "questionnaire.json");
-const QUESTIONNAIRE_DEFAULTS = {
-  subs: {
-    feet: "Feet, socks, shoes, anything adjacent to them.",
-    tasks: "Research / Essays / Games / Other.",
-    degradation: "",
-    masochism: "",
-    chastity: "",
-    worship: "",
-    petplay: "",
-  },
-};
-function loadQuestionnaire() {
-  try {
-    const saved = JSON.parse(fs.readFileSync(QUESTIONNAIRE_FILE, "utf8"));
-    return { subs: { ...QUESTIONNAIRE_DEFAULTS.subs, ...(saved.subs || {}) } };
-  } catch {
-    return { subs: { ...QUESTIONNAIRE_DEFAULTS.subs } };
-  }
-}
-function saveQuestionnaire(q) {
-  fs.writeFileSync(QUESTIONNAIRE_FILE, JSON.stringify(q, null, 2));
-}
-
-// public: /apply is account-less, so the questionnaire page reads this unauthenticated
-app.get("/api/questionnaire", (req, res) => {
-  res.json(loadQuestionnaire());
-});
-app.put("/api/questionnaire", (req, res) => {
-  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
-  if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });
-  const incoming = (req.body && req.body.subs) || {};
-  const q = loadQuestionnaire();
-  for (const id of Object.keys(q.subs)) {
-    if (incoming[id] === undefined) continue;
-    const value = String(incoming[id]).trim();
-    if (value.length > 200) return res.status(400).json({ error: "Keep each description under 200 characters." });
-    q.subs[id] = value;
-  }
-  saveQuestionnaire(q);
-  res.json({ ok: true, subs: q.subs });
-});
 
 app.get("/api/site", (req, res) => {
-  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
+  const who = playerId(req);
+  if (!who) return res.status(401).json({ error: "Not logged in." });
   const site = loadSite();
   const admin = isAdmin(req);
   res.json({
-    // what this viewer should see, already filled in
-    welcome: (admin ? site.welcomeAdmin : site.welcomeUser).replace(/\{name\}/g, req.session.username),
+    // what this viewer should see, already filled in ({name} is the guest's name)
+    welcome: (admin ? site.welcomeAdmin : site.welcomeUser).replace(/\{name\}/g, who),
     message: admin ? site.messageAdmin : site.messageUser,
     raw: admin ? site : undefined,     // hermione also gets the templates to edit
   });
@@ -2449,9 +1527,7 @@ app.put("/api/site", (req, res) => {
     if (req.body[key] === undefined) continue;
     const value = String(req.body[key]).trim();
     if (!value) return res.status(400).json({ error: "Text can't be empty." });
-    // the onboarding intros are paragraphs; the hero copy stays a short line
-    const max = key.startsWith("onboarding") ? 2000 : 200;
-    if (value.length > max) return res.status(400).json({ error: "Keep it under " + max + " characters." });
+    if (value.length > 200) return res.status(400).json({ error: "Keep it under 200 characters." });
     site[key] = value;
   }
   saveSite(site);
@@ -3075,14 +2151,6 @@ function pushNotification(user, id, text, href) {
   user.notifications = [note, ...list.filter((n) => n.id !== id)].slice(0, 20);
 }
 
-// removes a notification once whatever it was asking about is dealt with
-function dropNotification(user, id) {
-  if (!user || !Array.isArray(user.notifications)) return;
-  user.notifications = user.notifications.filter((n) => n.id !== id);
-}
-
-// Nudge about the day's objectives once per noon-Eastern day, so it lands when
-// the dailies actually reset rather than on every sign-in.
 
 app.get("/api/notifications", (req, res) => {
   if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
@@ -3117,294 +2185,6 @@ app.post("/api/notifications/clear", (req, res) => {
   res.json({ ok: true });
 });
 
-// --- tasks: assigned by hermione or granted automatically. Read-only for now;
-// the assignment and auto-award flows come later.
-// --- tasks Hermione sets ---
-//
-// Stored on the user record as `tasks`, so a task travels with its owner and
-// there is no join to do. Two kinds so far:
-//
-//   essay      { topic, minWords }        -> written on /task, submission kept
-//   repetition { text, reps }             -> typed on /task, reps counted
-//
-// Shared keys: id, type, status, points, assignedAt, completedAt. `source`
-// marks them apart from the automatic dailies.
-//
-// status runs active -> submitted -> done for essays, because Hermione reads
-// them before they count. A repetition has nothing to judge, so it goes
-// straight to done once the count is met. Sending an essay back returns it to
-// active with the text intact and a note explaining why.
-const TASK_TOPIC_MAX = 200;
-const TASK_TEXT_MAX = 2000;
-const ESSAY_MAX = 50000;
-const TASK_MAX_WORDS = 100000;
-const TASK_MAX_REPS = 500;
-
-function countWords(text) {
-  return String(text || "").trim().split(/\s+/).filter(Boolean).length;
-}
-
-function ownTasks(user) {
-  return Array.isArray(user.tasks) ? user.tasks : [];
-}
-
-// what the assignee is allowed to see: never another person's business, and
-// the essay they wrote comes back so they can reread it
-function taskForPlayer(t) {
-  return {
-    id: t.id,
-    type: t.type,
-    title: t.title,
-    detail: t.detail || "",
-    source: t.source || "hermione",
-    status: t.status,
-    points: t.points || 0,
-    assignedAt: t.assignedAt,
-    completedAt: t.completedAt || null,
-    minWords: t.minWords || 0,
-    text: t.text || "",
-    reps: t.reps || 0,
-    repsDone: t.repsDone || 0,
-    submission: t.submission || "",
-    reviewNote: t.reviewNote || "",
-    submittedAt: t.submittedAt || null,
-  };
-}
-
-app.get("/api/tasks", (req, res) => {
-  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
-  const users = loadUsers();
-  const key = req.session.username.toLowerCase();
-  const user = users[key];
-  if (!user) return res.status(401).json({ error: "Not logged in." });
-  res.json({ tasks: ownTasks(user).map(taskForPlayer) });
-});
-
-// Hermione assigns a task
-app.post("/api/users/:username/tasks", (req, res) => {
-  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
-  if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });
-
-  const users = loadUsers();
-  const key = req.params.username.toLowerCase();
-  const user = users[key];
-  if (!user) return res.status(404).json({ error: "No such account." });
-  if (key === "hermione") return res.status(400).json({ error: "Hermione sets her own agenda." });
-  if (isPending(user)) return res.status(400).json({ error: "Approve that account first." });
-
-  const type = String(req.body.type || "");
-  if (type !== "essay" && type !== "repetition") {
-    return res.status(400).json({ error: "Pick a task type." });
-  }
-  // Deliberate every time: no default, so a reward is never assigned by
-  // accident just because a field was left alone.
-  if (req.body.points === undefined || req.body.points === null || req.body.points === "") {
-    return res.status(400).json({ error: "Set a reward, even if it is zero." });
-  }
-  const points = Number(req.body.points);
-  if (!Number.isInteger(points) || points < 0) {
-    return res.status(400).json({ error: "Reward must be a whole number, zero or more." });
-  }
-
-  const task = {
-    id: "task-" + Date.now(),
-    type,
-    source: "hermione",
-    status: "active",
-    points,
-    assignedAt: new Date().toISOString(),
-    completedAt: null,
-    detail: String(req.body.detail || "").trim().slice(0, TASK_TOPIC_MAX),
-  };
-
-  if (type === "essay") {
-    const topic = String(req.body.topic || "").trim();
-    if (!topic) return res.status(400).json({ error: "Give the essay a topic." });
-    if (topic.length > TASK_TOPIC_MAX) {
-      return res.status(400).json({ error: "Topic must be " + TASK_TOPIC_MAX + " characters or fewer." });
-    }
-    const minWords = Number(req.body.minWords);
-    if (!Number.isInteger(minWords) || minWords < 1 || minWords > TASK_MAX_WORDS) {
-      return res.status(400).json({ error: "Set a word count between 1 and " + TASK_MAX_WORDS + "." });
-    }
-    task.title = topic;
-    task.minWords = minWords;
-    task.submission = "";
-  } else {
-    const text = String(req.body.text || "").trim();
-    if (!text) return res.status(400).json({ error: "Give her something to write." });
-    if (text.length > TASK_TEXT_MAX) {
-      return res.status(400).json({ error: "Text must be " + TASK_TEXT_MAX + " characters or fewer." });
-    }
-    const reps = Number(req.body.reps);
-    if (!Number.isInteger(reps) || reps < 1 || reps > TASK_MAX_REPS) {
-      return res.status(400).json({ error: "Set a repetition count between 1 and " + TASK_MAX_REPS + "." });
-    }
-    task.title = "Write it out " + reps + (reps === 1 ? " time" : " times");
-    task.text = text;
-    task.reps = reps;
-    task.repsDone = 0;
-  }
-
-  user.tasks = [...ownTasks(user), task];
-  pushNotification(
-    user,
-    task.id,
-    "Hermione has set you a task: " + task.title + ".",
-    "/tasks"
-  );
-  saveUsers(users);
-  res.json({ ok: true, task: taskForPlayer(task) });
-});
-
-// Hermione removes one
-app.delete("/api/users/:username/tasks/:id", (req, res) => {
-  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
-  if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });
-  const users = loadUsers();
-  const key = req.params.username.toLowerCase();
-  const user = users[key];
-  if (!user) return res.status(404).json({ error: "No such account." });
-  const before = ownTasks(user).length;
-  user.tasks = ownTasks(user).filter((t) => t.id !== req.params.id);
-  if (user.tasks.length === before) return res.status(404).json({ error: "No such task." });
-  dropNotification(user, req.params.id);
-  saveUsers(users);
-  res.json({ ok: true });
-});
-
-// Hermione reads someone's tasks, submissions included
-app.get("/api/users/:username/tasks", (req, res) => {
-  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
-  if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });
-  const users = loadUsers();
-  const user = users[req.params.username.toLowerCase()];
-  if (!user) return res.status(404).json({ error: "No such account." });
-  res.json({ tasks: ownTasks(user).map(taskForPlayer) });
-});
-
-// Hermione reads a handed-in essay and either takes it or sends it back
-app.post("/api/users/:username/tasks/:id/review", (req, res) => {
-  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
-  if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });
-
-  const users = loadUsers();
-  const key = req.params.username.toLowerCase();
-  const user = users[key];
-  if (!user) return res.status(404).json({ error: "No such account." });
-  const task = ownTasks(user).find((t) => t.id === req.params.id);
-  if (!task) return res.status(404).json({ error: "No such task." });
-  if (task.status !== "submitted") {
-    return res.status(400).json({ error: "That is not waiting to be read." });
-  }
-
-  const note = String(req.body.note || "").trim().slice(0, TASK_TOPIC_MAX);
-
-  if (req.body.approve) {
-    task.reviewNote = note;
-    completeTask(user, task);
-    pushNotification(
-      user,
-      "task-reviewed-" + task.id,
-      "Hermione accepted your work on " + task.title + "." +
-        (task.points ? " " + task.points + " points." : ""),
-      "/tasks"
-    );
-  } else {
-    // back to the assignee, text kept so they can revise rather than restart
-    task.status = "active";
-    task.submittedAt = null;
-    task.reviewNote = note || "Hermione has sent this back.";
-    pushNotification(
-      user,
-      "task-reviewed-" + task.id,
-      "Hermione sent back " + task.title + ". " + task.reviewNote,
-      "/task?id=" + task.id
-    );
-  }
-
-  const hermione = users["hermione"];
-  if (hermione) dropNotification(hermione, "review-" + task.id);
-  saveUsers(users);
-  res.json({ ok: true, task: taskForPlayer(task) });
-});
-
-// awards the reward once, when a task first reaches done
-function completeTask(user, task) {
-  if (task.status === "done") return;
-  task.status = "done";
-  task.completedAt = new Date().toISOString();
-  user.customTasksCompleted = (user.customTasksCompleted || 0) + 1;
-  if (task.points) user.points = (user.points || 0) + task.points;
-}
-
-// submit an essay: the word count is checked here, not in the browser
-app.post("/api/tasks/:id/essay", (req, res) => {
-  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
-  const users = loadUsers();
-  const user = users[req.session.username.toLowerCase()];
-  if (!user) return res.status(401).json({ error: "Not logged in." });
-  const task = ownTasks(user).find((t) => t.id === req.params.id);
-  if (!task || task.type !== "essay") return res.status(404).json({ error: "No such task." });
-
-  const submission = String(req.body.submission || "");
-  if (submission.length > ESSAY_MAX) {
-    return res.status(400).json({ error: "That is longer than this box can hold." });
-  }
-  const words = countWords(submission);
-  if (words < task.minWords) {
-    return res.status(400).json({
-      error: "You need " + task.minWords + " words. You have " + words + ".",
-      words,
-    });
-  }
-  task.submission = submission;
-  task.status = "submitted";
-  task.submittedAt = new Date().toISOString();
-  task.reviewNote = "";        // a fresh hand-in clears the last knockback
-  const hermione = users["hermione"];
-  if (hermione) {
-    pushNotification(
-      hermione,
-      "review-" + task.id,
-      user.username + " has handed in " + task.title + ".",
-      "/admin"
-    );
-  }
-  saveUsers(users);
-  res.json({ ok: true, words, task: taskForPlayer(task), points: user.points || 0 });
-});
-
-// record one finished repetition. The typed text is sent back and must match,
-// which is a light check rather than a real one: the same honest-boundary
-// posture as snake, since the client is refereeing the typing.
-app.post("/api/tasks/:id/rep", (req, res) => {
-  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
-  const users = loadUsers();
-  const user = users[req.session.username.toLowerCase()];
-  if (!user) return res.status(401).json({ error: "Not logged in." });
-  const task = ownTasks(user).find((t) => t.id === req.params.id);
-  if (!task || task.type !== "repetition") return res.status(404).json({ error: "No such task." });
-  if (task.status === "done") return res.json({ ok: true, task: taskForPlayer(task) });
-
-  if (String(req.body.text || "") !== task.text) {
-    return res.status(400).json({ error: "That is not what she asked for." });
-  }
-  task.repsDone = Math.min(task.reps, (task.repsDone || 0) + 1);
-  user.lettersTyped = (user.lettersTyped || 0) + [...task.text].length;
-  if (task.repsDone >= task.reps) completeTask(user, task);
-  saveUsers(users);
-  res.json({ ok: true, task: taskForPlayer(task), points: user.points || 0 });
-});
-
-// one page for doing a task; it branches on the task's type
-app.get("/task", requireLogin, (req, res) => {
-  res.sendFile(path.join(__dirname, "views", "task.html"));
-});
-
-app.get("/tasks", requireLogin, (req, res) => {
-  res.sendFile(path.join(__dirname, "views", "tasks.html"));
-});
 
 app.get("/deathroll", requirePlayer, (req, res) => {
   res.sendFile(path.join(__dirname, "views", "deathroll.html"));
@@ -3427,28 +2207,10 @@ app.get(["/lottery", "/slots"], requirePlayer, (req, res) => {
 });
 
 app.get("/writing", requirePlayer, (req, res) => {
-  // Devotion needs an account, same as deathroll; a guest is turned back.
-  if (req.query.mode === "devotion" && isGuest(req)) return res.redirect("/games");
   res.sendFile(path.join(__dirname, "views", "writing.html"));
 });
 
-app.get("/profile", requireLogin, (req, res) => {
-  res.sendFile(path.join(__dirname, "views", "profile.html"));
-});
 
-// One-time migration: Visitor was retired, so fold any existing visitor accounts
-// into the entry disciple rank. Runs at boot, rewrites only if something changed.
-(function migrateVisitorsToDisciple() {
-  try {
-    const users = loadUsers();
-    let changed = false;
-    for (const k of Object.keys(users)) {
-      const raw = String((users[k] && (users[k].rank || users[k].role)) || "").toLowerCase();
-      if (raw === "visitor") { users[k].rank = "Servant"; delete users[k].role; changed = true; }
-    }
-    if (changed) { saveUsers(users); console.log("Migrated visitor accounts to disciple."); }
-  } catch (e) { console.error("visitor migration skipped:", e && e.message); }
-})();
 
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);

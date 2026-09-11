@@ -3,7 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sign in - angeldom.me</title>
+  <title>angeldom.me</title>
+  <!-- The front door. There are no visitor accounts: this page starts a guest
+       session and plays the boot into the dashboard. Hermione signs in at /login
+       (`pray login`). The server redirects anyone who already has a session. -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -29,51 +32,7 @@
     .blink { animation: bl 1s steps(1) infinite; } @keyframes bl { 0%,50%{opacity:1} 50.01%,100%{opacity:0} }
     .head { color: var(--dim); margin-bottom: 1.1rem; }
     .row { margin: 0.2rem 0; }
-
-    /* terminal fields: a label then an inline text input that looks typed */
-    .fl { display: flex; align-items: baseline; gap: 0.6rem; margin: 0.55rem 0; }
-    .fl .lab { color: var(--dim); min-width: 8.5rem; }
-    .fl input {
-      flex: 1; background: transparent; border: none; border-bottom: 1px solid var(--dim2);
-      color: var(--bright); font-family: inherit; font-size: 1.02rem; padding: 0 0 3px; caret-color: var(--accent);
-    }
-    .fl input::placeholder { color: var(--dim2); }
-    .fl input:focus { outline: none; border-bottom-color: var(--accent); }
-    .fl input:disabled { opacity: 0.4; }
-    .fl select {
-      flex: 1; background: transparent; border: none; border-bottom: 1px solid var(--dim2);
-      color: var(--bright); font-family: inherit; font-size: 1.02rem; padding: 0 0 3px; cursor: pointer;
-    }
-    .fl select:focus { outline: none; border-bottom-color: var(--accent); }
-    .fl select option { background: #0a1420; color: var(--bright); }
-    .fl textarea {
-      flex: 1; background: transparent; border: 1px solid var(--dim2); border-radius: 3px;
-      color: var(--bright); font-family: inherit; font-size: 0.98rem; padding: 0.4rem 0.5rem; resize: vertical; min-height: 3.2rem; caret-color: var(--accent);
-    }
-    .fl textarea:focus { outline: none; border-color: var(--accent); }
-    input:-webkit-autofill { -webkit-text-fill-color: var(--bright); -webkit-box-shadow: 0 0 0 1000px var(--bg) inset; transition: background-color 100000s ease 0s; caret-color: var(--accent); }
-
-    /* account-type options as terminal chips */
-    .roles { display: flex; gap: 0.6rem; margin: 0.4rem 0 0.2rem; }
-    .role { cursor: pointer; border: 1px solid var(--dim2); color: var(--dim); background: transparent; font-family: inherit;
-      padding: 0.3rem 0.9rem; letter-spacing: 0.08em; text-transform: lowercase; font-size: 0.95rem; position: relative; }
-    .role:hover { border-color: var(--dim); color: var(--c); }
-    .role.sel { border-color: var(--accent); color: var(--bg); background: var(--accent); box-shadow: 0 0 16px var(--glow); }
-    .role::after { content: attr(data-tip); position: absolute; bottom: calc(100% + 0.5rem); left: 50%; transform: translateX(-50%);
-      width: 13rem; padding: 0.5rem 0.6rem; border: 1px solid var(--dim2); background: #071019; color: var(--c); font-size: 0.72rem;
-      line-height: 1.4; letter-spacing: 0; text-transform: none; text-align: left; opacity: 0; visibility: hidden; transition: opacity 0.12s; z-index: 20; }
-    .role:hover::after { opacity: 1; visibility: visible; }
-
-    .btn { display: inline-block; border: 1px solid var(--c); padding: 0.42rem 1.5rem; letter-spacing: 0.18em; text-transform: uppercase;
-      color: var(--c); background: transparent; font-family: inherit; font-size: 0.92rem; cursor: pointer; }
-    .btn.solid { background: var(--c); color: var(--bg); box-shadow: 0 0 22px var(--glow); }
-    .btn:hover { box-shadow: 0 0 22px var(--glow); }
-    .cur { display: inline-block; width: 0.6em; height: 1.05em; background: var(--c); transform: translateY(2px); }
-    .link { color: var(--dim); cursor: pointer; }
-    .link b { color: var(--bright); text-shadow: 0 0 10px var(--glow); font-weight: 400; }
-    .link:hover b { text-decoration: underline; }
     .errline { color: var(--err); min-height: 1.2em; margin: 0.6rem 0 0; }
-    .fields { margin-top: 0.4rem; }
 
     /* Mobile: the desktop scale(1.5) blew the content past a viewport that clips
        overflow, so the fields and the enter button ended up off-screen and login
@@ -83,11 +42,6 @@
       html, body { overflow: auto; }
       #scene { position: static; min-height: 100%; padding: 5vh 6vw; align-items: flex-start; }
       .content { transform: none; width: 100%; font-size: 1rem; line-height: 1.75; }
-      .fl { flex-wrap: wrap; gap: 0.25rem 0.6rem; }
-      .fl .lab { min-width: 0; }
-      .fl input, .fl select, .fl textarea { flex: 1 1 100%; font-size: 16px; } /* 16px stops iOS zoom-on-focus */
-      .roles { flex-wrap: wrap; }
-      .role::after { width: min(13rem, 78vw); }
     }
   </style>
   <script src="/audio.js"></script>
@@ -98,70 +52,32 @@
     <div class="content">
       <div class="head" style="letter-spacing:0.14em">angelOS v0.2 &nbsp; secure terminal</div>
       <div class="row dim">&gt; establishing link to Her ......... <span class="ok">OK</span></div>
-      <div class="row dim" id="statusline">&gt; awaiting credentials</div>
-
-      <form id="form" class="fields" autocomplete="on">
-        <div class="fl"><span class="lab" id="lab-user">login:</span><input id="username" name="username" autocomplete="username" required minlength="3" maxlength="30" /></div>
-        <div class="fl"><span class="lab">passphrase:</span><input id="password" name="password" type="password" autocomplete="current-password" required minlength="8" /></div>
-
-        <div class="errline" id="error"></div>
-        <div class="row" style="margin-top:1.3rem">
-          <button class="btn solid" id="submit" type="submit">enter</button>
-          <span class="dim" id="enter-hint" style="margin-left:1rem">&crarr; sign in</span>
-        </div>
-      </form>
-
-      <div class="row dim" id="toggle-line" style="margin-top:1.7rem">invite-only login &nbsp;<span class="link" id="to-register">&gt; <b>apply here</b></span></div>
-      <div class="row dim" id="guest-line" style="margin-top:0.5rem">just looking? &nbsp;<span class="link" id="to-guest">&gt; <b>continue as a guest</b></span></div>
-
-      <div id="pending" hidden>
-        <div class="br" style="font-size:1.3rem; margin-bottom:0.6rem">// petition received</div>
-        <div class="row" style="margin-top:1.4rem"><span class="btn" id="back-signin">back to sign in</span></div>
-      </div>
+      <div class="row dim" id="statusline">&gt; no credentials required ........ <span class="ok">OK</span></div>
+      <div class="row errline" id="errline" hidden>! <span id="error"></span></div>
     </div>
   </div>
   <div class="scan"></div>
 
   <script>
     const $ = (id) => document.getElementById(id);
-    const errorBox = $("error");
-    function err(msg) { errorBox.textContent = msg ? "! " + msg : ""; }
+    function err(msg) { $("error").textContent = msg; $("errline").hidden = false; }
 
-    // Login only. Applying is a separate, account-less questionnaire at /apply;
-    // Hermione reviews applications and makes accounts by hand.
-    $("to-register").addEventListener("click", () => { window.location.href = "/apply"; });
-    $("to-guest").addEventListener("click", () => startGuest("/dashboard"));
-
-    async function startGuest(path) {
+    // Become a guest and boot into the dashboard. No button: arriving is enough.
+    (async function enter() {
       try {
         const r = await fetch("/api/guest", { method: "POST" });
         if (r.ok) {
-          if (window.Boot) Boot.play({ navigateTo: path });
-          else window.location.href = path;
+          if (window.Boot) Boot.play({ navigateTo: "/dashboard" });
+          else window.location.href = "/dashboard";
           return;
         }
       } catch (e) {}
-      err("couldn't start a guest session.");
-    }
+      err("couldn't open a session. reload to try again.");
+    })();
 
-    $("form").addEventListener("submit", async (e) => {
-      e.preventDefault(); err("");
-      const payload = { username: $("username").value.trim(), password: $("password").value };
-      let res, data;
-      try {
-        res = await fetch("/api/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-        data = await res.json().catch(() => ({}));
-      } catch (e2) { err("connection lost. try again."); return; }
-      if (res.ok) {
-        // the dashboard forces a first-login password change when needed
-        if (window.Boot) Boot.play({ navigateTo: "/dashboard" });
-        else window.location.href = "/dashboard";
-      } else { err(data.error || "something went wrong."); }
-    });
-
-    // Ambient glitch. We cannot ask the server who this is yet, so we trust the
-    // flag cached by the dashboard on the last signed-in visit. A photosensitive
-    // account is unprotected only on the very first visit from a given browser.
+    // Ambient glitch, gated by the flags the dashboard caches in localStorage
+    // (photosensitivity, and the flashing-effects toggle). Nothing identifies a
+    // guest, so a fresh browser gets the effects until they are switched off.
     (function () {
       let ok = true;
       try { ok = localStorage.getItem("photosensitive") !== "1"; } catch (e) {}

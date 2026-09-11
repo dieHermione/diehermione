@@ -34,3 +34,5 @@ sessions.json
 gametips.json
 multitap.json
 ot12.json
+# finished writing runs (guests have no record to keep them on)
+completed.json

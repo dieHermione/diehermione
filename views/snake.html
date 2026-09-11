@@ -79,7 +79,7 @@
   <div class="tmr" id="tmr" hidden><div class="k">time left</div><span id="tmr-val">0:00</span></div>
   <div class="hud tl"><div class="k">score</div><div class="v" id="hud-score">0</div></div>
   <div class="hud tr"><div class="k">length</div><div class="v" id="hud-length">0</div></div>
-  <div class="hud bl"><div class="k">points earned</div><div class="v" id="hud-earned">0</div></div>
+  <div class="hud bl"><div class="k">eaten</div><div class="v" id="hud-earned">0</div></div>
   <div class="hud br2"><div class="k">boost &middot; hold shift</div><div class="boostbar" id="boostbar"><span id="boost-fill"></span></div></div>
 
   <div class="nav">
@@ -96,7 +96,7 @@
 
   <div class="overlay" id="results" hidden>
     <h1 id="r-title">time</h1>
-    <div class="ostat"><b id="r-food">0</b> eaten &middot; <b id="r-earned">0</b> points</div>
+    <div class="ostat"><b id="r-food">0</b> eaten</div>
     <div class="orow">
       <button class="obtn" id="again" type="button">again</button>
       <button class="obtn ghost" id="results-back" type="button">dashboard</button>
@@ -380,7 +380,7 @@
         const res = await fetch("/api/snake/food", { method: "POST" });
         if (!res.ok) return;
         const data = await res.json();
-        earned += data.earned; if (data.bonus) earned += data.bonus;
+        earned = data.eaten;   // the server's own count for this run
         showScore();
       } catch {}
     }
@@ -405,7 +405,6 @@
       pb.disabled = true;
       document.getElementById("r-title").textContent = reason === "time" ? "time" : "dead";
       document.getElementById("r-food").textContent = score;
-      document.getElementById("r-earned").textContent = earned;
       document.getElementById("tmr").hidden = true;
       document.getElementById("results").hidden = false;
       draw();

@@ -40,30 +40,13 @@
     /* the width cap is in rem so it grows with the root size (as zoom would);
        the vertical frame stays in px so taller type never eats the height budget */
     .dash { position: relative; z-index: 5; width: min(102.5rem, 94vw); height: calc(100vh - 104px); margin: 46px auto 0;
-      display: grid; grid-template-columns: 1.15fr 1.4fr 0.67fr; grid-template-rows: auto 1fr auto; gap: 3.2vh 3vw;
-      grid-template-areas: "hello hello clock" "actions dailies board" "vessel dailies ."; }
-    /* no admin panel: the middle column closes up instead of leaving a hole */
-    .dash.no-panel { grid-template-columns: 1.3fr 0.67fr;
-      grid-template-areas: "hello clock" "actions board" "vessel ."; }
+      display: grid; grid-template-columns: 1.3fr 0.67fr; grid-template-rows: auto 1fr; gap: 3.2vh 3vw;
+      grid-template-areas: "hello clock" "actions ."; }
+    /* (the balance and leaderboard columns went with accounts and points; the
+       grid is hero + clock over the enter list, and nothing else) */
     @media (max-width: 900px) {
-      .dash, .dash.no-panel, .dash.c-dailies, .dash.c-board, .dash.c-dailies.c-board {
-        grid-template-columns: 1fr;
-        grid-template-areas: "hello" "clock" "actions" "vessel" "dailies" "board";
-        height: auto;
-      }
+      .dash { grid-template-columns: 1fr; grid-template-areas: "hello" "clock" "actions"; height: auto; }
       html, body { overflow: auto; }
-      /* One column has no room for a folded spine, and the absolutely
-         positioned vertical heading collapsed the card to nothing. Folding is
-         simply off below this width. */
-      .fold-right.collapsed { position: static; overflow: visible;
-        border-left: 1px solid var(--dim2); padding-left: 2vw; }
-      .fold-right.collapsed > *:not(h2) { display: block; }
-      #dailies-card.collapsed h2, .fold-right.collapsed h2 {
-        position: static; inset: auto; width: auto; padding: 0;
-        writing-mode: horizontal-tb; transform: none; background: none;
-        display: block; height: auto;
-      }
-      .fold-right.collapsed h2 .chev { transform: none; }
     }
 
     /* ---- hello (welcome + flavor) ---- */
@@ -71,7 +54,6 @@
     #notif-slot { position: absolute; top: 0; right: 0; z-index: 20; }
     .hero-top { display: flex; align-items: baseline; gap: 0.7rem; margin-bottom: 0.8rem; }
     .hero-top .eyebrow { color: var(--dim); letter-spacing: 0.2em; text-transform: uppercase; font-size: 0.72rem; }
-    .hero-top .acct-age::before { content: "·"; margin-right: 0.7rem; }
     .hero h1 { font-family: "Share Tech Mono", ui-monospace, monospace; font-weight: 400; text-transform: uppercase;
       font-size: clamp(2rem, 4.8vw, 3.9rem); line-height: 1.06; color: var(--bright); text-shadow: 0 0 30px var(--glow); letter-spacing: 0.06em; margin: 0; }
     .hero > p { color: var(--dim); font-size: 1.15rem; letter-spacing: 0.06em; margin: 1rem 0 0; }
@@ -146,95 +128,6 @@
     .ctl-menu a:hover { color: var(--bright); }
     .ctl-btn.ghost { color: var(--dim); }
 
-    /* ---- vessel (balance) ---- */
-    .balance-card { grid-area: vessel; align-self: end; }
-    .bal-num { font-size: clamp(1.8rem, 3.4vw, 2.8rem); color: var(--bright); text-shadow: 0 0 18px var(--glow); font-variant-numeric: tabular-nums; line-height: 1; }
-    .bal-sub { color: var(--bright); letter-spacing: 0.1em; text-transform: uppercase; font-size: 0.78rem; margin-top: 0.3rem; }
-
-    /* ---- dailies / admin panel ---- */
-    .dailies-card { grid-area: dailies; display: flex; flex-direction: column; min-height: 0; border-left: 1px solid var(--dim2); padding-left: 2vw; }
-    .dailies-card h2 { color: var(--dim); letter-spacing: 0.2em; text-transform: uppercase; font-size: 0.72rem; font-weight: 400; margin: 0 0 0.8rem; }
-    /* Panel headings double as collapse toggles. These fold to the RIGHT: the
-       card shrinks to a spine and its column narrows, so the dashboard reads
-       clean when the panel is not wanted. */
-    .dailies-card h2.collapsible, .leaderboard-card h2.collapsible { cursor: pointer; user-select: none; }
-    .dailies-card h2.collapsible:hover, .leaderboard-card h2.collapsible:hover { color: var(--c); }
-    .dailies-card h2 .chev, .leaderboard-card h2 .chev { display: inline-block; margin-right: 0.4rem; transition: transform 0.15s; }
-    .fold-right.collapsed > *:not(h2) { display: none; }
-    /* The spine's heading is taken out of flow: as vertical text it is tall
-       enough to push the grid past fitDash's threshold, which scaled the whole
-       dashboard (top bar included) the moment a card was folded. Absolute
-       positioning means a fold changes nothing but the folded card.
-       The left border is the divider to this card's left, so it goes too. */
-    .fold-right.collapsed { position: relative; padding-left: 0; border-left: none; overflow: hidden; }
-    /* Out of flow, and centred both ways. In vertical-rl the flex main axis is
-       the vertical one, so justify-content centres down the line and
-       align-items centres across it. */
-    .fold-right.collapsed h2 { position: absolute; inset: 0;
-      display: flex; align-items: center; justify-content: center;
-      writing-mode: vertical-rl; transform: rotate(180deg);
-      white-space: nowrap; margin: 0; height: 100%; }
-    /* With the admin panel folded, its own column is a 3rem sliver and the only
-       rule near it is the leaderboard's left border, one grid gap away. The
-       label rides that line, punching a gap in it with the page background. */
-    #dailies-card.collapsed { overflow: visible; }
-    #dailies-card.collapsed h2 {
-      inset: 0 auto 0 calc(100% + 3vw); width: 1px;
-      background: var(--bg); padding: 0.7rem 0;
-    }
-    .fold-right.collapsed h2 .chev { transform: rotate(90deg); }
-    /* the column has to give the space back, or the card just leaves a hole */
-    /* --board-w is pinned in JS to the leaderboard's live width before a fold,
-       so folding the middle column hands its space to the first column only.
-       The leaderboard keeps its size and the hero keeps its right edge, which
-       is what the notifications bell is anchored to. */
-    .dash.c-dailies { grid-template-columns: 1fr 3rem var(--board-w, 0.77fr); }
-    .dash.c-board { grid-template-columns: 1.15fr 1.75fr 3rem; }
-    .dash.c-dailies.c-board { grid-template-columns: 1fr 3rem 3rem; }
-    /* The clock shares the leaderboard's column. When the board folds to a 3rem
-       spine that column narrows and the clock is in the top row of it, so it
-       would squish. Keep the clock single-line and let it spill left over the
-       empty hero space instead; it stays pinned to the same right edge. The
-       fixed 3rem track means the overflow never widens the spine below it. */
-    .dash.c-board .clock-card { justify-self: end; width: max-content; overflow: visible; }
-
-    .panel-body { flex: 1; min-height: 0; max-height: 60vh; overflow-y: auto; padding-right: 0.3rem;
-      scrollbar-width: thin; scrollbar-color: rgba(0,172,219,0.45) transparent; }   /* Firefox */
-    .panel-body::-webkit-scrollbar { width: 7px; } .panel-body::-webkit-scrollbar-track { background: transparent; }
-    .panel-body::-webkit-scrollbar-thumb { background: rgba(0,172,219,0.35); border-radius: 999px; }
-    .daily-list { display: flex; flex-direction: column; gap: 0.5rem; }
-    .daily { display: flex; align-items: baseline; gap: 0.7rem; }
-    .daily .tick { color: var(--dim2); width: 1.1em; } .daily.done .tick { color: var(--bright); }
-    .daily .body { flex: 1; min-width: 0; }
-    .daily .label { color: var(--c); } .daily.done .label { color: var(--bright); }
-    .daily .detail { color: var(--dim); font-size: 0.8rem; margin-top: 0.1rem; }
-    .daily .mini-bar { height: 3px; background: rgba(0,172,219,0.14); margin-top: 0.4rem; overflow: hidden; }
-    .daily .mini-bar span { display: block; height: 100%; background: var(--accent); }
-    .daily .reward { color: var(--dim); font-size: 0.78rem; white-space: nowrap; }
-
-    /* ---- leaderboard ---- */
-    /* top-aligned and content-height, so it is no taller than the enter list */
-    /* height is synced to the control card in JS so LEADERBOARD sits level with
-       ENTER; if the board overfills that height it scrolls rather than growing up */
-    .leaderboard-card { grid-area: board; padding-left: 2vw; min-height: 0; align-self: end; overflow-y: auto; overflow-x: hidden;
-      scrollbar-width: thin; scrollbar-color: rgba(0,172,219,0.45) transparent; }
-    .leaderboard-card::-webkit-scrollbar { width: 6px; }
-    .leaderboard-card::-webkit-scrollbar-thumb { background: rgba(0,172,219,0.35); border-radius: 999px; }
-    /* guests see the board but names are not links */
-    .dash.is-guest .leaderboard-card td a { pointer-events: none; color: var(--c); text-decoration: none; }
-    .leaderboard-card h2 { color: var(--dim); letter-spacing: 0.2em; text-transform: uppercase; font-size: 0.72rem; font-weight: 400; margin: 0 0 0.8rem; }
-    /* Full width: rows and heading are left-aligned; the points column right-aligns
-       to the window edge (mirrors the points display's padding on the left). Long
-       names ellipsize so the table never stretches. */
-    .leaderboard-card table { border-collapse: collapse; width: 100%; }
-    .leaderboard-card th, .leaderboard-card td { white-space: nowrap; }
-    .leaderboard-card thead th { text-align: left; color: var(--bright); font-weight: 400; font-size: 0.68rem; letter-spacing: 0.14em; text-transform: uppercase; padding-bottom: 0.4rem; }
-    .leaderboard-card th:nth-child(2), .leaderboard-card td:nth-child(2) { width: 100%; max-width: 0; overflow: hidden; text-overflow: ellipsis; padding-right: 3em; }
-    .leaderboard-card th:last-child, .leaderboard-card td:last-child { text-align: right; }
-    .leaderboard-card td { padding: 0.24rem 0; }
-    .leaderboard-card td.rank { color: var(--bright); width: 2.4em; padding-right: 0.8em; }
-    .leaderboard-card td a { color: var(--c); } .leaderboard-card td a:hover { color: var(--bright); }
-    .leaderboard-card td:last-child { color: var(--accent); font-variant-numeric: tabular-nums; }
 
     /* notifications bell (injected into #notif-slot) */
     #notif-slot .notif-btn { background: transparent; border: 1px solid var(--dim2); color: var(--c); border-radius: 4px !important; }
@@ -251,7 +144,6 @@
       <div id="notif-slot"></div>
       <div class="hero-top">
         <div class="eyebrow" id="greeting">Welcome</div>
-        <div class="eyebrow acct-age" id="acct-age"></div>
       </div>
       <h1><span class="editable" id="welcome-wrap"><span id="welcome">welcome</span></span></h1>
       <p><span class="editable" id="message-wrap"><span id="dashboard-message">Thank you for your testing.</span></span></p>
@@ -270,7 +162,6 @@
       <div class="controls">
         <a id="admin-link" class="ctl-btn" href="/admin" hidden>Admin</a>
         <a href="/games" class="ctl-btn">Games</a>
-        <a id="profile-link" class="ctl-btn" href="/profile">Profile</a>
         <button id="settings-toggle" class="ctl-btn" type="button" aria-expanded="false">Settings</button>
         <div class="settings" id="settings" hidden>
           <label class="set-row set-check">
@@ -292,33 +183,12 @@
             <button class="set-mute" id="mute-typing" type="button">on</button></div>
           <p class="set-note">Applies everywhere. A game with its own audio controls opens matching this, and can be changed there without altering these.</p>
         </div>
-        <button id="logout" class="ctl-btn" type="button">Log out</button>
+        <button id="logout" class="ctl-btn" type="button" hidden>Log out</button>
       </div>
-    </section>
-
-    <aside class="balance-card" id="balance-card">
-      <div class="bal-num" id="bal-num">—</div>
-      <div class="bal-sub" id="bal-sub">—</div>
-    </aside>
-
-    <aside class="dailies-card panel-card fold-right" id="dailies-card" hidden>
-      <h2 id="panel-title">Admin controls</h2>
-      <div class="panel-body" id="panel-body">
-        <div class="daily-list" id="daily-list"></div>
-      </div>
-    </aside>
-
-    <section class="leaderboard-card fold-right" id="board-card">
-      <h2 id="board-title">Leaderboard</h2>
-      <table>
-        <thead><tr><th></th><th>User</th><th>Points</th></tr></thead>
-        <tbody id="board"></tbody>
-      </table>
     </section>
   </div>
 
   <script>
-    let myRank = "—";
     // Screen-glitch flashing is off if the account was flagged photosensitive at
     // account creation (a permanent lock), or if the user switched flashing
     // effects off. Otherwise it runs.
@@ -366,34 +236,6 @@
       // 04:00 morning, 12:00 afternoon, 20:00 evening
       h < 4 ? "Good evening" : h < 12 ? "Good morning" : h < 20 ? "Good afternoon" : "Good evening";
 
-    function setBalance(points, coins) {
-      const num = document.getElementById("bal-num");
-      const sub = document.getElementById("bal-sub");
-      if (points === null || points === undefined) {
-        num.hidden = true;
-        sub.textContent = myRank;
-      } else {
-        num.hidden = false;
-        num.textContent = Number(points).toLocaleString();
-        sub.textContent = "points · " + myRank;
-      }
-    }
-
-    // Hermione has no real points or daily obligation; show placeholders so her
-    // dashboard doesn't look half-empty (to be replaced later).
-    function setFakeBalance() {
-      const num = document.getElementById("bal-num");
-      num.hidden = false;
-      num.textContent = "∞";
-      document.getElementById("bal-sub").textContent = "points · Angel";
-    }
-    // Guests keep no currency, but the counters stay on the dashboard as N/A.
-    function setGuestBalance() {
-      const num = document.getElementById("bal-num");
-      num.hidden = false;
-      num.textContent = "N/A";
-      document.getElementById("bal-sub").textContent = "points · guest";
-    }
     // First-login password gate for hand-made accounts.
     function showPasswordGate() {
       const st = document.createElement("style");
@@ -448,54 +290,17 @@
         // the account's saved accent wins over the local cache; reflect it in the picker
         if (window.Theme) { window.Theme.fromAccount(d.themeColor || "default", d.guest); markSwatch(window.Theme.get()); }
 
-        const isHermione = Boolean(d.isAdmin ?? (d.username && d.username.toLowerCase() === "hermione"));
-        const noEcon = Boolean(d.noEconomy) || isHermione;
-        myRank = d.rank || "—";
-        const age = d.createdAt ? Math.floor((Date.now() - new Date(d.createdAt)) / 86400000) : null;
-        document.getElementById("acct-age").textContent = age != null ? "Member for " + age + (age === 1 ? " day" : " days") : "";
-        if (d.guest) {
-          // Guests get the same dashboard, minus the account economy and the
-          // account-only pages; the games they cannot play are locked on /games.
-          document.querySelector(".dash").classList.add("no-panel", "is-guest");
-          setGuestBalance();
-          const pl = document.getElementById("profile-link"); if (pl) pl.hidden = true;
-          const lo = document.getElementById("logout"); if (lo) lo.textContent = "Sign in or apply";
-        } else if (isHermione) {
-          setFakeBalance();
-          // The admin controls moved to their own page (/admin); the dashboard
-          // just offers her the link and otherwise looks like a normal account.
+        // Everyone is a guest except Hermione. A guest sees exactly this page;
+        // there is no sign-in button (`pray login` in the console is the way in).
+        // She additionally gets the Admin link and a way out.
+        const isHermione = Boolean(d.isAdmin);
+        if (isHermione) {
           const al = document.getElementById("admin-link"); if (al) al.hidden = false;
-          document.querySelector(".dash").classList.add("no-panel");
-        } else {
-          // the middle column was the dailies panel; without it the grid closes up
-          document.querySelector(".dash").classList.add("no-panel");
-          setBalance(d.points, d.angelcoins);
+          const lo = document.getElementById("logout"); if (lo) lo.hidden = false;
         }
         loadCopy(isHermione);
       })
       .catch(() => (window.location.href = "/"));
-
-    fetch("/api/leaderboard")
-      .then((r) => (r.ok ? r.json() : Promise.reject()))
-      .then((d) => {
-        const board = document.getElementById("board");
-        d.users.forEach((u, i) => {
-          const tr = document.createElement("tr");
-          const rank = document.createElement("td");
-          rank.className = "rank";
-          rank.textContent = i + 1;
-          const name = document.createElement("td");
-          const link = document.createElement("a");
-          link.href = "/profile?user=" + encodeURIComponent(u.username);
-          link.textContent = u.username;
-          name.append(link);
-          const points = document.createElement("td");
-          points.textContent = u.points;
-          tr.append(rank, name, points);
-          board.append(tr);
-        });
-      })
-      .catch(() => {});
 
     // --- the two lines of dashboard copy, editable in place by hermione ---
     let siteRaw = null;
@@ -546,7 +351,7 @@
 
       const hint = document.createElement("p");
       hint.className = "hint";
-      hint.textContent = "{name} becomes their username.";
+      hint.textContent = "{name} becomes the guest's name.";
 
       const row = document.createElement("div");
       row.className = "row";
@@ -577,24 +382,6 @@
       editor.classList.add("open");
     }
 
-    // Folding the board grows the hero, which drags the notifications bell (pinned
-    // to the hero's right edge) into the space the clock now overflows into. Shift
-    // the bell left to sit just clear of the clock while the board is folded.
-    function placeNotif() {
-      const slot = document.getElementById("notif-slot");
-      const hero = slot && slot.offsetParent;
-      const clock = document.getElementById("clock-card");
-      if (!slot || !hero || !clock) return;
-      if (document.querySelector(".dash").classList.contains("c-board")) {
-        const gap = 20;
-        slot.style.right = Math.max(0, hero.offsetLeft + hero.offsetWidth - clock.offsetLeft + gap) + "px";
-      } else {
-        slot.style.right = "";
-      }
-    }
-
-    // The leaderboard used to collapse to a spine, but folding it reflowed the
-    // grid and shifted the top bar. It stays a fixed, non-folding panel now.
 
     // --- settings panel: drives AudioBus, which every page reads ---
     (function () {
@@ -639,7 +426,7 @@
 
     document.getElementById("logout").addEventListener("click", async () => {
       await fetch("/api/logout", { method: "POST" }).catch(() => {});
-      window.location.href = "/";
+      window.location.href = "/";   // the front door starts a fresh guest session
     });
 
     // --- Eastern-time clock (EST/EDT via Intl; daily reset is 6am Eastern) ---
@@ -672,32 +459,12 @@
     setInterval(tickClock, 1000);
 
     // Shrink the whole dashboard to fit the viewport height instead of scrolling.
-    // Content height varies (admin panel, dailies), so re-fit whenever it changes.
+    // Content height varies (the settings panel opens), so re-fit whenever it changes.
     const _dash = document.querySelector(".dash");
 
-    // Folding a column must not resize the leaderboard or shift the bell, so
-    // its live width is measured and pinned before the grid changes.
-    function pinBoardWidth() {
-      const board = document.getElementById("board-card");
-      if (!_dash || !board) return;
-      if (board.classList.contains("collapsed")) return;
-      _dash.style.setProperty("--board-w", Math.round(board.getBoundingClientRect().width) + "px");
-    }
-    // The leaderboard is bottom-aligned in the same row as the controls; matching
-    // its height to the control card makes its top (LEADERBOARD) sit level with
-    // ENTER, and a fixed height means a full board scrolls instead of growing up.
-    function syncBoardHeight() {
-      const ctrl = document.querySelector(".control-card");
-      const board = document.querySelector(".leaderboard-card");
-      if (!ctrl || !board) return;
-      board.style.height = "";
-      if (window.matchMedia("(max-width: 900px)").matches) return;   // stacked layout keeps natural height
-      board.style.height = ctrl.offsetHeight + "px";
-    }
     function fitDash() {
       if (!_dash) return;
       _dash.style.transform = "";
-      syncBoardHeight();
       const avail = window.innerHeight - 88;  // leave top+bottom margin
       const h = _dash.getBoundingClientRect().height;
       if (h > avail + 2) {
@@ -707,15 +474,8 @@
       } else {
         document.body.style.overflow = "";
       }
-      placeNotif();
     }
     try { new ResizeObserver(fitDash).observe(_dash); } catch (e) {}
-    // the control list is populated async (me.js), so re-sync the board height
-    // whenever it changes size, not just on the initial fit
-    try {
-      const ctrlEl = document.querySelector(".control-card");
-      if (ctrlEl) new ResizeObserver(syncBoardHeight).observe(ctrlEl);
-    } catch (e) {}
     window.addEventListener("resize", fitDash);
     fitDash();
   </script>

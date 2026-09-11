@@ -96,7 +96,7 @@
     <div class="chd">
       <span>angelOS v0.2</span>
       <span id="rule"></span>
-      <span>VAULT <b id="vault">…</b> &#10022;</span>
+      <span>FREE PLAY &#10022;</span>
     </div>
 
     <div class="band" id="band">
@@ -218,7 +218,6 @@
 
       await turnTo(data.index);
       turning = false;
-      document.getElementById("vault").textContent = Number(data.angelcoins).toLocaleString();
       showPay("+" + data.won + " ✦", "");
       // once there are no spins left (accounts, after their turn) the button
       // stops being a dead control and becomes the way back. Guests keep spinning.
@@ -254,7 +253,6 @@
 
     window.siteMe()
       .then((d) => {
-        document.getElementById("vault").textContent = Number(d.angelcoins || 0).toLocaleString();
         return fetch("/api/wheel");
       })
       .then((r) => (r.ok ? r.json() : Promise.reject()))

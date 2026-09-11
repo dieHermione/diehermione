@@ -109,11 +109,8 @@
   // generic "Go". Anything not listed falls back to "Go there".
   const GO_LABELS = {
     "/admin": "Review",
-    "/manage": "Review",
     "/deathroll": "Play",
     "/dashboard": "Open dailies",
-    "/profile": "View profile",
-    "/tasks": "Open tasks",
   };
 
   const BELL = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"

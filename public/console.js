@@ -96,8 +96,8 @@
   // Every page `pray launch` can open, in the order `pray launch list` prints
   // them. `admin: true` marks the targets only Hermione may open; launch itself
   // is not an admin command (anyone can launch a game), so that is checked per
-  // target at run time — and only cosmetically: /admin, /manage and /commands
-  // all redirect non-admins server-side, which is the real boundary.
+  // target at run time — and only cosmetically: /admin and /commands both
+  // redirect non-admins server-side, which is the real boundary.
   var LAUNCH = [
     // games
     ["snake",      "/snake",                 "snake"],
@@ -116,11 +116,8 @@
     // pages
     ["dashboard",  "/dashboard",             "home"],
     ["games",      "/games",                 "the games wall"],
-    ["profile",    "/profile",               "your profile"],
-    ["apply",      "/apply",                 "the questionnaire"],
     // hers
     ["admin",      "/admin",                 "admin panel",        true],
-    ["manage",     "/manage",                "account management", true],
     ["commands",   "/commands",              "this command list",  true],
   ];
   // aliases: old or alternate names for the same target
@@ -141,53 +138,14 @@
   }
 
   var PRAY = {
-    points: {
-      admin: true,
-      usage: "pray points <username> <+n|-n>   e.g. pray points alice +5  /  pray points alice -1",
-      run: function (args) {
-        var user = args[0], n = parseInt(args[1], 10);
-        if (!user || !Number.isInteger(n)) return Promise.resolve(PRAY.points.usage);
-        return fetch("/api/users/" + encodeURIComponent(user) + "/points", {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ amount: n }),
-        }).then(function (r) {
-          return r.json().catch(function () { return {}; }).then(function (d) {
-            if (!r.ok) return d.error || "That didn't work.";
-            return (n >= 0 ? "gave " : "took ") + Math.abs(n) + " points " +
-                   (n >= 0 ? "to " : "from ") + user + ". they now have " + d.points + ".";
-          });
-        });
-      },
-    },
-    set_points: {
-      admin: true,
-      usage: "pray set_points <username> <value>",
-      run: function (args) {
-        var user = args[0], n = parseInt(args[1], 10);
-        if (!user || !Number.isInteger(n)) return Promise.resolve(PRAY.set_points.usage);
-        return fetch("/api/users/" + encodeURIComponent(user) + "/points", {
-          method: "PUT", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ value: n }),
-        }).then(function (r) {
-          return r.json().catch(function () { return {}; }).then(function (d) {
-            if (!r.ok) return d.error || "That didn't work.";
-            return user + " now has " + d.points + " points.";
-          });
-        });
-      },
-    },
-    delete_account: {
-      admin: true,
-      usage: "pray delete_account <username>",
-      run: function (args) {
-        var user = String(args[0] || "").trim();
-        if (!user) return Promise.resolve(PRAY.delete_account.usage);
-        if (user.toLowerCase() === "hermione") return Promise.resolve("The admin account can't be deleted.");
-        return fetch("/api/users/" + encodeURIComponent(user), { method: "DELETE" }).then(function (r) {
-          return r.json().catch(function () { return {}; }).then(function (d) {
-            if (!r.ok) return d.error || "That didn't work.";
-            return user + "'s account has been deleted.";
-          });
+    login: {
+      usage: "pray login",
+      run: function () {
+        // the only way to Hermione's sign-in page: nothing on the site links it
+        return who().then(function (d) {
+          if (d && d.isAdmin) return "you are already here.";
+          setTimeout(function () { window.location.href = "/login"; }, 220);
+          return "opening the door.";
         });
       },
     },
@@ -227,25 +185,6 @@
         }
         setTimeout(function () { window.location.href = href; }, 220);
         return Promise.resolve("opening " + t[0] + ".");
-      },
-    },
-    open: {
-      usage: "pray open <username>",
-      run: function (args) {
-        var user = String(args[0] || "").trim();
-        if (!user) return Promise.resolve(PRAY.open.usage);
-        setTimeout(function () {
-          window.location.href = "/profile?user=" + encodeURIComponent(user);
-        }, 220);
-        return Promise.resolve("opening " + user + "'s profile.");
-      },
-    },
-    manage: {
-      admin: true,
-      usage: "pray manage",
-      run: function () {
-        setTimeout(function () { window.location.href = "/manage"; }, 220);
-        return Promise.resolve("opening account management.");
       },
     },
     quit: {

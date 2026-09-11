@@ -252,55 +252,20 @@
     // --- the two player cards flanking the board ---
     let myName = null;
 
-    async function renderPlayerCard(el, username, role) {
+    // A card is just the role and the name: there are no profiles behind players
+    // any more (Hermione is the one account; everyone else is a guest).
+    function renderPlayerCard(el, username, role) {
       if (!username) { el.hidden = true; return; }
-      const res = await fetch("/api/profile/" + encodeURIComponent(username));
-      if (!res.ok) { el.hidden = true; return; }
-      const p = (await res.json()).profile;
-
-      const parts = [];
       const roleEl = document.createElement("div");
       roleEl.className = "role";
       roleEl.textContent = role;
-      parts.push(roleEl);
-
-      if (p.icon) {
-        const img = document.createElement("img");
-        img.className = "avatar";
-        img.src = p.icon;
-        img.alt = p.username;
-        parts.push(img);
-      } else {
-        const fb = document.createElement("div");
-        fb.className = "avatar-fallback";
-        fb.textContent = (p.username[0] || "?").toUpperCase();
-        parts.push(fb);
-      }
-
+      const fb = document.createElement("div");
+      fb.className = "avatar-fallback";
+      fb.textContent = (username[0] || "?").toUpperCase();
       const name = document.createElement("div");
       name.className = "name";
-      name.textContent = p.username;
-      parts.push(name);
-
-      if (p.rank) {
-        const badge = document.createElement("span");
-        badge.className = "badge" + (p.rank === "Angel" ? " princess" : "");
-        badge.textContent = p.rank;
-        parts.push(badge);
-      }
-
-      const stats = [["Pronouns", p.pronouns || "-"]];
-      if (p.points !== null) stats.push(["Points", p.points]);   // hermione has none
-      stats.forEach(([k, v]) => {
-          const row = document.createElement("div");
-          row.className = "stat";
-          const ke = document.createElement("span"); ke.className = "k"; ke.textContent = k;
-          const ve = document.createElement("span"); ve.className = "v"; ve.textContent = v;
-          row.append(ke, ve);
-          parts.push(row);
-        });
-
-      el.replaceChildren(...parts);
+      name.textContent = username;
+      el.replaceChildren(roleEl, fb, name);
       el.hidden = false;
     }
 

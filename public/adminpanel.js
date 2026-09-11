@@ -1,8 +1,8 @@
 /* The admin controls, extracted from the dashboard onto their own /admin page.
  *
- * Everything Hermione administers lives here: approvals, accounts + points,
- * finished writing series, the editable line/message pools, and the effect
- * test triggers. The module is self-contained — it injects its own CSS and the
+ * Everything Hermione administers lives here: finished writing series, the
+ * editable line/message pools, and the effect test triggers. (Accounts, points
+ * and the questionnaire pipeline were dropped: everyone but her is a guest.) The module is self-contained — it injects its own CSS and the
  * session-result modal — so a host page only has to define the terminal palette
  * variables (--c, --dim, --dim2, --bright, --accent, --bg, --glow, --err) and
  * load the effect scripts it drives: dashglitch.js
@@ -18,49 +18,6 @@ window.AdminPanel = (function () {
 
   const esc = (s) => String(s == null ? "" : s).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
 
-  // A pending disciple's onboarding answers, folded under their approval row.
-  const ONB_KINKS = { feet: "Feet", tasks: "Tasks / Chores", degradation: "Degradation",
-    humiliation: "Humiliation", masochism: "Masochism", exhibitionism: "Exhibitionism",
-    worship: "Worship", petplay: "Petplay" };
-  const ONB_PUN = { lines_physical: "Lines (physical)", lines_typing: "Lines (typing)",
-    voice_memos: "Voice memos", ignoring: "Ignoring", onsite_games_hard: "On-site games (hard)" };
-  const ONB_PET = { dog: "Dog / Doggy / Puppy", good: "Good Boy / Girl", doll: "Doll",
-    pet: "Pet", bitch: "Bitch", loser: "Loser", dummy: "Dummy" };
-
-  function onboardingBlock(o) {
-    const kinks = Object.keys(ONB_KINKS).map((k) => {
-      const v = (o.kinks || {})[k];
-      const warn = (k === "feet" || k === "tasks") && v < 4;
-      return `<span class="qline">${esc(ONB_KINKS[k])} <b class="${warn ? "warn" : ""}">${v}/5</b></span>`;
-    }).join(" &nbsp;·&nbsp; ");
-    const pun = Object.keys(ONB_PUN).map((k) => {
-      const v = (o.punishments || {})[k];
-      return `<span class="qline">${esc(ONB_PUN[k])}: <span class="${v === "acceptable" ? "yes" : "no"}">${v === "acceptable" ? "acceptable" : "hard no"}</span></span>`;
-    }).join(" &nbsp;·&nbsp; ");
-    const pet = Object.keys(ONB_PET).map((k) => {
-      const v = (o.petnames || {})[k];
-      const cls = v === "love" || v === "like" ? "yes" : v === "hate" ? "no" : "";
-      return `<span class="qline">${esc(ONB_PET[k])}: <span class="${cls}">${v}</span></span>`;
-    }).join(" &nbsp;·&nbsp; ");
-    const wrap = document.createElement("div");
-    wrap.className = "qz";
-    const toggle = document.createElement("button");
-    toggle.className = "qtoggle";
-    toggle.textContent = "▸ questionnaire";
-    const bodyEl = document.createElement("div");
-    bodyEl.className = "qbody"; bodyEl.hidden = true;
-    bodyEl.innerHTML =
-      `<div class="qgrp"><b>interests</b><div class="qline">${kinks}</div></div>` +
-      `<div class="qgrp"><b>limits</b><div class="qline">${o.limits ? esc(o.limits) : "<span style='color:var(--dim2)'>none given</span>"}</div></div>` +
-      `<div class="qgrp"><b>punishments</b><div>${pun}</div></div>` +
-      `<div class="qgrp"><b>petnames</b><div>${pet}${o.petnamesOther ? ` &nbsp;·&nbsp; <span class="qline">Other: <b>${esc(o.petnamesOther)}</b></span>` : ""}</div></div>`;
-    toggle.addEventListener("click", () => {
-      bodyEl.hidden = !bodyEl.hidden;
-      toggle.textContent = (bodyEl.hidden ? "▸" : "▾") + " questionnaire";
-    });
-    wrap.append(toggle, bodyEl);
-    return wrap;
-  }
 
   /* --- the finished-series modal (pmodal), created on first use ------- */
   function ensurePmodal() {
@@ -173,23 +130,7 @@ window.AdminPanel = (function () {
       ".adm-lbl { display: block; font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); margin: 0.55rem 0 0.2rem; }",
       ".adm-area { width: 100%; background: rgba(0,172,219,0.05); border: 1px solid var(--dim2); color: var(--bright); font-family: inherit; font-size: 0.8rem; line-height: 1.5; padding: 0.45rem 0.55rem; resize: vertical; }",
       ".adm-area:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 12px var(--glow); }",
-      ".adm-row { display: flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0.5rem; border: 1px solid var(--dim2); margin-bottom: 0.45rem; }",
-      ".adm-row.pending { border-color: var(--accent); flex-wrap: wrap; background: rgba(0,172,219,0.05); }",
       /* a disciple who rated Feet or Tasks/Chores below 4 is flagged red for review */
-      ".adm-row.pending.flagged { border-color: var(--err); background: rgba(255,122,109,0.09); }",
-      ".adm-row.pending.flagged .nm::after { content: ' ⚑'; color: var(--err); }",
-      ".adm-row .nm { color: var(--bright); white-space: nowrap; } .adm-row .grow { flex: 1; min-width: 0; }",
-      ".adm-row .pts { color: var(--accent); font-size: 0.85rem; }",
-      ".adm-row .intro { flex-basis: 100%; color: var(--dim); font-size: 0.8rem; }",
-      /* the onboarding questionnaire answers, folded under a pending disciple */
-      ".adm-row .qz { flex-basis: 100%; margin-top: 0.4rem; border-top: 1px solid var(--dim2); padding-top: 0.45rem; font-size: 0.76rem; color: var(--dim); }",
-      ".adm-row .qz .qtoggle { background: none; border: none; color: var(--accent); font-family: inherit; font-size: 0.74rem; cursor: pointer; padding: 0; letter-spacing: 0.06em; }",
-      ".adm-row .qz .qbody { margin-top: 0.5rem; display: grid; gap: 0.5rem; }",
-      ".adm-row .qz .qgrp > b { display: block; color: var(--dim); font-weight: 400; letter-spacing: 0.14em; text-transform: uppercase; font-size: 0.68rem; margin-bottom: 0.15rem; }",
-      ".adm-row .qz .qline b { color: var(--bright); font-weight: 400; }",
-      ".adm-row .qz .qline { color: var(--c); }",
-      ".adm-row .qz .qline .warn { color: var(--err); }",
-      ".adm-row .qz .qline .no { color: var(--err); } .adm-row .qz .qline .yes { color: #7dffb0; }",
       ".adm-chip { border: 1px solid var(--c); background: transparent; color: var(--c); font-family: inherit; font-size: 0.76rem; padding: 0.24rem 0.7rem; cursor: pointer; text-transform: uppercase; letter-spacing: 0.08em; }",
       ".adm-chip:hover { background: var(--c); color: var(--bg); }",
       ".adm-chip.ghost { border-color: var(--dim2); color: var(--dim); }",
@@ -209,10 +150,6 @@ window.AdminPanel = (function () {
       ".ot-thumb.ot-current img { outline: 2px solid var(--accent); outline-offset: 2px; }",
       ".ot-thumb-nm { font-size: 0.68rem; color: var(--dim); margin-top: 0.25rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }",
       ".ot-thumb-x { position: absolute; top: 0; right: 0; background: rgba(0,0,0,0.7); }",
-      ".adm-mini { border: 1px solid var(--dim2); background: transparent; color: var(--c); font-family: inherit; width: 1.5rem; height: 1.5rem; cursor: pointer; }",
-      ".adm-mini:hover { border-color: var(--accent); color: var(--bright); }",
-      ".adm-toggle { border: 1px solid var(--dim2); background: transparent; color: var(--dim); font-family: inherit; font-size: 0.74rem; padding: 0.2rem 0.6rem; cursor: pointer; text-transform: uppercase; }",
-      ".adm-toggle.on { border-color: var(--accent); color: var(--bright); }",
       ".adm-doc { display: block; color: var(--accent); padding: 0.2rem 0; }",
       ".adm-doc:hover { text-decoration: underline; }",
       ".adm-log { display: flex; gap: 0.5rem; align-items: center; padding: 0.4rem 0.5rem; border: 1px solid var(--dim2); margin-bottom: 0.4rem; }",
@@ -258,22 +195,13 @@ window.AdminPanel = (function () {
     injectStyle();
     const body = container;
     body.replaceChildren();
-    const res = await fetch("/api/users");
-    if (!res.ok) { body.innerHTML = '<p class="adm-empty">Could not load accounts.</p>'; return; }
-    const { users } = await res.json();
     const wrap = document.createElement("div");
     wrap.className = "adm-wrap";
-
-    const approved = users.filter((u) => !u.pending && u.username.toLowerCase() !== "hermione");
 
     const mkChip = (label, cls, fn) => {
       const b = document.createElement("button");
       b.className = "adm-chip" + (cls ? " " + cls : "");
       b.textContent = label; b.addEventListener("click", fn); return b;
-    };
-    const mkMini = (label, fn) => {
-      const b = document.createElement("button");
-      b.className = "adm-mini"; b.textContent = label; b.addEventListener("click", fn); return b;
     };
     const mk = (tag, text) => {
       const el = document.createElement(tag); if (text != null) el.textContent = text; return el;
@@ -291,112 +219,6 @@ window.AdminPanel = (function () {
       return sec;
     };
 
-    // Approvals and Applications were removed from here: accounts are made by hand
-    // (no approval step), and completed questionnaires now live in Account
-    // management (/manage), not the admin panel.
-
-    // onboarding intro slides (About me / Site Purpose), editable copy that a
-    // disciple reads at the top of the questionnaire
-    const onbSec = document.createElement("div"); onbSec.className = "adm-sec";
-    onbSec.append(mk("h3", "Onboarding intro"));
-    const onbHint = mk("p", "The two slides a disciple reads before the questionnaire.");
-    onbHint.className = "adm-empty"; onbSec.append(onbHint);
-    const mkArea = (labelText) => {
-      const lab = mk("label", labelText); lab.className = "adm-lbl";
-      const ta = document.createElement("textarea"); ta.className = "adm-area"; ta.rows = 4;
-      onbSec.append(lab, ta); return ta;
-    };
-    const aboutTa = mkArea("About me");
-    const purposeTa = mkArea("Site Purpose");
-    const onbSave = mkChip("Save intro", "", async () => {
-      const r = await fetch("/api/site", {
-        method: "PUT", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ onboardingAbout: aboutTa.value, onboardingPurpose: purposeTa.value }),
-      });
-      onbSave.textContent = r.ok ? "Saved" : "Error";
-      setTimeout(() => { onbSave.textContent = "Save intro"; }, 1400);
-    });
-    const onbRow = document.createElement("div"); onbRow.style.marginTop = ".5rem"; onbRow.append(onbSave);
-    onbSec.append(onbRow);
-    fetch("/api/site").then((r) => r.json()).then((d) => {
-      if (d && d.raw) { aboutTa.value = d.raw.onboardingAbout || ""; purposeTa.value = d.raw.onboardingPurpose || ""; }
-    }).catch(() => {});
-    wrap.append(foldable(onbSec));
-
-    // questionnaire option descriptions: the sub-text under each /apply kink option
-    const qSec = document.createElement("div"); qSec.className = "adm-sec";
-    qSec.append(mk("h3", "Questionnaire descriptions"));
-    const qHint = mk("p", "The sub-text shown under each option on the application questionnaire. Leave blank for none.");
-    qHint.className = "adm-empty"; qSec.append(qHint);
-    const QLABELS = { feet: "Feet", tasks: "Tasks / Chores", degradation: "Degradation",
-      masochism: "Masochism", chastity: "Chastity", worship: "Worship", petplay: "Petplay" };
-    const qInputs = {};
-    Object.keys(QLABELS).forEach((id) => {
-      const lab = mk("label", QLABELS[id]); lab.className = "adm-lbl";
-      const inp = document.createElement("input"); inp.type = "text"; inp.className = "adm-area"; inp.value = "";
-      inp.placeholder = "no description"; qInputs[id] = inp;
-      qSec.append(lab, inp);
-    });
-    const qSave = mkChip("Save descriptions", "", async () => {
-      const subs = {}; Object.keys(qInputs).forEach((id) => { subs[id] = qInputs[id].value; });
-      qSave.textContent = "Saving...";
-      const r = await fetch("/api/questionnaire", {
-        method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ subs }),
-      });
-      qSave.textContent = r.ok ? "Saved" : "Error";
-      setTimeout(() => { qSave.textContent = "Save descriptions"; }, 1500);
-    });
-    const qRow = document.createElement("div"); qRow.style.marginTop = ".5rem"; qRow.append(qSave);
-    qSec.append(qRow);
-    // fetch current values from the server before showing them (never seed from a client default)
-    fetch("/api/questionnaire").then((r) => r.json()).then((d) => {
-      const s = (d && d.subs) || {};
-      Object.keys(qInputs).forEach((id) => { qInputs[id].value = s[id] || ""; });
-    }).catch(() => {});
-    wrap.append(foldable(qSec));
-
-    // accounts: points + leaderboard listing
-    const accSec = document.createElement("div");
-    accSec.className = "adm-sec";
-    const accH = document.createElement("h3"); accH.textContent = "Accounts · " + approved.length;
-    accSec.append(accH);
-    for (const u of approved) {
-      const row = document.createElement("div");
-      row.className = "adm-row";
-      const nm = document.createElement("span"); nm.className = "nm"; nm.textContent = u.username;
-      const grow = document.createElement("span"); grow.className = "grow";
-      const pts = document.createElement("span"); pts.className = "pts"; pts.textContent = (u.points || 0) + " pts";
-      grow.append(pts);
-      const adjust = async (amount) => {
-        const r = await fetch("/api/users/" + encodeURIComponent(u.username) + "/points", {
-          method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ amount }),
-        });
-        const data = await r.json().catch(() => ({}));
-        if (r.ok) { u.points = data.points; pts.textContent = data.points + " pts"; }
-      };
-      const listed = document.createElement("button");
-      listed.className = "adm-toggle" + (u.flagged ? " on" : "");
-      listed.textContent = u.flagged ? "Listed" : "Unlisted";
-      listed.addEventListener("click", async () => {
-        const r = await fetch("/api/users/" + encodeURIComponent(u.username) + "/flag", {
-          method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ flagged: !u.flagged }),
-        });
-        if (r.ok) { u.flagged = !u.flagged; listed.classList.toggle("on", u.flagged); listed.textContent = u.flagged ? "Listed" : "Unlisted"; }
-      });
-      const del = mkChip("Delete", "ghost", async () => {
-        if (!confirm("Delete " + u.username + "'s account for good? This cannot be undone.")) return;
-        const r = await fetch("/api/users/" + encodeURIComponent(u.username), { method: "DELETE" });
-        if (r.ok) row.remove();
-        else { const e = await r.json().catch(() => ({})); alert(e.error || "Could not delete."); }
-      });
-      row.append(nm, grow,
-        mkMini("−", () => adjust(-1)),
-        mkMini("+", () => adjust(1)),
-        mkChip("±", "ghost", () => { const n = parseInt(prompt("Adjust " + u.username + "'s points by:", "10")); if (Number.isInteger(n)) adjust(n); }),
-        listed, del);
-      accSec.append(row);
-    }
-    wrap.append(foldable(accSec));
 
     // lines completed (Penance / Devotion series), clickable to view
     const logSec = document.createElement("div"); logSec.className = "adm-sec";
@@ -855,11 +677,11 @@ window.AdminPanel = (function () {
     glBar.append(mkChip("Random", "ghost", () => window.DashGlitch && window.DashGlitch.glitch()));
     glSec.append(glBar); wrap.append(foldable(glSec));
 
-    // her tools (the in-site guide and tech pages were retired; the one document
-    // is HANDOFF.md in the repo)
+    // her tools (the guide/tech pages and account management were retired; the
+    // one document is HANDOFF.md in the repo)
     const docSec = document.createElement("div"); docSec.className = "adm-sec";
     docSec.append(mk("h3", "Tools"));
-    [["Account management", "/manage"], ["Commands", "/commands"]].forEach(([t, h]) => {
+    [["Commands", "/commands"]].forEach(([t, h]) => {
       const a = document.createElement("a"); a.className = "adm-doc"; a.href = h; a.textContent = t; docSec.append(a);
     });
     wrap.append(foldable(docSec));
@@ -870,7 +692,6 @@ window.AdminPanel = (function () {
     // own second row of tabs — Games does, one per game that has settings, with
     // the shared hover-text editor sitting in the first (default) subtab.
     const TABS = [
-      { id: "members", label: "Members", match: ["Approvals", "Applications", "Accounts"] },
       { id: "games", label: "Games", subs: [
         { id: "general",  label: "General",  match: ["Game hover text"] },
         { id: "penance",  label: "Penance",  match: ["Penance presets"] },
@@ -879,7 +700,7 @@ window.AdminPanel = (function () {
         { id: "ot12",     label: "OT12",     match: ["OT12 photos", "OT12 songs"] },
       ] },
       { id: "completed", label: "Completed", match: ["Lines completed", "Summaries handed in"] },
-      { id: "content", label: "Site content", match: ["Onboarding intro", "Questionnaire descriptions", "Decrypt lines", "Screen glitch"] },
+      { id: "content", label: "Site content", match: ["Decrypt lines", "Screen glitch"] },
       { id: "docs", label: "Tools", match: ["Tools"] },
     ];
     const secLabel = (sec) => {
@@ -952,8 +773,6 @@ window.AdminPanel = (function () {
       if (!tabHasContent(tab)) return;                  // hide tabs with nothing in them
       const btn = document.createElement("button");
       btn.className = "adm-tab"; btn.dataset.tab = tab.id; btn.textContent = tab.label;
-      const waiting = panel.querySelectorAll(".adm-row.pending").length;
-      if (waiting) { const b = document.createElement("span"); b.className = "badge"; b.textContent = waiting; btn.append(b); }
       btn.addEventListener("click", () => activate(tab.id));
       bar.append(btn);
       wrap.append(panel);
@@ -976,15 +795,13 @@ window.AdminPanel = (function () {
 
     body.append(wrap);
 
-    // gather every account's finished series
+    // finished runs, one global log (guests have no record to keep them on)
     const rows = [];
-    for (const u of users) {
-      const r = await fetch("/api/users/" + encodeURIComponent(u.username) + "/writing").catch(() => null);
-      if (!r || !r.ok) continue;
-      const data = await r.json();
-      (data.log || []).forEach((e) => rows.push({ name: u.username, e }));
+    const wres = await fetch("/api/admin/writing").catch(() => null);
+    if (wres && wres.ok) {
+      const data = await wres.json();
+      (data.entries || []).forEach((e) => rows.push({ name: e.player || "?", e }));
     }
-    rows.sort((a, b) => String(b.e.at || "").localeCompare(String(a.e.at || "")));
     logEmpty.hidden = rows.length > 0;
     const fmt = (ms) => { const s = Math.round((ms || 0) / 1000); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); };
     rows.slice(0, 40).forEach(({ name, e }) => {
@@ -997,7 +814,7 @@ window.AdminPanel = (function () {
       const dismiss = document.createElement("button"); dismiss.className = "adm-log-x"; dismiss.textContent = "×"; dismiss.title = "Dismiss";
       dismiss.addEventListener("click", async (ev) => {
         ev.stopPropagation();
-        const r = await fetch("/api/users/" + encodeURIComponent(name) + "/writing/" + encodeURIComponent(e.id), { method: "DELETE" });
+        const r = await fetch("/api/admin/writing/" + encodeURIComponent(e.id), { method: "DELETE" });
         if (r.ok) row.remove();
       });
       row.append(who, meta, dismiss);

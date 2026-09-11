@@ -36,32 +36,20 @@
     <div class="sub">Open the console anywhere with <b>~</b> (or <b>`</b>). Every command is prefixed <b>pray</b>.
       Up/down arrows walk your history. Admin-only commands are marked.</div>
 
-    <h2>Admin</h2>
-    <div class="cmd"><div class="sig">pray <b>points</b> &lt;username&gt; &lt;+n|-n&gt;</div>
-      <div class="d">Add or remove points. A signed number: <code>+5</code> grants, <code>-1</code> removes.</div>
-      <div class="eg">e.g. <code>pray points alice +5</code> &nbsp; <code>pray points alice -1</code></div></div>
-    <div class="cmd"><div class="sig">pray <b>set_points</b> &lt;username&gt; &lt;value&gt;</div>
-      <div class="d">Set an account's points to an exact value.</div>
-      <div class="eg">e.g. <code>pray set_points alice 100</code></div></div>
-    <div class="cmd"><div class="sig">pray <b>delete_account</b> &lt;username&gt;</div>
-      <div class="d">Permanently delete an account. Cannot be undone.</div>
-      <div class="eg">e.g. <code>pray delete_account alice</code></div></div>
+    <h2>Hers</h2>
     <div class="cmd"><div class="sig">pray <b>skip_stage</b></div>
       <div class="d">In Penance, Devotion, Multitap or OT12: skip the current line/round, but still count it as progress.</div>
       <div class="eg">e.g. <code>pray skip_stage</code></div></div>
-    <div class="cmd"><div class="sig">pray <b>manage</b></div>
-      <div class="d">Open account management: create disciple accounts and review questionnaires.</div></div>
-    <div class="cmd"><div class="sig">pray <b>open</b> &lt;username&gt;</div>
-      <div class="d">Open an account's profile.</div>
-      <div class="eg">e.g. <code>pray open alice</code></div></div>
-    <div class="cmd"><div class="sig">pray <b>launch</b> admin | manage | commands</div>
-      <div class="d">Open the admin panel, account management, or this page. Same command anyone uses to launch a game; these three targets are hers alone, and only show up in <code>pray launch list</code> for her.</div>
+    <div class="cmd"><div class="sig">pray <b>launch</b> admin | commands</div>
+      <div class="d">Open the admin panel, or this page. Same command anyone uses to launch a game; these two targets are hers alone, and only show up in <code>pray launch list</code> for her.</div>
       <div class="eg">e.g. <code>pray launch admin</code></div></div>
 
     <h2>Anyone</h2>
+    <div class="cmd"><div class="sig">pray <b>login</b></div>
+      <div class="d">Open the sign-in page. Only Hermione has an account; everyone else is a guest and never needs this. Nothing on the site links to it.</div></div>
     <div class="cmd"><div class="sig">pray <b>launch</b> &lt;game|page&gt;</div>
       <div class="d">Jump to a game or page. Games: snake, penance, devotion, multitap, summary, skillcheck, ot12,
-        deathroll, parse, elysium, chess, wheel, lottery. Pages: dashboard, games, profile, apply.
+        deathroll, parse, elysium, chess, wheel, lottery. Pages: dashboard, games.
         Old names still work (t9, slots, dummyparse, tree).</div>
       <div class="eg">e.g. <code>pray launch snake</code></div></div>
     <div class="cmd"><div class="sig">pray <b>launch list</b></div>

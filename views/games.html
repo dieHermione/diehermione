@@ -258,10 +258,10 @@
       { n: "skill check", href: "/skillcheck",            art: "skill", a: "#c11208", wb: "radial-gradient(120% 120% at 50% 46%, #200a0c, #050202 74%)" },
       { n: "ot12",        href: "/ot12",                  art: "ot12",  a: "#ffa6c5", wb: "#0d0508", wip: true },
       { n: "snake",       href: "/snake",                 art: "snake", a: "#c11208", wb: "linear-gradient(#140506, #05060a)" },
-      { n: "devotion",    href: "/writing?mode=devotion", art: "dev",   a: "#00acdb", wb: "#050a10", account: true, tab: "extra" },
-      { n: "deathroll",   href: "/deathroll",             art: "death", a: "#c11208", wb: "#0e0607", multi: true, tab: "extra" },
+      { n: "devotion",    href: "/writing?mode=devotion", art: "dev",   a: "#00acdb", wb: "#050a10", tab: "extra" },
+      { n: "deathroll",   href: "/deathroll",             art: "death", a: "#c11208", wb: "#0e0607", tab: "extra" },
       { n: "dummy parse", href: "/dummyparse",            art: "parse", a: "#ff5a4a", wb: "#0a0608", tab: "extra" },
-      { n: "elysium",     href: "/elysium",               art: "elysium", a: "#3f9f6a", wb: "#04100a", account: true, tab: "extra" },
+      { n: "elysium",     href: "/elysium",               art: "elysium", a: "#3f9f6a", wb: "#04100a", tab: "extra" },
       { n: "chess",       href: "/chess",                 art: "chess", a: "#a4322a", wb: "#0c0a08", tab: "extra" },
     ];
 
@@ -376,8 +376,8 @@
         a.href = g.href;
         a.tabIndex = 0;
         a.style.setProperty("--a", g.a);   // so the selection glow picks up the game's accent
-        // anything needing an account is pasted over for a guest
-        const locked = guest && (g.multi || g.account);
+        // (nothing is locked any more: accounts went, every game is open)
+        const locked = false;
         if (locked) {
           a.classList.add("locked");
           a.removeAttribute("href");
@@ -431,7 +431,6 @@
     function open() {
       const g = shown[sel];
       if (!g) return;
-      if (guest && (g.multi || g.account)) return;
       window.location.href = g.href;
     }
 
