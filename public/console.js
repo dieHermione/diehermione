@@ -93,18 +93,52 @@
   /* ---- pray commands: pray <command> [args] ----
      "pray" is the prefix for everything from here on; it replaced "wing".
      Bare `pray` with no command is itself a command: a small acknowledgement. */
-  var GAMES = {
-    snake: "/snake", penance: "/writing", devotion: "/writing?mode=devotion",
-    wheel: "/wheel", deathroll: "/deathroll", elysium: "/elysium",
-    chess: "/chess", parse: "/dummyparse", dummyparse: "/dummyparse",
-    skillcheck: "/skillcheck", summary: "/summary", lottery: "/lottery", slots: "/lottery",
-    multitap: "/multitap", ot12: "/ot12",
-    // not games, but the two places people most want to get back to
-    dashboard: "/dashboard", profile: "/profile", games: "/games",
-  };
-  // admin-only launch targets, checked at run time (launch itself is not an
-  // admin command — everyone can launch a game — only these specific names are)
-  var ADMIN_ONLY_LAUNCH = { admin: "/admin" };
+  // Every page `pray launch` can open, in the order `pray launch list` prints
+  // them. `admin: true` marks the targets only Hermione may open; launch itself
+  // is not an admin command (anyone can launch a game), so that is checked per
+  // target at run time — and only cosmetically: /admin, /manage and /commands
+  // all redirect non-admins server-side, which is the real boundary.
+  var LAUNCH = [
+    // games
+    ["snake",      "/snake",                 "snake"],
+    ["penance",    "/writing",               "penance lines"],
+    ["devotion",   "/writing?mode=devotion", "devotion lines (account)"],
+    ["multitap",   "/multitap",              "multitap keypad typing"],
+    ["summary",    "/summary",               "summarise an article"],
+    ["skillcheck", "/skillcheck",            "the dial"],
+    ["ot12",       "/ot12",                  "loona trivia"],
+    ["deathroll",  "/deathroll",             "deathroll (account)"],
+    ["parse",      "/dummyparse",            "dummy parse"],
+    ["elysium",    "/elysium",               "the tree (account)"],
+    ["chess",      "/chess",                 "chess against her"],
+    ["wheel",      "/wheel",                 "the wheel (not on the wall)"],
+    ["lottery",    "/lottery",               "scratch card (not on the wall)"],
+    // pages
+    ["dashboard",  "/dashboard",             "home"],
+    ["games",      "/games",                 "the games wall"],
+    ["profile",    "/profile",               "your profile"],
+    ["apply",      "/apply",                 "the questionnaire"],
+    // hers
+    ["admin",      "/admin",                 "admin panel",        true],
+    ["manage",     "/manage",                "account management", true],
+    ["commands",   "/commands",              "this command list",  true],
+  ];
+  // aliases: old or alternate names for the same target
+  var LAUNCH_ALIAS = { dummyparse: "parse", slots: "lottery", t9: "multitap", tree: "elysium", writing: "penance" };
+  function launchTarget(name) {
+    name = LAUNCH_ALIAS[name] || name;
+    for (var i = 0; i < LAUNCH.length; i++) if (LAUNCH[i][0] === name) return LAUNCH[i];
+    return null;
+  }
+  // the table, one target per line; her three only appear when she is asking
+  function launchList(isAdmin) {
+    var rows = LAUNCH.filter(function (t) { return !t[3] || isAdmin; });
+    var w = rows.reduce(function (m, t) { return Math.max(m, t[0].length); }, 0);
+    return rows.map(function (t) {
+      var pad = new Array(w - t[0].length + 3).join(" ");
+      return "  " + t[0] + pad + t[2] + (t[3] ? "  (hers)" : "");
+    }).join("\n");
+  }
 
   var PRAY = {
     points: {
@@ -173,20 +207,26 @@
       },
     },
     launch: {
-      usage: "pray launch <" + Object.keys(GAMES).concat(Object.keys(ADMIN_ONLY_LAUNCH)).join("|") + ">",
+      usage: "pray launch <game|page>   (pray launch list shows them all)",
       run: function (args) {
         var name = String(args[0] || "").toLowerCase();
-        var href = GAMES[name] || ADMIN_ONLY_LAUNCH[name];
-        if (!href) return Promise.resolve(PRAY.launch.usage);
-        if (ADMIN_ONLY_LAUNCH[name]) {
+        if (name === "list") {
+          return who().then(function (d) {
+            return "pray launch <one of these>\n" + launchList(Boolean(d && d.isAdmin));
+          });
+        }
+        var t = launchTarget(name);
+        if (!t) return Promise.resolve(PRAY.launch.usage);
+        var href = t[1];
+        if (t[3]) {
           return who().then(function (d) {
             if (!d || !d.isAdmin) return "She saw that.";
             setTimeout(function () { window.location.href = href; }, 220);
-            return "opening " + name + ".";
+            return "opening " + t[0] + ".";
           });
         }
         setTimeout(function () { window.location.href = href; }, 220);
-        return Promise.resolve("opening " + name + ".");
+        return Promise.resolve("opening " + t[0] + ".");
       },
     },
     open: {

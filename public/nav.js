@@ -47,10 +47,14 @@
     if (!document.body.classList.contains("has-top-nav")) return;
     injectBackStyle();
     // Individual games send you back to the wall they were opened from. The wall
-    // itself is one level up: its back button goes to the dashboard instead.
+    // itself is one level up: its back button goes to the dashboard instead. A
+    // page reached from somewhere else names that place with data-back on <body>
+    // (the admin pages do: /commands is opened from /admin, so it returns there).
     var onWall = location.pathname === "/games" || location.pathname === "/games/";
-    var label = onWall ? "Back to dashboard" : "Back to games";
-    var back = el("a", { className: "dash-back", href: onWall ? "/dashboard" : "/games", "aria-label": label, title: label });
+    var override = document.body.getAttribute("data-back");
+    var href = override || (onWall ? "/dashboard" : "/games");
+    var label = "Back to " + (href === "/dashboard" ? "dashboard" : href === "/admin" ? "admin" : href === "/games" ? "games" : href.replace(/^\//, ""));
+    var back = el("a", { className: "dash-back", href: href, "aria-label": label, title: label });
     back.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>';
     back.hidden = true;
     // A game can intercept "back": while a run is going it returns you to the

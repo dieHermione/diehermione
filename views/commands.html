@@ -15,12 +15,6 @@
     html, body { height:100%; }
     body { background:#000; color:var(--c); font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:14px; }
     .scan { position:fixed; inset:0; z-index:200; pointer-events:none; background:repeating-linear-gradient(0deg,rgba(0,0,0,.26) 0 1px,transparent 1px 3px); }
-    /* standard site back button: a chevron pinned top-left, no plate */
-    .back { position:fixed; top:1.3rem; left:1.3rem; z-index:1000; width:2.6rem; height:2.6rem;
-      border-radius:50%; display:flex; align-items:center; justify-content:center; background:none;
-      color:var(--c); opacity:.8; text-decoration:none; transition:transform .2s ease, opacity .2s ease; }
-    .back:hover { transform:translateY(-2px); opacity:1; }
-    .back svg { width:22px; height:22px; }
     .wrap { position:relative; z-index:5; width:100%; padding:4vh 5vw 6vh; }
     .top { font-size:11px; letter-spacing:.3em; color:var(--dim); text-transform:uppercase; padding-left:3.4rem; }
     h1 { font-size:1.4rem; color:var(--bright); letter-spacing:.06em; margin:1.4rem 0 0.3rem 3.4rem; font-weight:600; }
@@ -35,10 +29,7 @@
     .note { color:var(--dim2); font-size:12px; margin-top:1.4rem; line-height:1.6; }
   </style>
 </head>
-<body>
-  <a class="back" href="/dashboard" aria-label="Back to dashboard" title="Back to dashboard">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
-  </a>
+<body class="has-top-nav" data-back="/admin">
   <div class="wrap">
     <div class="top"><span style="text-transform:none">angelOS v0.2</span> // console commands</div>
     <h1>Console commands</h1>
@@ -59,19 +50,22 @@
       <div class="d">In Penance, Devotion, Multitap or OT12: skip the current line/round, but still count it as progress.</div>
       <div class="eg">e.g. <code>pray skip_stage</code></div></div>
     <div class="cmd"><div class="sig">pray <b>manage</b></div>
-      <div class="d">Open account management: create visitor/disciple accounts and review applications.</div></div>
+      <div class="d">Open account management: create disciple accounts and review questionnaires.</div></div>
     <div class="cmd"><div class="sig">pray <b>open</b> &lt;username&gt;</div>
       <div class="d">Open an account's profile.</div>
       <div class="eg">e.g. <code>pray open alice</code></div></div>
-    <div class="cmd"><div class="sig">pray <b>launch admin</b></div>
-      <div class="d">Open the admin panel. Same command anyone else uses to launch a game, but this one target is admin-only.</div>
+    <div class="cmd"><div class="sig">pray <b>launch</b> admin | manage | commands</div>
+      <div class="d">Open the admin panel, account management, or this page. Same command anyone uses to launch a game; these three targets are hers alone, and only show up in <code>pray launch list</code> for her.</div>
       <div class="eg">e.g. <code>pray launch admin</code></div></div>
 
     <h2>Anyone</h2>
     <div class="cmd"><div class="sig">pray <b>launch</b> &lt;game|page&gt;</div>
-      <div class="d">Jump to a game or page: snake, penance, devotion, wheel, deathroll, elysium, chess, parse,
-        skillcheck, summary, multitap, ot12, dashboard, profile, games.</div>
+      <div class="d">Jump to a game or page. Games: snake, penance, devotion, multitap, summary, skillcheck, ot12,
+        deathroll, parse, elysium, chess, wheel, lottery. Pages: dashboard, games, profile, apply.
+        Old names still work (t9, slots, dummyparse, tree).</div>
       <div class="eg">e.g. <code>pray launch snake</code></div></div>
+    <div class="cmd"><div class="sig">pray <b>launch list</b></div>
+      <div class="d">Print every launch target with a word on each.</div></div>
     <div class="cmd"><div class="sig">pray <b>reload</b></div><div class="d">Reload the current page.</div></div>
     <div class="cmd"><div class="sig">pray <b>quit</b></div><div class="d">Close the tab (if the browser allows it).</div></div>
     <div class="cmd"><div class="sig">pray</div><div class="d">On its own, a small acknowledgement.</div></div>
@@ -84,6 +78,7 @@
     window.siteMe().then(function (d) { if (!d || !d.isAdmin) window.location.href = "/dashboard"; })
       .catch(function () { window.location.href = "/"; });
   </script>
+  <script src="/nav.js" defer></script>
   <script src="/console.js" defer></script>
   <script src="/dashglitch.js" defer></script>
 

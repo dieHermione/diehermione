@@ -855,10 +855,11 @@ window.AdminPanel = (function () {
     glBar.append(mkChip("Random", "ghost", () => window.DashGlitch && window.DashGlitch.glitch()));
     glSec.append(glBar); wrap.append(foldable(glSec));
 
-    // documentation
+    // her tools (the in-site guide and tech pages were retired; the one document
+    // is HANDOFF.md in the repo)
     const docSec = document.createElement("div"); docSec.className = "adm-sec";
-    docSec.append(mk("h3", "Documentation & tools"));
-    [["Account management", "/manage"], ["Guide", "/guide"], ["Technical notes", "/tech"], ["Commands", "/commands"]].forEach(([t, h]) => {
+    docSec.append(mk("h3", "Tools"));
+    [["Account management", "/manage"], ["Commands", "/commands"]].forEach(([t, h]) => {
       const a = document.createElement("a"); a.className = "adm-doc"; a.href = h; a.textContent = t; docSec.append(a);
     });
     wrap.append(foldable(docSec));
@@ -879,7 +880,7 @@ window.AdminPanel = (function () {
       ] },
       { id: "completed", label: "Completed", match: ["Lines completed", "Summaries handed in"] },
       { id: "content", label: "Site content", match: ["Onboarding intro", "Questionnaire descriptions", "Decrypt lines", "Screen glitch"] },
-      { id: "docs", label: "Docs & tools", match: ["Documentation"] },
+      { id: "docs", label: "Tools", match: ["Tools"] },
     ];
     const secLabel = (sec) => {
       const h = sec.querySelector("h3");

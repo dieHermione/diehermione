@@ -1,381 +1,357 @@
-# Handoff, angeldomme
+# angeldomme — the one document
 
-What is true now, what is left, and the habits that keep this project cheap to
-work on. Rewritten 2026-07-30, refreshed 2026-08-03 after the dual-tone/boot/
-admin/visitor/notifications batch; earlier versions had a decade of "latest
-session" layers stacked on top of each other and most of it was superseded.
-
-> **The site is called angeldomme.** The `.me` is part of the word, not just the
-> TLD: it reads "angel domme". Never write bare `angeldom` in anything a visitor
-> sees — this includes UI chrome that is easy to overlook, like window title bars
-> and `name@host` handles: write `angeldomme` (or the full domain `angeldom.me`),
-> never `@angeldom`. The old `ANGELDOM //` headers are gone from every page; every
-> header now reads `angelOS v0.2`. Internal identifiers and the domain string are
-> fine. When in doubt, say it aloud: if it reads "angel-dom" it is wrong.
->
-> **`angelOS` keeps its exact casing — never `ANGELOS`, never `Angelos`.** Watch
-> the common trap: a header styled `text-transform: uppercase` turns `angelOS`
-> into `ANGELOS`. Wrap the word in a `text-transform: none` span (as `admin.html`
-> does) so the rest of the header can still be uppercased while `angelOS` stays
-> intact.
+This is the **only** documentation for the project. There is no README, no
+NEXT_SESSION, no per-folder notes, no in-site guide or tech page — everything
+lives here, in plain markdown, and **it is updated in the same commit as any
+change that would warrant it** (a new route, pool, command, rule, or a claim
+below that stops being true). Rewritten from the code on 2026-09-11; the
+previous five files trailed the code by twenty commits.
 
 Live at **angeldom.me** (Railway, auto-deploys on push to `main`). One Express
-server (`server.js`), no database, JSON files on disk, no build step. One admin
-identity: `hermione`.
+server (`server.js`, ~3.4k lines), no database, JSON files on disk under
+`DATA_DIR`, **no build step**. One admin identity: `hermione`. Repo:
+`dieHermione/diehermione` — it is also edited through Replit sometimes, so
+**pull/rebase before pushing**.
 
-> ## Always push
-> **Commit and push to `main` after every task — no need to ask first.** This is a
-> small personal hobby site; the user has standing authorization to push, and
-> pushing early never ruins anyone's experience. Don't sit on finished, verified
-> work waiting for a go-ahead. (Auto-deploys on push, so a quick post-push sanity
-> check against the live marker is still worth it — see Railway lag below.)
+---
 
-> ## Dual-tone colour rule — no dimming
-> Every blue-and-white surface uses **exactly two text colours**: the vivid brand
-> blue **`#00acdb`** and white **`#eafaff`**. There is **no dim/mid blue for text**
-> — the old `--dim`/`--dim2` shades (`#006b88`, `#004558`, and the older `#4f7ea0`,
-> `#2c4a5e`, `#aee3ff`, `#8fd0ff`) are gone from text; `--dim` and `--dim2` now just
-> resolve to `#00acdb`. Labels/eyebrows are the same blue as the values and links,
-> not a fainter one. Also: **no text transparency anywhere** — never set `color:`
-> to an `rgba()` with alpha or put `opacity:<1` on visible text; on the black
-> background use the opaque colour. (`--glow`, borders, and backgrounds may keep an
-> alpha; they are not text.) This applies to every blue-white page — dashboard,
-> login, boot, onboarding, summary, admin, manage, commands, guide, tech, profile —
-> and to the **devotion** and **summary** game cards. Among games only devotion and
-> summary follow the blue rule; the others keep their own accent. **Penance is red**
-> (card and screen) — it is *not* blue; dual-tone still holds there as one red + white.
+## Standing rules
 
-> ## UI rules for games (do not regress)
-> - **Never use `<input type="number">`.** Its up/down spinner is banned everywhere.
->   For a numeric field use `<input type="text" inputmode="numeric" maxlength="N">`
->   and strip non-digits on input (`value = value.replace(/\D/g, "")`).
-> - **A results screen is its own screen.** When a game finishes, show the results
->   on a dedicated screen — never rendered beneath the settings/options. Settings,
->   play, and results are three distinct screens. This applies to every game.
-> - Any results screen that also reports to the admin panel (summary, penance,
->   devotion, …) must send **all** the data the in-game results screen shows, not a
->   subset.
+### Naming
+The site is called **angeldomme** — the `.me` is part of the word ("angel
+domme"). Never write bare `angeldom` anywhere a visitor sees, including window
+titles and `name@host` handles: write `angeldomme` or the full domain
+`angeldom.me`. Every page header reads **`angelOS v0.2`**, with exactly that
+casing — never `ANGELOS`. An uppercased header must wrap the word in a
+`text-transform: none` span (as `admin.html` and `commands.html` do). Internal
+identifiers and the domain string are fine.
 
-> ## Persistence — CRUCIAL, do not regress
-> Every editable-text pool (`decrypt.json`, `devotion.json`, `penance.json`,
-> `site.json` = about-me/site-purpose, applications, users, elysium, writing/parse
-> logs, …) is a JSON file under **`DATA_DIR`**. The `load*()` functions read the
-> file first and only use the built-in `*_DEFAULTS` when the file is missing — so
-> **Hermione's edits always win over the code defaults.** They already do in code.
->
-> **Infra is already correct (verified 2026-08-02):** Railway service
-> `diehermione` has a persistent volume (`diehermione-volume`) mounted at `/data`
-> and the env var **`DATA_DIR=/data`** set. That's proven by accounts surviving
-> deploys — same `DATA_DIR`, same volume, so the text pools persist too. **Do not
-> add a second volume, and do not point `DATA_DIR` anywhere else.** Never "fix"
-> persistence by committing generated data JSON to the repo — a deploy would then
-> overwrite live edits with the committed copy.
->
-> So the "lines I removed came back" bug was **not** the filesystem. It was an
-> admin editor seeded from a **client-side default** (the old Subliminals box read
-> `window.Subliminal.messages`, the hardcoded pool, not the server), so saving
-> re-persisted defaults over the edit. Subliminals were removed entirely; the
-> remaining editors (decrypt / penance / devotion / about+purpose) all `fetch`
-> their current value from the server before showing it.
->
-> **Rule for any new editable pool:** copy `decrypt.json` exactly (file-first
-> load, defaults only as fallback) AND make its admin editor fetch the server
-> value before rendering. Never seed an editor from a client-side constant.
+### Always push
+Commit and push to `main` after every task without asking. Small personal
+hobby site, standing authorization. Auto-deploys on push, so sanity-check the
+live site against a real marker afterwards; Railway has lagged ~14 minutes
+before, so don't conclude a build failed too early.
 
-**Read order:** this file, then **`/guide`** and **`/tech`**, which were rewritten
-on 2026-07-30 and are accurate. `README.md` is still stale and owes a pass.
-`mockups/README.md` is the authority on which designs are chosen.
+### One document
+This file. Plain markdown, not styled to the site. Update it with the change,
+not afterwards.
+
+### Image generation is available
+GPT image 2 is available. **Suggest it wherever pure CSS/SVG isn't enough** —
+placeholder game cards, poster art, textures, materials — with a concrete brief
+(subject, style, palette, aspect, background) rather than hand-drawing a weak
+approximation. The user runs the generation.
+
+### Dual-tone colour — no dimming
+Every blue-and-white surface uses exactly two text colours: the accent
+(default **`#00acdb`**) and white **`#eafaff`**. No dim/mid blue for text;
+`--dim` and `--dim2` resolve to the accent. **No text transparency anywhere** —
+never `rgba()` with alpha or `opacity<1` on visible text (`--glow`, borders and
+backgrounds may keep alpha). Applies to dashboard, login, boot, onboarding,
+summary, admin, manage, commands, profile, and to the devotion and summary
+cards. **Penance is red** (card and screen), dual-tone as one red + white.
+The accent is themeable per account (see `theme.js`) — the rule is "two
+colours", not "blue".
+
+### UI rules for games
+- **Never `<input type="number">`.** Use `<input type="text" inputmode="numeric" maxlength="N">` and strip non-digits.
+- **Settings, play and results are three distinct screens.** Results never render beneath the options.
+- A results screen that reports to the admin panel sends **all** the data it shows.
+- New pages get the shared back chevron by putting `has-top-nav` on `<body>` and including `/nav.js` — never hand-roll a back link. A page opened from somewhere other than the wall names it with `data-back="/admin"` (etc.) on `<body>`.
+
+### Persistence — crucial
+Every editable pool is a JSON file under **`DATA_DIR`**. The `load*()`
+functions read the file first and fall back to the in-code `*_DEFAULTS` only
+when the file is missing — **Hermione's edits always win**. Infra is correct
+and verified: Railway service `diehermione`, volume `diehermione-volume` at
+`/data`, env `DATA_DIR=/data`. Do not add a second volume, do not move
+`DATA_DIR`, and **never commit generated data JSON** (a deploy would overwrite
+live edits). For any new pool: copy `decrypt.json`'s shape exactly, and make
+its admin editor **fetch the server value before rendering** — never seed an
+editor from a client-side constant (that bug re-persisted defaults over edits
+once already).
+
+### Hiding versus access control
+Chess is the pattern. Hermione-only UI lives in `views/chess-extra.js` behind
+a route that **404s** (not 403s) for everyone else, so the opponent's page has
+no markup, strings or endpoints to find — that is about not spoiling the game.
+**The endpoints check `isAdmin` on every call; that is the real boundary.** The
+console's `admin: true` flag is cosmetic for the same reason.
+
+### Mockups
+Parameterised single-file pages in `mockups/` (`?d=N`), rendered with headless
+Chrome, sent, and the throwaway `public/_*.html` copies deleted (gitignored
+anyway). Rules learned the hard way: when a batch comes back as "the same
+design again", change the **organising idea**, not the palette (T9 was
+rejected four times as a calculator; slots once as six cabinets); for a
+**physical object, ask for a reference photo on the first rejection** (the
+accepted T9 copies a Motorola RAZR V3). Never let several minigames share one
+page in a real implementation. Picking a mockup is a decision to *try* it —
+show it running before calling it settled. And now: where a card wants a
+photo, illustration or material, propose image generation instead of CSS.
 
 ---
 
 ## What exists
 
 ### Pages
-Login (`public/index.html`), dashboard (`public/dashboard.html`), and everything
-else in `views/` behind a route. `/games` is the wall every game is reached from;
-the dashboard no longer lists them individually.
 
-| Route | What |
+`public/index.html` is login (login-only; "apply here" → `/apply`; a guest
+button → `POST /api/guest`). `public/dashboard.html` is the dashboard;
+everything else is a view in `views/` behind a route.
+
+| Route | Who | What |
+|---|---|---|
+| `/` | anyone | login, boot into the dashboard |
+| `/dashboard` | player | the dashboard; guests see it in a guest state (no points, no Profile/admin). `/guest` redirects here |
+| `/games` | player | the wall every game is reached from; two tabs, *games* and *extra* |
+| `/profile` | login | the man page (`angelOS database`); `?user=` views another |
+| `/apply` | anyone | account-less questionnaire → `applications.json`; carries a short code the applicant DMs Hermione |
+| `/admin` | admin | the tabbed admin panel (`public/adminpanel.js`) |
+| `/manage` | admin | create accounts + review questionnaires (Create account / Questionnaires tabs); back → `/admin` |
+| `/commands` | admin | the `pray` reference, hand-maintained |
+| `/snake` `/writing` (`?mode=devotion`) `/multitap` (`/t9` alias) `/summary` `/skillcheck` `/ot12` `/deathroll` `/dummyparse` `/elysium` (`/tree` alias) `/chess` | player | the games on the wall |
+| `/wheel` `/lottery` (`/slots` alias) | player | still routed, **not linked from the wall** (see Drift) |
+| `/coc2-engine/` | anyone (static) | a hosted writeup, unrelated to the site's own docs |
+| `/chess-extra.js` | admin, 404 otherwise | Hermione's chess controls |
+
+"player" = `requirePlayer` (account or guest); "login" = `requireLogin`
+(account only); "admin" redirects non-admins to `/dashboard`. `/writing?mode=devotion`
+additionally redirects guests to `/games`.
+
+### The games wall (`views/games.html`)
+
+Locked layout; one bespoke poster per game, all sharing one macOS-window
+frame; cards hydrate real data (pool lines, elysium age). Order and tabs:
+
+| Tab | Game | Card | Accent | Notes |
+|---|---|---|---|---|
+| games | penance | real | red | |
+| games | multitap | real (flat keypad) | green | |
+| games | summary | real | blue | |
+| games | skill check | real (dial) | red | |
+| games | ot12 | real (group photo) | pink | flagged `wip` — "unfinished" label, still playable |
+| games | snake | real | red | |
+| extra | devotion | real | blue | `account` — locked for guests |
+| extra | deathroll | real | red | `multi` — locked for guests on the wall (server would still let Hermione open a game against a guest) |
+| extra | dummy parse | real | orange-red | |
+| extra | elysium | **placeholder** | green | `account` |
+| extra | chess | **placeholder** | red-brown | not locked for guests |
+
+Elysium and chess are the two remaining placeholder cards — candidates for
+image generation. Hover text over each card comes from `gametips.json`.
+
+### The games
+
+- **Snake** — free-swimming, no grid; dies on its own tail; food drifts at half speed and flees. **Shift** boosts (~5s per full meter at 1.9x, refills ~16s), **Space** pauses. Time limit chosen on the settings screen (up to 999 min). Food pays points.
+- **Penance / Devotion** (`/writing`) — typed lines from Hermione-editable presets (`penance.json`, `devotion.json`; `lines[0]` always first, the rest shuffled). Penance is red, keeps its own-lines box, and corrupts the text but stays legible. Devotion is blue and needs an account.
+- **Multitap** (`/multitap`, renamed from T9) — typing on an old-phone multi-tap keypad, green/white, deliberately unguided. Any other key commits the pending letter; `#` confirms; `*` deletes; one press of `0` confirms, a second enters a space. Settings screen picks preset or custom lines and a repetition count. Pool is `multitap.json`. Logs as `category: "multitap"`.
+- **Summary** — a real Wikipedia article (action API plain-text extract, trimmed) and a word limit that scales with the source. Pools in `SUMMARY_TOPICS`/`KIND_LABEL`: angels, feminism, Greek mythology, pre-18th-century history, critical biblical scholarship. Handed-in summaries → `summaries.json`, read in Admin → Completed.
+- **Skill check** — the pure dial, settings screen, presets 10/20/35/50, two difficulties, themed.
+- **OT12** (`/ot12`) — LOONA trivia. A round is either a Hermione-tagged **photo** (several members allowed; every member always offered; the answer set must match exactly) or a **trait question** generated from `OT12_MEMBER_DATA` (kinds: animal, shape, hangul, color, plant, height — only kinds with real values are offered; the pool is built at startup). Photos and "any trivia" split the odds evenly. Rounds chosen on the settings screen (default 10, max 100). Correct/wrong sounds. A **song framework** (`/api/ot12/songs`, hand-tagged) exists for future "who sings in X" questions — not built. **No automated image source, by design** (copyrighted photos); Hermione uploads (shrunk to 512px client-side) and re-tags in Admin → Games → OT12. No payout yet. Data-table caveats: values are not unique (location Earth 8 / Eden 4 — the yyxy four are Eden, real data; November/December/January each cover two members; eye colour Black covers four; shape Circle covers three), so a generator must never assume one right answer; missing fields are `undefined` and must be **skipped**, never invented. Thin fields: superpower, birthdate, height (1 of 12 each) — a height-range question cannot be generated yet.
+- **Deathroll** — Hermione sets the opening number; players alternate `1d(previous)`; a 1 loses. Games keyed by the non-Hermione player. Wall-locked for guests.
+- **Chess** — ink wash; every game is player (white) vs Hermione. Hermione has **STRIKE** (remove a piece, spent instead of a move, only on her turn) and **REWIND** (whole-state snapshot stack) via `chess-extra.js`. The picker lists every approved account.
+- **Elysium** — the tree-care game, server-authoritative and time-based (`elysium-engine.js`: hourly ticks, health/resilience/moisture/humidity/airflow/nutrients/leaf wetness/wound load, five zones, three diseases with stages, six growth stages, real-month seasons; actions Water/Mist/Trim/Fertilize/Inspect). Pays nothing, by design. Only page **without** the screen glitch. Admin debug panel at `/api/elysium/debug`.
+- **Dummy Parse** — priest damage sim; `GAME_VERSION` `"0.01"`; leaderboard shows best timed run per player on the current version only.
+- **Wheel** — the unrolled cylinder; one spin a day for accounts, unlimited for guests; **credits nothing** since angelcoins went. Not on the wall.
+- **Lottery** (was Slots) — the INSTANT scratch card; **still stakes angelcoins**, which nothing awards any more, so only Hermione (unlimited) can actually play. Not on the wall.
+
+### Runs are server-owned (or bounded)
+
+| Game | Model |
 |---|---|
-| `/games` | the wall every game is reached from; one bespoke card per game |
-| `/profile` | the man page, `angelOS database` |
-| `/guest` | redirects to `/dashboard`; guests see the dashboard in a guest state (no points, no Profile/admin) |
-| `/apply` | account-less questionnaire; stores to `applications.json`. Option sub-text is Hermione-editable (`questionnaire.json`) |
-| `/admin` | admin-only: the full admin panel, **tabbed** (Members / Writing / Site content / Docs & tools) |
-| `/manage` | admin-only, reached **from `/admin`**: create disciple accounts + review completed questionnaires; **tabbed** (Create account / Questionnaires); standard top-left back button leads to `/admin` |
-| `/commands` | admin-only: the `pray` command reference |
-| `/guide`, `/tech` | the manual and the technical notes |
-| `/snake` `/writing` `/wheel` `/deathroll` `/elysium` `/chess` `/dummyparse` `/skillcheck` `/summary` `/t9` `/ot12` `/lottery` (`/slots` alias) | the games |
+| Penance / Devotion / Multitap | **server-owned.** `POST /api/writing/session` builds the line sequence from the server's own pools (`mode` = `penance` / `devotion` / `multitap`; penance and multitap also accept the player's own lines) and stores it on the login session; `POST /api/writing/line` must match the expected line in order; `POST /api/writing/skip` is admin-only (`pray skip_stage`) and is the real boundary; `POST /api/writing/complete` takes **nothing** from the body and refuses unless the server's count says finished — one-shot. The run lives in `req.session.writing` (file-backed, survives restarts). |
+| OT12 | **server-owned.** `/api/ot12/session` → `/answer` → `/skip` (admin) → `/complete`; the correct set is never sent until after the answer. |
+| Dummy Parse | **bounded.** `/api/parse/session` locks the build (300-point pool) and starts the clock; `/api/parse` refuses more combat time than has elapsed, a wrong duration for a timed mode, or a DPS that disagrees with the total; mode and build come from the run. **Damage total is still client-reported.** |
+| Snake | **bounded.** `/api/snake/session` records the limit; `/api/snake/food` refuses outside a live run (2s grace) and rate-limits (burst 8, refill 2s); `/api/snake/complete` returns the server's count, which the results screen shows. A client can still claim pickups it didn't earn, just not unboundedly. |
+| Skill check, Chess, Deathroll, Elysium, Wheel, Lottery | n/a — either no score, or fully server-refereed already. |
 
-### Games
-- **Snake** free-swimming, no grid. Dies on its own tail. Food drifts at half
-  speed and flees on approach. **Boost:** hold **Shift** to go faster off a
-  storable meter (full bar ~5s at 1.9x, refills ~16s); **Space** pauses.
-- **Penance / Devotion** (`/writing`, `?mode=devotion`). Both take editable
-  preset line-sets; Penance also keeps its own-lines box. Penance corrupts but
-  stays legible (the glyph-scramble and the harsh corruption static are both
-  gone). **Penance is red; Devotion is blue.** **Devotion needs an account** —
-  guests are turned away (card lock + a server redirect), same as deathroll.
-- **Wheel** the unrolled cylinder. Accounts get one turn a day; guests unlimited.
-- **Lottery** (was Slots, `/lottery`, `/slots` alias) the INSTANT scratch card.
-- **Deathroll**, **Chess**, **Elysium**, **Devotion** need an account.
-- **Chess** is ink wash. Hermione has STRIKE and REWIND (see below).
-- **Dummy Parse** priest damage sim; **versioned** (`GAME_VERSION`).
-- **Skill check** the pure dial, with a settings screen.
-- **OT12** (`/ot12`) a matching game over the twelve members of LOONA: a photo,
-  four names, one right answer. **Bones only** — the game loop, the server-owned
-  run and the admin uploader exist; it has a placeholder card and no payout.
-  There is deliberately **no automated image source**: the photos are other
-  people's copyrighted work, so Hermione uploads and tags them herself under
-  *Site content → OT12 photos* (shrunk to 512px client-side, stored in
-  `ot12.json`). The member list is fixed in `OT12_MEMBERS`. The correct name is
-  never sent to the browser until after it answers, so it cannot be read out of
-  the DOM. **`OT12_MEMBER_DATA`** holds a per-member table (full name, hangul,
-  location, superpower, reveal month, animal, colour, plant, birthdate, height,
-  eye colour, shape) so later trivia can be *generated* from it — "who is between
-  160 and 165 cm", "whose animal is the owl" — rather than hand-written. Missing
-  values are `undefined` on purpose: a generator must **skip** a member for a
-  question whose field it lacks, never invent one or treat `""` as an answer.
-  Complete for all twelve: full name, hangul, location, reveal month, animal,
-  colour, plant. **Still thin: superpower, birthdate and height (1 of 12 each)**,
-  so a height-range question cannot be generated yet; eye colour is 11, shape 4.
-  > **Values are not unique** — a "which member has X" question can have several
-  > right answers, so a multiple-choice generator must not assume one. Known
-  > collisions: location (Earth 8 / Eden 4 — the yyxy four are Eden, which is real
-  > data, not a typo), reveal month (November, December and January each cover two
-  > members, one per era), eye colour (Black covers four), shape (Circle covers
-  > three).
-- **Summary** a real Wikipedia article and a word limit. Topic pools: angels,
-  feminism, Greek mythology, pre-18th-century history, **critical biblical
-  scholarship** (`SUMMARY_TOPICS` / `KIND_LABEL` in `server.js`).
+Say "bounded, not validated" for Snake and Dummy Parse.
 
-### Systems
-- **`audio.js`** one context, a gain node per channel (music/ambience/typing) and
-  a **master** over them. One localStorage key, cross-tab via `storage`, and a
-  BroadcastChannel lock so two visible tabs do not both play continuous sound.
-- **`console.js`** backtick opens it. Commands are prefixed **`pray`** (this
-  replaced `wing`): `points <user> <+n|-n>` (signed add), `set_points`, `manage`,
-  `open <user>`, `launch <game|page>`, `reload`, `quit`. **Bare `pray` just
-  acknowledges ("she hears you") — it does NOT flash a subliminal any more;
-  subliminals were removed entirely.** The `/commands` page documents them.
-- **`glitch.js` is deleted** (it drove the removed subliminal word-flash).
-  **`dashglitch.js`** is the screen distortion (five effects; tear/dropout/bloom/
-  contrast-crush/comb on a weighted 2.5–8s scheduler). **Edge burn was removed** —
-  its inset rim glow read as a vignette, which is gone site-wide. Contrast crush
-  swaps palette variables (never touches the background) and **inverts
-  blue↔white** instead of slamming to red. Every terminal
-  page runs it via `dashglitch.js` + `glitchboot.js` — **except Elysium**, which
-  has it removed on purpose. Photosensitive accounts and the effects-off toggle
-  gate it off.
-- **`boot.js`** the decrypt/POST animation, driven by a **virtual clock**: hold
-  **Space** to run it (and the tail) at **8x**, press **M** to skip straight to
-  the dashboard. ~30s cascade of tripled service lines; no [WARN] lines, no
-  vignette (so all text is uniform bright blue), and no lingering delay before the
-  dashboard. Lines are server-stored (`decrypt.json`) and editable in `/admin`.
-- **Editable text pools**, all the same shape (server-stored; the `/admin` editor
-  fetches the server value before rendering): `decrypt.json`, `devotion.json` +
-  `penance.json` (writing presets), `site.json` (about/purpose), and
-  **`questionnaire.json`** (the `/apply` option sub-text). *(subliminal.json and
-  snakesubliminal.json were removed with subliminals.)*
-- **Notifications are Hermione-only.** The bell is hidden for non-admins; member-
-  facing alerts (points, deathroll) were dropped. She still gets new-questionnaire,
-  writing-finished and her own deathroll alerts (`pushNotification` in `server.js`).
-- **Dashboard** (`public/dashboard.html`): hero title font is **Share Tech Mono**;
-  the clock *time* is white. The **leaderboard** was iterated to death — the final,
-  requested state is: **full-width table, heading + rows left-aligned, points
-  right-aligned to the window edge** (mirroring the balance display's padding on
-  the left), a wide name→points gap, and columns that ellipsize so they never
-  stretch. Its height is synced to the control card in JS so LEADERBOARD sits level
-  with ENTER, and it scrolls internally when full. Don't "helpfully" re-center it.
-- **Auth model:** no self-serve registration. Applicants fill `/apply` (Discord +
-  questionnaire) -> `applications.json`. Hermione makes accounts by hand in
-  `/manage` (**disciple only — visitor was retired**) with a dummy password and
-  `mustChangePassword`; first login forces a password change. A boot-time
-  migration folds any legacy `Visitor`-rank account into the entry disciple rank.
+### Systems (shared scripts in `public/`)
 
-### Removed, do not reinstate by accident
-Dailies and both daily bonuses; tithe; tasks and essays; the guestbook; the light
-/dark toggle; the top pill nav; guest as an account type; **self-serve
-registration** (login is login-only; "apply here" -> `/apply`); **subliminals**
-entirely (`glitch.js`, `subliminal.json`, the `pray` flash — the user may recreate
-the `pray` case later, from scratch); **angelcoins** (from UI and payouts; snake
-food now pays points); the **Visitor** account type (all folded into disciple;
-guests cover that role); **member-facing notifications** (bell is Hermione-only);
-the admin panel **from the dashboard** (it lives on `/admin` now); the boot
-**vignette** and **[WARN]** lines.
+- **`audio.js`** — one AudioContext; gain per channel (music / ambience / typing) under a master; one localStorage key, cross-tab via `storage`, BroadcastChannel lock so two visible tabs don't both play. **`ambience.js`** — room tone and interface sounds on the bus (hover sounds ride the typing channel).
+- **`console.js`** — backtick/`~` opens it; commands are `pray <cmd>`; bare `pray` just acknowledges ("she hears you"). Also holds `CODES` — placeholder secret phrases (`her eyes`, `static`, `bleed`, `collapse`, `quiet`, `listen`) that trigger glitch/audio effects. Full command list in the `/commands` table below.
+- **`dashglitch.js`** + **`glitchboot.js`** — the screen distortion: tear / dropout / bloom / contrast-crush / comb on a weighted 2.5–8s scheduler; contrast crush swaps palette variables (never the background) and inverts accent↔white. Every terminal page runs it except Elysium. Gated off by the photosensitive flag and the "Flashing effects" toggle.
+- **`boot.js`** — the decrypt/POST cascade on a **virtual clock**: hold **Space** for 8x, **M** skips. Lines from `decrypt.json`; also plays for guests. No `[WARN]` lines, no vignette.
+- **`theme.js`** — the account accent. Writes `--c/--dim/--dim2/--accent/--glow` **inline on `<html>`** (so nothing may set `--c` on `<body>`, which out-specifies it). Load in `<head>` before the page's `<style>`. Presets: default `#00acdb`, `ed0955`, `710087`, `0bdb00`, `f7df00`, `f78400`, `ffa6c5`; persisted to the account via `POST /api/theme`, localStorage for guests. Every game page follows the theme except Elysium.
+- **`nav.js`** — injects the back chevron on `has-top-nav` pages (`/games` → dashboard, everything else → `/games`, or wherever `<body data-back>` says — `/commands` → `/admin`), runs the signed-out redirect, and honours a page's `window.__navBack()` hook (writing, skillcheck, profile use it: mid-run back goes to the game's settings screen first). `/admin` and `/manage` still hand-roll their own chevron — next to convert.
+- **`notifications.js`** — the bell, **Hermione-only** (hidden for everyone else). Triggers: new questionnaire, a finished writing run, her own deathroll games.
+- **`updatecheck.js`** + `GET /api/version` — `BUILD_ID` is stamped at boot; pages compare and offer a reload after a redeploy.
+- **`transitions.js`** (login → dashboard covers), **`me.js`** (single-flight `/api/me` as `window.siteMe()`), **`ranks.js`** (rank legend; assignable when Hermione views someone else's badge), **`adminpanel.js`** (the whole `/admin` page).
+- **`cardnav.js`** — a reusable Niri-style card strip; only its demo page `/cardnav` uses it.
+
+### Dashboard (`public/dashboard.html`)
+Hero title in Share Tech Mono; clock time is white; scales via root font-size
+(**not** CSS `zoom` — measured: zoom doesn't rescale `vh/vw`). **Leaderboard**
+final state, do not re-centre: full-width table, heading and rows
+left-aligned, points right-aligned to the window edge, wide name→points gap,
+ellipsizing columns, height synced to the control card, internal scroll. Lists
+**only `flagged: true` accounts**. Settings panel: Accent swatches, Master /
+Music / Ambience / Typing volume + mute, Flashing effects (locked off for
+photosensitive accounts), password change. The dailies card markup is still
+in the file but `hidden`.
+
+### Auth model and ranks
+No self-serve registration. Applicants fill `/apply` (age gate, kinks 1–5,
+punishments, petnames, limits, other kinks, brat yes/no) → `applications.json`
++ a Hermione notification. Hermione creates accounts by hand in `/manage`
+(disciple only; visitor was retired) with a dummy password and
+`mustChangePassword`; first login forces a change. Login is refused while
+`status: "pending"`. Guests: `POST /api/guest` claims `guestN` from an
+in-memory registry (3h TTL; their chess/deathroll games go with them).
+
+Rank ladder (`RANK_LADDER`, highest first): **Angel** (Hermione only, shown
+for her regardless of the record), **??** (unassignable), **Disciple**,
+**Worshipper**, **Devoted**, **Follower**, **Servant** (the entry rank new
+accounts get). A boot-time migration folds legacy `Visitor` records into
+Servant. Hermione sits outside the points economy (`noEconomy`, `points: null`).
+
+### Admin panel (`/admin`, `public/adminpanel.js`)
+Tabs: **Members** (Approvals · Applications · Accounts) · **Games** (subtabs
+General = hover text · Penance presets · Devotion presets · Multitap lines ·
+OT12 photos + songs) · **Completed** (Lines completed · Summaries handed in) ·
+**Site content** (Onboarding intro · Questionnaire descriptions · Decrypt
+lines · Screen glitch) · **Tools** (Account management `/manage` · Commands
+`/commands`).
+
+### Editable pools
+
+| File (under `DATA_DIR`) | What | API | Editor |
+|---|---|---|---|
+| `decrypt.json` | boot cascade lines | `/api/decrypt` | Site content |
+| `penance.json` / `devotion.json` | writing presets `{id,name,lines[]}` | `/api/penance/presets`, `/api/devotion/presets` | Games |
+| `multitap.json` | flat sentence pool (lowercase, keypad-typeable) | `/api/multitap` | Games |
+| `gametips.json` | wall hover text, keyed by game name | `/api/gametips` | Games → General |
+| `ot12.json` | tagged photos + songs | `/api/ot12/photos`, `/api/ot12/songs` | Games → OT12 |
+| `site.json` | onboarding intro paragraphs, dashboard copy | `/api/site` | Site content |
+| `questionnaire.json` | `/apply` option sub-text (public read) | `/api/questionnaire` | Site content |
+
+Non-editable data files: `users.json` (accounts, points, writing log, lifetime
+counters, tasks), `games.json` (chess), `deathroll.json`, `elysium.json`,
+`parses.json`, `summaries.json`, `applications.json`, `sessions.json` +
+`.session-secret` (persistent sessions: file-backed `FileSessionStore`,
+flushed once a second, 30-day rolling cookie).
+
+### `pray` commands (`public/console.js`; mirror any change on `/commands`)
+
+| Command | Who | Does |
+|---|---|---|
+| `pray` | anyone | acknowledges |
+| `pray launch <target>` | anyone | navigates; the `LAUNCH` table in `console.js` lists every game and page, with aliases (`t9`, `slots`, `dummyparse`, `tree`, `writing`); `admin` / `manage` / `commands` are hers only, checked per target |
+| `pray launch list` | anyone | prints every launch target with a word each; her three only appear for her |
+| `pray open <user>` | anyone | that profile |
+| `pray reload` / `pray quit` | anyone | |
+| `pray points <user> <+n\|-n>` | admin | signed add |
+| `pray set_points <user> <n>` | admin | |
+| `pray delete_account <user>` | admin | not hermione |
+| `pray skip_stage` | admin | penance / devotion / multitap / ot12 — server-side skip |
+| `pray manage` | admin | `/manage` |
 
 ---
 
-## Runs are server-owned
+## Removed — do not reinstate by accident
+Dailies and both daily bonuses; tithe; tasks and essays (UI); the guestbook;
+light/dark toggle; the top pill nav; guest as an account type; **self-serve
+registration**; **subliminals** entirely (`glitch.js`, `subliminal.json`, the
+`pray` word-flash — a from-scratch rebuild of just the bare-`pray` flash was
+floated but never asked for again); **angelcoins**; the **Visitor** account
+type; member-facing notifications; the admin panel on the dashboard; the boot
+vignette and `[WARN]` lines; edge-burn glitch; the in-site `/guide` and `/tech`
+pages (2026-09-11 — this file replaced them).
 
-The games used to be fully client-refereed: the browser picked the lines, counted
-its own progress, and posted a finished total the server took on trust. **Penance,
-Devotion and Multitap no longer work that way** — all three run through the *same*
-endpoints, with `mode` selecting the line source (`penance` / `devotion` use named
-presets, `multitap` uses its flat pool; penance and multitap also accept the
-player's own lines). The server owns the run:
+## Drift and dead code (known, not yet cleaned)
+- **`POST /api/register` is still live and unauthenticated** (creates a pending account + notification, hands out an onboarding credential). No UI calls it. Same for the account-bound `/onboarding` + `/api/onboarding` flow that `/apply` superseded. Delete when convenient.
+- **Tasks** (`/task`, `/tasks`, `/api/tasks*`, `views/task.html`, `views/tasks.html`, `pushNotification` calls for them) — whole feature still in the server; nothing links to it except `/cardnav`.
+- **`/cardnav`** + `cardnav.js` — a demo surface; its card list still links `/guide` and `/tasks`.
+- **Writing categories shelf** (`writing.json`, `DEFAULT_CATEGORIES`, `GET/PUT /api/writing[/:id]`) — superseded by presets; no client calls it.
+- **`POST /api/photosensitive`** has no caller: **there is no UI to mark an account photosensitive.** Accounts are created `photosensitive: false` and the only way to flag one is editing `users.json`. The login page reads a localStorage flag, so a flagged account is also unprotected on its very first visit from a new browser.
+- **Lottery** stakes a currency that no longer exists (see above). Either wire it to points or remove it.
+- **Wheel** credits nothing. Keep, re-pay in points, or remove.
 
-| Endpoint | What it does |
-|---|---|
-| `POST /api/writing/session` | Builds the line sequence from the server's OWN pools, stores it on the login session, returns it |
-| `POST /api/writing/line` | One finished line; the text must match the line the server expects, in order. The server increments its own count |
-| `POST /api/writing/skip` | Admin-only (`pray skip_stage`): advance without typing. **This is the real boundary** — the console's admin check is only cosmetic |
-| `POST /api/writing/complete` | Refuses unless the server's own count says the run is finished. Takes **nothing** from the body: category, preset, difficulty, passages, mistakes, accuracy, elapsed and letters are all derived from the run. One-shot — the run is deleted, so it cannot be logged twice |
-
-The run lives in `req.session.writing`, which is file-backed now, so it survives a
-restart; one run at a time per login, and nothing extra in `users.json`. Multitap
-logs under `category: "multitap"` alongside the other two.
-
-### Dummy Parse is bounded, not simulated
-Same shape as Snake. `POST /api/parse/session` locks the stat build (rejecting one
-that overspends the 300-point pool) and starts the server's clock;
-`POST /api/parse` then refuses unless it names that run, and checks the parse
-against it: you cannot report more combat time than has actually elapsed, a timed
-mode must have that mode's duration, and the DPS has to agree with the total it
-came from. The stored entry takes its **mode and build from the run, not the
-body**, and a run files exactly one parse. **The damage total is still
-client-reported** — validating it would mean running the whole damage simulation
-server-side.
-
-### Snake is bounded, not simulated
-Snake cannot be validated the same way: the server would have to simulate a 60fps
-action game to know a pickup was real, and the latency would change how the game
-feels. So the server owns the **run** instead of the pickups —
-`POST /api/snake/session` records the time limit and start, `/api/snake/food`
-refuses unless a run is live and its clock has not expired (2s grace), and
-`POST /api/snake/complete` returns the server's own count, which is what the
-results screen shows. The total is now bounded by the run's length rather than
-only by the token bucket. **Don't mistake this for full validation** — a client
-can still claim pickups it did not earn, just not unboundedly.
-
-## Hiding versus access control
-
-Chess is the worked example and the pattern to copy. The two things only Hermione
-can do live in `views/chess-extra.js`, behind a route that **404s** (not 403s) for
-everyone else, so the opponent's copy of the page has no markup, no styles, no
-strings and no endpoints for them to find. That is about not spoiling the game.
-**The endpoints check `isAdmin` on every call, and that is the real boundary.**
+## Open items
+- Elysium and chess placeholder cards → **image generation** briefs.
+- Elysium is short of *events*, not features (ideas below).
+- OT12 payout; song-based questions; fill the thin member fields before a height question.
+- A photosensitivity toggle in Settings (one-way) to give `/api/photosensitive` a caller.
+- Hover sounds ride the typing channel; the settings panel has no fourth slider.
+- Dead code above.
 
 ---
 
-## Testing
-
-The sandbox is a scratch `DATA_DIR` on a second port. It does not persist between
-sessions; reseed it with a script that hashes using the repo's own `bcryptjs`.
+## Running and testing
 
 ```
+npm install
 DATA_DIR=<scratch>/sandbox PORT=57999 SESSION_SECRET=sandbox node server.js
 ```
 
-Seed `hermione` (Princess, `sandboxpass123`) and a couple of approved disciples.
-Give the leaderboard accounts `flagged: true` and some `points`, or the board
-renders empty (it lists only flagged accounts). Every account needs `passwordHash`,
-`status`, `pronouns` and `createdAt`. (`scratchpad/seed.js` already does this.)
+Node 22+ (the `start` script uses `--env-file-if-exists`). Deps: `express`,
+`express-session`, `bcryptjs`, `chess.js`. Env: `PORT` (3000), `DATA_DIR`
+(**must** be the volume in production), `SESSION_SECRET` (optional — else a
+key is generated once into `DATA_DIR/.session-secret`).
 
-**Check for a leftover server before trusting any request.** One from an earlier
-session holds the port, the new one dies with EADDRINUSE, and curl answers happily
-from the old data. `lsof -nP -iTCP:57999 -sTCP:LISTEN` and kill the PID it prints:
-`pkill` matches the shell wrapper and leaves node holding the socket.
+**The sandbox is wiped between sessions — reseed it.** `scratchpad/seed.js
+<dir>` (gitignored, lives on disk) writes `users.json` with `hermione`
+(`sandboxpass123`) and disciples `seraph` / `ranker` / `visitor1`
+(`testtest123`, `flagged: true` with points so the leaderboard isn't empty)
+and a pending `waiting`. Every account needs `passwordHash`, `status`,
+`pronouns`, `createdAt`. Hashes use the repo's own `bcryptjs`.
 
-Only `server.js` changes need a restart. Static files under `public/` and `views/`
-serve fresh.
-
-### The Browser pane cannot be trusted for layout
-It reported a **0x0 viewport for two entire sessions**, fronted or not. DOM and
-JSON checks through `javascript_tool` still work; every width, height and
-screenshot lied. Drive headless Chrome instead.
-
-Two throwaway tools made this cheap and are worth rebuilding immediately:
-
-- **`scratchpad/shot.js`** talks the DevTools protocol: navigate, run arbitrary JS
-  (click a tab, drive a parse with synthetic `KeyboardEvent`s, walk an animation),
-  then screenshot. `node shot.js <url> <out.png> [w] [h] ["<js>"] [settleBefore] [settleAfter]`.
-  `settleBefore` **must outlast the login redirect** or the eval is thrown away
-  with its context.
-- **`public/_shot.html`** logs in and redirects, so authenticated pages can be
-  captured. `?u=seraph&p=testtest123&go=/chess`, or `?u=guest` for a guest
-  session. `.gitignore` already covers `public/_*.html`, so it never deploys.
-
-`computer{type}` sends no keydown; drive typing games with synthetic
-`KeyboardEvent`s. Audio cannot be heard in headless Chrome (the context stays
-suspended) so verify the graph, not the sound.
-
-**`shot.js`'s screenshot step stalls on pages with a continuous rAF/canvas loop**
-(snake, elysium, mid-boot). The `eval:` result still prints to stdout *before* the
-capture, so run it backgrounded, poll the output file for the `eval:` line (return
-a DOM value to assert on), then `pkill -f shot-chrome-`. Static pages capture fine.
-
----
+- **Check for a leftover server first**: `lsof -nP -iTCP:57999 -sTCP:LISTEN`, kill the PID (`pkill` matches the shell wrapper and leaves node holding the socket). A stale server answers curl happily from old data.
+- Only `server.js` changes need a restart; `public/` and `views/` serve fresh.
+- `/writing`, the games and `/dashboard` need a session: log in (`POST /api/login` with a cookie jar) or `POST /api/guest` first. `/api/me` tells you who you are.
+- Prefer **curl and headless Chrome** over browser-pane screenshots. `scratchpad/shot.js <url> <out.png> [w] [h] ["<js>"] [settleBefore] [settleAfter]` drives DevTools (navigate, run JS, screenshot); `public/_shot.html?u=seraph&p=testtest123&go=/chess` (or `?u=guest`) logs in first so authenticated pages can be captured. `settleBefore` must outlast the login redirect. **Its eval return value often doesn't print, and the screenshot step stalls on rAF/canvas pages** (snake, elysium, mid-boot): assert via side effects + screenshot, run it backgrounded and `pkill -f shot-chrome-`.
+- The Browser pane reported a 0x0 viewport for two sessions; DOM/JSON checks through it work, layout numbers and screenshots did not. Fronting the tab matters for anything timing-based (rAF is frozen when hidden).
+- `computer{type}` sends no keydown; drive typing games with synthetic `KeyboardEvent`s. Headless audio contexts stay suspended — verify the graph, not the sound.
+- Mockups render off `file://`; `mockups/capture.sh [out] [batch]` regenerates `mockups/out/*.png` (not committed).
 
 ## Traps this codebase has already sprung
-
-- **SVG elements have no `hidden` or `className` IDL property.** Assigning either
-  silently does nothing. Put state on a wrapper div.
-- **`hidden` loses to an explicit `display`.** Every self-contained page needs its
-  own `[hidden]{display:none !important}`.
-- **A `filter` on page content becomes the containing block for `position:fixed`
-  descendants**, throwing the console and every modal across the screen.
-- **An overlay cannot avoid the background**, whatever filter it carries. If an
-  effect must spare the background, swap palette variables instead.
-- **Anything appended to an element a render function empties disappears
-  mid-animation.** Hang overlays on a parent that survives the repaint.
-- **Vertical text is tall.** A folded panel's rotated heading grew the dashboard
-  grid enough to trigger its scale-to-fit and shrink the whole page.
-- **Frame-rate dependent probability.** Roll on the state change, not per frame.
+- **Scripted string replacements fail silently** — assert the replacement landed (`if (s === before) throw`) or grep afterwards; a "fix" commit once contained no fix.
+- **`theme.js` writes `--c` inline on `<html>`**; anything setting `--c` on `<body>` breaks theming for the page.
+- **CSS `zoom` does not rescale `vh`/`vw`.** The dashboard scales via root font-size.
+- **SVG elements have no `hidden` or `className` IDL property** — state goes on a wrapper div.
+- **`hidden` loses to an explicit `display`** — every self-contained page needs `[hidden]{display:none !important}`.
+- **A `filter` on page content becomes the containing block for `position:fixed` descendants** (console and modals fly across the screen).
+- **An overlay cannot avoid the background** whatever filter it carries — swap palette variables instead.
+- **Anything appended inside an element a render function empties disappears mid-animation** — hang overlays on a parent that survives.
+- **Vertical text is tall** — a rotated heading once grew the dashboard grid into scale-to-fit.
+- **Frame-rate dependent probability** — roll on the state change, not per frame.
 - **A CSS animation ending in `transform: none`** wipes a positioning transform.
-- **Never transform `.dash`**; the scale-to-fit lives there.
+- **Never transform `.dash`** — the scale-to-fit lives there.
+- **nbsp in a typing box forces an unbreakable line** (horizontal scroll buried the caret); push real spaces as bare text nodes, not inside their own `<span>` (Safari).
+- **An undefined CSS custom property drops the whole declaration** silently.
 
 ---
 
-## Outstanding
+## Mockup record (`mockups/`)
 
-The admin-to-`/admin` extraction, the dual-tone recolour, the boot rework, the
-visitor removal, notifications-to-Hermione-only, the snake boost, the account-
-management rebuild, the questionnaire editor, and the summary scripture pool have
-all landed and are pushed. What is left:
+| Batch | File | Status |
+|---|---|---|
+| Profile | `profile.html` | chosen 10 (man page), built |
+| Wheel | `wheel.html` | chosen 5 (unrolled cylinder), built |
+| Game select | `select.html`, `select2.html`, `gamecards.html` | wall built; per-card designs iterated in place |
+| Chess | `chess.html` | chosen 9 (ink wash), built |
+| T9 → Multitap | `t9.html` | fifth attempt (RAZR V3 from reference); the built game uses the flat keypad |
+| Slots → Lottery | `slots.html` | chosen 5 (scratch card), built |
+| Dummy Parse | `dummyparse.html` | chosen 10 (ability cards) + 11 (timeline), built |
+| Decrypt | `decrypt.html` | chosen 1 (BIOS/POST), built into `boot.js` |
+| Dashboard | `dashboard.html`, `dashboard2.html` | v1 rejected; v2 (occult-terminal) never picked; current dashboard is its own thing |
 
-### Open
-- **`profile.html` was on the old light-blue palette** until it was recoloured;
-  it now matches. But it (and a few pages) still uses the classic man-page /
-  terminal layout — no redesign requested, just noting it is now on-scheme.
-- **Game-selection cards** already exist as bespoke per-game cards on `/games`
-  (snake and deathroll are still `placeholder card`). If a fresh mockup batch is
-  ever wanted: poster-wall layout, each card styled like the login game cards —
-  render as `?d=N` + headless Chrome, send, delete (see the mockup lesson below).
-- `README.md` is stale.
-- Photosensitivity first-visit gap: the login page reads a localStorage flag
-  (it runs before anyone is identified), so a flagged account is unprotected on
-  its very first visit from a new browser. (Dashboard Settings has a one-way
-  Photosensitivity toggle; account creation defaults the flag to false.)
-- Hover sounds ride the *typing* channel; the settings panel only has three.
-- `nav.js` may still carry dead `buildNav()` / `applyGuestNav()`.
-- Handed-in summaries are stored in `summaries.json` with **no admin view**.
-- Completed questionnaires are viewable in `/manage`; account creation is manual
-  (no automated Discord check, by design).
-- Elysium: `docs/elysium-ideas.md` — the game is short of *events*, not features.
-- Railway can lag badly (once ~14 minutes). Verify a deploy against a real marker
-  before concluding a build failed.
+The brief is explicitly **not minimalism** — "as overdesigned and maximalist as
+possible" — but the terminal look was lifted for chess and slots so each design
+could have its own material world.
 
-### If the user recreates subliminals
-They asked, later, to be able to re-add a subliminal flash to the bare `pray`
-console command — but only that one case, built from scratch (the whole system was
-deleted). Not done yet. If building it: follow the persistence rule for any pool,
-and gate it off for photosensitive accounts.
-
----
-
-## The mockup lesson, twice learned
-
-**T9 was rejected four times.** Three attempts repainted the same shape (an
-upright rectangle, screen on top, 3x4 key grid, which is a calculator whatever
-colour it is); the fourth changed the silhouettes but still *invented* the phones.
-The fifth was drawn from a reference photo of a Motorola RAZR V3 and copies it.
-
-**Slots was rejected once** for being six paint jobs on one idea (a cabinet with
-three reels in a window).
-
-Two rules from that:
-- When a batch comes back as "the same design again", change the **organising
-  idea**, not the palette.
-- For a physical object, **ask for a reference photo on the first rejection**
-  rather than guessing again.
+## Elysium — where it could go (brainstorm, nothing decided)
+The honest problem: natural disease onset is so slow that most visits are
+uneventful. Cheapest fixes first: raise baseline disease pressure (pure
+tuning); **weather** drawn per season that pushes moisture/humidity/airflow
+around so the right action changes week to week; let neglect leave visible
+marks. Then, in rough order of value: **rings** (freeze a yearly summary,
+readable from the trunk — the idea most in keeping with the game), species as
+a stat-weighting table, naming the tree, a scar record, seasons that matter
+(winter tells you to go away), an annual flowering gated on a healthy season,
+cuttings as keepsakes rather than currency, and **Hermione's controls** in the
+chess pattern (blight, drought/downpour, prune, bless, withhold the journal).
+Presentation: hand-drawn art per stage/season (now a job for image
+generation), a slower on-screen clock, wind tied to airflow.

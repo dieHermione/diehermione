@@ -3432,14 +3432,6 @@ app.get("/writing", requirePlayer, (req, res) => {
   res.sendFile(path.join(__dirname, "views", "writing.html"));
 });
 
-app.get("/guide", requireLogin, (req, res) => {
-  res.sendFile(path.join(__dirname, "views", "guide.html"));
-});
-
-app.get("/tech", requireLogin, (req, res) => {
-  res.sendFile(path.join(__dirname, "views", "tech.html"));
-});
-
 app.get("/profile", requireLogin, (req, res) => {
   res.sendFile(path.join(__dirname, "views", "profile.html"));
 });
