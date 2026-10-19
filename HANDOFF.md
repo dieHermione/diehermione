@@ -57,8 +57,8 @@ one at a time by **generated posters** (`public/img/card-<game>.jpg`, 3:4,
 cover-fit into the card box with no bottom fade); Devotion is the first.
 
 **The border is a 9-slice, not a background.** `mockups/frame-leopard.webp`
-(1396x1230, WebP+alpha, 212KB) is the leopard frame, rebuilt from the supplied
-sheet. Use it as `border-image: url(...) 172 168 round` on a `position:fixed;
+(1396x1222, WebP+alpha, 206KB) is the leopard frame, rebuilt from the supplied
+sheet. Use it as `border-image: url(...) 168 round` on a `position:fixed;
 inset:0; pointer-events:none` overlay, with `border-width` setting the
 thickness (visible fur is about half of it). **`round` is required** — the
 default `stretch` ovals the spots. One asset covers every viewport and aspect
@@ -90,6 +90,13 @@ other is a few px shorter — they are trimmed independently, and the taper does
 not end at the same place — it cannot fill its edge region, and every tile
 leaves a transparent strip down that side. Equalise each pair before
 mirror-doubling.
+
+And a fourth: **every arm must touch its outer edge, and the corner box must be
+square.** The supplied arms sit at different insets (top 5px, bottom 3, sides
+0), so each edge showed a different sliver of background — the top noticeably
+more than the left. Each corner is shifted until both its arms are flush, the
+bars are placed at zero offset to match, and all four corners are cropped to one
+square box so a single slice value renders the band equally thick on every side.
 
 Check by measuring, and **measure all four edges**: the left edge was clean
 while the right was striped, and only the right was reported. Measure on a bare
