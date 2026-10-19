@@ -56,6 +56,30 @@ first candidate to go when the new look arrives. Game cards are being replaced
 one at a time by **generated posters** (`public/img/card-<game>.jpg`, 3:4,
 cover-fit into the card box with no bottom fade); Devotion is the first.
 
+**The border is a 9-slice, not a background.** `mockups/frame-leopard.webp`
+(863x802, WebP+alpha, 138KB) is the leopard frame, rebuilt from the supplied
+sheet. Use it as `border-image: url(...) 172 168 round` on a `position:fixed;
+inset:0; pointer-events:none` overlay, with `border-width` setting the
+thickness (visible fur is about half of it). **`round` is required** — the
+default `stretch` ovals the spots. One asset covers every viewport and aspect
+ratio; do not make breakpoint variants and do not force 16:9.
+
+**What the supplied sheet is, and what the rebuild does.** It arrives as a KIT
+OF PARTS — four L-corners and four bars, laid out spaced on one canvas. **The
+gaps are delivery spacing, not the design: the pieces are meant to butt into
+one continuous band.** Every piece also tapers to nothing at its ends, so they
+cannot simply be placed — each end is squared off at full thickness first, then
+butted with no gap at all. Two further faults in the source: the bottom bar is
+64px thick against the top bar's 72 and the corners' 85, and the bars do not
+sit on the line of the corner arms. The rebuild is `scratchpad/build-frame.py`:
+it squares every end, scales all bars to one thickness, places each bar on the
+arm band **measured in the very column where it butts** — a computed centreline
+gets contaminated by the corner's elbow and pulls every bar inward, which reads
+as the frame failing to reach the edges — cleans the background-removal halo,
+and uses a mirrored copy of the top bar for the bottom. Give content about a
+rem of clearance inside `border-width`: the fur's inner edge is ragged.
+First arrangements are the `singlepage` mockup batch.
+
 ### Image generation is available
 GPT image 2 is available. **Suggest it wherever pure CSS/SVG isn't enough** —
 placeholder game cards, poster art, textures, materials — with a concrete brief
@@ -303,7 +327,7 @@ notifications; the admin panel on the dashboard; the boot vignette and
 
 ## Open items
 - The remaining ten CSS cards → generated posters like Devotion's (elysium and chess first; they are placeholders).
-- The redesign itself: off the terminal look, single page (ThroneLogs-style). Then delete the hidden effects code and the boot.
+- The redesign itself: off the terminal look, single page (ThroneLogs-style). Then delete the hidden effects code and the boot. **Three arrangements are mocked up (`mockups/singlepage.html?d=1..3`) and await a pick.**
 - Elysium is short of *events*, not features (ideas below).
 - OT12 payout is moot now (no points); song-based questions; fill the thin member fields before a height question.
 - A photosensitivity toggle in Settings for guests would have to be localStorage-only (nothing identifies them); today a fresh browser gets the effects until Flashing effects is unticked.
@@ -370,6 +394,7 @@ the repo's own `bcryptjs`. Only hermione's record matters.
 | Dummy Parse | `dummyparse.html` | chosen 10 (ability cards) + 11 (timeline), built |
 | Decrypt | `decrypt.html` | chosen 1 (BIOS/POST), built into `boot.js` |
 | Dashboard | `dashboard.html`, `dashboard2.html` | v1 rejected; v2 (occult-terminal) never picked; current dashboard is its own thing |
+| **Single page** | `singlepage.html` | 3 designs — **awaiting a pick** (2026-10-19): the leopard frame + one main panel + side nav. 1 column · 2 drawer · 3 plate |
 
 The brief is explicitly **not minimalism** — "as overdesigned and maximalist as
 possible" — but the terminal look was lifted for chess and slots so each design
