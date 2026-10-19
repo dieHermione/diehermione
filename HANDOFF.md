@@ -57,8 +57,8 @@ one at a time by **generated posters** (`public/img/card-<game>.jpg`, 3:4,
 cover-fit into the card box with no bottom fade); Devotion is the first.
 
 **The border is a 9-slice, not a background.** `mockups/frame-leopard.webp`
-(1396x1222, WebP+alpha, 206KB) is the leopard frame, rebuilt from the supplied
-sheet. Use it as `border-image: url(...) 168 round` on a `position:fixed;
+(1474x1302, WebP+alpha, 241KB) is the leopard frame, rebuilt from the supplied
+sheet. Use it as `border-image: url(...) 184 round` on a `position:fixed;
 inset:0; pointer-events:none` overlay, with `border-width` setting the
 thickness (visible fur is about half of it). **`round` is required** — the
 default `stretch` ovals the spots. One asset covers every viewport and aspect
@@ -97,6 +97,16 @@ square.** The supplied arms sit at different insets (top 5px, bottom 3, sides
 more than the left. Each corner is shifted until both its arms are flush, the
 bars are placed at zero offset to match, and all four corners are cropped to one
 square box so a single slice value renders the band equally thick on every side.
+
+**Flush must not mean hard.** Fur is wispy — the source carries ~17 rows of soft
+falloff past its solid band — and shaving that off makes every edge read as a cut
+line. Two things protect it: clean the background-removal halo *gently* (keep
+alpha within ~14px of solid fur, not 4px, which cost 70% of the falloff), and
+crop each piece with a pad so the faint tail outside the alpha>40 bbox survives.
+Then composite on a margin and crop it away at the end, so the solid band sits
+flush to the edge while its soft tail hangs past and clips off-canvas: flush
+outer boundary, intact fur on the inner one. Check both at once — soft rows
+should match the source, and the inset should read 0 on all four edges.
 
 Check by measuring, and **measure all four edges**: the left edge was clean
 while the right was striped, and only the right was reported. Measure on a bare

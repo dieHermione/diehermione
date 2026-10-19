@@ -23,7 +23,7 @@
   :root{
     --ink:#1d1419; --dim:#6f626a; --faint:#a4939c; --bg:#f9dce7; --plate:#ffffff;
     --line:#ecdae1; --tint:#fdf4f8;
-    --fw:clamp(46px,5.4vw,92px);         /* frame thickness; drives everything */
+    --fw:clamp(50px,5.9vw,100px);        /* frame thickness; drives everything */
     --pad:calc(var(--fw) + .9rem);       /* clears the fur's ragged inner edge */
   }
   html,body{height:100%}
@@ -36,7 +36,7 @@
      the corner/bar joints. `round` is required — stretch ovals the spots. */
   .frame{position:fixed;inset:0;z-index:90;pointer-events:none;
     border-style:solid;border-width:var(--fw);
-    border-image:url("frame-leopard.webp") 168 round}
+    border-image:url("frame-leopard.webp") 184 round}
 
   /* ---------- the shell ---------- */
   .page{position:fixed;inset:0;z-index:10;padding:var(--pad);display:flex;min-height:0}
