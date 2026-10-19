@@ -57,7 +57,7 @@ one at a time by **generated posters** (`public/img/card-<game>.jpg`, 3:4,
 cover-fit into the card box with no bottom fade); Devotion is the first.
 
 **The border is a 9-slice, not a background.** `mockups/frame-leopard.webp`
-(1474x1302, WebP+alpha, 241KB) is the leopard frame, rebuilt from the supplied
+(1474x1302, WebP+alpha, 230KB) is the leopard frame, rebuilt from the supplied
 sheet. Use it as `border-image: url(...) 184 round` on a `position:fixed;
 inset:0; pointer-events:none` overlay, with `border-width` setting the
 thickness (visible fur is about half of it). **`round` is required** — the
@@ -105,8 +105,21 @@ alpha within ~14px of solid fur, not 4px, which cost 70% of the falloff), and
 crop each piece with a pad so the faint tail outside the alpha>40 bbox survives.
 Then composite on a margin and crop it away at the end, so the solid band sits
 flush to the edge while its soft tail hangs past and clips off-canvas: flush
-outer boundary, intact fur on the inner one. Check both at once — soft rows
-should match the source, and the inset should read 0 on all four edges.
+outer boundary, intact fur on the inner one. **A ragged edge cannot be aligned by its average.** Fur has no straight
+boundary, so shifting a piece until its *mean* outer edge sits at zero leaves
+about half the rows short, which renders as thin pink slivers along the sides
+and bites out of the corners. The last step of the build therefore EXTRUDES the
+outer boundary: for every row and column, the outermost solid pixel is carried
+out to the sheet edge. Only the outer boundary is touched, so the inner one
+keeps its soft falloff. A fur edge clipped at the viewport reads as fur running
+off-screen, not as a hard cut — the hardness only ever showed on the inner edge.
+
+Check all three properties together, and check them on the FULL span, corners
+included — the corners were the last place the gaps hid, and a mid-edge sample
+reported clean while they were still open. Target: soft rows matching the
+source, inset 0 everywhere, and zero transparent pixels along the sheet's own
+four boundaries (assert on the sheet's alpha, not the render's colour — the
+soft tail blends close enough to the background to fool a colour test).
 
 Check by measuring, and **measure all four edges**: the left edge was clean
 while the right was striped, and only the right was reported. Measure on a bare
