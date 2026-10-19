@@ -57,7 +57,7 @@ one at a time by **generated posters** (`public/img/card-<game>.jpg`, 3:4,
 cover-fit into the card box with no bottom fade); Devotion is the first.
 
 **The border is a 9-slice, not a background.** `mockups/frame-leopard.webp`
-(863x802, WebP+alpha, 138KB) is the leopard frame, rebuilt from the supplied
+(1396x1252, WebP+alpha, 214KB) is the leopard frame, rebuilt from the supplied
 sheet. Use it as `border-image: url(...) 172 168 round` on a `position:fixed;
 inset:0; pointer-events:none` overlay, with `border-width` setting the
 thickness (visible fur is about half of it). **`round` is required** — the
@@ -78,6 +78,15 @@ gets contaminated by the corner's elbow and pulls every bar inward, which reads
 as the frame failing to reach the edges — cleans the background-removal halo,
 and uses a mirrored copy of the top bar for the bottom. Give content about a
 rem of clearance inside `border-width`: the fur's inner edge is ragged.
+
+**Two kinds of seam, two fixes.** Where the bar tile REPEATS, each bar is
+mirror-doubled (`[B][mirror B]`), so the unit begins and ends on the same
+column and the repeat is seamless by construction. Where a bar meets a CORNER,
+the corner goes down first and a feathered stub of the bar is laid over its arm
+— butting them instead leaves a pinch, because the corner's arm is thinner than
+the bar right at the joint. Check the result by measuring, not by eye: sample
+fur coverage per column along an edge and look for dips (it should never fall
+much below the band thickness, and never to zero).
 First arrangements are the `singlepage` mockup batch.
 
 ### Image generation is available
@@ -394,7 +403,7 @@ the repo's own `bcryptjs`. Only hermione's record matters.
 | Dummy Parse | `dummyparse.html` | chosen 10 (ability cards) + 11 (timeline), built |
 | Decrypt | `decrypt.html` | chosen 1 (BIOS/POST), built into `boot.js` |
 | Dashboard | `dashboard.html`, `dashboard2.html` | v1 rejected; v2 (occult-terminal) never picked; current dashboard is its own thing |
-| **Single page** | `singlepage.html` | 3 designs — **awaiting a pick** (2026-10-19): the leopard frame + one main panel + side nav. 1 column · 2 drawer · 3 plate |
+| **Single page** | `singlepage.html` | 3 designs — **awaiting a pick** (2026-10-19): the leopard frame + one main panel + side nav, on light pink with white panels. 1 column · 2 drawer · 3 plate |
 
 The brief is explicitly **not minimalism** — "as overdesigned and maximalist as
 possible" — but the terminal look was lifted for chess and slots so each design
