@@ -235,63 +235,6 @@ window.AdminPanel = (function () {
     const sumEmpty = document.createElement("p"); sumEmpty.className = "adm-empty"; sumEmpty.textContent = "No summaries handed in yet.";
     sumSec.append(sumList, sumEmpty); wrap.append(foldable(sumSec));
 
-    // devotion presets editor (Hermione-editable line sets)
-    /* Both writing games take preset line-sets, stored and validated the
-       same way, so one editor is built twice rather than copied. */
-    const presetEditor = async (label, api, fallbackName, hint) => {
-      const preSec = document.createElement("div"); preSec.className = "adm-sec";
-      preSec.append(mk("h3", label));
-      const PRE_HINT = hint;
-      const preHint = mk("p", PRE_HINT);
-      preHint.className = "adm-empty"; preSec.append(preHint);
-      const preList = document.createElement("div"); preSec.append(preList);
-      // one collector, so Remove and Save always send the same shape
-      const collectPresets = () => [...preList.querySelectorAll(".adm-preset")].map((box) => ({
-        name: box.querySelector("input").value.trim(),
-        lines: box.querySelector("textarea").value.split("\n").map((x) => x.trim()).filter(Boolean),
-      })).filter((x) => x.lines.length);
-      const putPresets = async () => {
-        const r = await fetch(api, {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ presets: collectPresets() }),
-        });
-        return r.ok ? null : ((await r.json().catch(() => ({}))).error || "Error");
-      };
-      const addPreset = (pr) => {
-        const box = document.createElement("div"); box.className = "adm-preset";
-        const nm = document.createElement("input"); nm.value = pr.name || ""; nm.placeholder = "preset name";
-        // Removing writes through immediately. Dropping the row and waiting
-        // for a separate Save read as a bug: it came back on next login.
-        const del = mkChip("Remove", "ghost", async () => {
-          box.remove();
-          const err = await putPresets();
-          if (err) { preList.append(box); preHint.textContent = err; }
-          else preHint.textContent = "Removed.";
-          setTimeout(() => { preHint.textContent = PRE_HINT; }, 1800);
-        });
-        const head = document.createElement("div"); head.className = "adm-preset-head"; head.append(nm, del);
-        const ta = document.createElement("textarea");
-        ta.rows = Math.max(4, (pr.lines || []).length + 1);
-        ta.value = (pr.lines || []).join("\n");
-        box.append(head, ta); preList.append(box);
-      };
-      let loaded = [];
-      try { const r = await fetch(api); loaded = (await r.json()).presets || []; } catch (e) {}
-      (loaded.length ? loaded : [{ name: fallbackName, lines: [] }]).forEach(addPreset);
-      const preBar = document.createElement("div"); preBar.className = "adm-preset-bar";
-      preBar.append(mkChip("+ Add preset", "ghost", () => addPreset({ name: "", lines: [] })));
-      const preSave = mkChip("Save presets", "", async () => {
-        preSave.textContent = "Saving...";
-        const err = await putPresets();
-        preSave.textContent = err ? "Error" : "Saved";
-        if (err) preHint.textContent = err;
-        setTimeout(() => { preSave.textContent = "Save presets"; }, 1500);
-      });
-      preBar.append(preSave); preSec.append(preBar); wrap.append(foldable(preSec));
-    };
-
-    await presetEditor("Devotion presets", "/api/devotion/presets", "devotion",
-      "The first line is always typed first; the rest are shuffled (no immediate repeat). One line per row. Removing saves straight away.");
 
     // multitap sentences: the example lines the multitap game asks you to type.
     // One per row; lowercase, letters/spaces/basic punctuation only.
@@ -694,7 +637,6 @@ window.AdminPanel = (function () {
     const TABS = [
       { id: "games", label: "Games", subs: [
         { id: "general",  label: "General",  match: ["Game hover text"] },
-        { id: "devotion", label: "Devotion", match: ["Devotion presets"] },
         { id: "multitap", label: "Multitap", match: ["Multitap lines"] },
         { id: "ot12",     label: "OT12",     match: ["OT12 photos", "OT12 songs"] },
       ] },

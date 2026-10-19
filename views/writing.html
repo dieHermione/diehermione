@@ -12,7 +12,8 @@
   [hidden] { display: none !important; }
   html, body { height: 100%; overflow: hidden; }
   /* Devotion: the blue terminal. (Penance, its red corrupting sibling, was
-     folded into it on 2026-09-11 — one game, presets or your own lines.) */
+     folded into it on 2026-09-11; the preset line-sets went on 2026-10-19, so
+     the lines are whatever you write on the settings screen.) */
   :root { --c: #00acdb; --dim: #00acdb; --ok: #ffffff; --err: #e0543a; --glow: rgba(0,172,219,0.4); }
   body { font-family: "IBM Plex Mono", monospace; background: #04060a; color: var(--c); }
   #app { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; padding: 4vh 5vw; }
@@ -110,10 +111,9 @@
         </div>
       </div>
       <div class="field">
-        <div class="flabel">lines</div>
-        <!-- Hermione's presets, then "custom": your own lines, one per row -->
-        <div class="opts" id="preset-opts"><button class="opt" data-preset="">custom</button></div>
-        <textarea class="term" id="lines" rows="3" maxlength="600" placeholder="Her will is Divine. I will obey." style="display:none"></textarea>
+        <div class="flabel">your lines · one per row</div>
+        <!-- the only line source: whatever is typed here, at game time -->
+        <textarea class="term" id="lines" rows="3" maxlength="600" placeholder="Her will is Divine. I will obey."></textarea>
         <div class="diffnote">at your own pace. a slip restarts the line.</div>
       </div>
       <div class="sm warn" id="sel-warn"></div>
@@ -155,13 +155,11 @@
   const $ = (id) => document.getElementById(id);
   function show(id) { document.querySelectorAll(".screen").forEach((s) => s.classList.toggle("on", s.id === id)); }
 
-  // Devotion: type a line, again and again. The lines come from one of
-  // Hermione's presets (server-stored, editable in /admin) or from the box —
-  // your own, one per row. Either way the SERVER owns the run: it builds the
-  // sequence, checks each finished line, and counts.
+  // Devotion: type a line, again and again. The lines are written in the box on
+  // the settings screen, at game time — there are no preset line-sets any more
+  // (removed 2026-10-19). The SERVER still owns the run: it takes those lines,
+  // builds the sequence, checks each finished line, and counts.
   const MODE = "devotion";
-  let PRESETS = {};          // keyed by preset id, filled from /api/devotion/presets
-  let preset = null;         // chosen preset id; null means "custom" (the box)
 
   /* ---------- audio: old-keyboard clicks over a soft hum ---------- */
   let actx = null, ambGain = null, ambStarted = false;
@@ -211,7 +209,7 @@
       setTimeout(step, 260);
     })();
   }
-  function leaveBoot() { if ($("boot").classList.contains("on")) { show("select"); refreshBegin(); } }
+  function leaveBoot() { if ($("boot").classList.contains("on")) { show("select"); refreshBegin(); $("lines").focus(); } }
   document.addEventListener("keydown", (e) => { if ($("boot").classList.contains("on")) { e.preventDefault(); leaveBoot(); } }, true);
   // mobile has no keyboard for "press any key" — a tap dismisses the boot too
   document.addEventListener("pointerdown", () => { if ($("boot").classList.contains("on")) leaveBoot(); }, true);
@@ -233,51 +231,28 @@
   });
   function parseLines() { return $("lines").value.split("\n").map((l) => l.trim()).filter(Boolean); }
   function refreshBegin() {
-    $("begin").disabled = preset ? false : parseLines().length === 0;
+    $("begin").disabled = parseLines().length === 0;
   }
   $("lines").addEventListener("input", refreshBegin);
   $("begin").addEventListener("click", startGame);
 
-  // presets first, "custom" last; picking custom reveals the box
-  const po = $("preset-opts");
-  po.addEventListener("click", (e) => {
-    const b = e.target.closest("[data-preset]"); if (!b) return;
-    preset = b.dataset.preset || null;
-    po.querySelectorAll(".opt").forEach((o) => o.classList.toggle("sel", o === b));
-    $("lines").style.display = preset ? "none" : "";
-    if (!preset) $("lines").focus();
-    refreshBegin();
-  });
-  // presets come from the server (Hermione-editable); the first one is the
-  // default. If none load, custom is the only option and gets selected.
-  fetch("/api/devotion/presets").then((r) => r.json()).then((data) => {
-    const custom = po.querySelector('[data-preset=""]');
-    (data.presets || []).forEach((p, i) => {
-      PRESETS[p.id] = p;
-      const b = document.createElement("button"); b.className = "opt" + (i === 0 ? " sel" : "");
-      b.dataset.preset = p.id; b.textContent = p.name; po.insertBefore(b, custom);
-      if (i === 0) preset = p.id;
-    });
-    if (!preset) { custom.classList.add("sel"); $("lines").style.display = ""; }
-    refreshBegin();
-  }).catch(() => { po.querySelector('[data-preset=""]').classList.add("sel"); $("lines").style.display = ""; refreshBegin(); });
 
   /* ---------- game ---------- */
-  // The SERVER owns the run: it builds the line sequence from its own pool (or
-  // the box's lines) and counts the lines. The client renders what it is given
-  // and reports each finished line for validation. `runId` ties the two.
+  // The SERVER owns the run: it takes the lines, builds the sequence and counts
+  // them. The client renders what it is given and reports each finished line for
+  // validation. `runId` ties the two.
   let runId = null, lineFailed = false;
 
   async function startGame() {
-    const own = preset ? null : parseLines();
-    if (!preset && !own.length) return;
+    const own = parseLines();
+    if (!own.length) return;
     const begin = $("begin");
     begin.disabled = true; $("sel-warn").textContent = "";
     let data;
     try {
       const res = await fetch("/api/writing/session", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mode: MODE, reps: state.reps, presetId: preset || undefined, ownLines: own || undefined }),
+        body: JSON.stringify({ mode: MODE, reps: state.reps, ownLines: own }),
       });
       data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "Could not start.");

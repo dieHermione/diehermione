@@ -18,7 +18,6 @@ const GAMES_FILE = path.join(process.env.DATA_DIR || __dirname, "games.json");
 const DEATHROLL_FILE = path.join(process.env.DATA_DIR || __dirname, "deathroll.json");
 const SITE_FILE = path.join(process.env.DATA_DIR || __dirname, "site.json");
 const ELYSIUM_FILE = path.join(process.env.DATA_DIR || __dirname, "elysium.json");
-const DEVOTION_FILE = path.join(process.env.DATA_DIR || __dirname, "devotion.json");
 const DECRYPT_FILE = path.join(process.env.DATA_DIR || __dirname, "decrypt.json");
 const GAMETIPS_FILE = path.join(process.env.DATA_DIR || __dirname, "gametips.json");
 const MULTITAP_FILE = path.join(process.env.DATA_DIR || __dirname, "multitap.json");
@@ -1320,10 +1319,10 @@ app.post("/api/writing/session", (req, res) => {
   const reps = Math.max(1, Math.min(WRITING_MAX_REPS, parseInt(body.reps, 10) || 0));
   if (!reps) return res.status(400).json({ error: "How many repetitions?" });
 
-  // Where the lines come from. A preset is resolved from the server's own pool,
-  // so the client cannot invent one. Both games also allow the player's own
-  // lines; that text is theirs, but the server still owns the sequence and the
-  // count.
+  // Where the lines come from. Devotion is ALWAYS the player's own lines, typed
+  // on its settings screen (its preset line-sets were removed on 2026-10-19).
+  // Multitap still falls back to its own flat pool when none are given. The text
+  // is theirs either way, but the server owns the sequence and the count.
   let lines = [], presetName = "";
   if (mode === "multitap") {
     // multitap's pool is a flat list, not named presets
@@ -1337,14 +1336,6 @@ app.post("/api/writing/session", (req, res) => {
       lines = loadMultitap().lines.slice();
       presetName = "preset";
     }
-  } else if (body.presetId) {
-    const pool = loadDevotion();
-    const preset = (pool.presets || []).find((p) => p.id === String(body.presetId));
-    if (!preset || !preset.lines || !preset.lines.length) {
-      return res.status(400).json({ error: "No such preset." });
-    }
-    lines = preset.lines.slice();
-    presetName = preset.name || preset.id;
   } else if (Array.isArray(body.ownLines)) {
     lines = body.ownLines.map((l) => String(l).trim().slice(0, 240)).filter(Boolean).slice(0, 100);
     presetName = "custom";
@@ -1530,87 +1521,6 @@ app.put("/api/site", (req, res) => {
   res.json({ ok: true, raw: site });
 });
 
-// --- Devotion presets (Hermione-editable line sets for the gentle game) ---
-// A preset is { id, name, lines[] }. lines[0] is ALWAYS shown first; lines[1..]
-// are the shuffle pool the client draws from (randomised, no immediate repeat).
-const DEVOTION_DEFAULTS = {
-  presets: [
-    {
-      id: "devotion",
-      name: "devotion",
-      lines: [
-        "Hermione is my guardian angel.",
-        "I belong at Her feet.",
-        "I am not in control.",
-        "Her will is Divine. I will obey.",
-        "My soul is damaged. Only obedience will bring salvation.",
-        "Suffering will make me whole.",
-        "She knows what is best for me. I will not stray from Her guidance.",
-        "There is nothing except for Her.",
-        "Her happiness is all that matters.",
-        "I will not take Her mercy for granted.",
-        "She is my guiding light.",
-        "She will be so pleased with me.",
-        "I kiss the ground upon which she steps.",
-        "Hermione knows best.",
-      ],
-    },
-  ],
-};
-function loadDevotion() {
-  try {
-    const data = JSON.parse(fs.readFileSync(DEVOTION_FILE, "utf8"));
-    if (data && Array.isArray(data.presets) && data.presets.length) return data;
-  } catch {}
-  return JSON.parse(JSON.stringify(DEVOTION_DEFAULTS));
-}
-function saveDevotion(data) {
-  fs.writeFileSync(DEVOTION_FILE, JSON.stringify(data, null, 2));
-}
-
-// Any player (accounts or guests) may read the presets to play Devotion.
-
-// one validator for both games' presets
-function cleanPresets(incoming, fallbackName) {
-  const presets = [];
-  for (const p of incoming) {
-    const name = String(p && p.name || "").trim().slice(0, 60) || fallbackName;
-    const lines = (Array.isArray(p && p.lines) ? p.lines : [])
-      .map((l) => String(l).trim()).filter(Boolean).slice(0, 100);
-    if (!lines.length) continue;               // a preset needs at least one line
-    const id = String(p && p.id || name).toLowerCase().replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-|-$/g, "").slice(0, 40) || ("preset-" + presets.length);
-    presets.push({ id, name, lines });
-  }
-  return presets;
-}
-
-
-app.get("/api/devotion/presets", (req, res) => {
-  if (!req.session.username && !req.session.guest) return res.status(401).json({ error: "Not logged in." });
-  res.json({ presets: loadDevotion().presets });
-});
-
-// Only Hermione may rewrite them.
-app.post("/api/devotion/presets", (req, res) => {
-  if (!req.session.username) return res.status(401).json({ error: "Not logged in." });
-  if (!isAdmin(req)) return res.status(403).json({ error: "Admins only." });
-  const incoming = Array.isArray(req.body.presets) ? req.body.presets : null;
-  if (!incoming) return res.status(400).json({ error: "presets must be an array." });
-  const presets = [];
-  for (const p of incoming) {
-    const name = String(p && p.name || "").trim().slice(0, 60) || "devotion";
-    const lines = (Array.isArray(p && p.lines) ? p.lines : [])
-      .map((l) => String(l).trim()).filter(Boolean).slice(0, 100);
-    if (!lines.length) continue;                 // a preset needs at least one line
-    const id = String(p && p.id || name).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40) || ("preset-" + presets.length);
-    presets.push({ id, name, lines });
-  }
-  if (!presets.length) return res.status(400).json({ error: "Add at least one preset with a line." });
-  const data = { presets };
-  saveDevotion(data);
-  res.json({ ok: true, presets });
-});
 
 // Cheap and unauthenticated on purpose: it leaks nothing and every page,
 // signed in or not, needs to be able to poll it.
@@ -1619,8 +1529,8 @@ app.get("/api/version", (req, res) => {
   res.json({ build: BUILD_ID });
 });
 
-/* The lines the login decrypt animation resolves into. Stored and edited the
-   same way the Devotion presets are; the login page reads them before anyone is
+/* The lines the login decrypt animation resolves into. File-first under
+   DATA_DIR like every other editable pool; the boot plays before anyone is
    signed in, so the GET is deliberately open. */
 const DECRYPT_DEFAULTS = {
   lines: [
@@ -1659,7 +1569,7 @@ app.post("/api/decrypt", (req, res) => {
 const GAMETIPS_DEFAULTS = {
   tips: {
     "snake": "Free-swimming serpent. Chase the fleeing heart and grow; die on your own tail.",
-    "devotion": "A verse reader. Recite Her lines in turn. An account is required.",
+    "devotion": "Write the lines you are given, over and over, until they are yours.",
     "multitap": "A typing drill on an old-phone keypad. No hints — remember the taps.",
     "ot12": "Match the photo to the member. Twelve girls, four names, one right answer.",
     "deathroll": "Roll against another, each cap the next roll. Hit one and you lose. Account required.",

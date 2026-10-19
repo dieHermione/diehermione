@@ -169,7 +169,7 @@ and chess are placeholders. Hover text over each card comes from
 ### The games
 
 - **Snake** — free-swimming, no grid; dies on its own tail; food drifts at half speed and flees. **Shift** boosts (~5s per full meter at 1.9x, refills ~16s), **Space** pauses. Time limit chosen on the settings screen (up to 999 min). Food is counted, not paid.
-- **Devotion** (`/writing`) — type a line, again and again: blue, calm, no difficulty; a slip restarts the current line. Lines come from one of Hermione's presets (`devotion.json`; `lines[0]` always first, the rest shuffled, no immediate repeat) **or from the "custom" box** (your own, one per row, ≤100 lines of ≤240 chars). Settings → play → results. **Penance was folded into it on 2026-09-11** — the red corrupting sibling with a difficulty picker is gone; `penance` is now an alias of `devotion` in the console and old `completed.json` entries keep their `penance` category.
+- **Devotion** (`/writing`) — type a line, again and again: blue, calm, no difficulty; a slip restarts the current line. **The lines are written on the settings screen at game time** — one per row, ≤100 lines of ≤240 chars — and that is the only source: the preset line-sets (`devotion.json`, `/api/devotion/presets` and its admin editor) were removed on 2026-10-19. The server still builds the sequence from what it is given (`lines[0]` first, the rest shuffled with no immediate repeat) and owns the count. Settings → play → results. **Penance was folded into it on 2026-09-11** — the red corrupting sibling with a difficulty picker is gone; `penance` is now an alias of `devotion` in the console and old `completed.json` entries keep their `penance` category.
 - **Multitap** (`/multitap`, renamed from T9) — typing on an old-phone multi-tap keypad, green/white, deliberately unguided. Any other key commits the pending letter; `#` confirms; `*` deletes; one press of `0` confirms, a second enters a space. Settings screen picks preset or custom lines and a repetition count. Pool is `multitap.json`. Logs as `category: "multitap"`.
 - **Summary** — a real Wikipedia article (action API plain-text extract, trimmed) and a word limit that scales with the source. Pools in `SUMMARY_TOPICS`/`KIND_LABEL`: angels, feminism, Greek mythology, pre-18th-century history, critical biblical scholarship. Handed-in summaries → `summaries.json`, read in Admin → Completed.
 - **Skill check** — the pure dial, settings screen, presets 10/20/35/50, two difficulties, themed.
@@ -185,7 +185,7 @@ and chess are placeholders. Hover text over each card comes from
 
 | Game | Model |
 |---|---|
-| Devotion / Multitap | **server-owned.** `POST /api/writing/session` builds the line sequence from the server's own pools (`mode` = `devotion` / `multitap`; both also accept the player's own `ownLines`) and stores it on the login session; `POST /api/writing/line` must match the expected line in order; `POST /api/writing/skip` is admin-only (`pray skip_stage`) and is the real boundary; `POST /api/writing/complete` takes **nothing** from the body and refuses unless the server's count says finished — one-shot. The run lives in `req.session.writing` (file-backed, survives restarts). |
+| Devotion / Multitap | **server-owned.** `POST /api/writing/session` builds the line sequence (`mode` = `devotion`, always from the player's own `ownLines`; `multitap`, from `ownLines` or its own flat pool) and stores it on the login session; `POST /api/writing/line` must match the expected line in order; `POST /api/writing/skip` is admin-only (`pray skip_stage`) and is the real boundary; `POST /api/writing/complete` takes **nothing** from the body and refuses unless the server's count says finished — one-shot. The run lives in `req.session.writing` (file-backed, survives restarts). |
 | OT12 | **server-owned.** `/api/ot12/session` → `/answer` → `/skip` (admin) → `/complete`; the correct set is never sent until after the answer. |
 | Dummy Parse | **bounded.** `/api/parse/session` locks the build (300-point pool) and starts the clock; `/api/parse` refuses more combat time than has elapsed, a wrong duration for a timed mode, or a DPS that disagrees with the total; mode and build come from the run. **Damage total is still client-reported.** |
 | Snake | **bounded.** `/api/snake/session` records the limit; `/api/snake/food` refuses outside a live run (2s grace) and rate-limits (burst 8, refill 2s); `/api/snake/complete` returns the server's count, which the results screen shows. A client can still claim pickups it didn't earn, just not unboundedly. |
@@ -236,8 +236,8 @@ leftover session from a retired account is destroyed on its next `/api/me`.
 flag, notifications).
 
 ### Admin panel (`/admin`, `public/adminpanel.js`)
-Tabs: **Games** (subtabs General = hover text · Devotion presets · Multitap
-lines · OT12 photos + songs) · **Completed** (Lines
+Tabs: **Games** (subtabs General = hover text · Multitap lines · OT12 photos
++ songs) · **Completed** (Lines
 completed · Summaries handed in) · **Site content** (Decrypt lines; the Screen
 glitch triggers hide while effects are hidden) · **Tools** (Commands
 `/commands`). The Members tab, onboarding-intro
@@ -248,7 +248,6 @@ and questionnaire editors went with accounts.
 | File (under `DATA_DIR`) | What | API | Editor |
 |---|---|---|---|
 | `decrypt.json` | boot cascade lines | `/api/decrypt` | Site content |
-| `devotion.json` | writing presets `{id,name,lines[]}` | `/api/devotion/presets` | Games → Devotion |
 | `multitap.json` | flat sentence pool (lowercase, keypad-typeable) | `/api/multitap` | Games |
 | `gametips.json` | wall hover text, keyed by game name | `/api/gametips` | Games → General |
 | `ot12.json` | tagged photos + songs | `/api/ot12/photos`, `/api/ot12/songs` | Games → OT12 |
@@ -260,7 +259,7 @@ records ignored), `games.json` (chess), `deathroll.json`, `elysium.json`
 (finished writing runs), `sessions.json` + `.session-secret` (persistent
 sessions: file-backed `FileSessionStore`, flushed once a second, 30-day
 rolling cookie). Old `applications.json`, `questionnaire.json`, `writing.json`,
-`penance.json` on the volume are orphans; nothing reads them.
+`penance.json`, `devotion.json` on the volume are orphans; nothing reads them.
 
 ### `pray` commands (`public/console.js`; mirror any change on `/commands`)
 
@@ -292,6 +291,10 @@ photosensitive endpoint (the flag on her record still gates effects).
 tear / glitch effects, difficulty picker (easy / exacting / merciless),
 `penance.json` and `/api/penance/presets`. Devotion gained the custom-lines box
 instead. Don't rebuild a second writing game; add to this one.
+**Devotion's preset line-sets** (2026-10-19): `devotion.json`, both
+`/api/devotion/presets` endpoints, the admin Devotion subtab and its editor, and
+the generic `presetEditor` / `cleanPresets` helpers. The lines are typed at game
+time now — don't reintroduce a stored pool for them.
 Earlier: dailies and both daily bonuses; tithe; the guestbook; light/dark
 toggle; the top pill nav; subliminals entirely (`glitch.js`, `subliminal.json`,
 the `pray` word-flash); angelcoins; the Visitor account type; member-facing
