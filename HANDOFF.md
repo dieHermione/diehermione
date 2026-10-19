@@ -57,7 +57,7 @@ one at a time by **generated posters** (`public/img/card-<game>.jpg`, 3:4,
 cover-fit into the card box with no bottom fade); Devotion is the first.
 
 **The border is a 9-slice, not a background.** `mockups/frame-leopard.webp`
-(1396x1252, WebP+alpha, 214KB) is the leopard frame, rebuilt from the supplied
+(1396x1230, WebP+alpha, 212KB) is the leopard frame, rebuilt from the supplied
 sheet. Use it as `border-image: url(...) 172 168 round` on a `position:fixed;
 inset:0; pointer-events:none` overlay, with `border-width` setting the
 thickness (visible fur is about half of it). **`round` is required** — the
@@ -84,9 +84,19 @@ mirror-doubled (`[B][mirror B]`), so the unit begins and ends on the same
 column and the repeat is seamless by construction. Where a bar meets a CORNER,
 the corner goes down first and a feathered stub of the bar is laid over its arm
 — butting them instead leaves a pinch, because the corner's arm is thinner than
-the bar right at the joint. Check the result by measuring, not by eye: sample
-fur coverage per column along an edge and look for dips (it should never fall
-much below the band thickness, and never to zero).
+the bar right at the joint. A third rule, learned by shipping it broken: **opposite bars must come out
+exactly the same length.** The canvas is sized from one of each pair, so if the
+other is a few px shorter — they are trimmed independently, and the taper does
+not end at the same place — it cannot fill its edge region, and every tile
+leaves a transparent strip down that side. Equalise each pair before
+mirror-doubling.
+
+Check by measuring, and **measure all four edges**: the left edge was clean
+while the right was striped, and only the right was reported. Measure on a bare
+page with nothing but the frame, or panel pixels get counted as frame; and
+count *interior* background runs (bounded by frame on both sides) rather than
+coverage per column, or a single anti-aliased pixel reads as a hole. Good
+output is a consistent band span with no interior run over about 3px.
 First arrangements are the `singlepage` mockup batch.
 
 ### Image generation is available
