@@ -57,7 +57,10 @@
   37-42 are dressings of it — a face and a palette each, no geometry restated:
               37 ivory (stationery, black ink)  38 oxblood (blush, deep red)
               39 graphite (cold sans letter)    40 black card (inverted)
-              41 gold (cream and bronze)        42 script (a hand, soft rose).
+              41 gold (cream and bronze)        42 script (a hand, soft rose)
+              43 vellum (paper barely there)    44 foil (slate and platinum)
+              45 sepia (an old letter)          46 plum card (coloured paper)
+              47 stark (a notice, not a letter) 48 blush mono (one hue throughout).
 
   Self-contained: open straight off file://, no server. The frame is the
   rebuilt 9-slice sheet sitting next to this file.
@@ -622,6 +625,54 @@
   body[data-f="42"] h1{font-size:clamp(2.6rem,5.4vw,4.2rem);line-height:1.1}
   body[data-f="42"] .eyebrow{font-style:normal}
 
+  /* 43 VELLUM — the paper is barely there; the silver reads straight through */
+  body[data-f="43"]{--display:"Prata",Georgia,serif; --ui:"DM Sans",system-ui,sans-serif;
+    --plate:rgba(255,253,250,.42); --nav-plate:rgba(255,253,250,.34);
+    --ink:#171318; --dim:#3f3741; --faint:#5e545f; --line:rgba(23,19,24,.2)}
+  body[data-f="43"] .nav{--nav-ink:#171318; --nav-dim:#352e37; --nav-faint:#4f4650}
+  body[data-f="43"] .veil{background:rgba(255,255,255,.40)}
+
+  /* 44 FOIL — slate card, platinum type, engraved hairlines */
+  body[data-f="44"]{--display:"Cinzel",Georgia,serif; --ui:"Lato",system-ui,sans-serif;
+    --plate:rgba(28,30,34,.90); --nav-plate:rgba(28,30,34,.80);
+    --ink:#e8eaee; --dim:#aeb4bd; --faint:#848b95; --line:rgba(232,234,238,.22)}
+  body[data-f="44"] .nav{--nav-ink:#e8eaee; --nav-dim:#c3c9d2; --nav-faint:#9aa1ab}
+  body[data-f="44"] .veil{background:rgba(14,16,20,.50)}
+  body[data-f="44"] h1{font-size:clamp(1.6rem,3.2vw,2.4rem);letter-spacing:.07em}
+  body[data-f="44"] .cell{background:rgba(255,255,255,.09)}
+
+  /* 45 SEPIA — an old letter: aged paper, brown-black ink, nothing crisp */
+  body[data-f="45"]{--display:"Fraunces",Georgia,serif; --ui:"Nunito Sans",system-ui,sans-serif;
+    --plate:rgba(243,232,213,.92); --nav-plate:rgba(243,232,213,.80);
+    --ink:#30241a; --dim:#5e4a35; --faint:#8a7355; --line:rgba(48,36,26,.2)}
+  body[data-f="45"] .nav{--nav-ink:#30241a; --nav-dim:#4c3c2b; --nav-faint:#7a6447}
+  body[data-f="45"] .veil{background:rgba(32,24,14,.46)}
+  body[data-f="45"] h1{font-weight:300}
+
+  /* 46 PLUM CARD — coloured paper, not white: deep plum with pale rose type */
+  body[data-f="46"]{--display:"Playfair Display",Georgia,serif; --ui:"Karla",system-ui,sans-serif;
+    --plate:rgba(52,20,40,.90); --nav-plate:rgba(52,20,40,.80);
+    --ink:#f6e6ee; --dim:#cfa8bd; --faint:#a67f94; --line:rgba(246,230,238,.2)}
+  body[data-f="46"] .nav{--nav-ink:#f6e6ee; --nav-dim:#e0bed0; --nav-faint:#b892a6}
+  body[data-f="46"] .veil{background:rgba(24,8,18,.5)}
+  body[data-f="46"] .cell{background:rgba(255,255,255,.1)}
+
+  /* 47 STARK — a notice, not a letter: pure white, pure black, heavy */
+  body[data-f="47"]{--display:"Archivo",system-ui,sans-serif; --ui:"Archivo",system-ui,sans-serif;
+    --plate:rgba(255,255,255,.95); --nav-plate:rgba(255,255,255,.86);
+    --ink:#000000; --dim:#3a3a3a; --faint:#6a6a6a; --line:rgba(0,0,0,.2)}
+  body[data-f="47"] .nav{--nav-ink:#000; --nav-dim:#2e2e2e; --nav-faint:#5c5c5c}
+  body[data-f="47"] .veil{background:rgba(18,18,18,.5)}
+  body[data-f="47"] h1{font-weight:600;letter-spacing:-.02em;font-size:clamp(1.9rem,3.8vw,2.8rem)}
+  body[data-f="47"] .eyebrow{font-style:normal;text-transform:uppercase;letter-spacing:.3em;font-size:.6rem}
+
+  /* 48 BLUSH MONO — one hue the whole way down: pink paper, pink rules, pink ink */
+  body[data-f="48"]{--display:"Cormorant Garamond",Georgia,serif; --ui:"Montserrat",system-ui,sans-serif;
+    --plate:rgba(252,228,236,.92); --nav-plate:rgba(252,228,236,.80);
+    --ink:#5c0d33; --dim:#8c3a5e; --faint:#b2748f; --line:rgba(92,13,51,.2)}
+  body[data-f="48"] .nav{--nav-ink:#5c0d33; --nav-dim:#742549; --nav-faint:#9d5878}
+  body[data-f="48"] .veil{background:rgba(44,8,26,.46)}
+
   /* 36 WALL — big tiles edge to edge; the copy is a caption, not a page */
   body[data-f="36"]{--display:"Archivo",system-ui,sans-serif; --ui:"Archivo",system-ui,sans-serif}
   body[data-f="36"] .panel{background:none;backdrop-filter:none;padding:0}
@@ -766,13 +817,16 @@ She knows what is best for me.</textarea></div>
                  "LETTER · a note, games at foot","WALL · big tiles edge to edge",
                  "IVORY · stationery, black ink","OXBLOOD · blush and deep red",
                  "GRAPHITE · cold sans letter","BLACK CARD · inverted",
-                 "GOLD · cream and bronze","SCRIPT · a hand, soft rose"];
+                 "GOLD · cream and bronze","SCRIPT · a hand, soft rose",
+                 "VELLUM · paper barely there","FOIL · slate and platinum",
+                 "SEPIA · an old letter","PLUM CARD · coloured paper",
+                 "STARK · a notice, not a letter","BLUSH MONO · one hue throughout"];
   const d = Math.min(NAMES.length, Math.max(1, parseInt(new URLSearchParams(location.search).get("d") || "1", 10)));
   document.body.dataset.d = d;
   const f = Math.min(FONTS.length, Math.max(1, parseInt(new URLSearchParams(location.search).get("f") || "1", 10)));
   document.body.dataset.f = f;
   // 35 is the chosen design; 37-42 are dressings of it and share its geometry
-  if (f === 35 || (f >= 37 && f <= 42)) document.body.dataset.layout = "letter";
+  if (f === 35 || (f >= 37 && f <= 48)) document.body.dataset.layout = "letter";
   document.getElementById("tag").innerHTML =
     "<b>" + f + "</b><span>" + FONTS[f - 1] + " · d" + d + " " + NAMES[d - 1] + "</span>";
 
