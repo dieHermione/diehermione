@@ -209,8 +209,11 @@
   body[data-d="9"] .nav button.on::before{display:none}
   body[data-d="9"] .nav .sep{background:transparent;margin:.5rem 0}
 
-  .tag{position:fixed;z-index:95;right:calc(var(--pad) + .2rem);bottom:calc(var(--pad) * .92);
-    font-size:.58rem;letter-spacing:.3em;text-transform:uppercase;color:var(--on-pink-3)}
+  .tag{position:fixed;z-index:95;right:calc(var(--pad) + .2rem);bottom:calc(var(--pad) * .9);
+    display:flex;align-items:baseline;gap:.55rem;background:#26101b;color:#fff;
+    border-radius:999px;padding:.5rem 1.3rem .6rem;box-shadow:0 .5rem 1.4rem rgba(38,16,27,.34)}
+  .tag b{font-family:"Cormorant Garamond",serif;font-size:2.1rem;font-weight:600;line-height:.85}
+  .tag span{font-size:.64rem;letter-spacing:.28em;text-transform:uppercase;color:#f2cfdd}
 </style>
 </head>
 <body>
@@ -316,7 +319,8 @@ She knows what is best for me.</textarea></div>
   const NAMES = ["column","drawer","plate","tabs","stack","split","overlay","spine","dock"];
   const d = Math.min(NAMES.length, Math.max(1, parseInt(new URLSearchParams(location.search).get("d") || "1", 10)));
   document.body.dataset.d = d;
-  document.getElementById("tag").textContent = d + " · " + NAMES[d - 1];
+  document.getElementById("tag").innerHTML =
+    "<b>" + d + "</b><span>" + NAMES[d - 1] + "</span>";
 
   const navEl = document.getElementById("nav"), panelEl = document.getElementById("panel");
   let current = "home";

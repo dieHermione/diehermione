@@ -482,7 +482,7 @@ the repo's own `bcryptjs`. Only hermione's record matters.
 | Dummy Parse | `dummyparse.html` | chosen 10 (ability cards) + 11 (timeline), built |
 | Decrypt | `decrypt.html` | chosen 1 (BIOS/POST), built into `boot.js` |
 | Dashboard | `dashboard.html`, `dashboard2.html` | v1 rejected; v2 (occult-terminal) never picked; current dashboard is its own thing |
-| **Single page** | `singlepage.html` | 9 designs — **awaiting a pick** (2026-10-19): the leopard frame + one main panel + side nav, on **#ed72ad** with white panels. 1 column · 2 drawer · 3 plate · 4 tabs · 5 stack · 6 split · 7 overlay · 8 spine · 9 dock |
+| **Single page** | `singlepage.html` | each renders its own number badge, so a contact sheet is readable; 9 designs — **awaiting a pick** (2026-10-19): the leopard frame + one main panel + side nav, on **#ed72ad** with white panels. 1 column · 2 drawer · 3 plate · 4 tabs · 5 stack · 6 split · 7 overlay · 8 spine · 9 dock |
 
 The brief is explicitly **not minimalism** — "as overdesigned and maximalist as
 possible" — but the terminal look was lifted for chess and slots so each design
