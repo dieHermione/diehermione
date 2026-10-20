@@ -46,9 +46,13 @@ not afterwards.
 `--display` and `--ui` drive every face in the mockup, and `?f=1..6` swaps the
 pairing, so type can be judged against the real layout rather than in isolation.
 Add a face by extending the Google Fonts link and adding one `body[data-f="N"]`
-rule; faces that set small or heavy get a nudge beside it (Italiana wants letter
--spacing, Parisienne wants a larger size and more line-height). **The design is
-settled (6, split); the type is not.**
+rule. **A swap is rarely just a swap** — each face needs its own nudge beside
+it, and skipping that is what makes a pairing look worse than it is: Italiana
+wants letter-spacing, the scripts want a larger size and more line-height or
+their ascenders collide, Cinzel is all-caps so it needs tracking and less size,
+Archivo Black carries its weight so it needs less size and a lighter italic,
+Oswald is set as caps to read as a cover line. **The design is settled (6,
+split); the type is not.**
 
 ### The palette
 A photographic background — `mockups/bg-glitter.jpg` (pink glitter; `bg-dusk.jpg`,
@@ -491,7 +495,7 @@ the repo's own `bcryptjs`. Only hermione's record matters.
 | Decrypt | `decrypt.html` | chosen 1 (BIOS/POST), built into `boot.js` |
 | Dashboard | `dashboard.html`, `dashboard2.html` | v1 rejected; v2 (occult-terminal) never picked; current dashboard is its own thing |
 | **Single page** | `singlepage.html` | **CHOSEN: 6 (split)** 2026-10-20 — the leopard frame, one main panel, a side nav that is its own surface, on glitter. The other eight stay in the file for reference: 1 column · 2 drawer · 3 plate · 4 tabs · 5 stack · 7 overlay · 8 spine · 9 dock. Each renders its own number badge so a contact sheet is readable |
-| Single-page type | `singlepage.html?f=1..6` | 6 pairings — **awaiting a pick**: 1 cormorant+jost · 2 bodoni+inter · 3 fraunces+nunito · 4 italiana+montserrat · 5 playfair+karla · 6 parisienne+montserrat. `?f=` works on any design |
+| Single-page type | `singlepage.html?f=1..12` | **6 (parisienne script) KEPT as a candidate**; still awaiting a final pick. Batch one, serif+sans pairings: 1 cormorant+jost · 2 bodoni+inter · 3 fraunces+nunito · 4 italiana+montserrat · 5 playfair+karla · 6 parisienne+montserrat. Batch two, a different idea each rather than another serif: 7 pinyon (formal copperplate) · 8 cinzel (inscriptional caps) · 9 prata+dm sans (modern editorial) · 10 archivo black (heavy grotesque) · 11 quicksand only (one family, weight and size alone) · 12 oswald caps (condensed masthead). `?f=` works on any design |
 
 The brief is explicitly **not minimalism** — "as overdesigned and maximalist as
 possible" — but the terminal look was lifted for chess and slots so each design

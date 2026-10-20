@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>single-page mockups — framed</title>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&family=Jost:wght@200;300;400;500&family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,600;1,6..96,400&family=Inter:wght@300;400;500&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;1,9..144,400&family=Nunito+Sans:wght@300;400;600&family=Italiana&family=Montserrat:wght@300;400;500&family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Karla:wght@300;400;500&family=Parisienne&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&family=Jost:wght@200;300;400;500&family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,600;1,6..96,400&family=Inter:wght@300;400;500&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;1,9..144,400&family=Nunito+Sans:wght@300;400;600&family=Italiana&family=Montserrat:wght@300;400;500&family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Karla:wght@300;400;500&family=Parisienne&family=Pinyon+Script&family=Cinzel:wght@400;600&family=Lato:wght@300;400;700&family=Prata&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&family=Archivo+Black&family=Archivo:wght@300;400;500&family=Quicksand:wght@300;400;500;600&family=Oswald:wght@300;400;500&display=swap" rel="stylesheet" />
 <!--
   Three arrangements of the same single-page shell: the leopard border, ONE main
   panel that every section loads into, and a side nav. ?d=1..3 picks the design.
@@ -24,9 +24,14 @@
     8 SPINE    the nav runs vertically up the left edge.
     9 DOCK     the nav is a column of separate tiles sitting on the pink.
 
-  6 SPLIT is the chosen design. ?f=1..6 swaps the type pairing on any of them:
-  1 cormorant+jost  2 bodoni+inter  3 fraunces+nunito  4 italiana+montserrat
-  5 playfair+karla  6 parisienne+montserrat.
+  6 SPLIT is the chosen design. ?f=N swaps the type pairing on any of them.
+  First batch:  1 cormorant+jost  2 bodoni+inter  3 fraunces+nunito
+                4 italiana+montserrat  5 playfair+karla  6 parisienne+montserrat (KEPT)
+  Second batch, each a different idea rather than another serif+sans:
+                7 pinyon script (formal copperplate)  8 cinzel (inscriptional caps)
+                9 prata+dm sans (modern editorial)   10 archivo black (heavy grotesque)
+               11 quicksand only (one family, weight and size alone)
+               12 oswald caps (condensed masthead).
 
   Self-contained: open straight off file://, no server. The frame is the
   rebuilt 9-slice sheet sitting next to this file.
@@ -227,6 +232,39 @@
   body[data-f="6"] h1{font-size:clamp(2.4rem,5vw,4rem);line-height:1.15}
   body[data-f="6"] .brand{font-size:1.9rem;font-weight:400}
   body[data-f="6"] .brand i{font-style:normal}
+
+  /* ---------- second batch: different ideas, not different serifs ---------- */
+  body[data-f="7"]{--display:"Pinyon Script",cursive;   --ui:"Montserrat",system-ui,sans-serif}
+  body[data-f="8"]{--display:"Cinzel",Georgia,serif;    --ui:"Lato",system-ui,sans-serif}
+  body[data-f="9"]{--display:"Prata",Georgia,serif;     --ui:"DM Sans",system-ui,sans-serif}
+  body[data-f="10"]{--display:"Archivo Black",system-ui,sans-serif; --ui:"Archivo",system-ui,sans-serif}
+  body[data-f="11"]{--display:"Quicksand",system-ui,sans-serif;     --ui:"Quicksand",system-ui,sans-serif}
+  body[data-f="12"]{--display:"Oswald",system-ui,sans-serif;        --ui:"Karla",system-ui,sans-serif}
+  /* 7 formal copperplate: a script needs room or the ascenders collide */
+  body[data-f="7"] h1{font-size:clamp(2.5rem,5.2vw,4.2rem);line-height:1.12}
+  body[data-f="7"] .brand{font-size:2rem;font-weight:400}
+  body[data-f="7"] .brand i{font-style:normal}
+  /* 8 inscriptional Roman: an all-caps face wants tracking and less size */
+  body[data-f="8"] h1{font-size:clamp(1.7rem,3.3vw,2.6rem);letter-spacing:.06em;line-height:1.25}
+  body[data-f="8"] .brand{font-size:1.15rem;letter-spacing:.14em;font-weight:600}
+  body[data-f="8"] .brand i{font-style:normal}
+  body[data-f="8"] .cell b{font-size:1.05rem;letter-spacing:.05em}
+  /* 10 heavy grotesque: weight does the work, so pull the size back */
+  body[data-f="10"] h1{font-size:clamp(1.9rem,3.7vw,2.9rem);letter-spacing:-.02em;line-height:1.08}
+  body[data-f="10"] h1 em{font-style:normal;font-weight:400;font-family:var(--ui)}
+  body[data-f="10"] .brand{font-size:1.2rem;letter-spacing:-.01em}
+  body[data-f="10"] .brand i{font-style:normal}
+  body[data-f="10"] .cell b{font-size:1.02rem}
+  /* 11 one family throughout: no display/body split, only weight and size */
+  body[data-f="11"] h1{font-weight:500;letter-spacing:-.01em}
+  body[data-f="11"] .brand{font-weight:600;letter-spacing:.02em}
+  body[data-f="11"] .cell b{font-weight:500;font-size:1.12rem}
+  /* 12 condensed masthead: set the headline as caps, like a cover line */
+  body[data-f="12"] h1{text-transform:uppercase;letter-spacing:.04em;font-weight:400;
+    font-size:clamp(2rem,4vw,3.1rem);line-height:1.08}
+  body[data-f="12"] h1 em{font-style:normal;font-weight:300}
+  body[data-f="12"] .brand{text-transform:uppercase;letter-spacing:.1em;font-size:1.15rem;font-weight:500}
+  body[data-f="12"] .brand i{font-style:normal;font-weight:300}
   body[data-f="2"] .brand,body[data-f="5"] .brand{font-weight:600}
 
   .tag{position:fixed;z-index:95;right:calc(var(--pad) + .2rem);bottom:calc(var(--pad) * .9);
@@ -338,7 +376,9 @@ She knows what is best for me.</textarea></div>
 
   const NAMES = ["column","drawer","plate","tabs","stack","split","overlay","spine","dock"];
   const FONTS = ["cormorant + jost","bodoni + inter","fraunces + nunito",
-                 "italiana + montserrat","playfair + karla","parisienne + montserrat"];
+                 "italiana + montserrat","playfair + karla","parisienne + montserrat",
+                 "pinyon + montserrat","cinzel + lato","prata + dm sans",
+                 "archivo black","quicksand only","oswald caps + karla"];
   const d = Math.min(NAMES.length, Math.max(1, parseInt(new URLSearchParams(location.search).get("d") || "1", 10)));
   document.body.dataset.d = d;
   const f = Math.min(FONTS.length, Math.max(1, parseInt(new URLSearchParams(location.search).get("f") || "1", 10)));
