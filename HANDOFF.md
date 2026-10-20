@@ -88,9 +88,9 @@ glitter: `#ed72ad` 2.2:1 (too weak for any text), `#d94f90` 3.1:1 (large
 display only), `#c1256b` 4.5:1, `#a81457` 5.8:1.
 
 ### The palette
-A photographic background — `mockups/bg-glitter.jpg` (pink glitter; `bg-dusk.jpg`,
-the low-poly landscape, is kept as the alternative and is one line away) over
-`#ed72ad` as the fallback. Every panel, card and tile is **translucent white**,
+A photographic background — `mockups/bg-silver.jpg` (silver glitter) under a
+**dark** veil. `bg-glitter.jpg` (pink) and `bg-dusk.jpg` (low-poly landscape)
+are kept as alternatives, each one line away. Every panel, card and tile is **translucent white**,
 backdrop-blurred, and **generously rounded** — 22px panels, 14px cards, pills
 for chips and buttons. Nothing is square unless two edges are meant to meet.
 
@@ -104,6 +104,17 @@ Text on the pink is a near-black plum `#26101b` with `#4a1930` for secondary;
 panels carry the warm-grey scale. The mockup holds both as `--on-pink*` and
 `--ink/--dim/--faint`, switched per design by an `on-white` class on the nav,
 since some arrangements seat the nav on a surface and some on the background.
+
+**Two busy textures of the same kind collide.** The leopard is black-and-white
+speckle; so is silver glitter. Measured on the render, the frame's mean
+separation from the background fell from 0.122 (on pink) to **0.052** on
+silver, with the background's texture variance nearly matching the frame's —
+the frame stops reading as an object and merges into the field. Lightening the
+background barely helped (0.061), because it crossed *through* the frame's
+luminance on the way. A **dark** veil fixed it outright (0.270, double what
+pink managed) and is what the silver build uses. The veil sits at z-index 1
+and the frame at 90, so a veil darkens the background **without touching the
+leopard** — that is the whole reason this lever works.
 
 **Match the veil to the picture.** The landscape ran from a bright sky to a
 dark navy floor where dark text fell to ~1.8:1, and needed a *graded* veil
@@ -528,7 +539,7 @@ the repo's own `bcryptjs`. Only hermione's record matters.
 | Decrypt | `decrypt.html` | chosen 1 (BIOS/POST), built into `boot.js` |
 | Dashboard | `dashboard.html`, `dashboard2.html` | v1 rejected; v2 (occult-terminal) never picked; current dashboard is its own thing |
 | **Single page** | `singlepage.html` | **CHOSEN: 6 (split)** 2026-10-20 — the leopard frame, one main panel, a side nav that is its own surface, on glitter. The other eight stay in the file for reference: 1 column · 2 drawer · 3 plate · 4 tabs · 5 stack · 7 overlay · 8 spine · 9 dock. Each renders its own number badge so a contact sheet is readable |
-| Single-page variants | `singlepage.html?f=1..36` | **6 (parisienne script) KEPT as a candidate**; still awaiting a final pick. Batch one, serif+sans pairings: 1 cormorant+jost · 2 bodoni+inter · 3 fraunces+nunito · 4 italiana+montserrat · 5 playfair+karla · 6 parisienne+montserrat. Batch two, a different idea each rather than another serif: 7 pinyon (formal copperplate) · 8 cinzel (inscriptional caps) · 9 prata+dm sans (modern editorial) · 10 archivo black (heavy grotesque) · 11 quicksand only (one family, weight and size alone) · 12 oswald caps (condensed masthead). Batch three changes the typographic SYSTEM rather than the face — scale, case, alignment, voice: 13 big (huge head, small body) · 14 lowercase (no small caps at all) · 15 poster (caps, tight) · 16 italic (italic as the voice) · 17 centred · 18 airy. `?f=` works on any design. Batch four loosens the panel itself — ornament, colour and how the data ranks: 19 ruled (banded masthead) · 20 ornament (drop cap) · 21 ledger (dotted, figures right) · 22 rose (type takes the colour) · 23 figures (the numbers lead) · 24 annotated (printed, written on). Batch five keeps ONLY the border and rebuilds the page: 25 bento (tiles, no single panel) · 26 noir (dark field) · 27 poster (headline and a word row) · 28 spread (magazine columns) · 29 sheet (one surface, nav a bar) · 30 float (no surfaces at all). Batch six is built on the corrected content and treats the page as a launcher: 31 marquee (names set huge) · 32 index (numbered contents list) · 33 deck (a fanned hand of cards) · 34 counter (dark desk over tiles) · 35 letter (a note, games at the foot) · 36 wall (big tiles edge to edge). `?f=` works on any design |
+| Single-page variants | `singlepage.html?f=1..36` — **each badge carries its own variant number**, since the design is fixed at 6 and every badge used to read "6" | **6 (parisienne script) KEPT as a candidate**; still awaiting a final pick. Batch one, serif+sans pairings: 1 cormorant+jost · 2 bodoni+inter · 3 fraunces+nunito · 4 italiana+montserrat · 5 playfair+karla · 6 parisienne+montserrat. Batch two, a different idea each rather than another serif: 7 pinyon (formal copperplate) · 8 cinzel (inscriptional caps) · 9 prata+dm sans (modern editorial) · 10 archivo black (heavy grotesque) · 11 quicksand only (one family, weight and size alone) · 12 oswald caps (condensed masthead). Batch three changes the typographic SYSTEM rather than the face — scale, case, alignment, voice: 13 big (huge head, small body) · 14 lowercase (no small caps at all) · 15 poster (caps, tight) · 16 italic (italic as the voice) · 17 centred · 18 airy. `?f=` works on any design. Batch four loosens the panel itself — ornament, colour and how the data ranks: 19 ruled (banded masthead) · 20 ornament (drop cap) · 21 ledger (dotted, figures right) · 22 rose (type takes the colour) · 23 figures (the numbers lead) · 24 annotated (printed, written on). Batch five keeps ONLY the border and rebuilds the page: 25 bento (tiles, no single panel) · 26 noir (dark field) · 27 poster (headline and a word row) · 28 spread (magazine columns) · 29 sheet (one surface, nav a bar) · 30 float (no surfaces at all). Batch six is built on the corrected content and treats the page as a launcher: 31 marquee (names set huge) · 32 index (numbered contents list) · 33 deck (a fanned hand of cards) · 34 counter (dark desk over tiles) · 35 letter (a note, games at the foot) · 36 wall (big tiles edge to edge). `?f=` works on any design |
 
 The brief is explicitly **not minimalism** — "as overdesigned and maximalist as
 possible" — but the terminal look was lifted for chess and slots so each design

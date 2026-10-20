@@ -63,7 +63,7 @@
     /* On #ed72ad white text is only 2.76:1, so everything on the pink is a
        near-black plum (6.49:1) with a softer plum for secondary (5.17:1).
        Panels are white, and carry the warm-grey scale instead. */
-    --bg:#ed72ad; --plate:rgba(255,255,255,.80);
+    --bg:#8e8e92; --plate:rgba(255,255,255,.80);
     --nav-plate:rgba(255,255,255,.50);   /* the nav is its own surface, tinted
                                             so it never merges with the panel */
     --r-lg:22px; --r-md:14px; --r-sm:10px;   /* nothing square unless it must be */
@@ -75,14 +75,14 @@
     --pad:calc(var(--fw) + .9rem);       /* clears the fur's ragged inner edge */
   }
   html,body{height:100%}
-  body{background:var(--bg) url("bg-glitter.jpg") center/cover no-repeat;color:var(--on-pink);font-family:var(--ui);
+  body{background:var(--bg) url("bg-silver.jpg") center/cover no-repeat;color:var(--on-pink);font-family:var(--ui);
        font-weight:400;font-size:15px;overflow:hidden;letter-spacing:.01em}
 
   /* ---------- the border ----------
      One 9-slice sheet, rebuilt from the supplied kit of parts: every piece end
      squared off and butted, so the band is continuous. Slices land exactly on
      the corner/bar joints. `round` is required — stretch ovals the spots. */
-  .veil{position:fixed;inset:0;z-index:1;pointer-events:none;background:rgba(255,255,255,.10)}
+  .veil{position:fixed;inset:0;z-index:1;pointer-events:none;background:rgba(24,20,26,.44)}
   .frame{position:fixed;inset:0;z-index:90;pointer-events:none;
     border-style:solid;border-width:var(--fw);
     border-image:url("frame-leopard.webp") 184 round}
@@ -706,7 +706,7 @@ She knows what is best for me.</textarea></div>
   const f = Math.min(FONTS.length, Math.max(1, parseInt(new URLSearchParams(location.search).get("f") || "1", 10)));
   document.body.dataset.f = f;
   document.getElementById("tag").innerHTML =
-    "<b>" + d + "</b><span>" + NAMES[d - 1] + " · " + FONTS[f - 1] + "</span>";
+    "<b>" + f + "</b><span>" + FONTS[f - 1] + " · d" + d + " " + NAMES[d - 1] + "</span>";
 
   const navEl = document.getElementById("nav"), panelEl = document.getElementById("panel");
   let current = "home";
