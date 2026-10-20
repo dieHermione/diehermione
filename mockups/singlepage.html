@@ -43,6 +43,10 @@
                19 ruled (banded masthead)      20 ornament (drop cap, tapered rules)
                21 ledger (dotted, figures right) 22 rose (type takes the colour)
                23 figures (the numbers lead)   24 annotated (printed, written on).
+  Fifth batch keeps ONLY the border and rebuilds the page around it:
+              25 bento (tiles, no single panel)   26 noir (dark field)
+              27 poster (headline and a word row) 28 spread (magazine columns)
+              29 sheet (one surface, nav a bar)   30 float (no surfaces at all).
 
   Self-contained: open straight off file://, no server. The frame is the
   rebuilt 9-slice sheet sitting next to this file.
@@ -375,6 +379,112 @@
   body[data-f="24"] h1{font-size:clamp(2.1rem,4.4vw,3.3rem)}
   body[data-f="24"] .row .v small{font-family:"Caveat",cursive;font-size:1.05rem;color:#a81457}
   body[data-f="24"] .row .k{font-size:.6rem}
+
+  /* ======== batch five: whole pages. Only the border is kept. ======== */
+
+  /* 25 BENTO — no single panel at all; every block is its own tile, nav a pill */
+  body[data-f="25"]{--display:"Archivo",system-ui,sans-serif; --ui:"Archivo",system-ui,sans-serif}
+  body[data-f="25"] .page{flex-direction:column;gap:.75rem}
+  body[data-f="25"] .nav{width:auto;flex-direction:row;align-items:center;gap:1.3rem;
+    border-radius:999px;padding:.7rem 1.6rem}
+  body[data-f="25"] .nav ul{flex-direction:row;gap:.2rem}
+  body[data-f="25"] .nav .sep,body[data-f="25"] .nav .who,body[data-f="25"] .tagline{display:none}
+  body[data-f="25"] .nav .brand{margin:0 .8rem 0 0;font-size:1.15rem}
+  body[data-f="25"] .nav button{width:auto;padding:.3rem .75rem}
+  body[data-f="25"] .nav button.on::before{display:none}
+  body[data-f="25"] .panel{background:none;backdrop-filter:none;padding:0;border-radius:0}
+  body[data-f="25"] .inner{max-width:none;display:flex;flex-direction:column;gap:.75rem}
+  body[data-f="25"] .rule{display:none}
+  body[data-f="25"] .inner > h1,body[data-f="25"] .inner > .lede{background:var(--plate);
+    border-radius:var(--r-lg);padding:1.4rem 1.7rem;margin:0;
+    backdrop-filter:blur(16px) saturate(118%);-webkit-backdrop-filter:blur(16px) saturate(118%)}
+  body[data-f="25"] .eyebrow{margin:0 0 0 .4rem}
+  body[data-f="25"] .rows{display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem}
+  body[data-f="25"] .row{flex-direction:column;align-items:flex-start;gap:.4rem;border-bottom:0;
+    background:var(--plate);border-radius:var(--r-lg);padding:1.3rem 1.4rem;
+    backdrop-filter:blur(16px) saturate(118%);-webkit-backdrop-filter:blur(16px) saturate(118%)}
+  body[data-f="25"] .row .k{flex:0 0 auto}
+  body[data-f="25"] .row .v{font-size:1.5rem}
+
+  /* 26 NOIR — the whole field goes dark; the leopard is the only light thing */
+  body[data-f="26"]{--display:"Bodoni Moda",Didot,serif; --ui:"Inter",system-ui,sans-serif;
+    --ink:#f8edf3; --dim:#cBaBbd; --faint:#9a7d8b; --line:rgba(255,255,255,.14);
+    --plate:rgba(255,255,255,.07); --nav-plate:rgba(255,255,255,.04);
+    --nav-ink:#f8edf3; --nav-dim:#d2aec1; --nav-faint:#9a7d8b}
+  body[data-f="26"] .veil{background:rgba(10,3,9,.84)}
+  body[data-f="26"] .cell{background:rgba(255,255,255,.05)}
+  body[data-f="26"] h1{font-weight:400}
+
+  /* 27 POSTER — no panel, no sidebar: a headline and a row of words, centred */
+  body[data-f="27"]{--display:"Anton",system-ui,sans-serif; --ui:"Archivo",system-ui,sans-serif}
+  body[data-f="27"] .page{flex-direction:column;align-items:center;justify-content:center;gap:2.4rem}
+  body[data-f="27"] .nav{order:2;width:auto;flex-direction:row;background:none;backdrop-filter:none;
+    padding:0;gap:0}
+  body[data-f="27"] .nav ul{flex-direction:row;gap:1.7rem}
+  body[data-f="27"] .nav .brand,body[data-f="27"] .tagline,body[data-f="27"] .nav .sep,
+  body[data-f="27"] .nav .who{display:none}
+  body[data-f="27"] .nav button{width:auto;padding:0;text-transform:uppercase;letter-spacing:.18em;
+    font-size:.8rem}
+  body[data-f="27"] .nav button.on::before{left:0;right:0;top:auto;bottom:-.45rem;width:auto;height:1px;
+    transform:none}
+  body[data-f="27"] .panel{order:1;flex:0 0 auto;background:none;backdrop-filter:none;padding:0;
+    overflow:visible;text-align:center}
+  body[data-f="27"] .inner{max-width:46rem}
+  body[data-f="27"] .rows,body[data-f="27"] .rule{display:none}
+  body[data-f="27"] h1{text-transform:uppercase;font-size:clamp(2.6rem,6.4vw,5.2rem);line-height:.94;
+    letter-spacing:-.01em;font-weight:400}
+  body[data-f="27"] h1 em{font-style:normal;font-family:var(--ui);font-weight:300}
+  body[data-f="27"] .lede{margin:0 auto;max-width:30rem;color:var(--ink);font-weight:400;font-size:1.05rem}
+  body[data-f="27"] .veil{background:rgba(255,255,255,.42)}
+  body[data-f="27"] .nav button{color:var(--ink);font-weight:500}
+  body[data-f="27"] .eyebrow{color:var(--dim);font-weight:500}
+
+  /* 28 SPREAD — a magazine page: two columns of text, rules, rotated masthead */
+  body[data-f="28"]{--display:"Playfair Display",Georgia,serif; --ui:"Karla",system-ui,sans-serif}
+  body[data-f="28"] .nav{width:4.4rem;align-items:center;padding:1.3rem 0;background:none;
+    backdrop-filter:none;border-right:1px solid var(--line);border-radius:0}
+  body[data-f="28"] .nav .brand,body[data-f="28"] .nav .tagline,body[data-f="28"] .nav ul,
+  body[data-f="28"] .nav .who{writing-mode:vertical-rl;transform:rotate(180deg)}
+  body[data-f="28"] .nav ul{flex-direction:row;gap:1.3rem}
+  body[data-f="28"] .nav button{width:auto;padding:0}
+  body[data-f="28"] .nav .sep{height:auto;width:1px;margin:0 .9rem}
+  body[data-f="28"] .nav .who{margin:auto 0 0 0}
+  body[data-f="28"] .panel{margin-left:0;border-radius:0;padding:2rem 2.4rem}
+  body[data-f="28"] .inner{max-width:none;column-count:2;column-gap:2.6rem;column-rule:1px solid var(--line)}
+  body[data-f="28"] h1{column-span:all;font-size:clamp(2.2rem,4.6vw,3.4rem);border-bottom:2px solid var(--ink);
+    padding-bottom:.6rem;margin-bottom:1rem}
+  body[data-f="28"] .eyebrow{column-span:all}
+  body[data-f="28"] .rows{column-span:all;margin-top:1rem}
+  body[data-f="28"] .rule{display:none}
+
+  /* 29 SHEET — one continuous sheet fills the frame; the nav is a bar on it */
+  body[data-f="29"]{--display:"Prata",Georgia,serif; --ui:"DM Sans",system-ui,sans-serif}
+  body[data-f="29"] .page{flex-direction:column;padding:var(--fw)}
+  body[data-f="29"] .nav{width:auto;flex-direction:row;align-items:center;gap:1.4rem;
+    border-radius:var(--r-lg) var(--r-lg) 0 0;padding:1rem 1.8rem;background:var(--plate);
+    border-bottom:1px solid var(--line)}
+  body[data-f="29"] .nav ul{flex-direction:row;gap:.1rem}
+  body[data-f="29"] .nav .sep,body[data-f="29"] .tagline{display:none}
+  body[data-f="29"] .nav .brand{margin:0 1.2rem 0 0;font-size:1.2rem}
+  body[data-f="29"] .nav button{width:auto;padding:.3rem .8rem}
+  body[data-f="29"] .nav button.on::before{display:none}
+  body[data-f="29"] .nav .who{margin:0 0 0 auto}
+  body[data-f="29"] .panel{margin-left:0;border-radius:0 0 var(--r-lg) var(--r-lg);padding:2.4rem 2.6rem}
+
+  /* 30 FLOAT — no surfaces anywhere; the glitter IS the page */
+  body[data-f="30"]{--display:"Archivo Black",system-ui,sans-serif; --ui:"Archivo",system-ui,sans-serif;
+    --ink:#26101b; --dim:#4a1930; --faint:#5e2440; --line:rgba(38,16,27,.28)}
+  body[data-f="30"] .veil{background:rgba(255,255,255,.46)}
+  body[data-f="30"] .nav,body[data-f="30"] .panel{background:none;backdrop-filter:none;
+    -webkit-backdrop-filter:none;border-radius:0}
+  body[data-f="30"] .nav{border-right:0;padding-left:0}
+  body[data-f="30"] .panel{padding:0 0 0 2.6rem}
+  body[data-f="30"] h1{font-size:clamp(2rem,4vw,3.1rem);line-height:1.04;letter-spacing:-.02em}
+  body[data-f="30"] h1 em{font-style:normal;font-family:var(--ui);font-weight:400}
+  body[data-f="30"] .rows .row{border-bottom:1px solid var(--line)}
+  body[data-f="30"] .nav button{font-weight:500;color:var(--ink)}
+  body[data-f="30"] .lede{color:var(--ink);font-weight:400}
+  body[data-f="30"] .row .k,body[data-f="30"] .eyebrow{color:var(--dim)}
   body[data-f="2"] .brand,body[data-f="5"] .brand{font-weight:600}
 
   .tag{position:fixed;z-index:95;right:calc(var(--pad) + .2rem);bottom:calc(var(--pad) * .9);
@@ -494,7 +604,10 @@ She knows what is best for me.</textarea></div>
                  "centred · symmetric","airy · wide tracking, light",
                  "ruled · banded masthead","ornament · drop cap",
                  "ledger · dotted, figures right","rose · coloured type",
-                 "figures · numbers lead","annotated · written on"];
+                 "figures · numbers lead","annotated · written on",
+                 "BENTO · tiles, no panel","NOIR · dark field",
+                 "POSTER · headline only","SPREAD · magazine columns",
+                 "SHEET · one surface","FLOAT · no surfaces at all"];
   const d = Math.min(NAMES.length, Math.max(1, parseInt(new URLSearchParams(location.search).get("d") || "1", 10)));
   document.body.dataset.d = d;
   const f = Math.min(FONTS.length, Math.max(1, parseInt(new URLSearchParams(location.search).get("f") || "1", 10)));
