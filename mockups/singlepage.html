@@ -47,6 +47,12 @@
               25 bento (tiles, no single panel)   26 noir (dark field)
               27 poster (headline and a word row) 28 spread (magazine columns)
               29 sheet (one surface, nav a bar)   30 float (no surfaces at all).
+  Sixth batch is built on the CORRECTED content — accounts are gone, so there
+  is nothing to review and home is her two lines plus the way in. All six treat
+  the page as a launcher:
+              31 marquee (names set huge)      32 index (numbered contents list)
+              33 deck (a fanned hand of cards) 34 counter (dark desk over tiles)
+              35 letter (a note, games at foot) 36 wall (big tiles edge to edge).
 
   Self-contained: open straight off file://, no server. The frame is the
   rebuilt 9-slice sheet sitting next to this file.
@@ -483,6 +489,94 @@
   body[data-f="30"] h1 em{font-style:normal;font-family:var(--ui);font-weight:400}
   body[data-f="30"] .rows .row{border-bottom:1px solid var(--line)}
   body[data-f="30"] .nav button{font-weight:500;color:var(--ink)}
+
+  /* ======== batch six: the page is a launcher, not a dashboard ======== */
+
+  /* 31 MARQUEE — the game names ARE the page, set huge and stacked */
+  body[data-f="31"]{--display:"Archivo",system-ui,sans-serif; --ui:"Archivo",system-ui,sans-serif}
+  body[data-f="31"] h1{font-size:1.5rem;font-weight:500;margin-bottom:.5rem}
+  body[data-f="31"] .lede{font-size:.88rem;max-width:30rem}
+  body[data-f="31"] .lede + .lede{display:none}
+  body[data-f="31"] .rule{margin:1.2rem 0}
+  body[data-f="31"] .grid{display:flex;flex-direction:column;gap:0}
+  body[data-f="31"] .cell{flex-direction:row;align-items:baseline;gap:1rem;background:none;
+    border:0;border-bottom:1px solid var(--line);border-radius:0;padding:.3rem 0;min-height:0}
+  body[data-f="31"] .cell:hover{background:none;transform:translateX(.5rem)}
+  body[data-f="31"] .cell b{font-size:clamp(1.15rem,2.3vw,1.75rem);line-height:1.1;font-weight:500;
+    letter-spacing:-.02em}
+  body[data-f="31"] .cell span{margin:0 0 0 auto}
+
+  /* 32 INDEX — a book's table of contents: numbered, dotted, serif */
+  body[data-f="32"]{--display:"EB Garamond",Georgia,serif; --ui:"EB Garamond",Georgia,serif}
+  body[data-f="32"] h1{font-size:clamp(1.8rem,3.6vw,2.7rem)}
+  body[data-f="32"] .grid{display:flex;flex-direction:column;gap:0;counter-reset:g}
+  body[data-f="32"] .cell{flex-direction:row;align-items:baseline;gap:1.1rem;background:none;
+    border:0;border-bottom:1px dotted rgba(38,16,27,.32);border-radius:0;padding:.4rem 0;min-height:0}
+  body[data-f="32"] .cell:hover{background:none}
+  body[data-f="32"] .cell::before{counter-increment:g;content:counter(g,decimal-leading-zero);
+    font-size:.72rem;color:var(--faint);letter-spacing:.1em}
+  body[data-f="32"] .cell b{font-size:1.14rem}
+  body[data-f="32"] .cell span{margin:0 0 0 auto;letter-spacing:.14em}
+
+  /* 33 DECK — the games are a hand of cards, fanned and overlapping */
+  body[data-f="33"]{--display:"Playfair Display",Georgia,serif; --ui:"Karla",system-ui,sans-serif}
+  body[data-f="33"] .grid{display:flex;flex-wrap:wrap;gap:0 0;row-gap:2.4rem;padding-left:1.6rem}
+  body[data-f="33"] .cell{flex:0 0 8.8rem;min-height:9.2rem;margin-right:-1.5rem;
+    box-shadow:0 .6rem 1.6rem rgba(90,20,55,.2);transform:rotate(-2.2deg);
+    background:rgba(255,255,255,.88);transition:transform .2s ease,box-shadow .2s ease}
+  body[data-f="33"] .cell:nth-child(even){transform:rotate(2.4deg) translateY(.5rem)}
+  body[data-f="33"] .cell:hover{transform:translateY(-.7rem) rotate(0deg);z-index:3;
+    box-shadow:0 1.1rem 2.4rem rgba(90,20,55,.3)}
+  body[data-f="33"] .cell b{font-size:1.15rem}
+
+  /* 34 COUNTER — a dark front desk at the top, the games laid out beneath it */
+  body[data-f="34"]{--display:"Bodoni Moda",Didot,serif; --ui:"Inter",system-ui,sans-serif}
+  body[data-f="34"] .panel{padding:0;background:none;backdrop-filter:none;overflow:hidden;
+    border-radius:var(--r-lg)}
+  body[data-f="34"] .inner{max-width:none}
+  body[data-f="34"] .eyebrow,body[data-f="34"] h1,body[data-f="34"] .lede{
+    background:#26101b;color:#f7e9f0;margin:0;padding:0 2.4rem}
+  body[data-f="34"] .eyebrow{padding-top:2rem;color:#c79bae}
+  body[data-f="34"] .lede{color:#dcc2ce;padding-bottom:0}
+  body[data-f="34"] .lede + .lede{padding-bottom:2.2rem}
+  body[data-f="34"] .rule{background:none;height:0;margin:0}
+  body[data-f="34"] .grid{grid-template-columns:repeat(5,1fr);gap:.6rem;
+    background:rgba(255,255,255,.86);padding:1.6rem 2.4rem 2.2rem;
+    backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+  body[data-f="34"] .cell{min-height:7rem;background:rgba(255,255,255,.6)}
+
+  /* 35 LETTER — her words set as a note; the games a quiet row at the foot */
+  body[data-f="35"]{--display:"EB Garamond",Georgia,serif; --ui:"Jost",system-ui,sans-serif}
+  body[data-f="35"] .inner{max-width:36rem;margin:0 auto;text-align:center}
+  body[data-f="35"] h1{font-size:clamp(2rem,4vw,3rem);font-weight:400}
+  body[data-f="35"] .lede{font-size:1.08rem;line-height:1.9;margin-left:auto;margin-right:auto}
+  body[data-f="35"] .eyebrow{font-style:italic;text-transform:none;letter-spacing:.04em;font-size:.95rem}
+  body[data-f="35"] .rule{background:linear-gradient(90deg,transparent,rgba(38,16,27,.3) 35%,
+    rgba(38,16,27,.3) 65%,transparent);margin:2.4rem 0 1.6rem}
+  body[data-f="35"] .grid{display:flex;flex-wrap:wrap;justify-content:center;gap:.4rem}
+  body[data-f="35"] .cell{flex:0 0 auto;flex-direction:row;align-items:baseline;gap:.4rem;
+    min-height:0;padding:.34rem 1rem;border-radius:999px;background:rgba(255,255,255,.55)}
+  body[data-f="35"] .cell b{font-size:.98rem}
+  body[data-f="35"] .cell span{display:none}
+
+  /* 36 WALL — big tiles edge to edge; the copy is a caption, not a page */
+  body[data-f="36"]{--display:"Archivo",system-ui,sans-serif; --ui:"Archivo",system-ui,sans-serif}
+  body[data-f="36"] .panel{background:none;backdrop-filter:none;padding:0}
+  body[data-f="36"] .inner{max-width:none}
+  body[data-f="36"] .eyebrow,body[data-f="36"] h1,body[data-f="36"] .lede{
+    background:var(--plate);backdrop-filter:blur(16px) saturate(118%);
+    -webkit-backdrop-filter:blur(16px) saturate(118%);padding:.5rem 1rem;margin:0;
+    display:block;width:fit-content;max-width:100%}
+  body[data-f="36"] .eyebrow{border-radius:var(--r-md) var(--r-md) 0 0;padding-bottom:.2rem}
+  body[data-f="36"] h1{font-size:1.5rem;font-weight:500;padding-top:.1rem;padding-bottom:.2rem}
+  body[data-f="36"] .lede{font-size:.86rem;max-width:34rem;
+    border-radius:0 0 var(--r-md) var(--r-md);padding-top:.2rem}
+  body[data-f="36"] .lede + .lede{display:none}
+  body[data-f="36"] .rule{display:none}
+  body[data-f="36"] .grid{grid-template-columns:repeat(5,1fr);gap:.55rem;margin-top:1.2rem}
+  body[data-f="36"] .cell{min-height:8.4rem;background:var(--plate);
+    backdrop-filter:blur(16px) saturate(118%);-webkit-backdrop-filter:blur(16px) saturate(118%)}
+  body[data-f="36"] .cell b{font-size:1.18rem}
   body[data-f="30"] .lede{color:var(--ink);font-weight:400}
   body[data-f="30"] .row .k,body[data-f="30"] .eyebrow{color:var(--dim)}
   body[data-f="2"] .brand,body[data-f="5"] .brand{font-weight:600}
@@ -512,7 +606,6 @@
   /* One panel, many sections: nav swaps what is inside it. No page ever loads. */
   const SECTIONS = [
     { id:"home", label:"home" },
-    { id:"games", label:"games" },
     { id:"devotion", label:"devotion" },
     { id:"elysium", label:"elysium" },
     { sep:true },
@@ -531,15 +624,11 @@
     home: () => `
       <div class="eyebrow">Friday · the nineteenth</div>
       <h1>Welcome, <em>guest4</em>.</h1>
-      <p class="lede">There is nothing here that you have earned. Everything is given, and
-        everything can be taken back.</p>
-      <p class="lede">Choose something from the left. It will open here.</p>
+      <p class="lede">You keep nothing here. No account, no score, no record — a name for
+        as long as you stay, and then not even that.</p>
+      <p class="lede">So there is only this: pick something, and do it properly.</p>
       <div class="rule"></div>
-      <div class="rows">
-        <div class="row"><span class="k">Last here</span><span class="v">four days ago <small>· nothing was missed</small></span></div>
-        <div class="row"><span class="k">Lines written</span><span class="v">1,240</span></div>
-        <div class="row"><span class="k">The tree</span><span class="v">82 days tended <small>· thirsty</small></span></div>
-      </div>`,
+      <div class="grid">${GAMES.map(([n,k]) => `<div class="cell"><b>${n}</b><span>${k}</span></div>`).join("")}</div>`,
     games: () => `
       <div class="eyebrow">Ten ways to pass the time</div>
       <h1>Games</h1>
@@ -558,22 +647,22 @@
 She knows what is best for me.</textarea></div>
       <button class="go">Begin</button>`,
     elysium: () => `
-      <div class="eyebrow">Day 82</div>
+      <div class="eyebrow">Planted today</div>
       <h1>Elysium</h1>
-      <p class="lede">It has been four days. The soil is dry and the lower leaves have begun to
-        curl — nothing that cannot be undone, if you see to it now.</p>
+      <p class="lede">It is yours while you are here. Leave it three hours and the name goes,
+        and the tree goes with it.</p>
       <div class="rule"></div>
       <div class="rows">
-        <div class="row"><span class="k">Stage</span><span class="v">Sapling <small>· 3 of 6</small></span></div>
-        <div class="row"><span class="k">Health</span><span class="v">71 <small>· slipping</small></span></div>
-        <div class="row"><span class="k">Soil moisture</span><span class="v">18 <small>· dry</small></span></div>
+        <div class="row"><span class="k">Stage</span><span class="v">Seedling <small>· 1 of 6</small></span></div>
+        <div class="row"><span class="k">Health</span><span class="v">100 <small>· untroubled</small></span></div>
+        <div class="row"><span class="k">Soil moisture</span><span class="v">62</span></div>
         <div class="row"><span class="k">Season</span><span class="v">Autumn</span></div>
       </div>
       <div class="field" style="margin-top:2rem"><div class="flabel">tend</div>
         <div class="chips"><button class="chip">water</button><button class="chip">mist</button>
           <button class="chip">trim</button><button class="chip">fertilize</button><button class="chip">inspect</button></div></div>`,
     settings: () => `
-      <div class="eyebrow">Yours alone</div>
+      <div class="eyebrow">This session only</div>
       <h1>Settings</h1>
       <div class="rule"></div>
       <div class="rows">
@@ -585,10 +674,11 @@ She knows what is best for me.</textarea></div>
     admin: () => `
       <div class="eyebrow">Hers</div>
       <h1>Admin</h1>
-      <p class="lede">Finished series, the editable pools, and the things only she can reach.</p>
+      <p class="lede">The finished runs guests leave behind, the editable pools, and the
+        things only she can reach.</p>
       <div class="rule"></div>
       <div class="rows">
-        <div class="row"><span class="k">Completed</span><span class="v">3 waiting <small>· devotion, multitap</small></span></div>
+        <div class="row"><span class="k">Completed runs</span><span class="v">3 waiting <small>· devotion, multitap</small></span></div>
         <div class="row"><span class="k">Hover text</span><span class="v">11 cards</span></div>
         <div class="row"><span class="k">OT12 photos</span><span class="v">24 tagged</span></div>
       </div>`,
@@ -607,7 +697,10 @@ She knows what is best for me.</textarea></div>
                  "figures · numbers lead","annotated · written on",
                  "BENTO · tiles, no panel","NOIR · dark field",
                  "POSTER · headline only","SPREAD · magazine columns",
-                 "SHEET · one surface","FLOAT · no surfaces at all"];
+                 "SHEET · one surface","FLOAT · no surfaces at all",
+                 "MARQUEE · names are the page","INDEX · a contents list",
+                 "DECK · a hand of cards","COUNTER · dark desk over tiles",
+                 "LETTER · a note, games at foot","WALL · big tiles edge to edge"];
   const d = Math.min(NAMES.length, Math.max(1, parseInt(new URLSearchParams(location.search).get("d") || "1", 10)));
   document.body.dataset.d = d;
   const f = Math.min(FONTS.length, Math.max(1, parseInt(new URLSearchParams(location.search).get("f") || "1", 10)));
@@ -631,7 +724,7 @@ She knows what is best for me.</textarea></div>
     b.addEventListener("click", () => open(s.id));
     li.append(b); navEl.append(li);
   });
-  // the games grid opens a game in the same panel, like the nav does
+  // the games grid opens a game in the same panel; home IS the games list now
   panelEl.addEventListener("click", (e) => {
     const cell = e.target.closest(".cell");
     if (cell && VIEW[cell.querySelector("b").textContent.toLowerCase()]) open(cell.querySelector("b").textContent.toLowerCase());

@@ -42,6 +42,20 @@ before, so don't conclude a build failed too early.
 This file. Plain markdown, not styled to the site. Update it with the change,
 not afterwards.
 
+### A mockup may not invent data the site cannot produce
+Accounts are gone, so **nothing about a visitor persists** — no lifetime
+counters, no "last here", no tree older than this session. A guest name is
+claimed on arrival and dropped after three idle hours. Batches one to five all
+carried a stats block (lines written, last here, 82 days tended) that the
+server cannot produce for anyone; it was fiction inherited from the
+account-era dashboard.
+
+What a guest's home screen can honestly show is only two things: **Hermione's
+editable welcome copy** (`site.json`) and **the way in to the games**. That is
+why the page is really a launcher, not a dashboard — worth remembering before
+designing another panel of figures. Hermione's own view can show more, because
+`completed.json` and the editable pools are real.
+
 ### Typography is a switch
 `--display` and `--ui` drive every face in the mockup, and `?f=1..6` swaps the
 pairing, so type can be judged against the real layout rather than in isolation.
@@ -514,7 +528,7 @@ the repo's own `bcryptjs`. Only hermione's record matters.
 | Decrypt | `decrypt.html` | chosen 1 (BIOS/POST), built into `boot.js` |
 | Dashboard | `dashboard.html`, `dashboard2.html` | v1 rejected; v2 (occult-terminal) never picked; current dashboard is its own thing |
 | **Single page** | `singlepage.html` | **CHOSEN: 6 (split)** 2026-10-20 — the leopard frame, one main panel, a side nav that is its own surface, on glitter. The other eight stay in the file for reference: 1 column · 2 drawer · 3 plate · 4 tabs · 5 stack · 7 overlay · 8 spine · 9 dock. Each renders its own number badge so a contact sheet is readable |
-| Single-page variants | `singlepage.html?f=1..30` | **6 (parisienne script) KEPT as a candidate**; still awaiting a final pick. Batch one, serif+sans pairings: 1 cormorant+jost · 2 bodoni+inter · 3 fraunces+nunito · 4 italiana+montserrat · 5 playfair+karla · 6 parisienne+montserrat. Batch two, a different idea each rather than another serif: 7 pinyon (formal copperplate) · 8 cinzel (inscriptional caps) · 9 prata+dm sans (modern editorial) · 10 archivo black (heavy grotesque) · 11 quicksand only (one family, weight and size alone) · 12 oswald caps (condensed masthead). Batch three changes the typographic SYSTEM rather than the face — scale, case, alignment, voice: 13 big (huge head, small body) · 14 lowercase (no small caps at all) · 15 poster (caps, tight) · 16 italic (italic as the voice) · 17 centred · 18 airy. `?f=` works on any design. Batch four loosens the panel itself — ornament, colour and how the data ranks: 19 ruled (banded masthead) · 20 ornament (drop cap) · 21 ledger (dotted, figures right) · 22 rose (type takes the colour) · 23 figures (the numbers lead) · 24 annotated (printed, written on). Batch five keeps ONLY the border and rebuilds the page: 25 bento (tiles, no single panel) · 26 noir (dark field) · 27 poster (headline and a word row) · 28 spread (magazine columns) · 29 sheet (one surface, nav a bar) · 30 float (no surfaces at all). `?f=` works on any design |
+| Single-page variants | `singlepage.html?f=1..36` | **6 (parisienne script) KEPT as a candidate**; still awaiting a final pick. Batch one, serif+sans pairings: 1 cormorant+jost · 2 bodoni+inter · 3 fraunces+nunito · 4 italiana+montserrat · 5 playfair+karla · 6 parisienne+montserrat. Batch two, a different idea each rather than another serif: 7 pinyon (formal copperplate) · 8 cinzel (inscriptional caps) · 9 prata+dm sans (modern editorial) · 10 archivo black (heavy grotesque) · 11 quicksand only (one family, weight and size alone) · 12 oswald caps (condensed masthead). Batch three changes the typographic SYSTEM rather than the face — scale, case, alignment, voice: 13 big (huge head, small body) · 14 lowercase (no small caps at all) · 15 poster (caps, tight) · 16 italic (italic as the voice) · 17 centred · 18 airy. `?f=` works on any design. Batch four loosens the panel itself — ornament, colour and how the data ranks: 19 ruled (banded masthead) · 20 ornament (drop cap) · 21 ledger (dotted, figures right) · 22 rose (type takes the colour) · 23 figures (the numbers lead) · 24 annotated (printed, written on). Batch five keeps ONLY the border and rebuilds the page: 25 bento (tiles, no single panel) · 26 noir (dark field) · 27 poster (headline and a word row) · 28 spread (magazine columns) · 29 sheet (one surface, nav a bar) · 30 float (no surfaces at all). Batch six is built on the corrected content and treats the page as a launcher: 31 marquee (names set huge) · 32 index (numbered contents list) · 33 deck (a fanned hand of cards) · 34 counter (dark desk over tiles) · 35 letter (a note, games at the foot) · 36 wall (big tiles edge to edge). `?f=` works on any design |
 
 The brief is explicitly **not minimalism** — "as overdesigned and maximalist as
 possible" — but the terminal look was lifted for chess and slots so each design
