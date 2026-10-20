@@ -43,12 +43,25 @@ This file. Plain markdown, not styled to the site. Update it with the change,
 not afterwards.
 
 ### The palette
-Page is **#ed72ad**; every panel, card and window surface is **white**. On that
-pink, white text is only 2.76:1 — display sizes at most — so text on the pink is
-a near-black plum `#26101b` (6.49:1) with `#4a1930` for secondary. Text on the
-white panels uses the warm-grey scale instead. The mockup carries both as
-`--on-pink*` and `--ink/--dim/--faint`, switched per design by an `on-white`
-class on the nav, since some arrangements seat the nav on pink and some on white.
+A photographic background (`mockups/bg-dusk.jpg` — low-poly dusk landscape)
+over `#ed72ad` as the fallback, with every panel, card and tile **translucent
+white** (`rgba(255,255,255,.82)`, backdrop-blurred) and **generously rounded**
+— 22px panels, 14px cards, pills for chips and buttons. Nothing is square
+unless two edges are meant to meet.
+
+Text on the pink is a near-black plum `#26101b` with `#4a1930` for secondary;
+panels carry the warm-grey scale. The mockup holds both as `--on-pink*` and
+`--ink/--dim/--faint`, switched per design by an `on-white` class on the nav,
+since some arrangements seat the nav on a surface and some on the background.
+
+**A photographic background needs a veil.** That image runs from a bright pink
+sky to a dark navy floor (~50,65,130), where dark text falls to about 1.8:1.
+A graded white veil under everything (.06 at the top to .56 at the foot) lifts
+the lower half; measured afterwards, body text holds 7.2–16.2:1 down the panel
+and nav text 6.8–12.3:1 down the background. **Measure at several heights, not
+one** — a translucent surface over a photograph has a different backdrop at the
+top than at the foot. The veil's strength is the dial between a vivid landscape
+and legible text.
 
 ### Direction: off the terminal aesthetic, toward one page
 Decided 2026-09-11: the site is **moving away from the terminal look** and

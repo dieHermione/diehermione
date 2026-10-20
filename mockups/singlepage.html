@@ -11,6 +11,10 @@
   They differ in the organising idea, not the spacing:
     1 COLUMN   nav and panel are two columns inside the frame, split by a hairline.
     2 DRAWER   the nav is furniture: a plate running under the frame's left edge.
+
+  Surfaces are translucent over a photographic background, so they pick up the
+  sky at the top and the dark landscape at the foot. A graded veil sits under
+  everything: without it, dark text on the navy lower half is about 1.8:1.
     3 PLATE    the panel is an object floating on the pink, the nav a word rail.
     4 TABS     the panel is a folder and the nav its tabs, the active one merging in.
     5 STACK    the panel is the top sheet of a stack, the others showing behind.
@@ -28,20 +32,24 @@
     /* On #ed72ad white text is only 2.76:1, so everything on the pink is a
        near-black plum (6.49:1) with a softer plum for secondary (5.17:1).
        Panels are white, and carry the warm-grey scale instead. */
-    --bg:#ed72ad; --plate:#ffffff;
+    --bg:#ed72ad; --plate:rgba(255,255,255,.82);
+    --r-lg:22px; --r-md:14px; --r-sm:10px;   /* nothing square unless it must be */
     --on-pink:#26101b; --on-pink-2:#4a1930; --on-pink-3:#5e2440;
-    --ink:#1d1419; --dim:#6f626a; --faint:#a4939c; --line:#f0dfe7; --tint:#fdeef5;
+    --ink:#1d1419; --dim:#6f626a; --faint:#a4939c; --line:rgba(38,16,27,.11); --tint:rgba(255,255,255,.5);
     --fw:clamp(50px,5.9vw,100px);        /* frame thickness; drives everything */
     --pad:calc(var(--fw) + .9rem);       /* clears the fur's ragged inner edge */
   }
   html,body{height:100%}
-  body{background:var(--bg);color:var(--on-pink);font-family:"Jost",system-ui,sans-serif;
+  body{background:var(--bg) url("bg-dusk.jpg") center/cover no-repeat fixed;color:var(--on-pink);font-family:"Jost",system-ui,sans-serif;
        font-weight:400;font-size:15px;overflow:hidden;letter-spacing:.01em}
 
   /* ---------- the border ----------
      One 9-slice sheet, rebuilt from the supplied kit of parts: every piece end
      squared off and butted, so the band is continuous. Slices land exactly on
      the corner/bar joints. `round` is required — stretch ovals the spots. */
+  .veil{position:fixed;inset:0;z-index:1;pointer-events:none;
+    background:linear-gradient(180deg,rgba(255,255,255,.06) 0%,rgba(255,255,255,.16) 48%,
+      rgba(255,255,255,.40) 74%,rgba(255,255,255,.56) 100%)}
   .frame{position:fixed;inset:0;z-index:90;pointer-events:none;
     border-style:solid;border-width:var(--fw);
     border-image:url("frame-leopard.webp") 184 round}
@@ -60,7 +68,7 @@
   .tagline{font-size:.62rem;letter-spacing:.34em;text-transform:uppercase;color:var(--nav-faint);
     margin-bottom:2.4rem}
   .nav ul{list-style:none;display:flex;flex-direction:column;gap:.1rem}
-  .nav button{appearance:none;background:none;border:0;cursor:pointer;width:100%;
+  .nav button{appearance:none;background:none;border:0;cursor:pointer;width:100%;border-radius:var(--r-sm);
     text-align:left;color:var(--nav-dim);font-family:inherit;font-weight:300;font-size:.98rem;
     letter-spacing:.14em;text-transform:lowercase;padding:.44rem 0;position:relative;
     transition:color .18s ease,padding .18s ease}
@@ -73,7 +81,8 @@
 
   /* the one panel everything loads into */
   .panel{flex:1 1 auto;min-width:0;min-height:0;overflow-y:auto;scrollbar-width:thin;
-    background:var(--plate);color:var(--ink);padding:2.5rem 2.7rem}
+    background:var(--plate);color:var(--ink);padding:2.5rem 2.7rem;border-radius:var(--r-lg);
+    backdrop-filter:blur(16px) saturate(118%);-webkit-backdrop-filter:blur(16px) saturate(118%)}
   .panel::-webkit-scrollbar{width:5px}
   .panel::-webkit-scrollbar-thumb{background:#e2cdd6;border-radius:99px}
   .inner{max-width:52rem}
@@ -83,19 +92,20 @@
   h1 em{font-style:italic;color:var(--dim)}
   .lede{font-size:1.02rem;line-height:1.75;color:var(--dim);max-width:40rem}
   .lede + .lede{margin-top:.9rem}
-  .rule{height:1px;background:var(--line);margin:2.1rem 0}
+  .rule{height:1px;background:var(--line);margin:2.1rem 0;border-radius:1px}
 
-  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(10.5rem,1fr));
-    border-top:1px solid var(--line);border-left:1px solid var(--line)}
-  .cell{border-right:1px solid var(--line);border-bottom:1px solid var(--line);
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(10.5rem,1fr));gap:.6rem}
+  .cell{border:1px solid var(--line);border-radius:var(--r-md);background:rgba(255,255,255,.42);
     padding:1.1rem 1rem 1.25rem;min-height:6.2rem;display:flex;
-    flex-direction:column;justify-content:flex-end;cursor:pointer;transition:background .18s ease}
-  .cell:hover{background:var(--tint)}
+    flex-direction:column;justify-content:flex-end;cursor:pointer;
+    transition:background .18s ease,transform .18s ease}
+  .cell:hover{background:rgba(255,255,255,.72);transform:translateY(-2px)}
   .cell b{font-family:"Cormorant Garamond",serif;font-weight:400;font-size:1.32rem;letter-spacing:.01em}
   .cell span{font-size:.68rem;letter-spacing:.2em;text-transform:uppercase;color:var(--faint);margin-top:.3rem}
 
   .rows{display:flex;flex-direction:column}
   .row{display:flex;align-items:baseline;gap:1.4rem;padding:.72rem 0;border-bottom:1px solid var(--line)}
+  .row:last-child{border-bottom:0}
   .row .k{flex:0 0 11rem;font-size:.66rem;letter-spacing:.24em;text-transform:uppercase;color:var(--faint)}
   .row .v{font-size:1rem;color:var(--ink)}
   .row .v small{color:var(--dim);font-size:.82rem}
@@ -103,16 +113,18 @@
   .field{margin-bottom:1.5rem}
   .flabel{font-size:.62rem;letter-spacing:.26em;text-transform:uppercase;color:var(--faint);margin-bottom:.6rem}
   .chips{display:flex;gap:.5rem;flex-wrap:wrap}
-  .chip{border:1px solid var(--line);background:none;color:var(--dim);font-family:inherit;font-weight:300;
-    font-size:.9rem;letter-spacing:.08em;padding:.4rem 1.05rem;cursor:pointer;transition:all .18s ease}
+  .chip{border:1px solid var(--line);background:rgba(255,255,255,.4);color:var(--dim);font-family:inherit;
+    font-weight:300;font-size:.9rem;letter-spacing:.08em;padding:.42rem 1.15rem;cursor:pointer;
+    border-radius:999px;transition:all .18s ease}
   .chip:hover{border-color:#c9a7b6;color:var(--ink)}
   .chip.on{background:var(--ink);border-color:var(--ink);color:#fff}
   textarea{width:100%;max-width:34rem;min-height:5.4rem;background:var(--tint);border:1px solid var(--line);
-    color:var(--ink);font-family:inherit;font-weight:300;font-size:1rem;line-height:1.7;padding:.8rem .9rem;resize:vertical}
+    color:var(--ink);font-family:inherit;font-weight:300;font-size:1rem;line-height:1.7;padding:.9rem 1rem;
+    resize:vertical;border-radius:var(--r-md)}
   textarea:focus{outline:none;border-color:#c9a7b6}
   .go{margin-top:.4rem;border:1px solid var(--ink);background:none;color:var(--ink);font-family:inherit;
-    font-size:.74rem;letter-spacing:.26em;text-transform:uppercase;padding:.62rem 2rem;cursor:pointer;
-    transition:all .18s ease}
+    font-size:.74rem;letter-spacing:.26em;text-transform:uppercase;padding:.68rem 2.2rem;cursor:pointer;
+    border-radius:999px;transition:all .18s ease}
   .go:hover{background:var(--ink);color:#fff}
 
   /* ---------- 1 · COLUMN — two columns inside the frame, split by a hairline ---------- */
@@ -126,6 +138,7 @@
     justify-content:center;border-right:1px solid var(--line)}
   body[data-d="2"] .nav .who{margin-top:3.2rem}
   body[data-d="2"] .panel{margin-left:2.6rem}
+  body[data-d="2"] .nav{border-radius:0 var(--r-lg) var(--r-lg) 0}
   body[data-d="2"] .inner{padding-top:.5rem}
 
   /* ---------- 3 · PLATE — the panel is an object; the nav a rail of words ---------- */
@@ -140,31 +153,33 @@
   /* ---------- 4 · TABS — the panel is a folder, the nav its tabs ---------- */
   body[data-d="4"] .nav{width:11.5rem;padding-top:3rem}
   body[data-d="4"] .nav ul{gap:.3rem}
-  body[data-d="4"] .nav button{background:var(--plate);color:var(--dim);padding:.62rem 1rem;
+  body[data-d="4"] .nav button{background:var(--plate);color:var(--dim);padding:.66rem 1.05rem;
     letter-spacing:.1em;box-shadow:inset -1px 0 0 var(--line)}
   body[data-d="4"] .nav button:hover{color:var(--ink)}
   body[data-d="4"] .nav button.on{color:var(--ink);box-shadow:none;position:relative;z-index:2;
     margin-right:-2px;padding-right:1.4rem}
   body[data-d="4"] .nav button.on::before{display:none}
   body[data-d="4"] .nav .brand,body[data-d="4"] .nav .tagline,body[data-d="4"] .nav .who{padding-left:1rem}
-  body[data-d="4"] .panel{margin-left:0;position:relative;z-index:1}
+  body[data-d="4"] .panel{margin-left:0;position:relative;z-index:1;border-radius:0 var(--r-lg) var(--r-lg) 0}
+  body[data-d="4"] .nav button{border-radius:var(--r-md) 0 0 var(--r-md)}
 
   /* ---------- 5 · STACK — the panel is the top sheet of a stack ---------- */
   body[data-d="5"] .page{padding:calc(var(--pad) + .3rem)}
   body[data-d="5"] .nav{width:10.5rem;padding-right:1.8rem}
   body[data-d="5"] .panel{margin:1.5rem 1.5rem 0 1.2rem;border:1px solid var(--line);
-    box-shadow:9px -9px 0 -1px var(--plate), 9px -9px 0 0 var(--line),
-               18px -18px 0 -1px var(--plate), 18px -18px 0 0 var(--line)}
+    box-shadow:9px -9px 0 -1px rgba(255,255,255,.55), 9px -9px 0 0 var(--line),
+               18px -18px 0 -1px rgba(255,255,255,.38), 18px -18px 0 0 var(--line)}
 
   /* ---------- 6 · SPLIT — pink meets white on one hard line, no gap ---------- */
   body[data-d="6"] .nav{width:15rem;padding-right:2.4rem;justify-content:center}
-  body[data-d="6"] .panel{margin-left:0;padding:3rem 3.2rem}
+  body[data-d="6"] .panel{margin-left:0;padding:3rem 3.2rem;border-radius:0 var(--r-lg) var(--r-lg) 0}
 
   /* ---------- 7 · OVERLAY — one white sheet fills the frame, nav printed in its margin ---------- */
   body[data-d="7"] .page{padding:var(--fw)}
-  body[data-d="7"] .nav{width:13.5rem;background:var(--plate);
+  body[data-d="7"] .nav{width:13.5rem;background:var(--plate);border-radius:var(--r-lg) 0 0 var(--r-lg);
+    backdrop-filter:blur(16px) saturate(118%);-webkit-backdrop-filter:blur(16px) saturate(118%);
     padding:2.5rem 1.8rem 2.5rem 2.6rem;border-right:1px solid var(--line)}
-  body[data-d="7"] .panel{margin-left:0;padding-left:3rem}
+  body[data-d="7"] .panel{margin-left:0;padding-left:3rem;border-radius:0 var(--r-lg) var(--r-lg) 0}
 
   /* ---------- 8 · SPINE — the nav runs up the left edge ---------- */
   body[data-d="8"] .nav{width:4.4rem;align-items:center;padding:.4rem 0}
@@ -183,8 +198,9 @@
   /* ---------- 9 · DOCK — the nav is a column of tiles on the pink ---------- */
   body[data-d="9"] .nav{width:12.5rem;padding-right:2rem;justify-content:center}
   body[data-d="9"] .nav ul{gap:.42rem}
-  body[data-d="9"] .nav button{background:var(--plate);color:var(--dim);border:1px solid var(--line);
-    padding:.66rem .95rem;letter-spacing:.1em}
+  body[data-d="9"] .nav button{background:rgba(255,255,255,.62);color:var(--ink);border:1px solid var(--line);
+    padding:.7rem 1.05rem;letter-spacing:.1em;border-radius:999px;
+    backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
   body[data-d="9"] .nav button:hover{color:var(--ink)}
   body[data-d="9"] .nav button.on{background:var(--ink);border-color:var(--ink);color:var(--plate)}
   body[data-d="9"] .nav button.on::before{display:none}
@@ -204,6 +220,7 @@
     </nav>
     <main class="panel"><div class="inner" id="panel"></div></main>
   </div>
+  <div class="veil"></div>
   <div class="frame"></div>
   <div class="tag" id="tag"></div>
 
