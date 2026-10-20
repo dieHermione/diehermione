@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>single-page mockups — framed</title>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&family=Jost:wght@200;300;400;500&family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,600;1,6..96,400&family=Inter:wght@300;400;500&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;1,9..144,400&family=Nunito+Sans:wght@300;400;600&family=Italiana&family=Montserrat:wght@300;400;500&family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Karla:wght@300;400;500&family=Parisienne&family=Pinyon+Script&family=Cinzel:wght@400;600&family=Lato:wght@300;400;700&family=Prata&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&family=Archivo+Black&family=Archivo:wght@300;400;500&family=Quicksand:wght@300;400;500;600&family=Oswald:wght@300;400;500&family=Anton&family=Caveat:wght@400;600&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&family=Jost:wght@200;300;400;500&family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,600;1,6..96,400&family=Inter:wght@300;400;500&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;1,9..144,400&family=Nunito+Sans:wght@300;400;600&family=Italiana&family=Montserrat:wght@300;400;500&family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Karla:wght@300;400;500&family=Parisienne&family=Pinyon+Script&family=Cinzel:wght@400;600&family=Lato:wght@300;400;700&family=Prata&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&family=Archivo+Black&family=Archivo:wght@300;400;500&family=Quicksand:wght@300;400;500;600&family=Oswald:wght@300;400;500&family=Anton&family=Caveat:wght@400;600&family=Spectral:ital,wght@0,300;0,400;0,600;1,400&family=Syne:wght@400;600;700&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet" />
 <!--
   Three arrangements of the same single-page shell: the leopard border, ONE main
   panel that every section loads into, and a side nav. ?d=1..3 picks the design.
@@ -61,6 +61,10 @@
               43 vellum (paper barely there)    44 foil (slate and platinum)
               45 sepia (an old letter)          46 plum card (coloured paper)
               47 stark (a notice, not a letter) 48 blush mono (one hue throughout).
+  43 IS THE CHOSEN PAPER. Its palette lives under [data-paper="vellum"]; 49-54
+  are font attempts on it, each a face plus its own corrections:
+              49 didone  50 bookish (spectral)  51 syne display
+              52 condensed caps  53 copperplate hand  54 plain grotesque.
 
   Self-contained: open straight off file://, no server. The frame is the
   rebuilt 9-slice sheet sitting next to this file.
@@ -626,11 +630,41 @@
   body[data-f="42"] .eyebrow{font-style:normal}
 
   /* 43 VELLUM — the paper is barely there; the silver reads straight through */
-  body[data-f="43"]{--display:"Prata",Georgia,serif; --ui:"DM Sans",system-ui,sans-serif;
-    --plate:rgba(255,253,250,.42); --nav-plate:rgba(255,253,250,.34);
+  /* ---------- VELLUM: the chosen paper, shared by all its font attempts ---------- */
+  body[data-paper="vellum"]{--plate:rgba(255,253,250,.42); --nav-plate:rgba(255,253,250,.34);
     --ink:#171318; --dim:#3f3741; --faint:#5e545f; --line:rgba(23,19,24,.2)}
-  body[data-f="43"] .nav{--nav-ink:#171318; --nav-dim:#352e37; --nav-faint:#4f4650}
-  body[data-f="43"] .veil{background:rgba(255,255,255,.40)}
+  body[data-paper="vellum"] .nav{--nav-ink:#171318; --nav-dim:#352e37; --nav-faint:#4f4650}
+  body[data-paper="vellum"] .veil{background:rgba(255,255,255,.40)}
+  body[data-f="43"]{--display:"Prata",Georgia,serif; --ui:"DM Sans",system-ui,sans-serif}
+
+  /* ---- font attempts on vellum: a face and its own corrections, no palette ---- */
+  /* 49 DIDONE — the sharpest letterforms, a real test of hairlines on texture */
+  body[data-f="49"]{--display:"Bodoni Moda",Didot,serif; --ui:"Inter",system-ui,sans-serif}
+  body[data-f="49"] h1{font-weight:600}
+  /* 50 BOOKISH — one old-style serif the whole way down, set at reading weight */
+  body[data-f="50"]{--display:"Spectral",Georgia,serif; --ui:"Spectral",Georgia,serif}
+  body[data-f="50"] h1{font-weight:400}
+  body[data-f="50"] .lede{font-size:1.02rem;line-height:1.85}
+  /* 51 SYNE — a display face with real character, against a plain geometric body */
+  body[data-f="51"]{--display:"Syne",system-ui,sans-serif; --ui:"Jost",system-ui,sans-serif}
+  body[data-f="51"] h1{font-weight:700;letter-spacing:-.02em;font-size:clamp(1.9rem,3.8vw,2.8rem)}
+  body[data-f="51"] h1 em{font-weight:400;font-style:normal}
+  body[data-f="51"] .brand{font-weight:600}
+  /* 52 CONDENSED — a masthead: caps, narrow, over a plain humanist body */
+  body[data-f="52"]{--display:"Oswald",system-ui,sans-serif; --ui:"Lato",system-ui,sans-serif}
+  body[data-f="52"] h1{text-transform:uppercase;letter-spacing:.05em;font-weight:400;
+    font-size:clamp(1.8rem,3.6vw,2.7rem)}
+  body[data-f="52"] h1 em{font-style:normal;font-weight:300}
+  body[data-f="52"] .brand{text-transform:uppercase;letter-spacing:.1em;font-size:1.1rem}
+  body[data-f="52"] .brand i{font-style:normal;font-weight:300}
+  body[data-f="52"] .eyebrow{font-style:normal;text-transform:uppercase;letter-spacing:.3em;font-size:.6rem}
+  /* 53 HAND — a copperplate greeting on vellum, printed body beneath */
+  body[data-f="53"]{--display:"Pinyon Script",cursive; --ui:"Montserrat",system-ui,sans-serif}
+  body[data-f="53"] h1{font-size:clamp(2.5rem,5.2vw,4rem);line-height:1.12}
+  body[data-f="53"] .eyebrow{font-style:normal}
+  /* 54 PLAIN — no serif anywhere; weight and size do all the work */
+  body[data-f="54"]{--display:"Archivo",system-ui,sans-serif; --ui:"Archivo",system-ui,sans-serif}
+  body[data-f="54"] h1{font-weight:500;letter-spacing:-.015em}
 
   /* 44 FOIL — slate card, platinum type, engraved hairlines */
   body[data-f="44"]{--display:"Cinzel",Georgia,serif; --ui:"Lato",system-ui,sans-serif;
@@ -820,13 +854,17 @@ She knows what is best for me.</textarea></div>
                  "GOLD · cream and bronze","SCRIPT · a hand, soft rose",
                  "VELLUM · paper barely there","FOIL · slate and platinum",
                  "SEPIA · an old letter","PLUM CARD · coloured paper",
-                 "STARK · a notice, not a letter","BLUSH MONO · one hue throughout"];
+                 "STARK · a notice, not a letter","BLUSH MONO · one hue throughout",
+                 "vellum · didone","vellum · bookish spectral","vellum · syne display",
+                 "vellum · condensed caps","vellum · copperplate hand","vellum · plain grotesque"];
   const d = Math.min(NAMES.length, Math.max(1, parseInt(new URLSearchParams(location.search).get("d") || "1", 10)));
   document.body.dataset.d = d;
   const f = Math.min(FONTS.length, Math.max(1, parseInt(new URLSearchParams(location.search).get("f") || "1", 10)));
   document.body.dataset.f = f;
   // 35 is the chosen design; 37-42 are dressings of it and share its geometry
-  if (f === 35 || (f >= 37 && f <= 48)) document.body.dataset.layout = "letter";
+  if (f === 35 || (f >= 37 && f <= 54)) document.body.dataset.layout = "letter";
+  // 43 is the chosen paper; 49-54 are font attempts on it and share its palette
+  if (f === 43 || (f >= 49 && f <= 54)) document.body.dataset.paper = "vellum";
   document.getElementById("tag").innerHTML =
     "<b>" + f + "</b><span>" + FONTS[f - 1] + " · d" + d + " " + NAMES[d - 1] + "</span>";
 
