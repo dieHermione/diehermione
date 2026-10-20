@@ -42,6 +42,14 @@ before, so don't conclude a build failed too early.
 This file. Plain markdown, not styled to the site. Update it with the change,
 not afterwards.
 
+### The palette
+Page is **#ed72ad**; every panel, card and window surface is **white**. On that
+pink, white text is only 2.76:1 — display sizes at most — so text on the pink is
+a near-black plum `#26101b` (6.49:1) with `#4a1930` for secondary. Text on the
+white panels uses the warm-grey scale instead. The mockup carries both as
+`--on-pink*` and `--ink/--dim/--faint`, switched per design by an `on-white`
+class on the nav, since some arrangements seat the nav on pink and some on white.
+
 ### Direction: off the terminal aesthetic, toward one page
 Decided 2026-09-11: the site is **moving away from the terminal look** and
 toward a **single-page format like ThroneLogs**. Nothing is redesigned yet;
@@ -443,7 +451,7 @@ the repo's own `bcryptjs`. Only hermione's record matters.
 | Dummy Parse | `dummyparse.html` | chosen 10 (ability cards) + 11 (timeline), built |
 | Decrypt | `decrypt.html` | chosen 1 (BIOS/POST), built into `boot.js` |
 | Dashboard | `dashboard.html`, `dashboard2.html` | v1 rejected; v2 (occult-terminal) never picked; current dashboard is its own thing |
-| **Single page** | `singlepage.html` | 3 designs — **awaiting a pick** (2026-10-19): the leopard frame + one main panel + side nav, on light pink with white panels. 1 column · 2 drawer · 3 plate |
+| **Single page** | `singlepage.html` | 9 designs — **awaiting a pick** (2026-10-19): the leopard frame + one main panel + side nav, on **#ed72ad** with white panels. 1 column · 2 drawer · 3 plate · 4 tabs · 5 stack · 6 split · 7 overlay · 8 spine · 9 dock |
 
 The brief is explicitly **not minimalism** — "as overdesigned and maximalist as
 possible" — but the terminal look was lifted for chess and slots so each design
