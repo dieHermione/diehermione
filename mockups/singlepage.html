@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>single-page mockups — framed</title>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&family=Jost:wght@200;300;400;500&family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,600;1,6..96,400&family=Inter:wght@300;400;500&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;1,9..144,400&family=Nunito+Sans:wght@300;400;600&family=Italiana&family=Montserrat:wght@300;400;500&family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Karla:wght@300;400;500&family=Parisienne&family=Pinyon+Script&family=Cinzel:wght@400;600&family=Lato:wght@300;400;700&family=Prata&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&family=Archivo+Black&family=Archivo:wght@300;400;500&family=Quicksand:wght@300;400;500;600&family=Oswald:wght@300;400;500&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&family=Jost:wght@200;300;400;500&family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,600;1,6..96,400&family=Inter:wght@300;400;500&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;1,9..144,400&family=Nunito+Sans:wght@300;400;600&family=Italiana&family=Montserrat:wght@300;400;500&family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Karla:wght@300;400;500&family=Parisienne&family=Pinyon+Script&family=Cinzel:wght@400;600&family=Lato:wght@300;400;700&family=Prata&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&family=Archivo+Black&family=Archivo:wght@300;400;500&family=Quicksand:wght@300;400;500;600&family=Oswald:wght@300;400;500&family=Anton&display=swap" rel="stylesheet" />
 <!--
   Three arrangements of the same single-page shell: the leopard border, ONE main
   panel that every section loads into, and a side nav. ?d=1..3 picks the design.
@@ -32,6 +32,12 @@
                 9 prata+dm sans (modern editorial)   10 archivo black (heavy grotesque)
                11 quicksand only (one family, weight and size alone)
                12 oswald caps (condensed masthead).
+  Third batch changes the SYSTEM rather than the face — scale, case, alignment,
+  voice — because the first two kept the same scale and the same letterspaced
+  small-cap labels and only swapped which face drew them:
+               13 big (huge headline over small body)  14 lowercase (no small caps anywhere)
+               15 poster (everything caps, tight)      16 italic (italic as the voice)
+               17 centred (symmetry, no left edge)     18 airy (wide tracking, light).
 
   Self-contained: open straight off file://, no server. The frame is the
   rebuilt 9-slice sheet sitting next to this file.
@@ -265,6 +271,50 @@
   body[data-f="12"] h1 em{font-style:normal;font-weight:300}
   body[data-f="12"] .brand{text-transform:uppercase;letter-spacing:.1em;font-size:1.15rem;font-weight:500}
   body[data-f="12"] .brand i{font-style:normal;font-weight:300}
+
+  /* ---------- third batch: the system changes, not just the face ---------- */
+  /* 13 BIG — extreme scale contrast: a huge headline over very small everything */
+  body[data-f="13"]{--display:"Bodoni Moda",Didot,serif; --ui:"Inter",system-ui,sans-serif;font-size:13.5px}
+  body[data-f="13"] h1{font-size:clamp(3.2rem,7vw,5.4rem);line-height:.92;letter-spacing:-.02em;margin-bottom:1.4rem}
+  body[data-f="13"] .eyebrow{font-size:.52rem;letter-spacing:.4em}
+  body[data-f="13"] .lede{font-size:.92rem;max-width:32rem}
+  /* 14 LOWERCASE — every letterspaced small-cap label dropped; nothing shouts */
+  body[data-f="14"]{--display:"Fraunces",Georgia,serif; --ui:"Nunito Sans",system-ui,sans-serif}
+  body[data-f="14"] .eyebrow,body[data-f="14"] .tagline,body[data-f="14"] .who,
+  body[data-f="14"] .row .k,body[data-f="14"] .cell span,body[data-f="14"] .flabel,
+  body[data-f="14"] .go,body[data-f="14"] .tag span{text-transform:lowercase;letter-spacing:.02em;font-size:.78rem}
+  body[data-f="14"] h1{font-weight:300}
+  /* 15 POSTER — the opposite: everything in caps, tight, graphic */
+  body[data-f="15"]{--display:"Anton",system-ui,sans-serif; --ui:"Archivo",system-ui,sans-serif}
+  body[data-f="15"] h1{text-transform:uppercase;font-size:clamp(2.2rem,4.6vw,3.6rem);
+    letter-spacing:-.01em;line-height:.98;font-weight:400}
+  body[data-f="15"] h1 em{font-style:normal;font-family:var(--ui);font-weight:300}
+  body[data-f="15"] .brand{text-transform:uppercase;font-size:1.25rem;letter-spacing:.02em}
+  body[data-f="15"] .brand i{font-style:normal;font-family:var(--ui);font-weight:300}
+  body[data-f="15"] .cell b{text-transform:uppercase;font-size:1rem}
+  body[data-f="15"] .nav button{text-transform:uppercase;letter-spacing:.12em;font-size:.84rem}
+  /* 16 ITALIC — the italic is the voice, not the exception */
+  body[data-f="16"]{--display:"Cormorant Garamond",Georgia,serif; --ui:"Jost",system-ui,sans-serif}
+  body[data-f="16"] h1{font-style:italic;font-weight:300;font-size:clamp(2.4rem,5vw,4rem)}
+  body[data-f="16"] h1 em{font-style:normal}
+  body[data-f="16"] .eyebrow{font-family:var(--display);font-style:italic;text-transform:none;
+    letter-spacing:.04em;font-size:1rem}
+  body[data-f="16"] .brand i{font-style:italic}
+  body[data-f="16"] .cell b{font-style:italic}
+  /* 17 CENTRED — symmetry instead of a left edge */
+  body[data-f="17"]{--display:"Prata",Georgia,serif; --ui:"DM Sans",system-ui,sans-serif}
+  body[data-f="17"] .inner{margin:0 auto}
+  body[data-f="17"] .eyebrow,body[data-f="17"] h1,body[data-f="17"] .lede{text-align:center}
+  body[data-f="17"] .lede{margin-left:auto;margin-right:auto}
+  body[data-f="17"] h1{font-size:clamp(1.9rem,3.9vw,3rem);line-height:1.2}
+  /* 18 AIRY — low contrast, wide tracking, nothing heavy anywhere */
+  body[data-f="18"]{--display:"Italiana",Georgia,serif; --ui:"Montserrat",system-ui,sans-serif;font-weight:300}
+  body[data-f="18"] h1{letter-spacing:.08em;font-weight:400;font-size:clamp(2rem,4vw,3.1rem);line-height:1.3}
+  body[data-f="18"] .lede{line-height:2;letter-spacing:.03em}
+  body[data-f="18"] .nav button{letter-spacing:.24em;font-size:.86rem}
+  body[data-f="18"] .brand{letter-spacing:.12em;font-weight:400}
+  body[data-f="18"] .brand i{font-style:normal}
+  body[data-f="18"] .row .k,body[data-f="18"] .eyebrow{letter-spacing:.4em}
   body[data-f="2"] .brand,body[data-f="5"] .brand{font-weight:600}
 
   .tag{position:fixed;z-index:95;right:calc(var(--pad) + .2rem);bottom:calc(var(--pad) * .9);
@@ -378,7 +428,10 @@ She knows what is best for me.</textarea></div>
   const FONTS = ["cormorant + jost","bodoni + inter","fraunces + nunito",
                  "italiana + montserrat","playfair + karla","parisienne + montserrat",
                  "pinyon + montserrat","cinzel + lato","prata + dm sans",
-                 "archivo black","quicksand only","oswald caps + karla"];
+                 "archivo black","quicksand only","oswald caps + karla",
+                 "big · huge head, small body","lowercase · no small caps",
+                 "poster · all caps, tight","italic · italic as the voice",
+                 "centred · symmetric","airy · wide tracking, light"];
   const d = Math.min(NAMES.length, Math.max(1, parseInt(new URLSearchParams(location.search).get("d") || "1", 10)));
   document.body.dataset.d = d;
   const f = Math.min(FONTS.length, Math.max(1, parseInt(new URLSearchParams(location.search).get("f") || "1", 10)));
