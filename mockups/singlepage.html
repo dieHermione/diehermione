@@ -65,6 +65,9 @@
   are font attempts on it, each a face plus its own corrections:
               49 didone  50 bookish (spectral)  51 syne display
               52 condensed caps  53 copperplate hand  54 plain grotesque.
+  53'S LEFT SIDE IS KEPT. It lives under [data-nav="hand"] — a copperplate
+  wordmark over a plain nav — and 55-60 vary ONLY the main panel's faces:
+              55 didone  56 bookish  57 garamond  58 plain  59 airy  60 engraved.
 
   Self-contained: open straight off file://, no server. The frame is the
   rebuilt 9-slice sheet sitting next to this file.
@@ -105,10 +108,10 @@
   /* nav */
   .nav{display:flex;flex-direction:column;flex:0 0 auto;min-height:0;
     --nav-ink:var(--ink); --nav-dim:#6b2c49; --nav-faint:#7a3a56;
-    color:var(--nav-ink);background:var(--nav-plate);border-radius:var(--r-lg);
+    color:var(--nav-ink);font-family:var(--nav-ui,var(--ui));background:var(--nav-plate);border-radius:var(--r-lg);
     padding:1.9rem 1.5rem;backdrop-filter:blur(14px) saturate(115%);
     -webkit-backdrop-filter:blur(14px) saturate(115%)}
-  .brand{font-family:var(--display);font-size:1.5rem;font-weight:600;
+  .brand{font-family:var(--nav-display,var(--display));font-size:1.5rem;font-weight:600;
     letter-spacing:.02em;line-height:1;margin-bottom:.15rem}
   .brand i{font-style:italic;font-weight:300;color:var(--nav-dim)}
   .tagline{font-size:.62rem;letter-spacing:.34em;text-transform:uppercase;color:var(--nav-faint);
@@ -637,6 +640,34 @@
   body[data-paper="vellum"] .veil{background:rgba(255,255,255,.40)}
   body[data-f="43"]{--display:"Prata",Georgia,serif; --ui:"DM Sans",system-ui,sans-serif}
 
+  /* ---------- 53's LEFT SIDE: a copperplate wordmark over a plain nav ---------- */
+  body[data-nav="hand"]{--nav-display:"Pinyon Script",cursive; --nav-ui:"Montserrat",system-ui,sans-serif}
+  body[data-nav="hand"] .brand{font-size:1.9rem;font-weight:400;line-height:1.1}
+  body[data-nav="hand"] .brand i{font-style:normal}
+
+  /* ---- panel faces against that fixed nav; the left side never moves ---- */
+  /* 55 DIDONE — hairline contrast answering the script's thick-and-thin */
+  body[data-f="55"]{--display:"Bodoni Moda",Didot,serif; --ui:"Inter",system-ui,sans-serif}
+  body[data-f="55"] h1{font-weight:600}
+  /* 56 BOOKISH — an even screen serif; the script stays the only flourish */
+  body[data-f="56"]{--display:"Spectral",Georgia,serif; --ui:"Spectral",Georgia,serif}
+  body[data-f="56"] .lede{font-size:1.02rem;line-height:1.85}
+  /* 57 GARAMOND — the most sympathetic: old-style, same century as the hand */
+  body[data-f="57"]{--display:"EB Garamond",Georgia,serif; --ui:"EB Garamond",Georgia,serif}
+  body[data-f="57"] h1{font-size:clamp(2.1rem,4.2vw,3.2rem)}
+  body[data-f="57"] .lede{font-size:1.08rem}
+  /* 58 PLAIN — maximum tension: a hand on the left, nothing but grotesque right */
+  body[data-f="58"]{--display:"Archivo",system-ui,sans-serif; --ui:"Archivo",system-ui,sans-serif}
+  body[data-f="58"] h1{font-weight:500;letter-spacing:-.015em}
+  /* 59 AIRY — geometric and light, so the script carries all the weight */
+  body[data-f="59"]{--display:"Jost",system-ui,sans-serif; --ui:"Jost",system-ui,sans-serif}
+  body[data-f="59"] h1{font-weight:300;letter-spacing:.01em}
+  body[data-f="59"] .lede{font-weight:300}
+  /* 60 ENGRAVED — wide light caps, a different kind of formality to the hand */
+  body[data-f="60"]{--display:"Italiana",Georgia,serif; --ui:"Montserrat",system-ui,sans-serif}
+  body[data-f="60"] h1{letter-spacing:.04em;font-size:clamp(2rem,4vw,3rem)}
+  body[data-f="60"] .eyebrow{letter-spacing:.08em}
+
   /* ---- font attempts on vellum: a face and its own corrections, no palette ---- */
   /* 49 DIDONE — the sharpest letterforms, a real test of hairlines on texture */
   body[data-f="49"]{--display:"Bodoni Moda",Didot,serif; --ui:"Inter",system-ui,sans-serif}
@@ -856,15 +887,19 @@ She knows what is best for me.</textarea></div>
                  "SEPIA · an old letter","PLUM CARD · coloured paper",
                  "STARK · a notice, not a letter","BLUSH MONO · one hue throughout",
                  "vellum · didone","vellum · bookish spectral","vellum · syne display",
-                 "vellum · condensed caps","vellum · copperplate hand","vellum · plain grotesque"];
+                 "vellum · condensed caps","vellum · copperplate hand","vellum · plain grotesque",
+                 "hand nav + didone","hand nav + bookish","hand nav + garamond",
+                 "hand nav + plain","hand nav + airy","hand nav + engraved caps"];
   const d = Math.min(NAMES.length, Math.max(1, parseInt(new URLSearchParams(location.search).get("d") || "1", 10)));
   document.body.dataset.d = d;
   const f = Math.min(FONTS.length, Math.max(1, parseInt(new URLSearchParams(location.search).get("f") || "1", 10)));
   document.body.dataset.f = f;
   // 35 is the chosen design; 37-42 are dressings of it and share its geometry
-  if (f === 35 || (f >= 37 && f <= 54)) document.body.dataset.layout = "letter";
-  // 43 is the chosen paper; 49-54 are font attempts on it and share its palette
-  if (f === 43 || (f >= 49 && f <= 54)) document.body.dataset.paper = "vellum";
+  if (f === 35 || (f >= 37 && f <= 60)) document.body.dataset.layout = "letter";
+  // 43 is the chosen paper; 49-60 are font attempts on it and share its palette
+  if (f === 43 || (f >= 49 && f <= 60)) document.body.dataset.paper = "vellum";
+  // 53's left side is settled, so 55-60 keep it and vary only the panel
+  if (f === 53 || (f >= 55 && f <= 60)) document.body.dataset.nav = "hand";
   document.getElementById("tag").innerHTML =
     "<b>" + f + "</b><span>" + FONTS[f - 1] + " · d" + d + " " + NAMES[d - 1] + "</span>";
 
