@@ -43,25 +43,43 @@ This file. Plain markdown, not styled to the site. Update it with the change,
 not afterwards.
 
 ### The palette
-A photographic background (`mockups/bg-dusk.jpg` — low-poly dusk landscape)
-over `#ed72ad` as the fallback, with every panel, card and tile **translucent
-white** (`rgba(255,255,255,.82)`, backdrop-blurred) and **generously rounded**
-— 22px panels, 14px cards, pills for chips and buttons. Nothing is square
-unless two edges are meant to meet.
+A photographic background — `mockups/bg-glitter.jpg` (pink glitter; `bg-dusk.jpg`,
+the low-poly landscape, is kept as the alternative and is one line away) over
+`#ed72ad` as the fallback. Every panel, card and tile is **translucent white**,
+backdrop-blurred, and **generously rounded** — 22px panels, 14px cards, pills
+for chips and buttons. Nothing is square unless two edges are meant to meet.
+
+**The nav is always its own surface**, never bare on the background, and it is
+deliberately *more* transparent than the panel (`--nav-plate` .50 against
+`--plate` .80) so the two read apart by material rather than only by an edge.
+What changes per design is the nav's shape and seat: a column, a full-height
+drawer, a compact card, a tab well, a tray, an upright pill.
 
 Text on the pink is a near-black plum `#26101b` with `#4a1930` for secondary;
 panels carry the warm-grey scale. The mockup holds both as `--on-pink*` and
 `--ink/--dim/--faint`, switched per design by an `on-white` class on the nav,
 since some arrangements seat the nav on a surface and some on the background.
 
-**A photographic background needs a veil.** That image runs from a bright pink
-sky to a dark navy floor (~50,65,130), where dark text falls to about 1.8:1.
-A graded white veil under everything (.06 at the top to .56 at the foot) lifts
-the lower half; measured afterwards, body text holds 7.2–16.2:1 down the panel
-and nav text 6.8–12.3:1 down the background. **Measure at several heights, not
-one** — a translucent surface over a photograph has a different backdrop at the
-top than at the foot. The veil's strength is the dial between a vivid landscape
-and legible text.
+**Match the veil to the picture.** The landscape ran from a bright sky to a
+dark navy floor where dark text fell to ~1.8:1, and needed a *graded* veil
+(.06 to .56) to be usable. The glitter is uniform in luminance, so it needs
+only a flat .10 sliver to calm the sparkle. **Measure a translucent surface at
+several heights, not one** — over a photograph its backdrop differs top to
+foot.
+
+**A tint that works on white can fail on pink.** The warm-grey `--dim` used for
+inactive text is 5.2:1 on a white panel but only **3.2:1** on the pink nav
+surface, so the nav carries its own plum scale (`#6b2c49` at 5.6:1 inactive,
+`#7a3a56` for labels) while panels keep the greys. Sample inside the surface
+you mean — a point a few percent off lands on the background and flatters the
+reading.
+
+**`backdrop-filter` hangs `shot.js`.** The DevTools `Page.captureScreenshot`
+never returns once several blurred surfaces are on the page: the `eval:` line
+prints and no file is written. Chrome's own `--screenshot` CLI handles it —
+which is what `mockups/capture.sh` already uses, so capture the batch with that
+rather than `shot.js`. (Dropping `background-attachment:fixed` does not fix it;
+it was removed anyway, since the page never scrolls.)
 
 ### Direction: off the terminal aesthetic, toward one page
 Decided 2026-09-11: the site is **moving away from the terminal look** and
