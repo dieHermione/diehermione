@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>single-page mockups — framed</title>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&family=Jost:wght@200;300;400;500&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&family=Jost:wght@200;300;400;500&family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,600;1,6..96,400&family=Inter:wght@300;400;500&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;1,9..144,400&family=Nunito+Sans:wght@300;400;600&family=Italiana&family=Montserrat:wght@300;400;500&family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Karla:wght@300;400;500&family=Parisienne&display=swap" rel="stylesheet" />
 <!--
   Three arrangements of the same single-page shell: the leopard border, ONE main
   panel that every section loads into, and a side nav. ?d=1..3 picks the design.
@@ -24,6 +24,10 @@
     8 SPINE    the nav runs vertically up the left edge.
     9 DOCK     the nav is a column of separate tiles sitting on the pink.
 
+  6 SPLIT is the chosen design. ?f=1..6 swaps the type pairing on any of them:
+  1 cormorant+jost  2 bodoni+inter  3 fraunces+nunito  4 italiana+montserrat
+  5 playfair+karla  6 parisienne+montserrat.
+
   Self-contained: open straight off file://, no server. The frame is the
   rebuilt 9-slice sheet sitting next to this file.
 -->
@@ -37,13 +41,15 @@
     --nav-plate:rgba(255,255,255,.50);   /* the nav is its own surface, tinted
                                             so it never merges with the panel */
     --r-lg:22px; --r-md:14px; --r-sm:10px;   /* nothing square unless it must be */
+    --display:"Cormorant Garamond",Georgia,serif;   /* ?f= swaps these two */
+    --ui:"Jost",system-ui,sans-serif;
     --on-pink:#26101b; --on-pink-2:#4a1930; --on-pink-3:#5e2440;
     --ink:#1d1419; --dim:#6f626a; --faint:#a4939c; --line:rgba(38,16,27,.11); --tint:rgba(255,255,255,.5);
     --fw:clamp(50px,5.9vw,100px);        /* frame thickness; drives everything */
     --pad:calc(var(--fw) + .9rem);       /* clears the fur's ragged inner edge */
   }
   html,body{height:100%}
-  body{background:var(--bg) url("bg-glitter.jpg") center/cover no-repeat;color:var(--on-pink);font-family:"Jost",system-ui,sans-serif;
+  body{background:var(--bg) url("bg-glitter.jpg") center/cover no-repeat;color:var(--on-pink);font-family:var(--ui);
        font-weight:400;font-size:15px;overflow:hidden;letter-spacing:.01em}
 
   /* ---------- the border ----------
@@ -64,7 +70,7 @@
     color:var(--nav-ink);background:var(--nav-plate);border-radius:var(--r-lg);
     padding:1.9rem 1.5rem;backdrop-filter:blur(14px) saturate(115%);
     -webkit-backdrop-filter:blur(14px) saturate(115%)}
-  .brand{font-family:"Cormorant Garamond",serif;font-size:1.5rem;font-weight:600;
+  .brand{font-family:var(--display);font-size:1.5rem;font-weight:600;
     letter-spacing:.02em;line-height:1;margin-bottom:.15rem}
   .brand i{font-style:italic;font-weight:300;color:var(--nav-dim)}
   .tagline{font-size:.62rem;letter-spacing:.34em;text-transform:uppercase;color:var(--nav-faint);
@@ -89,7 +95,7 @@
   .panel::-webkit-scrollbar-thumb{background:#e2cdd6;border-radius:99px}
   .inner{max-width:52rem}
   .eyebrow{font-size:.6rem;letter-spacing:.34em;text-transform:uppercase;color:var(--faint);margin-bottom:1rem}
-  h1{font-family:"Cormorant Garamond",serif;font-weight:400;font-size:clamp(2.1rem,4.4vw,3.5rem);
+  h1{font-family:var(--display);font-weight:400;font-size:clamp(2.1rem,4.4vw,3.5rem);
     line-height:1.04;letter-spacing:-.005em;margin-bottom:1.1rem}
   h1 em{font-style:italic;color:var(--dim)}
   .lede{font-size:1.02rem;line-height:1.75;color:var(--dim);max-width:40rem}
@@ -102,7 +108,7 @@
     flex-direction:column;justify-content:flex-end;cursor:pointer;
     transition:background .18s ease,transform .18s ease}
   .cell:hover{background:rgba(255,255,255,.72);transform:translateY(-2px)}
-  .cell b{font-family:"Cormorant Garamond",serif;font-weight:400;font-size:1.32rem;letter-spacing:.01em}
+  .cell b{font-family:var(--display);font-weight:400;font-size:1.32rem;letter-spacing:.01em}
   .cell span{font-size:.68rem;letter-spacing:.2em;text-transform:uppercase;color:var(--faint);margin-top:.3rem}
 
   .rows{display:flex;flex-direction:column}
@@ -209,10 +215,24 @@
   body[data-d="9"] .nav button.on::before{display:none}
   body[data-d="9"] .nav .sep{background:transparent;margin:.5rem 0}
 
+  /* ---------- typography sets ---------- */
+  body[data-f="2"]{--display:"Bodoni Moda",Didot,serif; --ui:"Inter",system-ui,sans-serif}
+  body[data-f="3"]{--display:"Fraunces",Georgia,serif;  --ui:"Nunito Sans",system-ui,sans-serif}
+  body[data-f="4"]{--display:"Italiana",Georgia,serif;  --ui:"Montserrat",system-ui,sans-serif}
+  body[data-f="5"]{--display:"Playfair Display",Georgia,serif; --ui:"Karla",system-ui,sans-serif}
+  body[data-f="6"]{--display:"Parisienne",cursive;      --ui:"Montserrat",system-ui,sans-serif}
+  /* the two display faces that set small need a nudge to hold their line */
+  body[data-f="4"] h1{letter-spacing:.02em}
+  body[data-f="4"] .brand{letter-spacing:.06em;font-weight:400}
+  body[data-f="6"] h1{font-size:clamp(2.4rem,5vw,4rem);line-height:1.15}
+  body[data-f="6"] .brand{font-size:1.9rem;font-weight:400}
+  body[data-f="6"] .brand i{font-style:normal}
+  body[data-f="2"] .brand,body[data-f="5"] .brand{font-weight:600}
+
   .tag{position:fixed;z-index:95;right:calc(var(--pad) + .2rem);bottom:calc(var(--pad) * .9);
     display:flex;align-items:baseline;gap:.55rem;background:#26101b;color:#fff;
     border-radius:999px;padding:.5rem 1.3rem .6rem;box-shadow:0 .5rem 1.4rem rgba(38,16,27,.34)}
-  .tag b{font-family:"Cormorant Garamond",serif;font-size:2.1rem;font-weight:600;line-height:.85}
+  .tag b{font-family:var(--display);font-size:2.1rem;font-weight:600;line-height:.85}
   .tag span{font-size:.64rem;letter-spacing:.28em;text-transform:uppercase;color:#f2cfdd}
 </style>
 </head>
@@ -317,10 +337,14 @@ She knows what is best for me.</textarea></div>
   };
 
   const NAMES = ["column","drawer","plate","tabs","stack","split","overlay","spine","dock"];
+  const FONTS = ["cormorant + jost","bodoni + inter","fraunces + nunito",
+                 "italiana + montserrat","playfair + karla","parisienne + montserrat"];
   const d = Math.min(NAMES.length, Math.max(1, parseInt(new URLSearchParams(location.search).get("d") || "1", 10)));
   document.body.dataset.d = d;
+  const f = Math.min(FONTS.length, Math.max(1, parseInt(new URLSearchParams(location.search).get("f") || "1", 10)));
+  document.body.dataset.f = f;
   document.getElementById("tag").innerHTML =
-    "<b>" + d + "</b><span>" + NAMES[d - 1] + "</span>";
+    "<b>" + d + "</b><span>" + NAMES[d - 1] + " · " + FONTS[f - 1] + "</span>";
 
   const navEl = document.getElementById("nav"), panelEl = document.getElementById("panel");
   let current = "home";
