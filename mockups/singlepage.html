@@ -53,6 +53,11 @@
               31 marquee (names set huge)      32 index (numbered contents list)
               33 deck (a fanned hand of cards) 34 counter (dark desk over tiles)
               35 letter (a note, games at foot) 36 wall (big tiles edge to edge).
+  35 IS THE CHOSEN DESIGN. Its geometry lives under [data-layout="letter"] and
+  37-42 are dressings of it — a face and a palette each, no geometry restated:
+              37 ivory (stationery, black ink)  38 oxblood (blush, deep red)
+              39 graphite (cold sans letter)    40 black card (inverted)
+              41 gold (cream and bronze)        42 script (a hand, soft rose).
 
   Self-contained: open straight off file://, no server. The frame is the
   rebuilt 9-slice sheet sitting next to this file.
@@ -546,18 +551,76 @@
   body[data-f="34"] .cell{min-height:7rem;background:rgba(255,255,255,.6)}
 
   /* 35 LETTER — her words set as a note; the games a quiet row at the foot */
+  /* ---------- THE LETTER: design 35's geometry, shared by all its variants ---------- */
+  body[data-layout="letter"] .inner{max-width:36rem;margin:0 auto;text-align:center}
+  body[data-layout="letter"] h1{font-size:clamp(2rem,4vw,3rem);font-weight:400}
+  body[data-layout="letter"] .lede{font-size:1.08rem;line-height:1.9;margin-left:auto;margin-right:auto}
+  body[data-layout="letter"] .eyebrow{font-style:italic;text-transform:none;letter-spacing:.04em;font-size:.95rem}
   body[data-f="35"]{--display:"EB Garamond",Georgia,serif; --ui:"Jost",system-ui,sans-serif}
-  body[data-f="35"] .inner{max-width:36rem;margin:0 auto;text-align:center}
-  body[data-f="35"] h1{font-size:clamp(2rem,4vw,3rem);font-weight:400}
-  body[data-f="35"] .lede{font-size:1.08rem;line-height:1.9;margin-left:auto;margin-right:auto}
-  body[data-f="35"] .eyebrow{font-style:italic;text-transform:none;letter-spacing:.04em;font-size:.95rem}
-  body[data-f="35"] .rule{background:linear-gradient(90deg,transparent,rgba(38,16,27,.3) 35%,
-    rgba(38,16,27,.3) 65%,transparent);margin:2.4rem 0 1.6rem}
-  body[data-f="35"] .grid{display:flex;flex-wrap:wrap;justify-content:center;gap:.4rem}
-  body[data-f="35"] .cell{flex:0 0 auto;flex-direction:row;align-items:baseline;gap:.4rem;
+  body[data-layout="letter"] .rule{height:1px;background:linear-gradient(90deg,transparent,currentColor 35%,
+    currentColor 65%,transparent);margin:2.4rem 0 1.6rem;color:var(--faint);opacity:.6}
+  body[data-layout="letter"] .grid{display:flex;flex-wrap:wrap;justify-content:center;gap:.4rem}
+  body[data-layout="letter"] .cell{flex:0 0 auto;flex-direction:row;align-items:baseline;gap:.4rem;
     min-height:0;padding:.34rem 1rem;border-radius:999px;background:rgba(255,255,255,.55)}
-  body[data-f="35"] .cell b{font-size:.98rem}
-  body[data-f="35"] .cell span{display:none}
+  body[data-layout="letter"] .cell b{font-size:.98rem}
+  body[data-layout="letter"] .cell span{display:none}
+
+  /* ---- variants of the letter: type + colour only ----
+     NOTE: the nav's colours must be set ON .nav. Setting them on body looks
+     right and does nothing, because .nav declares its own --nav-* values. */
+  body[data-f="37"] .nav{--nav-ink:#1c1a17; --nav-dim:#44403a; --nav-faint:#726c63}
+  body[data-f="38"] .nav{--nav-ink:#5e0f20; --nav-dim:#6e1f30; --nav-faint:#965465}
+  body[data-f="39"] .nav{--nav-ink:#1d2024; --nav-dim:#3f464e; --nav-faint:#7d848c}
+  body[data-f="40"] .nav{--nav-ink:#f4ecf1; --nav-dim:#dccedb; --nav-faint:#a493a0}
+  body[data-f="41"] .nav{--nav-ink:#2a2318; --nav-dim:#514324; --nav-faint:#8a7a58}
+  body[data-f="42"] .nav{--nav-ink:#3a2029; --nav-dim:#5f3644; --nav-faint:#937280}
+  /* 37 IVORY — stationery: warm off-white, black ink, no pink anywhere */
+  body[data-f="37"]{--display:"EB Garamond",Georgia,serif; --ui:"EB Garamond",Georgia,serif;
+    --plate:rgba(253,250,243,.90); --nav-plate:rgba(253,250,243,.80);
+    --ink:#1c1a17; --dim:#55504a; --faint:#8b847b; --line:rgba(28,26,23,.14);
+    --nav-ink:#1c1a17; --nav-dim:#55504a; --nav-faint:#8b847b}
+  body[data-f="37"] .veil{background:rgba(22,20,18,.46)}
+
+  /* 38 OXBLOOD — blush paper, deep oxblood ink */
+  body[data-f="38"]{--display:"Cormorant Garamond",Georgia,serif; --ui:"Jost",system-ui,sans-serif;
+    --plate:rgba(255,246,246,.90); --nav-plate:rgba(255,243,244,.80);
+    --ink:#5e0f20; --dim:#8a3144; --faint:#b07482; --line:rgba(94,15,32,.16);
+    --nav-ink:#5e0f20; --nav-dim:#8a3144; --nav-faint:#a9697a}
+  body[data-f="38"] .veil{background:rgba(40,10,18,.44)}
+
+  /* 39 GRAPHITE — cold and modern: a sans letter, no warmth at all */
+  body[data-f="39"]{--display:"Jost",system-ui,sans-serif; --ui:"Jost",system-ui,sans-serif;
+    --plate:rgba(244,245,247,.88); --nav-plate:rgba(242,243,246,.80);
+    --ink:#1d2024; --dim:#5b6169; --faint:#949aa2; --line:rgba(29,32,36,.14);
+    --nav-ink:#1d2024; --nav-dim:#5b6169; --nav-faint:#949aa2}
+  body[data-f="39"] .veil{background:rgba(14,16,19,.48)}
+  body[data-f="39"] h1{font-weight:300;letter-spacing:-.01em}
+
+  /* 40 BLACK CARD — the letter inverts: a dark card, light type */
+  body[data-f="40"]{--display:"Bodoni Moda",Didot,serif; --ui:"Inter",system-ui,sans-serif;
+    --plate:rgba(22,18,24,.88); --nav-plate:rgba(22,18,24,.80);
+    --ink:#f4ecf1; --dim:#b8a6b2; --faint:#8a7985; --line:rgba(255,255,255,.15);
+    --nav-ink:#f4ecf1; --nav-dim:#b8a6b2; --nav-faint:#8a7985}
+  body[data-f="40"] .veil{background:rgba(255,255,255,.26)}
+  body[data-f="40"] .cell{background:rgba(255,255,255,.08)}
+
+  /* 41 GOLD — cream card, bronze rules and figures */
+  body[data-f="41"]{--display:"Italiana",Georgia,serif; --ui:"Montserrat",system-ui,sans-serif;
+    --plate:rgba(252,247,236,.92); --nav-plate:rgba(252,247,236,.80);
+    --ink:#2a2318; --dim:#6a5a3c; --faint:#9c8a68; --line:rgba(122,96,46,.22);
+    --nav-ink:#2a2318; --nav-dim:#6a5a3c; --nav-faint:#9c8a68}
+  body[data-f="41"] .veil{background:rgba(26,20,10,.46)}
+  body[data-f="41"] h1{letter-spacing:.03em}
+  body[data-f="41"] .eyebrow{color:#7a5f2e}
+
+  /* 42 SCRIPT — the greeting in a hand, the body printed, soft rose */
+  body[data-f="42"]{--display:"Pinyon Script",cursive; --ui:"EB Garamond",Georgia,serif;
+    --plate:rgba(255,250,251,.90); --nav-plate:rgba(255,247,249,.80);
+    --ink:#3a2029; --dim:#7a4d5c; --faint:#a9838f; --line:rgba(58,32,41,.14);
+    --nav-ink:#3a2029; --nav-dim:#7a4d5c; --nav-faint:#a9838f}
+  body[data-f="42"] .veil{background:rgba(34,16,22,.44)}
+  body[data-f="42"] h1{font-size:clamp(2.6rem,5.4vw,4.2rem);line-height:1.1}
+  body[data-f="42"] .eyebrow{font-style:normal}
 
   /* 36 WALL — big tiles edge to edge; the copy is a caption, not a page */
   body[data-f="36"]{--display:"Archivo",system-ui,sans-serif; --ui:"Archivo",system-ui,sans-serif}
@@ -700,11 +763,16 @@ She knows what is best for me.</textarea></div>
                  "SHEET · one surface","FLOAT · no surfaces at all",
                  "MARQUEE · names are the page","INDEX · a contents list",
                  "DECK · a hand of cards","COUNTER · dark desk over tiles",
-                 "LETTER · a note, games at foot","WALL · big tiles edge to edge"];
+                 "LETTER · a note, games at foot","WALL · big tiles edge to edge",
+                 "IVORY · stationery, black ink","OXBLOOD · blush and deep red",
+                 "GRAPHITE · cold sans letter","BLACK CARD · inverted",
+                 "GOLD · cream and bronze","SCRIPT · a hand, soft rose"];
   const d = Math.min(NAMES.length, Math.max(1, parseInt(new URLSearchParams(location.search).get("d") || "1", 10)));
   document.body.dataset.d = d;
   const f = Math.min(FONTS.length, Math.max(1, parseInt(new URLSearchParams(location.search).get("f") || "1", 10)));
   document.body.dataset.f = f;
+  // 35 is the chosen design; 37-42 are dressings of it and share its geometry
+  if (f === 35 || (f >= 37 && f <= 42)) document.body.dataset.layout = "letter";
   document.getElementById("tag").innerHTML =
     "<b>" + f + "</b><span>" + FONTS[f - 1] + " · d" + d + " " + NAMES[d - 1] + "</span>";
 

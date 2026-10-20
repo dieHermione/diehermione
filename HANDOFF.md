@@ -60,7 +60,20 @@ designing another panel of figures. Hermione's own view can show more, because
 `--display` and `--ui` drive every face in the mockup, and `?f=1..6` swaps the
 pairing, so type can be judged against the real layout rather than in isolation.
 Add a face by extending the Google Fonts link and adding one `body[data-f="N"]`
-rule. **A swap is rarely just a swap** — each face needs its own nudge beside
+rule. **A custom property set on `body` loses to one set on the element.** `.nav`
+declares its own `--nav-ink/--nav-dim/--nav-faint`, so a variant that sets
+those on `body` looks correct in the source and changes nothing on screen —
+six dressings rendered with the old plum nav before this was spotted. Per-
+variant nav colours must target `.nav` itself. The same trap waits for any
+component that declares its own tokens.
+
+**A nav on a dark-veiled background needs darker secondaries than its panel
+does.** The nav surface is translucent, so over the dark veil it renders near
+mid-grey and a mid-tone secondary lands at 3:1 — all six dressings failed
+before their inactive colours were darkened a step and the surface lifted to
+.80. Measure the nav separately from the panel; they sit on different grounds.
+
+**A swap is rarely just a swap** — each face needs its own nudge beside
 it, and skipping that is what makes a pairing look worse than it is: Italiana
 wants letter-spacing, the scripts want a larger size and more line-height or
 their ascenders collide, Cinzel is all-caps so it needs tracking and less size,
@@ -539,7 +552,7 @@ the repo's own `bcryptjs`. Only hermione's record matters.
 | Decrypt | `decrypt.html` | chosen 1 (BIOS/POST), built into `boot.js` |
 | Dashboard | `dashboard.html`, `dashboard2.html` | v1 rejected; v2 (occult-terminal) never picked; current dashboard is its own thing |
 | **Single page** | `singlepage.html` | **CHOSEN: 6 (split)** 2026-10-20 — the leopard frame, one main panel, a side nav that is its own surface, on glitter. The other eight stay in the file for reference: 1 column · 2 drawer · 3 plate · 4 tabs · 5 stack · 7 overlay · 8 spine · 9 dock. Each renders its own number badge so a contact sheet is readable |
-| Single-page variants | `singlepage.html?f=1..36` — **each badge carries its own variant number**, since the design is fixed at 6 and every badge used to read "6" | **6 (parisienne script) KEPT as a candidate**; still awaiting a final pick. Batch one, serif+sans pairings: 1 cormorant+jost · 2 bodoni+inter · 3 fraunces+nunito · 4 italiana+montserrat · 5 playfair+karla · 6 parisienne+montserrat. Batch two, a different idea each rather than another serif: 7 pinyon (formal copperplate) · 8 cinzel (inscriptional caps) · 9 prata+dm sans (modern editorial) · 10 archivo black (heavy grotesque) · 11 quicksand only (one family, weight and size alone) · 12 oswald caps (condensed masthead). Batch three changes the typographic SYSTEM rather than the face — scale, case, alignment, voice: 13 big (huge head, small body) · 14 lowercase (no small caps at all) · 15 poster (caps, tight) · 16 italic (italic as the voice) · 17 centred · 18 airy. `?f=` works on any design. Batch four loosens the panel itself — ornament, colour and how the data ranks: 19 ruled (banded masthead) · 20 ornament (drop cap) · 21 ledger (dotted, figures right) · 22 rose (type takes the colour) · 23 figures (the numbers lead) · 24 annotated (printed, written on). Batch five keeps ONLY the border and rebuilds the page: 25 bento (tiles, no single panel) · 26 noir (dark field) · 27 poster (headline and a word row) · 28 spread (magazine columns) · 29 sheet (one surface, nav a bar) · 30 float (no surfaces at all). Batch six is built on the corrected content and treats the page as a launcher: 31 marquee (names set huge) · 32 index (numbered contents list) · 33 deck (a fanned hand of cards) · 34 counter (dark desk over tiles) · 35 letter (a note, games at the foot) · 36 wall (big tiles edge to edge). `?f=` works on any design |
+| Single-page variants | `singlepage.html?f=1..42` — **CHOSEN: 35 (letter)**, dressed by 37-42: 37 ivory · 38 oxblood · 39 graphite · 40 black card · 41 gold · 42 script. Its geometry lives under `[data-layout="letter"]` so a dressing sets only a face and a palette — **each badge carries its own variant number**, since the design is fixed at 6 and every badge used to read "6" | **6 (parisienne script) KEPT as a candidate**; still awaiting a final pick. Batch one, serif+sans pairings: 1 cormorant+jost · 2 bodoni+inter · 3 fraunces+nunito · 4 italiana+montserrat · 5 playfair+karla · 6 parisienne+montserrat. Batch two, a different idea each rather than another serif: 7 pinyon (formal copperplate) · 8 cinzel (inscriptional caps) · 9 prata+dm sans (modern editorial) · 10 archivo black (heavy grotesque) · 11 quicksand only (one family, weight and size alone) · 12 oswald caps (condensed masthead). Batch three changes the typographic SYSTEM rather than the face — scale, case, alignment, voice: 13 big (huge head, small body) · 14 lowercase (no small caps at all) · 15 poster (caps, tight) · 16 italic (italic as the voice) · 17 centred · 18 airy. `?f=` works on any design. Batch four loosens the panel itself — ornament, colour and how the data ranks: 19 ruled (banded masthead) · 20 ornament (drop cap) · 21 ledger (dotted, figures right) · 22 rose (type takes the colour) · 23 figures (the numbers lead) · 24 annotated (printed, written on). Batch five keeps ONLY the border and rebuilds the page: 25 bento (tiles, no single panel) · 26 noir (dark field) · 27 poster (headline and a word row) · 28 spread (magazine columns) · 29 sheet (one surface, nav a bar) · 30 float (no surfaces at all). Batch six is built on the corrected content and treats the page as a launcher: 31 marquee (names set huge) · 32 index (numbered contents list) · 33 deck (a fanned hand of cards) · 34 counter (dark desk over tiles) · 35 letter (a note, games at the foot) · 36 wall (big tiles edge to edge). `?f=` works on any design |
 
 The brief is explicitly **not minimalism** — "as overdesigned and maximalist as
 possible" — but the terminal look was lifted for chess and slots so each design
