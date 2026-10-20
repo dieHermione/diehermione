@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>single-page mockups — framed</title>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&family=Jost:wght@200;300;400;500&family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,600;1,6..96,400&family=Inter:wght@300;400;500&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;1,9..144,400&family=Nunito+Sans:wght@300;400;600&family=Italiana&family=Montserrat:wght@300;400;500&family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Karla:wght@300;400;500&family=Parisienne&family=Pinyon+Script&family=Cinzel:wght@400;600&family=Lato:wght@300;400;700&family=Prata&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&family=Archivo+Black&family=Archivo:wght@300;400;500&family=Quicksand:wght@300;400;500;600&family=Oswald:wght@300;400;500&family=Anton&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&family=Jost:wght@200;300;400;500&family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,600;1,6..96,400&family=Inter:wght@300;400;500&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;1,9..144,400&family=Nunito+Sans:wght@300;400;600&family=Italiana&family=Montserrat:wght@300;400;500&family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Karla:wght@300;400;500&family=Parisienne&family=Pinyon+Script&family=Cinzel:wght@400;600&family=Lato:wght@300;400;700&family=Prata&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&family=Archivo+Black&family=Archivo:wght@300;400;500&family=Quicksand:wght@300;400;500;600&family=Oswald:wght@300;400;500&family=Anton&family=Caveat:wght@400;600&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet" />
 <!--
   Three arrangements of the same single-page shell: the leopard border, ONE main
   panel that every section loads into, and a side nav. ?d=1..3 picks the design.
@@ -38,6 +38,11 @@
                13 big (huge headline over small body)  14 lowercase (no small caps anywhere)
                15 poster (everything caps, tight)      16 italic (italic as the voice)
                17 centred (symmetry, no left edge)     18 airy (wide tracking, light).
+  Fourth batch loosens the panel itself — ornament, colour, and how the data is
+  ranked, not only the faces:
+               19 ruled (banded masthead)      20 ornament (drop cap, tapered rules)
+               21 ledger (dotted, figures right) 22 rose (type takes the colour)
+               23 figures (the numbers lead)   24 annotated (printed, written on).
 
   Self-contained: open straight off file://, no server. The frame is the
   rebuilt 9-slice sheet sitting next to this file.
@@ -315,6 +320,61 @@
   body[data-f="18"] .brand{letter-spacing:.12em;font-weight:400}
   body[data-f="18"] .brand i{font-style:normal}
   body[data-f="18"] .row .k,body[data-f="18"] .eyebrow{letter-spacing:.4em}
+
+  /* ---------- fourth batch: the panel itself is loosened ---------- */
+  /* 19 RULED — the dateline sits in a banded masthead over the headline */
+  body[data-f="19"]{--display:"Playfair Display",Georgia,serif; --ui:"Karla",system-ui,sans-serif}
+  body[data-f="19"] .eyebrow{text-align:center;letter-spacing:.5em;font-size:.56rem;
+    border-top:2px solid var(--ink);border-bottom:1px solid var(--ink);padding:.55rem 0;
+    color:var(--ink);margin-bottom:1.4rem}
+  body[data-f="19"] h1{text-align:center;font-size:clamp(2rem,4.2vw,3.2rem);line-height:1.1}
+  body[data-f="19"] .lede{text-align:center;margin-left:auto;margin-right:auto}
+  body[data-f="19"] .rule{height:2px;background:var(--ink);opacity:.8}
+
+  /* 20 ORNAMENT — drop cap, tapered rules; the page is decorated, not ruled */
+  body[data-f="20"]{--display:"EB Garamond",Georgia,serif; --ui:"EB Garamond",Georgia,serif}
+  body[data-f="20"] h1{font-size:clamp(2.2rem,4.6vw,3.4rem);font-weight:500}
+  body[data-f="20"] .lede{font-size:1.1rem;line-height:1.8}
+  body[data-f="20"] .lede:first-of-type::first-letter{float:left;font-size:3.5rem;line-height:.82;
+    padding:.25rem .5rem 0 0;color:var(--ink);font-weight:500}
+  body[data-f="20"] .rule{background:linear-gradient(90deg,transparent,rgba(38,16,27,.34) 18%,
+    rgba(38,16,27,.34) 82%,transparent)}
+  body[data-f="20"] .row{border-bottom-color:rgba(38,16,27,.08)}
+  body[data-f="20"] .eyebrow{font-style:italic;text-transform:none;letter-spacing:.06em;font-size:.95rem}
+
+  /* 21 LEDGER — a statement: dotted rules, figures aligned right, tabular */
+  body[data-f="21"]{--display:"Prata",Georgia,serif; --ui:"Karla",system-ui,sans-serif}
+  body[data-f="21"] .row{border-bottom:1px dotted rgba(38,16,27,.3);padding:.85rem 0}
+  body[data-f="21"] .row .k{flex:0 0 auto}
+  body[data-f="21"] .row .v{margin-left:auto;text-align:right;font-variant-numeric:tabular-nums}
+  body[data-f="21"] .rule{height:2px;background:rgba(38,16,27,.5)}
+  body[data-f="21"] h1{font-size:clamp(1.9rem,3.8vw,2.9rem)}
+
+  /* 22 ROSE — the type takes the colour instead of staying dark */
+  body[data-f="22"]{--display:"Bodoni Moda",Didot,serif; --ui:"Inter",system-ui,sans-serif}
+  body[data-f="22"] h1{color:#c1256b}
+  body[data-f="22"] h1 em{color:#a81457;opacity:.75}
+  body[data-f="22"] .eyebrow,body[data-f="22"] .row .k,body[data-f="22"] .flabel,
+  body[data-f="22"] .cell span{color:#a81457}
+  body[data-f="22"] .cell b{color:#c1256b}
+  body[data-f="22"] .rule{background:#c1256b;opacity:.45}
+
+  /* 23 FIGURES — the numbers are the headline; the prose steps back */
+  body[data-f="23"]{--display:"Archivo",system-ui,sans-serif; --ui:"Archivo",system-ui,sans-serif}
+  body[data-f="23"] h1{font-size:clamp(1.5rem,2.8vw,2.1rem);font-weight:500;letter-spacing:-.01em}
+  body[data-f="23"] .lede{font-size:.9rem;max-width:30rem}
+  body[data-f="23"] .row{align-items:baseline;padding:1.05rem 0}
+  body[data-f="23"] .row .k{flex:0 0 9rem;font-size:.56rem;letter-spacing:.3em}
+  body[data-f="23"] .row .v{font-size:2.3rem;line-height:1;font-weight:400;letter-spacing:-.02em}
+  body[data-f="23"] .row .v small{font-size:.78rem;letter-spacing:0}
+
+  /* 24 ANNOTATED — a printed page someone has written on */
+  body[data-f="24"]{--display:"EB Garamond",Georgia,serif; --ui:"Jost",system-ui,sans-serif}
+  body[data-f="24"] .eyebrow{font-family:"Caveat",cursive;text-transform:none;letter-spacing:0;
+    font-size:1.45rem;color:#a81457;margin-bottom:.35rem}
+  body[data-f="24"] h1{font-size:clamp(2.1rem,4.4vw,3.3rem)}
+  body[data-f="24"] .row .v small{font-family:"Caveat",cursive;font-size:1.05rem;color:#a81457}
+  body[data-f="24"] .row .k{font-size:.6rem}
   body[data-f="2"] .brand,body[data-f="5"] .brand{font-weight:600}
 
   .tag{position:fixed;z-index:95;right:calc(var(--pad) + .2rem);bottom:calc(var(--pad) * .9);
@@ -431,7 +491,10 @@ She knows what is best for me.</textarea></div>
                  "archivo black","quicksand only","oswald caps + karla",
                  "big · huge head, small body","lowercase · no small caps",
                  "poster · all caps, tight","italic · italic as the voice",
-                 "centred · symmetric","airy · wide tracking, light"];
+                 "centred · symmetric","airy · wide tracking, light",
+                 "ruled · banded masthead","ornament · drop cap",
+                 "ledger · dotted, figures right","rose · coloured type",
+                 "figures · numbers lead","annotated · written on"];
   const d = Math.min(NAMES.length, Math.max(1, parseInt(new URLSearchParams(location.search).get("d") || "1", 10)));
   document.body.dataset.d = d;
   const f = Math.min(FONTS.length, Math.max(1, parseInt(new URLSearchParams(location.search).get("f") || "1", 10)));

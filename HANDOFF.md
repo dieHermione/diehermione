@@ -57,10 +57,15 @@ have been passed over.
 **The mockup rule applies to type as well.** Batches one and two were both
 "pick a display face, pick a UI face" and only varied which face drew the same
 scale and the same letterspaced small-cap labels — that is the T9 mistake,
-repainting one shape. Batch three varies the system instead. If that is also
-passed over, **stop guessing and ask for a reference** (a site, a magazine, a
-screenshot whose type she likes); that is what finally settled T9, and it is
-cheaper than a fourth batch.
+repainting one shape. Batch three varies the system instead. Batch four loosens the panel itself. Each
+batch has had to widen what counts as variable — face, then system, then the
+panel — because holding the rest fixed is what made the earlier ones read as
+one idea repainted. **A reference is still the cheapest way to end this**: a
+site, a magazine, a screenshot whose type she likes. That is what settled T9.
+
+Useful contrast numbers for coloured type on the panel as it renders over the
+glitter: `#ed72ad` 2.2:1 (too weak for any text), `#d94f90` 3.1:1 (large
+display only), `#c1256b` 4.5:1, `#a81457` 5.8:1.
 
 ### The palette
 A photographic background — `mockups/bg-glitter.jpg` (pink glitter; `bg-dusk.jpg`,
@@ -503,7 +508,7 @@ the repo's own `bcryptjs`. Only hermione's record matters.
 | Decrypt | `decrypt.html` | chosen 1 (BIOS/POST), built into `boot.js` |
 | Dashboard | `dashboard.html`, `dashboard2.html` | v1 rejected; v2 (occult-terminal) never picked; current dashboard is its own thing |
 | **Single page** | `singlepage.html` | **CHOSEN: 6 (split)** 2026-10-20 — the leopard frame, one main panel, a side nav that is its own surface, on glitter. The other eight stay in the file for reference: 1 column · 2 drawer · 3 plate · 4 tabs · 5 stack · 7 overlay · 8 spine · 9 dock. Each renders its own number badge so a contact sheet is readable |
-| Single-page type | `singlepage.html?f=1..18` | **6 (parisienne script) KEPT as a candidate**; still awaiting a final pick. Batch one, serif+sans pairings: 1 cormorant+jost · 2 bodoni+inter · 3 fraunces+nunito · 4 italiana+montserrat · 5 playfair+karla · 6 parisienne+montserrat. Batch two, a different idea each rather than another serif: 7 pinyon (formal copperplate) · 8 cinzel (inscriptional caps) · 9 prata+dm sans (modern editorial) · 10 archivo black (heavy grotesque) · 11 quicksand only (one family, weight and size alone) · 12 oswald caps (condensed masthead). Batch three changes the typographic SYSTEM rather than the face — scale, case, alignment, voice: 13 big (huge head, small body) · 14 lowercase (no small caps at all) · 15 poster (caps, tight) · 16 italic (italic as the voice) · 17 centred · 18 airy. `?f=` works on any design. **Three batches have now been passed over — the next move is a reference, not a fourth guess** |
+| Single-page type | `singlepage.html?f=1..24` | **6 (parisienne script) KEPT as a candidate**; still awaiting a final pick. Batch one, serif+sans pairings: 1 cormorant+jost · 2 bodoni+inter · 3 fraunces+nunito · 4 italiana+montserrat · 5 playfair+karla · 6 parisienne+montserrat. Batch two, a different idea each rather than another serif: 7 pinyon (formal copperplate) · 8 cinzel (inscriptional caps) · 9 prata+dm sans (modern editorial) · 10 archivo black (heavy grotesque) · 11 quicksand only (one family, weight and size alone) · 12 oswald caps (condensed masthead). Batch three changes the typographic SYSTEM rather than the face — scale, case, alignment, voice: 13 big (huge head, small body) · 14 lowercase (no small caps at all) · 15 poster (caps, tight) · 16 italic (italic as the voice) · 17 centred · 18 airy. `?f=` works on any design. Batch four loosens the panel itself — ornament, colour and how the data ranks: 19 ruled (banded masthead) · 20 ornament (drop cap) · 21 ledger (dotted, figures right) · 22 rose (type takes the colour) · 23 figures (the numbers lead) · 24 annotated (printed, written on). `?f=` works on any design |
 
 The brief is explicitly **not minimalism** — "as overdesigned and maximalist as
 possible" — but the terminal look was lifted for chess and slots so each design
