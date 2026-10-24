@@ -1455,7 +1455,17 @@ app.post("/api/writing/complete", (req, res) => {
       saveUsers(users);
     }
   }
-  res.json({ ok: true });
+  // Hand back the numbers that were actually RECORDED. The client counts
+  // keystrokes and the server counts letters, so the two accuracies differ by a
+  // point or two; the player should be told the one that went into the record.
+  res.json({
+    ok: true,
+    passages: entry.passages,
+    mistakes: entry.mistakes,
+    accuracy: entry.accuracy,
+    letters: entry.letters,
+    elapsedMs: entry.elapsedMs,
+  });
 });
 
 // Admin-only: the finished runs, newest first, and dismissing one.
@@ -2060,9 +2070,11 @@ app.get(["/lottery", "/slots"], requirePlayer, (req, res) => {
   res.sendFile(path.join(__dirname, "views", "slots.html"));
 });
 
-app.get("/writing", requirePlayer, (req, res) => {
-  res.sendFile(path.join(__dirname, "views", "writing.html"));
-});
+// Devotion moved INTO the dashboard shell on 2026-10-24 (public/panels/devotion.js).
+// The old standalone page is gone rather than kept beside it: two copies of the
+// same game is how the two drift apart. The path stays alive because the wall
+// card, the console's `pray devotion` and any bookmark all point at it.
+app.get("/writing", requirePlayer, (req, res) => res.redirect("/dashboard#devotion"));
 
 
 

@@ -3,487 +3,74 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dashboard - angeldom.me</title>
+  <title>angeldomme</title>
+
+  <!--
+    The single-page shell. This is mockup 55 (mockups/singlepage.html?d=6&f=55)
+    shipped: the leopard border, a side nav, and ONE panel that every section
+    loads into. Nothing here is terminal-styled any more — no scan lines, no
+    glitch, no monospace, no accent-colour tinting.
+
+    This page is only the frame and the furniture. The sections live in
+    /panels/*.js and register themselves with Shell; see shell.js for the
+    contract. Order of registration is the order of the nav.
+
+    Scripts, and why each one is still here:
+      me.js         single-flight /api/me; must exist before shell.js boots
+      audio.js      AudioBus — settings drives it, devotion's key clicks use it
+      shell.js      nav, hash routing, the panel registry
+      panels/*      the sections
+      console.js    `pray login` is the ONLY way to the login page now
+      updatecheck.js  offers a reload when a new build goes live
+      ambience.js   room tone, on the ambience channel
+
+    Gone, deliberately: dashglitch.js (effects are hidden site-wide, and this
+    design has nothing to glitch), theme.js (the accent would re-tint nothing
+    here; it still runs on the pages that are still terminal-styled), and
+    notifications.js (the bell was terminal chrome — the admin section reports
+    the count instead).
+  -->
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
-  <script src="/theme.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Pinyon+Script&family=Montserrat:wght@300;400;500&family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,600;1,6..96,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/shell.css" />
+
   <script src="/me.js"></script>
-  <script src="/dashglitch.js"></script>
-  <style>
-    /* Big-Type terminal dashboard (black / baby-blue). Self-contained; overrides
-       the shared shell. Green is avoided (white used for "done"/ok). */
-    /* Dual-tone: white stays white; every blue collapses to one vivid blue. */
-    :root { --c:#00acdb; --dim:#00acdb; --dim2:#00acdb; --bright:#eafaff; --accent:#00acdb; --bg:#000000; --glow:rgba(0,172,219,0.34); --ok:#eafaff; --err:#ff7a6d; --button-bg:#00acdb; }
-    * { box-sizing: border-box; }
-    [hidden] { display: none !important; }
-    /* DASHBOARD SIZING (this page only).
-       The dashboard's type is rem-based or rem-capped, so scaling the root font
-       size reproduces what browser zoom does — CSS `zoom` does NOT, because vh/vw
-       keep resolving against the real viewport and the layout overflows.
-       Calibrated to two measured points: 1.40x at 1512px wide (MacBook) and
-       2.00x at 2560px (1440p 27"), i.e. root = 16px * (0.5344 + 0.000573*w).
-       Clamped so very small and very large displays stay sane. */
-    html { font-size: clamp(16px, calc(8.55px + 0.916vw), 34px); }
-    html, body { height: 100%; overflow: hidden; }
-    body { margin: 0; padding: 0; background: var(--bg); color: var(--c); font-family: "IBM Plex Mono", monospace; font-size: 15px; display: block; }
-    .sky-clouds { display: none !important; }
-    .term-glow { display: none; }
-    .term-grid { display: none; }
-    .term-scan { position: fixed; inset: 0; z-index: 60; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(0,0,0,0.24) 0 1px, transparent 1px 3px); }
-    .term-vig { position: fixed; inset: 0; z-index: 59; pointer-events: none; box-shadow: inset 0 0 26vh 9vh rgba(0,0,0,0.6); }
-    a { color: inherit; text-decoration: none; }
-    .dim { color: var(--dim); } .dim2 { color: var(--dim2); } .br { color: var(--bright); text-shadow: 0 0 10px var(--glow); } .accent { color: var(--accent); }
-    .stitle { color: var(--bright); letter-spacing: 0.2em; text-transform: uppercase; font-size: 0.72rem; margin-bottom: 0.6rem; }
-
-    /* dash never scrolls; sized under fitDash's threshold so it isn't scaled */
-    /* the width cap is in rem so it grows with the root size (as zoom would);
-       the vertical frame stays in px so taller type never eats the height budget */
-    .dash { position: relative; z-index: 5; width: min(102.5rem, 94vw); height: calc(100vh - 104px); margin: 46px auto 0;
-      display: grid; grid-template-columns: 1.3fr 0.67fr; grid-template-rows: auto 1fr; gap: 3.2vh 3vw;
-      grid-template-areas: "hello clock" "actions ."; }
-    /* (the balance and leaderboard columns went with accounts and points; the
-       grid is hero + clock over the enter list, and nothing else) */
-    @media (max-width: 900px) {
-      .dash { grid-template-columns: 1fr; grid-template-areas: "hello" "clock" "actions"; height: auto; }
-      html, body { overflow: auto; }
-    }
-
-    /* ---- hello (welcome + flavor) ---- */
-    .hero { grid-area: hello; position: relative; }
-    #notif-slot { position: absolute; top: 0; right: 0; z-index: 20; }
-    .hero-top { display: flex; align-items: baseline; gap: 0.7rem; margin-bottom: 0.8rem; }
-    .hero-top .eyebrow { color: var(--dim); letter-spacing: 0.2em; text-transform: uppercase; font-size: 0.72rem; }
-    .hero h1 { font-family: "Share Tech Mono", ui-monospace, monospace; font-weight: 400; text-transform: uppercase;
-      font-size: clamp(2rem, 4.8vw, 3.9rem); line-height: 1.06; color: var(--bright); text-shadow: 0 0 30px var(--glow); letter-spacing: 0.06em; margin: 0; }
-    .hero > p { color: var(--dim); font-size: 1.15rem; letter-spacing: 0.06em; margin: 1rem 0 0; }
-    .editable { position: relative; }
-    .pencil { background: none; border: none; color: var(--dim); cursor: pointer; font-size: 0.9rem; margin-left: 0.5rem; vertical-align: middle; }
-    .pencil:hover { color: var(--accent); }
-    .copy-editor { display: none; margin-top: 1rem; border: 1px solid var(--dim2); padding: 0.9rem; max-width: 520px; }
-    .copy-editor.open { display: block; }
-    .copy-editor label { display: block; color: var(--dim); font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; margin: 0.5rem 0 0.25rem; }
-    .copy-editor input { width: 100%; background: rgba(0,172,219,0.06); border: 1px solid var(--dim2); color: var(--bright); font-family: inherit; padding: 0.4rem 0.5rem; }
-    .copy-editor .hint { color: var(--dim2); font-size: 0.75rem; margin: 0.5rem 0; }
-    .copy-editor .row { display: flex; gap: 0.6rem; margin-top: 0.4rem; }
-
-    /* ---- clock ---- */
-    .clock-card { grid-area: clock; text-align: right; }
-    .clk-eyebrow { color: var(--dim); letter-spacing: 0.2em; text-transform: uppercase; font-size: 0.72rem; }
-    .clk-time { font-size: clamp(2rem, 4vw, 3.4rem); color: var(--bright); text-shadow: 0 0 16px var(--glow); font-variant-numeric: tabular-nums; line-height: 1.1; margin: 0.2rem 0; }
-    .clk-ampm { font-size: 1rem; color: var(--dim); }
-    .clk-date { color: var(--dim); }
-    .clk-reset { color: var(--dim2); font-size: 0.85rem; margin-top: 0.3rem; }
-
-    /* ---- actions / games ---- */
-    .control-card { grid-area: actions; align-self: end; }
-    .controls { display: flex; flex-direction: column; align-items: flex-start; gap: 0.1rem; }
-    .ctl-btn, .controls a { display: block; background: none; border: none; color: var(--c); font-family: inherit; font-size: 1.08rem; letter-spacing: 0.04em; padding: 0.16rem 0; cursor: pointer; text-align: left; }
-    .controls a::before, .ctl-dropdown > .ctl-btn::before, #hermione-link::before, #logout::before,
-    #settings-toggle::before { content: "› "; color: var(--bright); }
-
-    /* settings, folded into the control card between the games and log out */
-    #settings-toggle[aria-expanded="true"]::before { content: "⌄ "; }
-    .settings { border-left: 1px solid var(--dim2); margin: 0.35rem 0 0.5rem 0.35rem; padding: 0.3rem 0 0.3rem 0.7rem; }
-    .set-row { display: flex; align-items: center; gap: 0.5rem; padding: 0.18rem 0; font-size: 0.8rem; }
-    .set-row .set-k { width: 4.6rem; color: var(--dim); }
-    .set-row input[type="range"] { flex: 1; min-width: 4rem; accent-color: var(--accent); height: 3px; }
-    .set-check { cursor: pointer; color: var(--c); }
-    .set-check input { accent-color: var(--accent); }
-    /* a locked toggle (photosensitive accounts) reads as greyed and unclickable */
-    .set-check:has(input:disabled) { cursor: not-allowed; opacity: 0.5; }
-    .set-check input:disabled { cursor: not-allowed; }
-    .set-mute { width: 2.4rem; background: transparent; border: 1px solid var(--dim2); color: var(--dim);
-      font-family: inherit; font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; padding: 0.1rem 0; }
-    .set-mute.off { border-color: var(--err); color: var(--err); }
-    .set-note { color: var(--dim2); font-size: 0.62rem; line-height: 1.6; margin-top: 0.4rem; }
-    .swatches { display: flex; gap: 0.4rem; flex-wrap: wrap; }
-    .swatch { width: 1.3rem; height: 1.3rem; border-radius: 50%; cursor: pointer; padding: 0;
-      border: 2px solid transparent; box-shadow: 0 0 0 1px rgba(255,255,255,0.25) inset; }
-    .swatch.on { border-color: var(--bright); }
-
-    /* in-theme tooltips: the native title popup is unstyled OS chrome, so the
-       game links carry data-tip and draw their own terminal panel instead */
-    .controls a[data-tip] { position: relative; }
-    .controls a[data-tip]::after {
-      content: "// " attr(data-tip);
-      position: absolute; left: calc(100% + 0.9rem); top: 50%; transform: translateY(-50%);
-      width: 15rem; padding: 0.55rem 0.7rem; z-index: 30;
-      background: rgba(0,0,0,0.96); border: 1px solid var(--accent); box-shadow: 0 0 22px var(--glow);
-      color: var(--c); font-size: 0.72rem; line-height: 1.5; letter-spacing: 0.02em;
-      text-transform: none; text-align: left; white-space: normal;
-      opacity: 0; visibility: hidden; transition: opacity 0.12s ease;
-      clip-path: polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 7px 100%, 0 calc(100% - 7px));
-    }
-    .controls a[data-tip]:hover::after, .controls a[data-tip]:focus-visible::after { opacity: 1; visibility: visible; }
-    /* the tooltip would run off the right edge on a narrow window */
-    @media (max-width: 900px) {
-      .controls a[data-tip]::after { left: 0; top: calc(100% + 0.4rem); transform: none; width: min(15rem, 80vw); }
-    }
-    .controls a:hover, .ctl-btn:hover { color: var(--bright); text-shadow: 0 0 10px var(--glow); }
-    .ctl-dropdown { position: relative; }
-    .ctl-menu { display: flex; flex-direction: column; padding-left: 1.1rem; }
-    .ctl-menu a { font-size: 1rem; color: var(--dim); }
-    .ctl-menu a::before { content: "· "; color: var(--dim2); }
-    .ctl-menu a:hover { color: var(--bright); }
-    .ctl-btn.ghost { color: var(--dim); }
-
-
-    /* notifications bell (injected into #notif-slot) */
-    #notif-slot .notif-btn { background: transparent; border: 1px solid var(--dim2); color: var(--c); border-radius: 4px !important; }
-    #notif-slot .notif-btn:hover { border-color: var(--accent); color: var(--bright); }
-  </style>
-  <script src="/audio.js"></script>
 </head>
 <body>
-  <div class="term-glow"></div>
-  <div class="term-grid"></div>
-
-  <div class="dash">
-    <section class="hero">
-      <div id="notif-slot"></div>
-      <div class="hero-top">
-        <div class="eyebrow" id="greeting">Welcome</div>
-      </div>
-      <h1><span class="editable" id="welcome-wrap"><span id="welcome">welcome</span></span></h1>
-      <p><span class="editable" id="message-wrap"><span id="dashboard-message">Thank you for your testing.</span></span></p>
-      <div class="copy-editor" id="copy-editor"></div>
-    </section>
-
-    <aside class="clock-card" id="clock-card">
-      <div class="clk-eyebrow" id="clk-eyebrow">Eastern Time</div>
-      <div class="clk-time"><span id="clk-time">--:--:--</span> <span class="clk-ampm" id="clk-ampm"></span></div>
-      <div class="clk-date" id="clk-date"></div>
-      <div class="clk-reset" id="clk-reset"></div>
-    </aside>
-
-    <section class="control-card">
-      <div class="stitle">enter</div>
-      <div class="controls">
-        <a id="admin-link" class="ctl-btn" href="/admin" hidden>Admin</a>
-        <a href="/games" class="ctl-btn">Games</a>
-        <button id="settings-toggle" class="ctl-btn" type="button" aria-expanded="false">Settings</button>
-        <div class="settings" id="settings" hidden>
-          <label class="set-row set-check" id="set-effects-row">
-            <input type="checkbox" id="set-effects" /> <span>Flashing effects</span>
-          </label>
-          <div class="set-row"><span class="set-k">Accent</span>
-            <div class="swatches" id="swatches"></div></div>
-          <div class="set-row"><span class="set-k">Master</span>
-            <input type="range" id="vol-master" min="0" max="100" />
-            <button class="set-mute" id="mute-master" type="button">on</button></div>
-          <div class="set-row"><span class="set-k">Music</span>
-            <input type="range" id="vol-music" min="0" max="100" />
-            <button class="set-mute" id="mute-music" type="button">on</button></div>
-          <div class="set-row"><span class="set-k">Ambience</span>
-            <input type="range" id="vol-ambience" min="0" max="100" />
-            <button class="set-mute" id="mute-ambience" type="button">on</button></div>
-          <div class="set-row"><span class="set-k">Typing</span>
-            <input type="range" id="vol-typing" min="0" max="100" />
-            <button class="set-mute" id="mute-typing" type="button">on</button></div>
-          <p class="set-note">Applies everywhere. A game with its own audio controls opens matching this, and can be changed there without altering these.</p>
-        </div>
-        <button id="logout" class="ctl-btn" type="button" hidden>Log out</button>
-      </div>
-    </section>
+  <div class="page">
+    <nav class="nav" aria-label="Sections">
+      <div class="brand">angel<i>domme</i></div>
+      <div class="tagline">angelOS</div>
+      <ul id="nav"></ul>
+      <div class="who" id="who"></div>
+    </nav>
+    <main class="panel"><div class="inner" id="panel"></div></main>
   </div>
 
-  <script>
-    // Screen-glitch flashing is off if the account was flagged photosensitive at
-    // account creation (a permanent lock), or if the user switched flashing
-    // effects off. Otherwise it runs.
-    let photosensitive = false;
-    let effectsOn = true;
-    try { effectsOn = localStorage.getItem("glitch-effects") !== "0"; } catch (e) {}
-    function applyEffects() {
-      const ok = !photosensitive && effectsOn;
-      if (window.DashGlitch) {
-        window.DashGlitch.setEnabled(ok);
-        if (ok) window.DashGlitch.startRandom(); else window.DashGlitch.stopRandom();
-      }
-    }
-    // Photosensitive accounts (flagged at creation) cannot turn flashing effects
-    // on: the box is unchecked and disabled. Everyone else may toggle it freely.
-    function applyEffectsLock() {
-      const box = document.getElementById("set-effects");
-      if (!box) return;
-      if (photosensitive) { box.checked = false; box.disabled = true; effectsOn = false; }
-      else { box.checked = effectsOn; box.disabled = false; }
-    }
+  <!-- veil under the content, frame over it: the only reason the leopard is
+       visible against the silver is that they sit on opposite sides of it -->
+  <div class="veil"></div>
+  <div class="frame"></div>
 
-    // accent-colour swatches: default (blue) + the presets from theme.js
-    function buildSwatches() {
-      const box = document.getElementById("swatches");
-      if (!box || !window.Theme) return;
-      box.replaceChildren();
-      Object.keys(window.Theme.PRESETS).forEach((label) => {
-        const b = document.createElement("button");
-        b.type = "button"; b.className = "swatch"; b.dataset.color = label;
-        b.style.background = window.Theme.PRESETS[label];
-        b.title = label === "default" ? "default (blue)" : "#" + label;
-        b.addEventListener("click", () => { window.Theme.set(label); markSwatch(label); });
-        box.append(b);
-      });
-      markSwatch(window.Theme.get());
-    }
-    function markSwatch(label) {
-      document.querySelectorAll("#swatches .swatch").forEach((s) => s.classList.toggle("on", s.dataset.color === label));
-    }
-    buildSwatches();
+  <noscript>
+    <div style="position:fixed;inset:0;z-index:200;display:flex;align-items:center;
+                justify-content:center;padding:3rem;background:rgba(255,253,250,.95);
+                font-family:Georgia,serif;font-size:1.1rem;line-height:1.8;text-align:center">
+      This page needs JavaScript. Without it there is nothing here to read.
+    </div>
+  </noscript>
 
-    const h = new Date().getHours();
-    document.getElementById("greeting").textContent =
-      // 04:00 morning, 12:00 afternoon, 20:00 evening
-      h < 4 ? "Good evening" : h < 12 ? "Good morning" : h < 20 ? "Good afternoon" : "Good evening";
-
-    // First-login password gate for hand-made accounts.
-    function showPasswordGate() {
-      const st = document.createElement("style");
-      st.textContent =
-        "#pw-gate{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.95);display:flex;align-items:center;justify-content:center;padding:5vw;font-family:'IBM Plex Mono',monospace}" +
-        "#pw-gate .pw-box{width:min(420px,92vw);border:1px solid var(--accent);background:#05080f;padding:1.8rem;box-shadow:0 0 40px var(--glow)}" +
-        "#pw-gate .pw-h{color:var(--bright);letter-spacing:.06em;margin-bottom:.6rem;font-size:1.1rem}" +
-        "#pw-gate .pw-p{color:var(--dim);font-size:.85rem;line-height:1.6;margin-bottom:1.2rem}" +
-        "#pw-gate input{width:100%;background:rgba(0,172,219,.06);border:1px solid var(--dim2);color:var(--bright);font-family:inherit;font-size:1rem;padding:.55rem .7rem;margin-bottom:.7rem}" +
-        "#pw-gate input:focus{outline:none;border-color:var(--accent)}" +
-        "#pw-gate .pw-err{color:var(--err);min-height:1.2em;font-size:.82rem;margin-bottom:.5rem}" +
-        "#pw-gate .pw-btn{width:100%;border:1px solid var(--accent);background:var(--accent);color:#000;font-family:inherit;letter-spacing:.14em;text-transform:uppercase;padding:.6rem;cursor:pointer}" +
-        "#pw-gate .pw-btn:disabled{opacity:.5}";
-      document.head.appendChild(st);
-      const ov = document.createElement("div"); ov.id = "pw-gate";
-      ov.innerHTML =
-        '<div class="pw-box"><div class="pw-h">// set your password</div>' +
-        '<p class="pw-p">This account was made for you with a temporary password. Choose your own to continue.</p>' +
-        '<input id="pw-1" type="password" placeholder="new password" autocomplete="new-password" />' +
-        '<input id="pw-2" type="password" placeholder="confirm password" autocomplete="new-password" />' +
-        '<div class="pw-err" id="pw-err"></div>' +
-        '<button class="pw-btn" id="pw-go" type="button">set password</button></div>';
-      document.body.appendChild(ov);
-      const go = async () => {
-        const a = document.getElementById("pw-1").value, b = document.getElementById("pw-2").value;
-        const e = document.getElementById("pw-err");
-        if (a.length < 8) { e.textContent = "At least 8 characters."; return; }
-        if (a !== b) { e.textContent = "Passwords do not match."; return; }
-        document.getElementById("pw-go").disabled = true;
-        const r = await fetch("/api/password", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ next: a }) }).catch(() => null);
-        if (r && r.ok) { window.location.reload(); return; }
-        const dd = r ? await r.json().catch(() => ({})) : {};
-        e.textContent = (dd && dd.error) || "That didn't work."; document.getElementById("pw-go").disabled = false;
-      };
-      document.getElementById("pw-go").addEventListener("click", go);
-      document.getElementById("pw-2").addEventListener("keydown", (ev) => { if (ev.key === "Enter") go(); });
-      setTimeout(() => document.getElementById("pw-1").focus(), 60);
-    }
-
-    window.siteMe()
-      .then((d) => {
-        // A hand-made account must set its own password before anything else.
-        if (d.mustChangePassword) { showPasswordGate(); return; }
-        // Flashing effects are off entirely for anyone who declared
-        // photosensitivity at registration.
-        photosensitive = Boolean(d.photosensitive);
-        // cached so the login page, which runs before we know who you are, can
-        // still honour the flag on every visit after the first
-        try { localStorage.setItem("photosensitive", photosensitive ? "1" : "0"); } catch (e) {}
-        applyEffects();
-        applyEffectsLock();
-        // the account's saved accent wins over the local cache; reflect it in the picker
-        if (window.Theme) { window.Theme.fromAccount(d.themeColor || "default", d.guest); markSwatch(window.Theme.get()); }
-
-        // Everyone is a guest except Hermione. A guest sees exactly this page;
-        // there is no sign-in button (`pray login` in the console is the way in).
-        // She additionally gets the Admin link and a way out.
-        const isHermione = Boolean(d.isAdmin);
-        if (isHermione) {
-          const al = document.getElementById("admin-link"); if (al) al.hidden = false;
-          const lo = document.getElementById("logout"); if (lo) lo.hidden = false;
-        }
-        loadCopy(isHermione);
-      })
-      .catch(() => (window.location.href = "/"));
-
-    // --- the two lines of dashboard copy, editable in place by hermione ---
-    let siteRaw = null;
-
-    async function loadCopy(isHermione) {
-      const res = await fetch("/api/site");
-      if (!res.ok) return;
-      const site = await res.json();
-      document.getElementById("welcome").textContent = site.welcome;
-      document.getElementById("dashboard-message").textContent = site.message;
-      siteRaw = site.raw || null;
-      if (isHermione && siteRaw) addPencils();
-    }
-
-    function addPencils() {
-      [["welcome-wrap", "welcome"], ["message-wrap", "message"]].forEach(([wrapId, which]) => {
-        const wrap = document.getElementById(wrapId);
-        if (!wrap || wrap.querySelector(".pencil")) return;
-        const pencil = document.createElement("button");
-        pencil.type = "button";
-        pencil.className = "pencil";
-        pencil.textContent = "✎";
-        pencil.title = "Edit this text";
-        pencil.addEventListener("click", () => openCopyEditor(which));
-        wrap.append(pencil);
-      });
-    }
-
-    function openCopyEditor(which) {
-      const editor = document.getElementById("copy-editor");
-      const adminKey = which === "welcome" ? "welcomeAdmin" : "messageAdmin";
-      const userKey = which === "welcome" ? "welcomeUser" : "messageUser";
-      editor.replaceChildren();
-
-      const mineLabel = document.createElement("label");
-      mineLabel.textContent = "What you see";
-      const mine = document.createElement("input");
-      mine.type = "text";
-      mine.maxLength = 200;
-      mine.value = siteRaw[adminKey];
-
-      const theirsLabel = document.createElement("label");
-      theirsLabel.textContent = "What everyone else sees";
-      const theirs = document.createElement("input");
-      theirs.type = "text";
-      theirs.maxLength = 200;
-      theirs.value = siteRaw[userKey];
-
-      const hint = document.createElement("p");
-      hint.className = "hint";
-      hint.textContent = "{name} becomes the guest's name.";
-
-      const row = document.createElement("div");
-      row.className = "row";
-      const save = document.createElement("button");
-      save.type = "button";
-      save.className = "ctl-btn";
-      save.textContent = "Save";
-      const cancel = document.createElement("button");
-      cancel.type = "button";
-      cancel.className = "ctl-btn ghost";
-      cancel.textContent = "Cancel";
-      cancel.addEventListener("click", () => editor.classList.remove("open"));
-      save.addEventListener("click", async () => {
-        const res = await fetch("/api/site", {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ [adminKey]: mine.value, [userKey]: theirs.value }),
-        });
-        if (res.ok) {
-          siteRaw = (await res.json()).raw;
-          editor.classList.remove("open");
-          loadCopy(true);
-        }
-      });
-      row.append(save, cancel);
-
-      editor.append(mineLabel, mine, theirsLabel, theirs, hint, row);
-      editor.classList.add("open");
-    }
-
-
-    // --- settings panel: drives AudioBus, which every page reads ---
-    (function () {
-      const bus = window.AudioBus;
-      const toggle = document.getElementById("settings-toggle");
-      const body = document.getElementById("settings");
-      toggle.addEventListener("click", () => {
-        const open = body.hidden;
-        body.hidden = !open;
-        toggle.setAttribute("aria-expanded", String(open));
-        fitDash();
-      });
-      // Flashing effects: on by default, off if you de-tick it; the choice is
-      // remembered. Photosensitive accounts have it locked off (applyEffectsLock).
-      const fx = document.getElementById("set-effects");
-      // the effects are hidden site-wide for now (see dashglitch.js); so is the box
-      if (window.DashGlitch && window.DashGlitch.hidden) document.getElementById("set-effects-row").hidden = true;
-      applyEffectsLock();
-      fx.addEventListener("change", () => {
-        if (photosensitive) { fx.checked = false; return; }
-        effectsOn = fx.checked;
-        try { localStorage.setItem("glitch-effects", effectsOn ? "1" : "0"); } catch (e) {}
-        applyEffects();
-      });
-
-      if (!bus) return;
-
-      ["master"].concat(bus.channels).forEach((name) => {
-        const slider = document.getElementById("vol-" + name);
-        const mute = document.getElementById("mute-" + name);
-        if (!slider || !mute) return;
-        const paint = () => {
-          const s = bus.get(name);
-          slider.value = Math.round(s.volume * 100);
-          mute.textContent = s.muted ? "off" : "on";
-          mute.classList.toggle("off", s.muted);
-        };
-        slider.addEventListener("input", () => bus.set(name, { volume: Number(slider.value) / 100, muted: false }));
-        mute.addEventListener("click", () => bus.set(name, { muted: !bus.get(name).muted }));
-        bus.onChange(paint);
-        paint();
-      });
-    })();
-
-    document.getElementById("logout").addEventListener("click", async () => {
-      await fetch("/api/logout", { method: "POST" }).catch(() => {});
-      window.location.href = "/";   // the front door starts a fresh guest session
-    });
-
-    // --- Eastern-time clock (EST/EDT via Intl; daily reset is 6am Eastern) ---
-    const RESET_HOUR = 6;
-    function easternParts(now) {
-      const p = new Intl.DateTimeFormat("en-US", {
-        timeZone: "America/New_York", hourCycle: "h23",
-        hour: "2-digit", minute: "2-digit", second: "2-digit",
-      }).formatToParts(now);
-      const get = (t) => Number(p.find((x) => x.type === t).value);
-      return { h: get("hour"), m: get("minute"), s: get("second") };
-    }
-    function tickClock() {
-      const now = new Date();
-      const time = new Intl.DateTimeFormat("en-US", {
-        timeZone: "America/New_York", hourCycle: "h23", hour: "2-digit", minute: "2-digit", second: "2-digit",
-      }).formatToParts(now);
-      const val = (t) => (time.find((x) => x.type === t) || {}).value || "";
-      document.getElementById("clk-time").textContent = val("hour") + ":" + val("minute") + ":" + val("second");
-      document.getElementById("clk-ampm").textContent = "";
-      const tz = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", timeZoneName: "short" })
-        .formatToParts(now).find((x) => x.type === "timeZoneName").value;
-      document.getElementById("clk-eyebrow").textContent = "Eastern Time · " + tz;
-      document.getElementById("clk-date").textContent = new Intl.DateTimeFormat("en-US", {
-        timeZone: "America/New_York", weekday: "long", month: "long", day: "numeric",
-      }).format(now);
-      // (daily reset countdown removed: there are no dailies anymore)
-    }
-    tickClock();
-    setInterval(tickClock, 1000);
-
-    // Shrink the whole dashboard to fit the viewport height instead of scrolling.
-    // Content height varies (the settings panel opens), so re-fit whenever it changes.
-    const _dash = document.querySelector(".dash");
-
-    function fitDash() {
-      if (!_dash) return;
-      _dash.style.transform = "";
-      const avail = window.innerHeight - 88;  // leave top+bottom margin
-      const h = _dash.getBoundingClientRect().height;
-      if (h > avail + 2) {
-        _dash.style.transformOrigin = "top center";
-        _dash.style.transform = "scale(" + Math.max(0.6, avail / h) + ")";
-        document.body.style.overflow = "hidden";
-      } else {
-        document.body.style.overflow = "";
-      }
-    }
-    try { new ResizeObserver(fitDash).observe(_dash); } catch (e) {}
-    window.addEventListener("resize", fitDash);
-    fitDash();
-  </script>
-  <script src="/notifications.js" defer></script>
-  <script src="/updatecheck.js" defer></script>
+  <script src="/audio.js" defer></script>
+  <script src="/shell.js" defer></script>
+  <script src="/panels/home.js" defer></script>
+  <script src="/panels/devotion.js" defer></script>
+  <script src="/panels/elysium.js" defer></script>
+  <script src="/panels/settings.js" defer></script>
+  <script src="/panels/admin.js" defer></script>
   <script src="/console.js" defer></script>
+  <script src="/updatecheck.js" defer></script>
   <script src="/ambience.js" defer></script>
 </body>
 </html>

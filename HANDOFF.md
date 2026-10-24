@@ -19,6 +19,14 @@ edited through Replit sometimes, so **pull/rebase before pushing**.
 > require an account. Old disciple records may still sit in `users.json`; login
 > refuses them and nothing reads them.
 
+> **The redesign has started (2026-10-24).** `/dashboard` is now the
+> single-page shell — leopard frame, side nav, one panel — and devotion runs
+> inside it. **Every other page is still terminal-styled.** If something you
+> are about to touch looks like two different websites, that is why, and it is
+> expected until the pages listed under *Open items* are converted. New work on
+> the dashboard goes through `public/shell.css` and `public/panels/`; new work
+> on a terminal page is still terminal until it is its turn.
+
 ---
 
 ## Standing rules
@@ -183,8 +191,13 @@ it was removed anyway, since the page never scrolls.)
 
 ### Direction: off the terminal aesthetic, toward one page
 Decided 2026-09-11: the site is **moving away from the terminal look** and
-toward a **single-page format like ThroneLogs**. Nothing is redesigned yet;
-in preparation **every screen effect is hidden** — the glitches, every
+toward a **single-page format like ThroneLogs**.
+
+**2026-10-24 — the first page landed.** `/dashboard` is now the single-page
+shell (mockup 55), and devotion runs inside it. Everything else is still
+terminal-styled; see *The shell* below for what is ported and what is not.
+
+In preparation **every screen effect is hidden** — the glitches, every
 scanline overlay (`.scan`, the boot overlay's, the console panel's) — by one
 switch, `HIDDEN = true` at the top of `public/dashglitch.js`, which every
 terminal page loads. The dashboard's Flashing effects box and the admin Screen
@@ -339,12 +352,13 @@ dashboard; everything else is a view in `views/` behind a route.
 | Route | Who | What |
 |---|---|---|
 | `/` | anyone | become a guest, boot, land on the dashboard (or skip to it if already a player) |
-| `/dashboard` | player | welcome copy, clock, ENTER (Games · Settings; Hermione also gets Admin · Log out). `/guest` redirects here |
+| `/dashboard` | player | **the shell** — leopard frame, side nav, one panel. Sections: home / devotion / elysium / settings / admin (hers). `/guest` redirects here |
 | `/games` | player | the wall every game is reached from; two tabs, *games* and *extra*; nothing is locked |
 | `/login` | anyone | Hermione's sign-in form; reached only by `pray login`; redirects an existing login to the dashboard |
 | `/admin` | admin | the tabbed admin panel (`public/adminpanel.js`) |
 | `/commands` | admin | the `pray` reference, hand-maintained; back → `/admin` |
-| `/snake` `/writing` (devotion) `/multitap` (`/t9` alias) `/summary` `/skillcheck` `/ot12` `/deathroll` `/dummyparse` `/elysium` (`/tree` alias) `/chess` | player | the games on the wall |
+| `/snake` `/multitap` (`/t9` alias) `/summary` `/skillcheck` `/ot12` `/deathroll` `/dummyparse` `/elysium` (`/tree` alias) `/chess` | player | the games on the wall, each still its own page |
+| `/writing` | player | **302 → `/dashboard#devotion`.** Devotion moved into the shell; `views/writing.html` was deleted rather than kept beside it |
 | `/wheel` `/lottery` (`/slots` alias) | player | still routed, **not linked from the wall** (free play, pay nothing) |
 | `/coc2-engine/` | anyone (static) | a hosted writeup, unrelated to the site's own docs |
 | `/avatar/` | anyone (static) | a picture editor. Hosted here, **part of nothing here** — see below |
@@ -412,7 +426,11 @@ and chess are placeholders. Hover text over each card comes from
 ### The games
 
 - **Snake** — free-swimming, no grid; dies on its own tail; food drifts at half speed and flees. **Shift** boosts (~5s per full meter at 1.9x, refills ~16s), **Space** pauses. Time limit chosen on the settings screen (up to 999 min). Food is counted, not paid.
-- **Devotion** (`/writing`) — type a line, again and again: blue, calm, no difficulty; a slip restarts the current line. **The lines are written on the settings screen at game time** — one per row, ≤100 lines of ≤240 chars — and that is the only source: the preset line-sets (`devotion.json`, `/api/devotion/presets` and its admin editor) were removed on 2026-10-19. The server still builds the sequence from what it is given (`lines[0]` first, the rest shuffled with no immediate repeat) and owns the count. Settings → play → results. **Penance was folded into it on 2026-09-11** — the red corrupting sibling with a difficulty picker is gone; `penance` is now an alias of `devotion` in the console and old `completed.json` entries keep their `penance` category.
+- **Devotion** (`/dashboard#devotion`; `/writing` redirects there) — **runs inside the shell since 2026-10-24**; `views/writing.html` was deleted. Type a line, again and again: blue, calm, no difficulty; a slip restarts the current line. **The lines are written on the settings screen at game time** — one per row, ≤100 lines of ≤240 chars — and that is the only source: the preset line-sets (`devotion.json`, `/api/devotion/presets` and its admin editor) were removed on 2026-10-19. The server still builds the sequence from what it is given (`lines[0]` first, the rest shuffled with no immediate repeat) and owns the count. Settings → play → results. The results screen shows **the accuracy the server
+recorded**, not one computed locally: the client counts keystrokes and the
+server counts letters, so the two differ by a point or two and the player was
+being told a different number from the one in her record. `/api/writing/complete`
+now returns what it wrote. **Penance was folded into it on 2026-09-11** — the red corrupting sibling with a difficulty picker is gone; `penance` is now an alias of `devotion` in the console and old `completed.json` entries keep their `penance` category.
 - **Multitap** (`/multitap`, renamed from T9) — typing on an old-phone multi-tap keypad, green/white, deliberately unguided. Any other key commits the pending letter; `#` confirms; `*` deletes; one press of `0` confirms, a second enters a space. Settings screen picks preset or custom lines and a repetition count. Pool is `multitap.json`. Logs as `category: "multitap"`.
 - **Summary** — a real Wikipedia article (action API plain-text extract, trimmed) and a word limit that scales with the source. Pools in `SUMMARY_TOPICS`/`KIND_LABEL`: angels, feminism, Greek mythology, pre-18th-century history, critical biblical scholarship. Handed-in summaries → `summaries.json`, read in Admin → Completed.
 - **Skill check** — the pure dial, settings screen, presets 10/20/35/50, two difficulties, themed.
@@ -428,7 +446,7 @@ and chess are placeholders. Hover text over each card comes from
 
 | Game | Model |
 |---|---|
-| Devotion / Multitap | **server-owned.** `POST /api/writing/session` builds the line sequence (`mode` = `devotion`, always from the player's own `ownLines`; `multitap`, from `ownLines` or its own flat pool) and stores it on the login session; `POST /api/writing/line` must match the expected line in order; `POST /api/writing/skip` is admin-only (`pray skip_stage`) and is the real boundary; `POST /api/writing/complete` takes **nothing** from the body and refuses unless the server's count says finished — one-shot. The run lives in `req.session.writing` (file-backed, survives restarts). |
+| Devotion / Multitap | **server-owned.** `POST /api/writing/session` builds the line sequence (`mode` = `devotion`, always from the player's own `ownLines`; `multitap`, from `ownLines` or its own flat pool) and stores it on the login session; `POST /api/writing/line` must match the expected line in order; `POST /api/writing/skip` is admin-only (`pray skip_stage`) and is the real boundary; `POST /api/writing/complete` takes **nothing** from the body, refuses unless the server's count says finished — one-shot — and **returns the numbers it recorded** so the results screen cannot disagree with the record. The run lives in `req.session.writing` (file-backed, survives restarts). |
 | OT12 | **server-owned.** `/api/ot12/session` → `/answer` → `/skip` (admin) → `/complete`; the correct set is never sent until after the answer. |
 | Dummy Parse | **bounded.** `/api/parse/session` locks the build (300-point pool) and starts the clock; `/api/parse` refuses more combat time than has elapsed, a wrong duration for a timed mode, or a DPS that disagrees with the total; mode and build come from the run. **Damage total is still client-reported.** |
 | Snake | **bounded.** `/api/snake/session` records the limit; `/api/snake/food` refuses outside a live run (2s grace) and rate-limits (burst 8, refill 2s); `/api/snake/complete` returns the server's count, which the results screen shows. A client can still claim pickups it didn't earn, just not unboundedly. |
@@ -454,18 +472,106 @@ Say "bounded, not validated" for Snake and Dummy Parse.
 - **`updatecheck.js`** + `GET /api/version` — `BUILD_ID` is stamped at boot; pages compare and offer a reload after a redeploy.
 - **`transitions.js`** (login → dashboard covers), **`me.js`** (single-flight `/api/me` as `window.siteMe()`; a guest gets `{guest, username, isAdmin:false}`, hermione `{username, isAdmin:true, themeColor, photosensitive, createdAt, mustChangePassword}`), **`adminpanel.js`** (the whole `/admin` page).
 
-### Dashboard (`public/dashboard.html`)
-Hero title in Share Tech Mono; clock time is white; scales via root font-size
-(**not** CSS `zoom` — measured: zoom doesn't rescale `vh/vw`). Grid is two
-columns: `"hello clock" / "actions ."` — the balance and leaderboard columns
-went with points. ENTER lists **Games · Settings** for a guest; Hermione also
-sees **Admin** and **Log out** (which returns to `/`, i.e. a fresh guest
-session). There is deliberately **no sign-in button**. Settings panel: Accent
-swatches, Master / Music / Ambience / Typing volume + mute, Flashing effects
-(hidden while effects are hidden; locked off for a photosensitive account),
-password change (hers). The two
-lines of copy are editable in place by Hermione (pencils) — `{name}` becomes
-the guest's name.
+### The shell (`public/dashboard.html`, `shell.css`, `shell.js`, `panels/`)
+**This is mockup 55, shipped on 2026-10-24.** It replaced the terminal
+dashboard entirely — that page's 489 lines are gone, not hidden. Four layers
+chosen separately in `mockups/singlepage.html` and flattened here, because
+there is only one design now:
+
+| layer | from | what it is |
+|---|---|---|
+| geometry | design 35 `letter` | a centred note, max 36rem, games as pills at the foot |
+| paper | dressing 43 `vellum` | warm white at `.42` alpha; the silver reads straight through |
+| nav | dressing 53's left side | Pinyon Script wordmark over Montserrat, lowercase |
+| panel type | variant 55 `didone` | Bodoni Moda over Inter, `h1` at 600 |
+
+`shell.css` holds the whole design and is meant to be linked by the next page
+that converts. **Do not reintroduce `data-d` / `data-f` switching** — the
+mockup file keeps the alternatives; this one has a single answer.
+
+**Root font size** is `clamp(15px, calc(9.9px + 0.34vw), 24px)`, which lands on
+exactly 15px at 1500px wide — the width the design was rendered and approved
+at — and grows gently after. It is rem-based for the same reason the old
+dashboard was: measured, CSS `zoom` does not rescale `vh/vw`.
+
+**Sections are panel modules.** `shell.js` owns the nav, hash routing and a
+registry; each section is a plain `defer`-loaded script in `public/panels/`
+that registers itself:
+
+```js
+Shell.register("home", { label, admin?, mount(host, ctx), unmount?() });
+```
+
+`ctx.me` and `ctx.site` are resolved before any `mount`. Registration order is
+nav order, and a separator is drawn before `settings`. `admin: true` hides the
+entry from guests — **presentation only**; every endpoint re-checks server-side.
+Routing is the hash, so reload and the back button both work; an unknown or
+forbidden hash falls back to home.
+
+**What runs in the panel:** home, devotion (the whole game), elysium (the
+tending console), settings, admin.
+**What still opens as its own page:** the other eight games. Their pills carry
+a small arrow so leaving is never a surprise. Porting them is the next tranche
+— each is a full document with its own `<style>` and `<script>`, so it is one
+game at a time, not one sweep.
+
+- **home** — the two lines of editable copy (`/api/site`, `{name}` filled
+  server-side, pencils for her only), the games, and a link to the wall. Home
+  **is** the games list; there is no separate `games` section.
+- **devotion** — ported from the deleted `views/writing.html`. Same
+  server-owned loop (`/api/writing/session|line|complete`). Two things changed:
+  the angelOS boot is gone (no terminal to boot) and the key clicks now run
+  through `AudioBus`'s `typing` channel, so the slider in Settings — two clicks
+  away in the same shell — finally governs them.
+- **elysium** — the readout and the tend buttons only. The game at `/elysium`
+  is a whole environment (scene, weather, music, journal) and squeezing it into
+  a 36rem note would cost the thing that makes it work, so the panel links to
+  it instead. This is a summary plus the real place, **not** a second copy.
+- **settings** — audio only. The accent swatches went (this shell has a fixed
+  palette, so the picker would change nothing you can see; `theme.js` still
+  applies her last choice on the pages that are still terminal-styled, so no
+  choice was thrown away) and so did the flashing-effects box (a toggle for
+  something already off site-wide is a lie). Her password change stays.
+- **admin** — a landing page, not the panel: what is waiting, and the way out.
+  `/admin` still holds the editors.
+
+**Scripts the shell does NOT load**, deliberately: `dashglitch.js` (nothing to
+glitch), `theme.js` (would re-tint nothing), `notifications.js` (the bell was
+terminal chrome — admin reports the count instead). `console.js` stays, because
+`pray login` is the only way to the login page. **`console.js` still draws
+itself in the terminal style** — it is the last terminal artefact on this page,
+and restyling it is a known open item.
+
+Two behaviours were carried over from the old dashboard by hand and would
+otherwise have been lost silently:
+- the `photosensitive` localStorage cache, which the **front door** reads
+  before anyone is identified. The effects are hidden site-wide, so nothing
+  reads it usefully today; it keeps the flag working the day they come back.
+- the **must-change-password gate**. The old page blocked itself with a modal;
+  the shell opens `settings` instead, hides the current-password field (the
+  server skips that check while the flag is set) and reloads once it clears.
+
+### The frame, and the one invariant that keeps it honest
+`border-image: url("/img/frame-leopard.webp") 184 round` on a
+`position:fixed; inset:0; pointer-events:none` overlay at `z-index:90`, over a
+`.veil` at `z-index:1`. **That separation is the only reason the frame is
+visible at all**: leopard and silver glitter are both black-and-white speckle
+and their raw mean luminance differs by 0.05; the veil lightens the background
+without touching the frame.
+
+Below 820px the nav becomes a row above the panel. **The page stays `fixed` and
+the panel keeps its own scrollbar.** Letting the document scroll instead sends
+text travelling under the frame's fixed top and bottom bands — the border eats
+whatever line you are reading. The check that protects this is geometric, not
+per-element: *the nav and panel boxes must sit wholly inside the frame's
+opening*. If that holds, no amount of scrolling can hide a readable line,
+because each surface clips its own overflow. Verified at 390, 820, 1500 and
+2560 wide.
+
+A per-element version of this check **passes for the wrong reason** twice over:
+once because the home panel is too short to overflow at phone height, and again
+because an element's bounding box extends past the panel's clip box while the
+visible part of it does not. Both were caught by sabotaging the rule first.
 
 ### Identity
 Everyone is a guest: `POST /api/guest` claims `guestN` from an in-memory
@@ -538,6 +644,12 @@ instead. Don't rebuild a second writing game; add to this one.
 `/api/devotion/presets` endpoints, the admin Devotion subtab and its editor, and
 the generic `presetEditor` / `cleanPresets` helpers. The lines are typed at game
 time now — don't reintroduce a stored pool for them.
+**The terminal dashboard** (2026-10-24): `public/dashboard.html`'s 489 lines —
+the Share Tech Mono hero, the Eastern clock card, the ENTER control list, the
+`fitDash` scale-to-fit, the accent swatches, the flashing-effects box, the
+password-gate modal, the notification bell slot. Replaced by the shell, not
+hidden behind a flag. **`views/writing.html`** went with it: devotion runs in
+the panel and `/writing` redirects. Don't restore either as a second copy.
 Earlier: dailies and both daily bonuses; tithe; the guestbook; light/dark
 toggle; the top pill nav; subliminals entirely (`glitch.js`, `subliminal.json`,
 the `pray` word-flash); angelcoins; the Visitor account type; member-facing
@@ -546,12 +658,18 @@ notifications; the admin panel on the dashboard; the boot vignette and
 
 ## Open items
 - The remaining ten CSS cards → generated posters like Devotion's (elysium and chess first; they are placeholders).
-- The redesign itself: off the terminal look, single page (ThroneLogs-style). Then delete the hidden effects code and the boot. **Three arrangements are mocked up (`mockups/singlepage.html?d=1..3`) and await a pick.**
+- **The redesign, continued.** `/dashboard` is the shell (mockup 55) as of 2026-10-24. Everything else is still terminal-styled. In rough order of how jarring the seam is:
+  1. **The front door** (`public/index.html`) — a terminal boot cascade that lands on a vellum letter. It is the first thing anyone sees. Needs her decision, not a guess.
+  2. **The eight unported games.** Each is a full document with its own `<style>`/`<script>`, so it is one at a time. Devotion shows the shape: lift the loop, drop the page, redirect the old path.
+  3. **`console.js`** still draws itself in the terminal style on top of the shell — the last terminal artefact on a page that is otherwise done.
+  4. **`/games`** (the wall), `/admin`, `/login`, `/commands`.
+  Only once the terminal pages are gone can the hidden effects code and the boot be deleted.
 - Elysium is short of *events*, not features (ideas below).
 - OT12 payout is moot now (no points); song-based questions; fill the thin member fields before a height question.
 - A photosensitivity toggle in Settings for guests would have to be localStorage-only (nothing identifies them); today a fresh browser gets the effects until Flashing effects is unticked.
 - `/admin` still hand-rolls its back chevron (`/commands` uses `nav.js` + `data-back`).
 - Hover sounds ride the typing channel; the settings panel has no fourth slider.
+- The shell has no notification bell. Admin reports the count; she has to go there to see one.
 - Wheel and Lottery are free-play curiosities off the wall; keep, re-card, or remove.
 
 ---
@@ -568,16 +686,32 @@ Node 22+ (the `start` script uses `--env-file-if-exists`). Deps: `express`,
 (**must** be the volume in production), `SESSION_SECRET` (optional — else a
 key is generated once into `DATA_DIR/.session-secret`).
 
-**The sandbox is wiped between sessions — reseed it.** `scratchpad/seed.js
-<dir>` (gitignored, lives on disk) writes `users.json` with `hermione`
-(`sandboxpass123`) plus a few legacy disciple records (`seraph` etc.,
-`testtest123`) that are useful only to prove login refuses them. Hashes use
-the repo's own `bcryptjs`. Only hermione's record matters.
+**The sandbox is wiped between sessions — reseed it.** Only hermione's record
+matters, and it is one command (the repo has `bcryptjs`, **not** `bcrypt` —
+requiring the wrong one is the usual first error):
+
+```
+node -e 'const b=require("bcryptjs"),f=require("fs"),d=process.argv[1];
+f.writeFileSync(d+"/users.json",JSON.stringify({hermione:{username:"hermione",
+passwordHash:b.hashSync("sandboxpass123",10),createdAt:Date.now()}},null,2))' <dir>
+```
 
 - **Check for a leftover server first**: `lsof -nP -iTCP:57999 -sTCP:LISTEN`, kill the PID (`pkill` matches the shell wrapper and leaves node holding the socket). A stale server answers curl happily from old data.
 - Only `server.js` changes need a restart; `public/` and `views/` serve fresh.
 - Every page but `/` and `/login` needs a session: `POST /api/guest` (a fresh visitor to `/` does this itself) or hermione's `POST /api/login`, with a cookie jar. `/api/me` tells you who you are.
-- Prefer **curl and headless Chrome** over browser-pane screenshots. `scratchpad/shot.js <url> <out.png> [w] [h] ["<js>"] [settleBefore] [settleAfter]` drives DevTools (navigate, run JS, screenshot); `public/_shot.html?u=hermione&p=sandboxpass123&go=/admin` (or `?u=guest&go=/games`) makes the session first so pages behind one can be captured; a guest boot can be skipped with a synthetic `m` keydown. `settleBefore` must outlast the login redirect. **Its eval return value often doesn't print, and the screenshot step stalls on rAF/canvas pages** (snake, elysium, mid-boot): assert via side effects + screenshot, run it backgrounded and `pkill -f shot-chrome-`.
+- Prefer **curl and headless Chrome** over browser-pane screenshots.
+- **`scratchpad/cdp.js` (2026-10-24) is the one that works on the shell.** ~110 lines, no dependencies — Node 22+ has a global `WebSocket`, so it speaks the DevTools protocol directly. Worth rebuilding each session; it does what `shot.js` could not.
+
+  ```
+  node cdp.js <url1> <eval1.js> [<url2> <eval2.js> ...]
+  ```
+
+  Each step navigates, waits for load, then evaluates its file wrapped in `(async () => { … })()` with `awaitPromise` **and** `returnByValue`, printing the returned value as JSON alongside any page exceptions. **That pair is why the return value prints reliably** — the old tool's silent evals were a missing `returnByValue`. Steps share one browser, so **step 1 logs in and step 2 measures**: the session cookie is `maxAge` 30 days, so it survives, but a *separate* Chrome launch does not share it.
+
+  `CDP_SIZE=w,h` sets the window; **`CDP_EMULATE=w,h` is needed below ~500px**, because `--window-size` has a floor there and silently clamps — a "390px" run that reports a 500px viewport is this. `CDP_SHOT=<dir>` writes a PNG per step; `Page.captureScreenshot` is raced against a 12s deadline so a stall is reported, not hung on. It did **not** stall on the shell despite its `backdrop-filter`, unlike `shot.js`.
+
+  **It leaks Chrome.** `chrome.kill()` kills the parent and not its children; ten strays accumulated and starved the machine until later runs timed out. `pkill -f cdp-profile` after each run.
+- `scratchpad/shot.js` (if rebuilt): **its eval return value often doesn't print, and the screenshot step stalls on rAF/canvas pages** (snake, elysium, mid-boot). `public/_shot.html?u=hermione&p=sandboxpass123&go=/admin` makes the session first. Prefer `cdp.js`.
 - The Browser pane reported a 0x0 viewport for two sessions; DOM/JSON checks through it work, layout numbers and screenshots did not. Fronting the tab matters for anything timing-based (rAF is frozen when hidden).
 - `computer{type}` sends no keydown; drive typing games with synthetic `KeyboardEvent`s. Headless audio contexts stay suspended — verify the graph, not the sound.
 - Mockups render off `file://`; `mockups/capture.sh [out] [batch]` regenerates `mockups/out/*.png` (not committed).
@@ -594,7 +728,10 @@ the repo's own `bcryptjs`. Only hermione's record matters.
 - **Vertical text is tall** — a rotated heading once grew the dashboard grid into scale-to-fit.
 - **Frame-rate dependent probability** — roll on the state change, not per frame.
 - **A CSS animation ending in `transform: none`** wipes a positioning transform.
-- **Never transform `.dash`** — the scale-to-fit lives there.
+- **Never transform `.dash`** — the scale-to-fit lives there. *(Gone with the terminal dashboard; left here because the trap outlives the element.)*
+- **`.nav` declares its own `--nav-ink/--nav-dim/--nav-faint`**, so setting them on `:root` or `body` looks right and does nothing. Set them on `.nav`. Six mockup dressings shipped with the wrong nav colour before this was caught.
+- **`element.append()` returns `undefined`**, so `host.append(x).lastChild` throws. Keep a reference.
+- **A test can pass for the wrong reason, twice over.** Sabotaging the narrow-layout rule produced no failure, because the section under test was too short to overflow at phone height; the per-element version then produced a *false positive*, because an element's bounding box extends past the clip box that is actually hiding it. Break every new rule and watch a check fail before believing it.
 - **nbsp in a typing box forces an unbreakable line** (horizontal scroll buried the caret); push real spaces as bare text nodes, not inside their own `<span>` (Safari).
 - **An undefined CSS custom property drops the whole declaration** silently.
 
@@ -615,6 +752,7 @@ the repo's own `bcryptjs`. Only hermione's record matters.
 | Dashboard | `dashboard.html`, `dashboard2.html` | v1 rejected; v2 (occult-terminal) never picked; current dashboard is its own thing |
 | **Single page** | `singlepage.html` | **CHOSEN: 6 (split)** 2026-10-20 — the leopard frame, one main panel, a side nav that is its own surface, on glitter. The other eight stay in the file for reference: 1 column · 2 drawer · 3 plate · 4 tabs · 5 stack · 7 overlay · 8 spine · 9 dock. Each renders its own number badge so a contact sheet is readable |
 | Single-page variants | `singlepage.html?f=1..42` — **CHOSEN: 35 (letter)**, dressed by 37-48: 37 ivory · 38 oxblood · 39 graphite · 40 black card · 41 gold · 42 script · 43 vellum · 44 foil · 45 sepia · 46 plum card · 47 stark · 48 blush mono. **PAPER CHOSEN: 43 (vellum)** — its palette lives under `[data-paper="vellum"]`, and 49-54 are font attempts on it: 49 didone · 50 bookish (spectral) · 51 syne · 52 condensed caps · 53 copperplate hand · 54 plain grotesque. **NAV KEPT: 53's left side** (`[data-nav="hand"]`, a copperplate wordmark over a plain nav); 55-60 vary only the panel: 55 didone · 56 bookish · 57 garamond · 58 plain · 59 airy · 60 engraved caps. Its geometry lives under `[data-layout="letter"]` so a dressing sets only a face and a palette — **each badge carries its own variant number**, since the design is fixed at 6 and every badge used to read "6" | **6 (parisienne script) KEPT as a candidate**; still awaiting a final pick. Batch one, serif+sans pairings: 1 cormorant+jost · 2 bodoni+inter · 3 fraunces+nunito · 4 italiana+montserrat · 5 playfair+karla · 6 parisienne+montserrat. Batch two, a different idea each rather than another serif: 7 pinyon (formal copperplate) · 8 cinzel (inscriptional caps) · 9 prata+dm sans (modern editorial) · 10 archivo black (heavy grotesque) · 11 quicksand only (one family, weight and size alone) · 12 oswald caps (condensed masthead). Batch three changes the typographic SYSTEM rather than the face — scale, case, alignment, voice: 13 big (huge head, small body) · 14 lowercase (no small caps at all) · 15 poster (caps, tight) · 16 italic (italic as the voice) · 17 centred · 18 airy. `?f=` works on any design. Batch four loosens the panel itself — ornament, colour and how the data ranks: 19 ruled (banded masthead) · 20 ornament (drop cap) · 21 ledger (dotted, figures right) · 22 rose (type takes the colour) · 23 figures (the numbers lead) · 24 annotated (printed, written on). Batch five keeps ONLY the border and rebuilds the page: 25 bento (tiles, no single panel) · 26 noir (dark field) · 27 poster (headline and a word row) · 28 spread (magazine columns) · 29 sheet (one surface, nav a bar) · 30 float (no surfaces at all). Batch six is built on the corrected content and treats the page as a launcher: 31 marquee (names set huge) · 32 index (numbered contents list) · 33 deck (a fanned hand of cards) · 34 counter (dark desk over tiles) · 35 letter (a note, games at the foot) · 36 wall (big tiles edge to edge). `?f=` works on any design |
+| **Single page — SHIPPED** | `public/dashboard.html` + `shell.css` + `panels/` | **55 built as the dashboard, 2026-10-24.** `?d=6&f=55` = letter geometry + vellum paper + hand nav + didone panel. The mockup file stays as the record of what was rejected; the shipped CSS has **no** `data-d`/`data-f` switching, because there is one design now. Re-render the original for comparison with `--headless=new --window-size=1500,900` on `file://…/mockups/singlepage.html?d=6&f=55` |
 
 The brief is explicitly **not minimalism** — "as overdesigned and maximalist as
 possible" — but the terminal look was lifted for chess and slots so each design

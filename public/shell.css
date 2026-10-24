@@ -1,0 +1,325 @@
+/* ============================================================================
+   shell.css — the single-page shell: leopard frame, side nav, one panel.
+   This is mockup 55, resolved. It was built in mockups/singlepage.html as four
+   independent layers and chosen as `?d=6&f=55`; here they are flattened:
+
+     geometry   design 35 "letter"   — a centred note, games as pills at the foot
+     paper      dressing 43 "vellum" — warm white at .42 alpha over the silver
+     nav        dressing 53's left   — a copperplate wordmark over plain caps
+     panel type variant  55 "didone" — Bodoni Moda over Inter
+
+   Nothing switches on a data-attribute any more: there is one design. Future
+   pages adopting the shell link this file and reuse the same class names.
+
+   TRAPS, all three paid for in the mockup rounds:
+     * border-image MUST use `round`. `stretch` ovals the leopard spots.
+     * .veil sits at z-index 1 and the frame at 90, so the veil lightens the
+       background WITHOUT touching the frame. That separation is the only reason
+       the frame is visible at all: leopard and silver glitter are both
+       black-and-white speckle and their mean luminance differs by 0.05 raw.
+     * the nav declares its own --nav-* colours, so overriding them from :root
+       looks right and does nothing. Set them on .nav.
+   ========================================================================== */
+
+:root {
+  /* the frame drives the whole layout; --pad clears the fur's ragged inner edge */
+  --fw: clamp(26px, 5.9vw, 100px);
+  --pad: calc(var(--fw) + .9rem);
+
+  --bg: #8e8e92;
+
+  /* vellum: the paper is barely there and the silver reads straight through */
+  --plate: rgba(255, 253, 250, .42);
+  --nav-plate: rgba(255, 253, 250, .34);
+  --ink: #171318;
+  --dim: #3f3741;
+  --faint: #5e545f;
+  --line: rgba(23, 19, 24, .2);
+  --tint: rgba(255, 255, 255, .5);
+
+  --r-lg: 22px;
+  --r-md: 14px;
+  --r-sm: 10px;
+
+  /* didone panel over a copperplate nav */
+  --display: "Bodoni Moda", Didot, Georgia, serif;
+  --ui: "Inter", system-ui, sans-serif;
+  --nav-display: "Pinyon Script", cursive;
+  --nav-ui: "Montserrat", system-ui, sans-serif;
+
+  --err: #8a1b2c;
+  --ok: #1f5134;
+}
+
+/* Reproduces the proportions the design was approved at (1500px wide → 15px)
+   and grows gently on a larger display, the way browser zoom would. */
+html { font-size: clamp(15px, calc(9.9px + 0.34vw), 24px); }
+html, body { height: 100%; }
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+body {
+  margin: 0;
+  background: var(--bg) url("/img/bg-silver.jpg") center / cover no-repeat;
+  color: var(--ink);
+  font-family: var(--ui);
+  font-weight: 400;
+  font-size: 1rem;
+  letter-spacing: .01em;
+  overflow: hidden;
+}
+
+/* ---------- the border ----------
+   One 9-slice sheet rebuilt from the supplied kit of parts: every piece end
+   squared and butted, so the band is continuous and one slice value renders
+   equal thickness on all four sides. */
+.veil { position: fixed; inset: 0; z-index: 1; pointer-events: none; background: rgba(255, 255, 255, .40); }
+.frame {
+  position: fixed; inset: 0; z-index: 90; pointer-events: none;
+  border-style: solid; border-width: var(--fw);
+  border-image: url("/img/frame-leopard.webp") 184 round;
+}
+
+/* ---------- the shell ---------- */
+.page { position: fixed; inset: 0; z-index: 10; padding: var(--pad); display: flex; min-height: 0; }
+
+/* ---------- nav ---------- */
+.nav {
+  display: flex; flex-direction: column; flex: 0 0 auto; min-height: 0;
+  width: 15rem; padding: 2.4rem 2rem; justify-content: center;
+  --nav-ink: #171318; --nav-dim: #352e37; --nav-faint: #4f4650;
+  color: var(--nav-ink);
+  font-family: var(--nav-ui);
+  background: var(--nav-plate);
+  border-radius: var(--r-lg) 0 0 var(--r-lg);
+  backdrop-filter: blur(14px) saturate(115%);
+  -webkit-backdrop-filter: blur(14px) saturate(115%);
+}
+.brand {
+  font-family: var(--nav-display);
+  font-size: 1.9rem; font-weight: 400; line-height: 1.1;
+  letter-spacing: .02em; margin-bottom: .15rem;
+}
+.brand i { font-style: normal; color: var(--nav-dim); }
+.tagline {
+  font-size: .62rem; letter-spacing: .34em; text-transform: uppercase;
+  color: var(--nav-faint); margin-bottom: 2.4rem;
+}
+.nav ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .1rem; }
+.nav button {
+  appearance: none; background: none; border: 0; cursor: pointer; width: 100%;
+  border-radius: var(--r-sm); text-align: left;
+  color: var(--nav-dim); font-family: inherit; font-weight: 300; font-size: .98rem;
+  letter-spacing: .14em; text-transform: lowercase;
+  padding: .44rem 0; position: relative;
+  transition: color .18s ease;
+}
+.nav button:hover, .nav button:focus-visible { color: var(--nav-ink); }
+.nav button.on { color: var(--nav-ink); }
+.nav button.on::before {
+  content: ""; position: absolute; left: -1.1rem; top: 50%;
+  width: .52rem; height: 1px; background: var(--nav-ink); transform: translateY(-50%);
+}
+.nav .sep { height: 1px; background: currentColor; opacity: .22; margin: 1.1rem 0; }
+/* `auto` absorbs the nav's free space, which pins the name to the foot and the
+   wordmark to the head. Without it the whole block centres as one clump and the
+   nav stops reading as a column. */
+.who {
+  margin-top: auto;
+  font-size: .62rem; letter-spacing: .26em; text-transform: uppercase; color: var(--nav-faint);
+}
+
+/* ---------- the one panel everything loads into ---------- */
+.panel {
+  flex: 1 1 auto; min-width: 0; min-height: 0; overflow-y: auto; scrollbar-width: thin;
+  background: var(--plate); color: var(--ink);
+  padding: 3rem 3.2rem; border-radius: 0 var(--r-lg) var(--r-lg) 0;
+  backdrop-filter: blur(16px) saturate(118%);
+  -webkit-backdrop-filter: blur(16px) saturate(118%);
+}
+.panel::-webkit-scrollbar { width: 5px; }
+.panel::-webkit-scrollbar-thumb { background: rgba(23, 19, 24, .22); border-radius: 99px; }
+
+/* the letter: a centred note, never the full width of the panel */
+.inner { max-width: 36rem; margin: 0 auto; text-align: center; }
+
+/* ---------- type ---------- */
+.eyebrow {
+  font-style: italic; letter-spacing: .04em; font-size: .95rem;
+  color: var(--faint); margin-bottom: 1rem;
+}
+h1 {
+  font-family: var(--display); font-weight: 600;
+  font-size: clamp(2rem, 4vw, 3rem); line-height: 1.04; letter-spacing: -.005em;
+  margin: 0 0 1.1rem;
+}
+h1 em { font-style: italic; font-weight: 400; color: var(--dim); }
+.lede {
+  font-size: 1.08rem; line-height: 1.9; color: var(--dim);
+  max-width: 40rem; margin: 0 auto;
+}
+.lede + .lede { margin-top: .9rem; }
+.small { font-size: .88rem; line-height: 1.7; color: var(--faint); }
+.rule {
+  height: 1px; border-radius: 1px; margin: 2.4rem 0 1.6rem;
+  background: linear-gradient(90deg, transparent, currentColor 35%, currentColor 65%, transparent);
+  color: var(--faint); opacity: .6;
+}
+
+/* ---------- the games, as a quiet row of pills at the foot ---------- */
+.grid { display: flex; flex-wrap: wrap; justify-content: center; gap: .4rem; }
+.cell {
+  flex: 0 0 auto; display: flex; flex-direction: row; align-items: baseline; gap: .28rem;
+  border: 1px solid var(--line); border-radius: 999px;
+  background: rgba(255, 255, 255, .55);
+  padding: .34rem 1rem; cursor: pointer;
+  font: inherit; color: inherit;
+  transition: background .18s ease, transform .18s ease;
+}
+.cell:hover, .cell:focus-visible { background: rgba(255, 255, 255, .82); transform: translateY(-2px); }
+.cell b { font-family: var(--display); font-weight: 400; font-size: .98rem; letter-spacing: .01em; }
+/* the arrow says "this one leaves the shell"; it has to be small enough to stay
+   quiet and large enough to be an arrow rather than a speck */
+.cell .away { display: flex; align-items: center; color: var(--faint); }
+.cell .away svg { width: .62rem; height: .62rem; display: block; }
+
+/* ---------- key/value rows ---------- */
+.rows { display: flex; flex-direction: column; text-align: left; }
+.row { display: flex; align-items: baseline; gap: 1.4rem; padding: .72rem 0; border-bottom: 1px solid var(--line); }
+.row:last-child { border-bottom: 0; }
+.row .k { flex: 0 0 11rem; font-size: .66rem; letter-spacing: .24em; text-transform: uppercase; color: var(--faint); }
+.row .v { font-size: 1rem; color: var(--ink); }
+.row .v small { color: var(--dim); font-size: .82rem; }
+
+/* ---------- form furniture ---------- */
+.field { margin-bottom: 1.5rem; text-align: left; }
+.flabel { font-size: .62rem; letter-spacing: .26em; text-transform: uppercase; color: var(--faint); margin-bottom: .6rem; }
+.chips { display: flex; gap: .5rem; flex-wrap: wrap; }
+.chip {
+  border: 1px solid var(--line); background: rgba(255, 255, 255, .4); color: var(--dim);
+  font-family: inherit; font-weight: 300; font-size: .9rem; letter-spacing: .08em;
+  padding: .42rem 1.15rem; cursor: pointer; border-radius: 999px;
+  transition: background .18s ease, border-color .18s ease, color .18s ease;
+}
+.chip:hover:not(:disabled), .chip:focus-visible { border-color: var(--faint); color: var(--ink); }
+.chip.on { background: var(--ink); border-color: var(--ink); color: #fff; }
+.chip:disabled { opacity: .45; cursor: default; }
+
+textarea, input[type="text"], input[type="password"], input[type="number"] {
+  width: 100%; background: var(--tint); border: 1px solid var(--line); color: var(--ink);
+  font-family: inherit; font-weight: 300; font-size: 1rem; line-height: 1.7;
+  padding: .9rem 1rem; border-radius: var(--r-md);
+}
+textarea { min-height: 5.4rem; resize: vertical; }
+textarea:focus, input:focus { outline: none; border-color: var(--faint); }
+
+.go {
+  margin-top: .4rem; border: 1px solid var(--ink); background: none; color: var(--ink);
+  font-family: inherit; font-size: .74rem; letter-spacing: .26em; text-transform: uppercase;
+  padding: .68rem 2.2rem; cursor: pointer; border-radius: 999px;
+  transition: background .18s ease, color .18s ease, opacity .18s ease;
+}
+.go:hover:not(:disabled), .go:focus-visible { background: var(--ink); color: #fff; }
+.go:disabled { opacity: .4; cursor: default; }
+.go.ghost { border-color: var(--line); color: var(--dim); }
+.go.ghost:hover { background: rgba(255, 255, 255, .6); color: var(--ink); }
+.actions { display: flex; gap: .6rem; justify-content: center; flex-wrap: wrap; }
+
+.warn { min-height: 1.3em; font-size: .88rem; color: var(--err); margin-top: .6rem; }
+.note { min-height: 1.3em; font-size: .88rem; color: var(--faint); margin-top: .6rem; }
+
+/* ---------- sliders (settings) ---------- */
+.slider-row { display: flex; align-items: center; gap: 1rem; padding: .66rem 0; border-bottom: 1px solid var(--line); }
+.slider-row:last-child { border-bottom: 0; }
+.slider-row .k { flex: 0 0 7rem; font-size: .66rem; letter-spacing: .24em; text-transform: uppercase; color: var(--faint); }
+.slider-row input[type="range"] {
+  flex: 1 1 auto; min-width: 0; appearance: none; -webkit-appearance: none;
+  height: 1px; background: var(--line); margin: 0; padding: 0; border: 0;
+}
+.slider-row input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: .8rem; height: .8rem; border-radius: 50%;
+  background: var(--ink); cursor: pointer; border: 0;
+}
+.slider-row input[type="range"]::-moz-range-thumb {
+  width: .8rem; height: .8rem; border-radius: 50%; background: var(--ink); cursor: pointer; border: 0;
+}
+.slider-row .mute {
+  flex: 0 0 auto; width: 3.2rem; text-align: right;
+  background: none; border: 0; cursor: pointer; font-family: inherit;
+  font-size: .62rem; letter-spacing: .2em; text-transform: uppercase; color: var(--ink);
+}
+.slider-row .mute.off { color: var(--faint); text-decoration: line-through; }
+
+/* ---------- devotion: the line being typed ---------- */
+.target {
+  font-family: var(--display); font-size: clamp(1.3rem, 2.6vw, 2rem); line-height: 1.6;
+  color: var(--ink); margin: 1.4rem auto 1.8rem; max-width: 34rem; min-height: 3.2em;
+  white-space: pre-wrap; word-break: break-word;
+}
+.target .done { color: var(--faint); }
+.target .cur { background: var(--ink); color: var(--plate); border-radius: 2px; }
+.meter { display: flex; justify-content: center; gap: 2.4rem; flex-wrap: wrap; }
+.meter div { font-size: .66rem; letter-spacing: .24em; text-transform: uppercase; color: var(--faint); }
+.meter div b { display: block; margin-top: .3rem; font-family: var(--display); font-weight: 400;
+  font-size: 1.5rem; letter-spacing: 0; text-transform: none; color: var(--ink); font-variant-numeric: tabular-nums; }
+.bar { height: 2px; background: var(--line); border-radius: 2px; margin: 0 auto 1.6rem; max-width: 24rem; overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--ink); width: 0; transition: width .12s linear; }
+.transcript { text-align: left; max-width: 30rem; margin: 0 auto; font-size: .92rem; color: var(--dim); line-height: 1.9; }
+.transcript span { color: var(--faint); font-size: .8rem; }
+
+/* ---------- the copy pencil (hers only) ---------- */
+.pencil {
+  background: none; border: 0; cursor: pointer; padding: 0 0 0 .4rem;
+  color: var(--faint); vertical-align: middle; line-height: 1;
+}
+.pencil:hover, .pencil:focus-visible { color: var(--ink); }
+.pencil svg { width: .8em; height: .8em; display: block; }
+.editor {
+  text-align: left; max-width: 30rem; margin: 1.2rem auto 0;
+  border: 1px solid var(--line); border-radius: var(--r-md);
+  background: rgba(255, 255, 255, .5); padding: 1.1rem 1.2rem;
+}
+.editor label { display: block; font-size: .62rem; letter-spacing: .26em; text-transform: uppercase;
+  color: var(--faint); margin: .7rem 0 .3rem; }
+.editor label:first-child { margin-top: 0; }
+.editor .hint { font-size: .82rem; color: var(--faint); margin: .7rem 0 0; }
+.editor .actions { justify-content: flex-start; margin-top: .9rem; }
+
+/* ---------- loading / empty ---------- */
+.loading { font-size: .66rem; letter-spacing: .24em; text-transform: uppercase; color: var(--faint); }
+
+/* ---------- the deploy bar (updatecheck.js) ----------
+   It styles itself with `inherit`/`currentColor` over a near-black panel, which
+   on this page would be dark ink on dark. Give it its own two colours. */
+#update-bar { color: #f4eff2 !important; border-color: rgba(244, 239, 242, .5) !important; font-family: var(--ui); }
+
+/* ============================================================================
+   NARROW — the frame cannot thin past legibility, so below 820px the nav stops
+   being a column and becomes a row above the panel.
+
+   The page stays FIXED and the panel keeps its own scrollbar. Letting the
+   document scroll instead would send the text travelling under the frame's
+   top and bottom bands, which are fixed to the viewport: the border would eat
+   whatever line you were reading.
+   ========================================================================== */
+@media (max-width: 820px) {
+  .page { flex-direction: column; padding: var(--pad) calc(var(--fw) + .6rem); }
+  .nav {
+    width: auto; flex: 0 0 auto;
+    flex-direction: row; flex-wrap: wrap; align-items: baseline; gap: .3rem 1.2rem;
+    padding: 1rem 1.2rem; border-radius: var(--r-lg) var(--r-lg) 0 0; justify-content: flex-start;
+  }
+  .brand { font-size: 1.5rem; margin: 0; }
+  .tagline { margin: 0; }
+  .nav ul { flex-direction: row; flex-wrap: wrap; gap: .1rem 1rem; flex: 1 1 100%; }
+  .nav button { width: auto; padding: .3rem 0; }
+  .nav button.on::before { left: 0; top: auto; bottom: .1rem; width: 100%; }
+  .nav .sep { display: none; }
+  .who { margin: 0; flex: 1 1 100%; }
+  .panel { padding: 1.8rem 1.3rem; border-radius: 0 0 var(--r-lg) var(--r-lg); }
+  .inner { max-width: none; }
+  .row { flex-direction: column; gap: .2rem; }
+  .row .k { flex: none; }
+  .slider-row .k { flex: 0 0 4.5rem; }
+  .meter { gap: 1.6rem; }
+}
