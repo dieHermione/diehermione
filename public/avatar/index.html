@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Avatar Maker</title>
+<meta name="description" content="Crop, mask and adjust a picture into an avatar. Everything happens in your browser — the picture is never uploaded." />
+<!--
+  A self-contained picture editor. It is hosted on this domain and shares
+  nothing else with it: no site scripts, no fonts, no palette, no session, no
+  server. The picture is read on this device and never leaves it.
+-->
+<link rel="stylesheet" href="avatar.css" />
+</head>
+<body>
+
+<header class="bar">
+  <div class="brand">Avatar Maker</div>
+  <div class="bar-note" id="privacy">Your picture stays on this device.</div>
+  <div class="bar-actions">
+    <button type="button" class="btn ghost" id="reset-all">Start over</button>
+    <button type="button" class="btn" id="copy" hidden>Copy</button>
+    <button type="button" class="btn primary" id="download">Download PNG</button>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- ---------------- preview ---------------- -->
+  <section class="stage-col">
+    <div class="stage" id="stage">
+      <div class="drop" id="drop">
+        <div class="drop-inner">
+          <div class="drop-icon" aria-hidden="true">
+            <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <rect x="6" y="10" width="36" height="28" rx="3" />
+              <circle cx="17" cy="20" r="3.5" />
+              <path d="M8 33l10-9 7 6 6-5 9 8" />
+            </svg>
+          </div>
+          <div class="drop-title">Click to upload a picture</div>
+          <div class="drop-sub">or drop one here &middot; PNG, JPEG, WebP, GIF</div>
+        </div>
+      </div>
+      <div class="canvas-hold" id="canvas-hold" hidden>
+        <canvas id="preview"></canvas>
+        <div class="shape-ui" id="shape-ui" hidden>
+          <div class="handle nw" data-corner="nw"></div>
+          <div class="handle ne" data-corner="ne"></div>
+          <div class="handle sw" data-corner="sw"></div>
+          <div class="handle se" data-corner="se"></div>
+        </div>
+      </div>
+    </div>
+    <p class="stage-hint" id="stage-hint" hidden>Drag the picture to reposition &middot; scroll to zoom</p>
+    <p class="err" id="err" hidden></p>
+    <input type="file" id="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden />
+  </section>
+
+  <!-- ---------------- controls ---------------- -->
+  <section class="panels" id="panels">
+
+    <details class="panel" open>
+      <summary>Picture</summary>
+      <div class="panel-body">
+        <div class="row">
+          <button type="button" class="chip" id="pic-replace">Replace&hellip;</button>
+          <button type="button" class="chip" data-mode="fill">Fill</button>
+          <button type="button" class="chip" data-mode="fit">Fit</button>
+          <button type="button" class="chip" id="mirror">Mirror</button>
+        </div>
+        <label class="slider"><span>Zoom</span>
+          <input type="range" id="zoom" min="10" max="400" value="100" step="1" />
+          <output id="zoom-out">100%</output></label>
+        <label class="slider"><span>Rotate</span>
+          <input type="range" id="rotate" min="-180" max="180" value="0" step="1" />
+          <output id="rotate-out">0&deg;</output></label>
+        <div class="row">
+          <button type="button" class="chip" id="rot-ccw">&#8634; 90&deg;</button>
+          <button type="button" class="chip" id="rot-cw">&#8635; 90&deg;</button>
+          <button type="button" class="chip" id="pic-reset">Reset</button>
+        </div>
+      </div>
+    </details>
+
+    <details class="panel" open>
+      <summary>Canvas</summary>
+      <div class="panel-body">
+        <div class="row" id="size-presets">
+          <button type="button" class="chip" data-size="100">100</button>
+          <button type="button" class="chip" data-size="128">128</button>
+          <button type="button" class="chip" data-size="256">256</button>
+          <button type="button" class="chip on" data-size="512">512</button>
+          <button type="button" class="chip" data-size="1024">1024</button>
+        </div>
+        <div class="row pair">
+          <label class="field"><span>Width</span>
+            <input type="text" inputmode="numeric" id="cw" value="512" maxlength="4" /></label>
+          <label class="field"><span>Height</span>
+            <input type="text" inputmode="numeric" id="ch" value="512" maxlength="4" /></label>
+        </div>
+        <div class="row">
+          <span class="lbl">Sides</span>
+          <button type="button" class="chip on" id="lock-on">Locked</button>
+          <button type="button" class="chip" id="lock-off">Free</button>
+        </div>
+      </div>
+    </details>
+
+    <details class="panel" open>
+      <summary>Shape</summary>
+      <div class="panel-body">
+        <div class="shapes" id="shapes"></div>
+        <div class="row">
+          <button type="button" class="chip" id="shape-reset">Fill the canvas</button>
+        </div>
+        <p class="note">Drag the outline on the preview to move it, or a corner to resize.</p>
+      </div>
+    </details>
+
+    <details class="panel">
+      <summary>Border</summary>
+      <div class="panel-body">
+        <div class="row">
+          <span class="lbl">Style</span>
+          <button type="button" class="chip" id="border-off">None</button>
+          <button type="button" class="chip on" id="border-on">Solid</button>
+        </div>
+        <label class="slider"><span>Width</span>
+          <input type="range" id="bw" min="1" max="64" value="3" step="1" />
+          <output id="bw-out">3px</output></label>
+        <div class="row">
+          <span class="lbl">Position</span>
+          <button type="button" class="chip on" data-bpos="inside">Inside</button>
+          <button type="button" class="chip" data-bpos="centre">Centre</button>
+          <button type="button" class="chip" data-bpos="outside">Outside</button>
+        </div>
+        <div class="row">
+          <span class="lbl">Colour</span>
+          <input type="color" id="bcolour" value="#ffffff" />
+          <button type="button" class="chip" id="bw-reset">Reset width</button>
+        </div>
+        <label class="slider"><span>Opacity</span>
+          <input type="range" id="bop" min="0" max="100" value="100" step="1" />
+          <output id="bop-out">100%</output></label>
+      </div>
+    </details>
+
+    <details class="panel">
+      <summary>Background</summary>
+      <div class="panel-body">
+        <div class="row" id="bg-modes">
+          <button type="button" class="chip on" data-bg="none">None</button>
+          <button type="button" class="chip" data-bg="solid">Solid</button>
+          <button type="button" class="chip" data-bg="gradient">Gradient</button>
+        </div>
+        <div class="row" id="bg-solid-row" hidden>
+          <span class="lbl">Fill</span>
+          <input type="color" id="bgcolour" value="#111318" />
+        </div>
+        <div id="bg-grad-row" hidden>
+          <div class="row">
+            <span class="lbl">From</span><input type="color" id="bgfrom" value="#2b1d33" />
+            <span class="lbl">To</span><input type="color" id="bgto" value="#c8a2c8" />
+          </div>
+          <label class="slider"><span>Angle</span>
+            <input type="range" id="bgangle" min="0" max="360" value="90" step="1" />
+            <output id="bgangle-out">90&deg;</output></label>
+        </div>
+        <p class="note">Anything the picture does not cover exports transparent.</p>
+      </div>
+    </details>
+
+    <details class="panel">
+      <summary>Adjustments</summary>
+      <div class="panel-body">
+        <div class="row wrap-row" id="presets"></div>
+        <div class="group">Light</div>
+        <label class="slider"><span>Exposure</span>
+          <input type="range" id="exposure" min="-100" max="100" value="0" />
+          <output>0</output></label>
+        <label class="slider"><span>Brightness</span>
+          <input type="range" id="brightness" min="-100" max="100" value="0" />
+          <output>0</output></label>
+        <label class="slider"><span>Contrast</span>
+          <input type="range" id="contrast" min="-100" max="100" value="0" />
+          <output>0</output></label>
+        <label class="slider"><span>Highlights</span>
+          <input type="range" id="highlights" min="-100" max="100" value="0" />
+          <output>0</output></label>
+        <label class="slider"><span>Shadows</span>
+          <input type="range" id="shadows" min="-100" max="100" value="0" />
+          <output>0</output></label>
+        <div class="group">Colour</div>
+        <label class="slider"><span>Saturation</span>
+          <input type="range" id="saturation" min="-100" max="100" value="0" />
+          <output>0</output></label>
+        <label class="slider"><span>Warmth</span>
+          <input type="range" id="warmth" min="-100" max="100" value="0" />
+          <output>0</output></label>
+        <label class="slider"><span>Tint</span>
+          <input type="range" id="tint" min="-100" max="100" value="0" />
+          <output>0</output></label>
+        <label class="slider"><span>Hue</span>
+          <input type="range" id="hue" min="-180" max="180" value="0" />
+          <output>0&deg;</output></label>
+        <div class="group">Finish</div>
+        <label class="slider"><span>Vignette</span>
+          <input type="range" id="vignette" min="-100" max="100" value="0" />
+          <output>0</output></label>
+        <div class="row"><button type="button" class="chip" id="adj-reset">Reset adjustments</button></div>
+      </div>
+    </details>
+
+    <details class="panel" open>
+      <summary>Export</summary>
+      <div class="panel-body">
+        <div class="readout">Output <b id="out-size">512 &times; 512</b></div>
+        <div class="row">
+          <button type="button" class="btn primary wide" id="download2">Download PNG</button>
+        </div>
+        <div class="row">
+          <button type="button" class="btn wide" id="copy2" hidden>Copy to clipboard</button>
+        </div>
+        <p class="note" id="copy-note" hidden>Copying needs a browser that allows images on the clipboard.</p>
+      </div>
+    </details>
+
+  </section>
+</main>
+
+<script src="avatar.js"></script>
+</body>
+</html>

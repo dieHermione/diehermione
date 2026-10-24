@@ -167,6 +167,13 @@ surface, so the nav carries its own plum scale (`#6b2c49` at 5.6:1 inactive,
 you mean — a point a few percent off lands on the background and flatters the
 reading.
 
+**`scratchpad/pageval.js` is the eval-only runner.** `shot.js` evaluates and
+*then* screenshots, and the screenshot is what stalls on canvas pages, so it
+cannot return a value from one. `pageval.js` takes a URL and a JS file, prints
+the returned value as JSON and never captures — which is what the `/avatar/`
+pixel assertions run on. (`shot.js` does in fact manage a capture of that page,
+since it has no continuous rAF loop, but do not rely on it.)
+
 **`backdrop-filter` hangs `shot.js`.** The DevTools `Page.captureScreenshot`
 never returns once several blurred surfaces are on the page: the `eval:` line
 prints and no file is written. Chrome's own `--screenshot` CLI handles it —
@@ -340,11 +347,42 @@ dashboard; everything else is a view in `views/` behind a route.
 | `/snake` `/writing` (devotion) `/multitap` (`/t9` alias) `/summary` `/skillcheck` `/ot12` `/deathroll` `/dummyparse` `/elysium` (`/tree` alias) `/chess` | player | the games on the wall |
 | `/wheel` `/lottery` (`/slots` alias) | player | still routed, **not linked from the wall** (free play, pay nothing) |
 | `/coc2-engine/` | anyone (static) | a hosted writeup, unrelated to the site's own docs |
+| `/avatar/` | anyone (static) | a picture editor. Hosted here, **part of nothing here** — see below |
 | `/chess-extra.js` | admin, 404 otherwise | Hermione's chess controls |
 
 "player" = `requirePlayer` (a guest or hermione); "admin" redirects non-admins
 to `/dashboard`. `requireLogin` (account only) now effectively means hermione
 and guards `/admin` and the elysium debug endpoints.
+
+### Hosted but unrelated: `/avatar/`
+A self-contained picture editor at `public/avatar/` (`index.html`,
+`avatar.css`, `avatar.js`). It is on this domain and shares nothing else with
+it **by instruction**: no `nav.js`, `theme.js`, `console.js` or
+`dashglitch.js`, no `has-top-nav`, no site fonts or palette, no entry on the
+games wall, no `pray launch` target, and no link from anywhere. Treat it the
+way `/coc2-engine/` is treated: when the site is restyled, this does not come
+with it.
+
+**It needs no route.** `express.static` is registered at `server.js:137` with
+no auth, so a folder under `public/` is served to anyone — `/avatar/` returns
+200 with no cookie at all, where `/games` 302s. That is deliberate: there is no
+session, no `requirePlayer`, and nothing to unpick if it ever moves. Adding a
+route would only couple it to the site again.
+
+**No server side at all.** The picture is decoded with `createImageBitmap` and
+never leaves the browser; output is a PNG via `canvas.toBlob` → a temporary
+`<a download>`, plus clipboard copy where `ClipboardItem` and a secure context
+allow it. There is no upload endpoint, no `DATA_DIR` file and no size limit to
+police. This is the first code in the repo to do a download or a clipboard
+write — there was no prior art for either.
+
+Two things worth knowing if you touch it. Every positional value in its
+`state` is **normalised 0..1 against the canvas**, and `renderTo(ctx, W, H)` is
+the only drawing path, so the preview and the exported PNG agree by
+construction rather than by keeping two code paths in step. And the
+adjustments are **one per-pixel pass**, not `ctx.filter`: the filter property
+cannot express exposure, highlights, shadows, warmth, tint or vignette, and
+splitting the work across both would make the order of operations incoherent.
 
 ### The games wall (`views/games.html`)
 
