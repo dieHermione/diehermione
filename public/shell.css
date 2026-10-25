@@ -129,6 +129,36 @@ body {
   font-size: .62rem; letter-spacing: .26em; text-transform: uppercase; color: var(--nav-faint);
 }
 
+/* ---------- a page with no nav ----------
+   The pages that are not the shell — the front door, login, the wall, the
+   admin panel, the pray reference — still live inside the same frame, so the
+   site is one viewport everywhere. They use `.page solo`, which is the same
+   fixed box with a single panel in it and no side column.
+
+   `solo` panels round on all four corners, because there is no nav butted
+   against their left edge. */
+.page.solo { display: block; }
+.page.solo > .panel { height: 100%; border-radius: var(--r-lg); }
+.page.solo .inner { height: 100%; }
+/* a solo page that is just one short thing — a form, a notice — centres it */
+.page.solo.middle > .panel { display: flex; align-items: center; justify-content: center; }
+.page.solo.middle .inner { height: auto; }
+
+/* the wordmark, for a page that has no nav to carry it */
+.solo-brand { font-family: var(--nav-display); font-size: 1.9rem; line-height: 1.1; margin-bottom: .1rem; }
+.solo-brand i { font-style: normal; color: var(--dim); }
+.solo-tag { font-size: .6rem; letter-spacing: .34em; text-transform: uppercase; color: var(--faint); margin-bottom: 2rem; }
+
+/* back to the shell, top-left inside the panel */
+.solo-back {
+  position: absolute; top: 1.6rem; left: 1.8rem; z-index: 4;
+  display: flex; align-items: center; gap: .5rem;
+  color: var(--faint); text-decoration: none;
+  font-family: var(--ui); font-size: .6rem; letter-spacing: .26em; text-transform: uppercase;
+}
+.solo-back:hover, .solo-back:focus-visible { color: var(--ink); }
+.solo-back svg { width: .9rem; height: .9rem; }
+
 /* ---------- the one panel everything loads into ---------- */
 .panel {
   flex: 1 1 auto; min-width: 0; min-height: 0; overflow-y: auto; scrollbar-width: thin;

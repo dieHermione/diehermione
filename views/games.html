@@ -3,49 +3,45 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Games - angeldom.me</title>
+  <title>The wall · angeldomme</title>
+
+  <!--
+    The games wall. Each poster is a bespoke object for its game — nothing is
+    standardised between the interiors — dropped into one macOS-style window
+    frame.
+
+    Reskinned 2026-10-24: the PAGE moved into the shell's frame and faces, and
+    THE CARDS DID NOT. They are her art, and the card interiors are deliberately
+    their own little worlds; restyling them to the vellum palette would be
+    throwing the thing away to make it match. Dark windows on pale paper is the
+    composition now, and it reads like photographs laid out on a sheet.
+  -->
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Major+Mono+Display&family=Bebas+Neue&display=swap" rel="stylesheet" />
-  <script src="/theme.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Major+Mono+Display&family=Bebas+Neue&family=Pinyon+Script&family=Montserrat:wght@300;400;500&family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,600;1,6..96,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/shell.css" />
   <script src="/me.js"></script>
   <script src="/audio.js"></script>
   <style>
-    /* Game selection wall (locked layout). Each poster is a bespoke object for
-       its game — nothing standardised between the interiors — dropped into one
-       standard macOS-style window frame. Self-contained, no site.css. */
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    [hidden] { display: none !important; }
-
+    /* The card interiors below still use these: they are the posters' own
+       palette, nothing to do with the page. */
     :root {
-      --c: #aee3ff; --dim: #4f7ea0; --dim2: #2c4a5e; --bright: #eafaff;
-      --accent: #8fd0ff; --glow: rgba(0,172,219,.32);
-      --red: #ff3b2f; --deep: #c11208; --err: #ff5a4a;
+      --red: #ff3b2f; --deep: #c11208;
     }
-    html, body { height: 100%; }
-    body {
-      background: #000; color: var(--c);
-      font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 14px;
-      overflow: hidden;
+    .stage { display: flex; flex-direction: column; height: 100%; }
+    .wall-head { text-align: center; flex-shrink: 0; }
+    .wall-head h1 { margin-bottom: .4rem; }
+
+    .tabs { display: flex; gap: .5rem; flex-shrink: 0; justify-content: center; margin: 1.2rem 0 1.4rem; }
+    .tab {
+      background: rgba(255, 255, 255, .4); border: 1px solid var(--line); color: var(--dim);
+      font-family: var(--ui); font-weight: 300; font-size: .85rem; letter-spacing: .14em;
+      text-transform: lowercase; padding: .38rem 1.2rem; cursor: pointer; border-radius: 999px;
+      transition: background .18s ease, color .18s ease, border-color .18s ease;
     }
-    .scan { position: fixed; inset: 0; z-index: 200; pointer-events: none;
-      background: repeating-linear-gradient(0deg, rgba(0,0,0,.30) 0 1px, transparent 1px 3px); }
-
-    .stage { position: absolute; inset: 0; padding: 3vh 3vw; display: flex; flex-direction: column; }
-    .hdr { display: flex; justify-content: space-between; font-size: 10px;
-      letter-spacing: .35em; color: var(--dim); flex-shrink: 0; }
-    .hdr > span:first-child { padding-left: 2.8rem; }   /* room for the back chevron */
-    .hdr b { color: var(--bright); font-weight: 400; }
-
-    /* the wall is split into tabs; the strip below shows one tab at a time.
-       Pinned top-left, under the angelOS header, not sharing its row. */
-    .tabs { display: flex; gap: .4rem; flex-shrink: 0; margin: .8rem 0 0; padding-left: 2.8rem; }
-    .tab { background: transparent; border: 1px solid var(--dim2); color: var(--dim);
-      font-family: inherit; font-size: 10px; letter-spacing: .3em; text-transform: uppercase;
-      padding: .3rem 1.1rem; cursor: pointer; border-radius: 3px; }
-    .tab:hover { color: var(--accent); border-color: var(--accent); }
-    .tab.on { color: var(--bright); border-color: var(--accent);
-      background: color-mix(in srgb, var(--accent) 14%, transparent); }
+    .tab:hover { color: var(--ink); border-color: var(--faint); }
+    .tab.on { background: var(--ink); border-color: var(--ink); color: #fff; }
 
     /* The wall is a single strip, flush left, that scrolls sideways as games
        are added rather than wrapping. `grid-auto-flow: column` with one row
@@ -56,7 +52,7 @@
       scrollbar-color: rgba(0,172,219,.35) transparent; cursor: grab; }
     .board.dragging { cursor: grabbing; user-select: none; }
     .board::-webkit-scrollbar { height: 7px; }
-    .board::-webkit-scrollbar-thumb { background: rgba(0,172,219,.32); border-radius: 999px; }
+    .board::-webkit-scrollbar-thumb { background: rgba(23,19,24,.22); border-radius: 999px; }
     /* Horizontal padding is not cosmetic here: every card's drop shadow
        (.frame-mac's box-shadow, present whether selected or not) bleeds well
        past its own box. An inner card's bleed just overlaps its neighbour, but
@@ -183,17 +179,21 @@
     /* ---------- selection & lock ---------- */
     .p.sel { z-index: 20; }
     /* the hover border/glow follows the account's theme colour, not the game accent */
-    .p.sel .frame-mac { outline: 1px solid var(--accent); outline-offset: 3px;
-      box-shadow: 0 0 34px color-mix(in srgb, var(--accent) 45%, transparent), 0 16px 38px rgba(0,0,0,.82); }
+    /* The selection and focus rings used to be the terminal accent. That accent
+       is retired, and an undefined custom property drops the WHOLE declaration
+       — so these rings would have silently stopped drawing. They are the page's
+       ink now, which reads against both the paper and the dark card. */
+    .p.sel .frame-mac { outline: 1px solid var(--ink); outline-offset: 3px;
+      box-shadow: 0 14px 34px rgba(23,19,24,.3); }
     .p:focus-visible { outline: none; }
-    .p:focus-visible .frame-mac { outline: 2px solid var(--bright); outline-offset: 3px; }
+    .p:focus-visible .frame-mac { outline: 2px solid var(--ink); outline-offset: 3px; }
 
     .p.locked .frame-mac { filter: grayscale(.7) brightness(.55); }
     .p.locked { cursor: not-allowed; }
     .p .locknote { position: absolute; left: 0; right: 0; top: 46%; z-index: 30; display: none;
-      background: rgba(0,0,0,.82); border-top: 1px solid var(--dim2); border-bottom: 1px solid var(--dim2);
+      background: rgba(0,0,0,.82); border-top: 1px solid rgba(255,255,255,.3); border-bottom: 1px solid rgba(255,255,255,.3);
       padding: .35rem 0; text-align: center; font-size: 9px; letter-spacing: .28em;
-      text-transform: uppercase; color: var(--c); }
+      text-transform: uppercase; color: #eee; }
     .p.locked .locknote { display: block; }
 
     /* on a narrow screen the wall becomes a list */
@@ -209,19 +209,31 @@
     }
   </style>
 </head>
-<body class="has-top-nav">
-  <div class="stage">
-    <div class="hdr">
-      <span>angelOS v0.2</span>
-      <span><b id="count">0</b> GAMES</span>
-    </div>
-    <div class="tabs" id="tabs">
-      <button class="tab on" type="button" data-tab="main">games</button>
-      <button class="tab" type="button" data-tab="extra">extra</button>
-    </div>
-    <div class="board" id="board"></div>
+<body>
+  <div class="page solo">
+    <main class="panel">
+      <a class="solo-back" href="/dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+        dashboard
+      </a>
+      <div class="inner wide">
+        <div class="stage">
+          <div class="wall-head">
+            <div class="eyebrow"><b id="count">0</b> of them</div>
+            <h1>The wall</h1>
+          </div>
+          <div class="tabs" id="tabs">
+            <button class="tab on" type="button" data-tab="main">games</button>
+            <button class="tab" type="button" data-tab="extra">extra</button>
+          </div>
+          <div class="board" id="board"></div>
+        </div>
+      </div>
+    </main>
   </div>
-<div class="scan"></div>
+
+  <div class="veil"></div>
+  <div class="frame"></div>
 
   <script>
     /* One poster per game. Wheel, chess and lottery are still routes in the
@@ -229,15 +241,15 @@
        wall. Each game names a bespoke interior "art" and its accent; every card
        shares the one macOS window frame. */
     const GAMES = [
-      { n: "devotion",    href: "/writing",               art: "dev",   a: "#00acdb", wb: "#050a10" },
-      { n: "multitap",    href: "/multitap",              art: "t9",    a: "#0bdb00", wb: "#050d05" },
-      { n: "summary",     href: "/summary",               art: "sum",   a: "#00acdb", wb: "#050a10" },
-      { n: "skill check", href: "/skillcheck",            art: "skill", a: "#c11208", wb: "radial-gradient(120% 120% at 50% 46%, #200a0c, #050202 74%)" },
-      { n: "ot12",        href: "/ot12",                  art: "ot12",  a: "#ffa6c5", wb: "#0d0508", wip: true },
-      { n: "snake",       href: "/snake",                 art: "snake", a: "#c11208", wb: "linear-gradient(#140506, #05060a)" },
-      { n: "deathroll",   href: "/deathroll",             art: "death", a: "#c11208", wb: "#0e0607", tab: "extra" },
-      { n: "elysium",     href: "/elysium",               art: "elysium", a: "#3f9f6a", wb: "#04100a", tab: "extra" },
-      { n: "chess",       href: "/chess",                 art: "chess", a: "#a4322a", wb: "#0c0a08", tab: "extra" },
+      { n: "devotion",    href: "/dashboard#devotion",               art: "dev",   a: "#00acdb", wb: "#050a10" },
+      { n: "multitap",    href: "/dashboard#multitap",              art: "t9",    a: "#0bdb00", wb: "#050d05" },
+      { n: "summary",     href: "/dashboard#summary",               art: "sum",   a: "#00acdb", wb: "#050a10" },
+      { n: "skill check", href: "/dashboard#skillcheck",            art: "skill", a: "#c11208", wb: "radial-gradient(120% 120% at 50% 46%, #200a0c, #050202 74%)" },
+      { n: "ot12",        href: "/dashboard#ot12",                  art: "ot12",  a: "#ffa6c5", wb: "#0d0508", wip: true },
+      { n: "snake",       href: "/dashboard#snake",                 art: "snake", a: "#c11208", wb: "linear-gradient(#140506, #05060a)" },
+      { n: "deathroll",   href: "/dashboard#deathroll",             art: "death", a: "#c11208", wb: "#0e0607", tab: "extra" },
+      { n: "elysium",     href: "/dashboard#elysium",               art: "elysium", a: "#3f9f6a", wb: "#04100a", tab: "extra" },
+      { n: "chess",       href: "/dashboard#chess",                 art: "chess", a: "#a4322a", wb: "#0c0a08", tab: "extra" },
     ];
 
     // a ring of laurel leaves, for the elysium card
@@ -435,11 +447,10 @@
       .then((d) => { if (window.Theme) window.Theme.fromAccount(d.themeColor || "default", d.guest); guest = Boolean(d.guest); build(); })
       .catch(() => (window.location.href = "/"));
   </script>
-  <script src="/nav.js" defer></script>
+  <!-- nav.js drew the old back chevron; .solo-back replaces it. dashglitch and
+       glitchboot have nothing left to glitch here. -->
   <script src="/updatecheck.js" defer></script>
   <script src="/console.js" defer></script>
   <script src="/ambience.js" defer></script>
-  <script src="/dashglitch.js" defer></script>
-  <script src="/glitchboot.js" defer></script>
 </body>
 </html>

@@ -188,18 +188,6 @@
       });
       host.append(grid);
 
-      var wall = document.createElement("p");
-      wall.className = "small";
-      wall.style.marginTop = "1.6rem";
-      var a = document.createElement("a");
-      a.href = "/games";
-      a.textContent = "the wall";
-      a.style.color = "var(--ink)";
-      a.style.textDecoration = "underline";
-      a.style.textUnderlineOffset = "3px";
-      wall.append(document.createTextNode("Or see them as cards on "), a,
-        document.createTextNode("."));
-      host.append(wall);
     },
   });
 })();

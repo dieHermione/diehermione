@@ -21,29 +21,46 @@
 
   var box, input, log, open = false;
 
+  /* The console is the one terminal affordance that stays: `pray login` is the
+     only way to the login page, and a command line should look like one. What
+     it is NOT any more is a black box with scan lines dropped on top of the
+     vellum shell — it is the same paper, the same ink, the same two faces, and
+     only the caret and the monospaced log remain of the old look.
+
+     It styles itself from the shell's variables with its own fallbacks, so it
+     still renders sensibly on a page that has not been reskinned yet. */
   function css() {
     if (document.getElementById("console-style")) return;
     var s = document.createElement("style");
     s.id = "console-style";
     s.textContent =
-      "#console{position:fixed;left:0;right:0;top:0;z-index:500;background:rgba(0,0,0,0.94);" +
-      "border-bottom:1px solid var(--c,currentColor);box-shadow:0 0 40px var(--glow,rgba(255,255,255,0.15));" +
-      "font-family:'IBM Plex Mono',ui-monospace,monospace;color:var(--c,currentColor);" +
-      "transform:translateY(-100%);transition:transform .22s ease;padding:0.9rem 1.2rem 0.7rem;}" +
+      "#console{position:fixed;left:0;right:0;top:0;z-index:500;" +
+      "background:var(--plate,rgba(255,253,250,.9));" +
+      "backdrop-filter:blur(16px) saturate(118%);-webkit-backdrop-filter:blur(16px) saturate(118%);" +
+      "border-bottom:1px solid var(--line,rgba(23,19,24,.2));" +
+      "color:var(--ink,#171318);" +
+      "font-family:var(--ui,system-ui,sans-serif);" +
+      "transform:translateY(-100%);transition:transform .22s ease;" +
+      "padding:1rem 1.4rem .8rem;}" +
       "#console.open{transform:translateY(0);}" +
-      "#console::after{content:'';position:absolute;inset:0;pointer-events:none;" +
-      "background:repeating-linear-gradient(0deg,rgba(0,0,0,0.3) 0 1px,transparent 1px 3px);}" +
-      "#console .con-log{max-height:30vh;overflow-y:auto;font-size:0.82rem;line-height:1.7;" +
-      "scrollbar-width:thin;}" +
+      "#console .con-log{max-height:30vh;overflow-y:auto;scrollbar-width:thin;" +
+      "font-family:ui-monospace,'IBM Plex Mono',monospace;" +
+      "font-size:.8rem;line-height:1.8;color:var(--dim,#3f3741);}" +
+      "#console .con-log::-webkit-scrollbar{width:5px;}" +
+      "#console .con-log::-webkit-scrollbar-thumb{background:rgba(23,19,24,.22);border-radius:99px;}" +
       "#console .con-log div{white-space:pre-wrap;}" +
-      "#console .con-log .in{opacity:1;}" +
-      "#console .con-log .ok{color:var(--bright,var(--br,currentColor));}" +
-      "#console .con-log .no{color:var(--err,#ff5a4a);}" +
-      "#console .con-line{display:flex;align-items:center;gap:0.5rem;margin-top:0.5rem;}" +
-      "#console .con-line span{color:var(--accent,var(--br,currentColor));}" +
-      "#console input{flex:1;background:transparent;border:none;outline:none;" +
-      "color:var(--bright,var(--br,currentColor));font-family:inherit;font-size:0.92rem;letter-spacing:0.04em;}" +
-      "#console .con-hint{font-size:0.64rem;letter-spacing:0.18em;text-transform:uppercase;margin-top:0.4rem;}";
+      "#console .con-log .in{color:var(--ink,#171318);}" +
+      "#console .con-log .ok{color:var(--ok,#1f5134);}" +
+      "#console .con-log .no{color:var(--err,#8a1b2c);}" +
+      "#console .con-line{display:flex;align-items:center;gap:.6rem;margin-top:.6rem;" +
+      "border-top:1px solid var(--line,rgba(23,19,24,.2));padding-top:.6rem;}" +
+      "#console .con-line span{color:var(--faint,#5e545f);" +
+      "font-family:ui-monospace,'IBM Plex Mono',monospace;}" +
+      "#console input{flex:1;background:transparent;border:none;outline:none;padding:0;" +
+      "color:var(--ink,#171318);font-family:ui-monospace,'IBM Plex Mono',monospace;" +
+      "font-size:.9rem;letter-spacing:.02em;}" +
+      "#console .con-hint{font-size:.56rem;letter-spacing:.26em;text-transform:uppercase;" +
+      "color:var(--faint,#5e545f);margin-top:.5rem;}";
     document.head.appendChild(s);
   }
 

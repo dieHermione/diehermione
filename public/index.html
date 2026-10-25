@@ -3,88 +3,82 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>angeldom.me</title>
-  <!-- The front door. There are no visitor accounts: this page starts a guest
-       session and plays the boot into the dashboard. Hermione signs in at /login
-       (`pray login`). The server redirects anyone who already has a session. -->
+  <title>angeldomme</title>
+
+  <!--
+    The front door. There is no form and no button: arriving IS the action.
+    It claims a guest name (POST /api/guest) and goes to the dashboard; anyone
+    who already has a session never sees this, because GET / redirects them.
+
+    Reskinned 2026-10-24. This used to be a terminal boot cascade that landed
+    on a vellum letter — the one seam everybody met first. It is now the same
+    frame, paper and faces as the shell, and the only thing that happens is a
+    line of type while the session is claimed. The boot, the scan line and the
+    ambient glitch are gone with it.
+  -->
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <script src="/dashglitch.js"></script>
-  <script src="/boot.js"></script>
-  <script src="/theme.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Pinyon+Script&family=Montserrat:wght@300;400;500&family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,600;1,6..96,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/shell.css" />
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    :root { --c: #00acdb; --dim: #00acdb; --dim2: #00acdb; --bright: #eafaff; --accent: #00acdb; --bg: #000000; --glow: rgba(0,172,219,0.34); --err: #ff7a6d; }
-    [hidden] { display: none !important; }
-    html, body { height: 100%; overflow: hidden; }
-    body { background: var(--bg); color: var(--c); font-family: "IBM Plex Mono", monospace; }
-    #scene { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; padding: 5vh 5vw; }
-    .glow-bg { display: none; }
-    .scan { position: absolute; inset: 0; pointer-events: none; z-index: 40; background: repeating-linear-gradient(0deg, rgba(0,0,0,0.28) 0 1px, transparent 1px 3px); }
-    /* scaled up ~50% to fill the screen better; overlays (scan/vig) sit outside
-       #scene so this transform does not disturb them */
-    .content { position: relative; z-index: 5; width: min(640px, 92vw); font-size: 1.05rem; line-height: 1.9;
-      transform: scale(1.5); transform-origin: center; }
-    .dim { color: var(--dim); } .dim2 { color: var(--dim2); } .br { color: var(--bright); text-shadow: 0 0 12px var(--glow); }
-    .ok { color: var(--bright); }
-    .cap { letter-spacing: 0.22em; text-transform: uppercase; }
-    .blink { animation: bl 1s steps(1) infinite; } @keyframes bl { 0%,50%{opacity:1} 50.01%,100%{opacity:0} }
-    .head { color: var(--dim); margin-bottom: 1.1rem; }
-    .row { margin: 0.2rem 0; }
-    .errline { color: var(--err); min-height: 1.2em; margin: 0.6rem 0 0; }
-
-    /* Mobile: the desktop scale(1.5) blew the content past a viewport that clips
-       overflow, so the fields and the enter button ended up off-screen and login
-       was impossible. On narrow screens drop the transform, let the page scroll,
-       and let the label/input rows wrap so nothing runs off the edge. */
-    @media (max-width: 720px) {
-      html, body { overflow: auto; }
-      #scene { position: static; min-height: 100%; padding: 5vh 6vw; align-items: flex-start; }
-      .content { transform: none; width: 100%; font-size: 1rem; line-height: 1.75; }
+    .door { text-align: center; max-width: 26rem; margin: 0 auto; }
+    .door .solo-brand { font-size: clamp(2.4rem, 6vw, 3.6rem); }
+    .door .solo-tag { margin-bottom: 2.6rem; }
+    .door .line {
+      font-size: .64rem; letter-spacing: .3em; text-transform: uppercase; color: var(--faint);
+      min-height: 1.4em;
     }
+    /* a quiet pulse while the session is claimed — not a glitch, just a sign
+       that something is happening */
+    .door .line.working { animation: door-pulse 1.6s ease-in-out infinite; }
+    @keyframes door-pulse { 50% { opacity: .35; } }
+    .door .warn { margin-top: 1rem; }
+    .door .go { margin-top: 1.4rem; }
   </style>
-  <script src="/audio.js"></script>
 </head>
 <body>
-  <div id="scene">
-    <div class="glow-bg"></div>
-    <div class="content">
-      <div class="head" style="letter-spacing:0.14em">angelOS v0.2 &nbsp; secure terminal</div>
-      <div class="row dim">&gt; establishing link to Her ......... <span class="ok">OK</span></div>
-      <div class="row dim" id="statusline">&gt; no credentials required ........ <span class="ok">OK</span></div>
-      <div class="row errline" id="errline" hidden>! <span id="error"></span></div>
-    </div>
+  <div class="page solo middle">
+    <main class="panel">
+      <div class="inner">
+        <div class="door">
+          <div class="solo-brand">angel<i>domme</i></div>
+          <div class="solo-tag">angelOS</div>
+          <div class="line working" id="line">opening the door</div>
+          <div class="warn" id="error"></div>
+          <button class="go" id="retry" type="button" hidden>Try again</button>
+        </div>
+      </div>
+    </main>
   </div>
-  <div class="scan"></div>
+
+  <div class="veil"></div>
+  <div class="frame"></div>
 
   <script>
-    const $ = (id) => document.getElementById(id);
-    function err(msg) { $("error").textContent = msg; $("errline").hidden = false; }
-
-    // Become a guest and boot into the dashboard. No button: arriving is enough.
-    (async function enter() {
-      try {
-        const r = await fetch("/api/guest", { method: "POST" });
-        if (r.ok) {
-          if (window.Boot) Boot.play({ navigateTo: "/dashboard" });
-          else window.location.href = "/dashboard";
-          return;
-        }
-      } catch (e) {}
-      err("couldn't open a session. reload to try again.");
-    })();
-
-    // Ambient glitch, gated by the flags the dashboard caches in localStorage
-    // (photosensitivity, and the flashing-effects toggle). Nothing identifies a
-    // guest, so a fresh browser gets the effects until they are switched off.
-    (function () {
-      let ok = true;
-      try { ok = localStorage.getItem("photosensitive") !== "1"; } catch (e) {}
-      // the flashing-effects toggle (cached by the dashboard) applies here too
-      try { if (localStorage.getItem("glitch-effects") === "0") ok = false; } catch (e) {}
-      if (window.DashGlitch) { window.DashGlitch.setEnabled(ok); if (ok) window.DashGlitch.startRandom(); }
-    })();
+    // Become a guest and go through. No button: arriving is enough.
+    function enter() {
+      var line = document.getElementById("line");
+      var err = document.getElementById("error");
+      var retry = document.getElementById("retry");
+      line.textContent = "opening the door";
+      line.classList.add("working");
+      err.textContent = "";
+      retry.hidden = true;
+      fetch("/api/guest", { method: "POST" }).then(function (r) {
+        if (!r.ok) throw new Error("no session");
+        line.classList.remove("working");
+        line.textContent = "come in";
+        window.location.href = "/dashboard";
+      }).catch(function () {
+        line.classList.remove("working");
+        line.textContent = "";
+        err.textContent = "The door would not open.";
+        retry.hidden = false;
+      });
+    }
+    document.getElementById("retry").addEventListener("click", enter);
+    enter();
   </script>
   <script src="/ambience.js" defer></script>
 </body>

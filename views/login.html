@@ -3,129 +3,76 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sign in - angeldom.me</title>
-  <!-- Hermione's sign-in. Reached only by `pray login`; nothing on the site links here. -->
+  <title>Sign in · angeldomme</title>
+
+  <!--
+    Hermione's sign-in. Reached only by `pray login` from the console; there is
+    no button anywhere that leads here, because there are no accounts to sign
+    into but hers.
+
+    Reskinned 2026-10-24: the same frame, paper and faces as the shell, in the
+    `solo` layout (frame + one panel, no nav). The terminal version's boot
+    chatter, scan line and ambient glitch are gone.
+  -->
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <script src="/dashglitch.js"></script>
-  <script src="/boot.js"></script>
-  <script src="/theme.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Pinyon+Script&family=Montserrat:wght@300;400;500&family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,600;1,6..96,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/shell.css" />
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    :root { --c: #00acdb; --dim: #00acdb; --dim2: #00acdb; --bright: #eafaff; --accent: #00acdb; --bg: #000000; --glow: rgba(0,172,219,0.34); --err: #ff7a6d; }
-    [hidden] { display: none !important; }
-    html, body { height: 100%; overflow: hidden; }
-    body { background: var(--bg); color: var(--c); font-family: "IBM Plex Mono", monospace; }
-    #scene { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; padding: 5vh 5vw; }
-    .glow-bg { display: none; }
-    .scan { position: absolute; inset: 0; pointer-events: none; z-index: 40; background: repeating-linear-gradient(0deg, rgba(0,0,0,0.28) 0 1px, transparent 1px 3px); }
-    /* scaled up ~50% to fill the screen better; overlays (scan/vig) sit outside
-       #scene so this transform does not disturb them */
-    .content { position: relative; z-index: 5; width: min(640px, 92vw); font-size: 1.05rem; line-height: 1.9;
-      transform: scale(1.5); transform-origin: center; }
-    .dim { color: var(--dim); } .dim2 { color: var(--dim2); } .br { color: var(--bright); text-shadow: 0 0 12px var(--glow); }
-    .ok { color: var(--bright); }
-    .cap { letter-spacing: 0.22em; text-transform: uppercase; }
-    .blink { animation: bl 1s steps(1) infinite; } @keyframes bl { 0%,50%{opacity:1} 50.01%,100%{opacity:0} }
-    .head { color: var(--dim); margin-bottom: 1.1rem; }
-    .row { margin: 0.2rem 0; }
-
-    /* terminal fields: a label then an inline text input that looks typed */
-    .fl { display: flex; align-items: baseline; gap: 0.6rem; margin: 0.55rem 0; }
-    .fl .lab { color: var(--dim); min-width: 8.5rem; }
-    .fl input {
-      flex: 1; background: transparent; border: none; border-bottom: 1px solid var(--dim2);
-      color: var(--bright); font-family: inherit; font-size: 1.02rem; padding: 0 0 3px; caret-color: var(--accent);
-    }
-    .fl input::placeholder { color: var(--dim2); }
-    .fl input:focus { outline: none; border-bottom-color: var(--accent); }
-    .fl input:disabled { opacity: 0.4; }
-    input:-webkit-autofill { -webkit-text-fill-color: var(--bright); -webkit-box-shadow: 0 0 0 1000px var(--bg) inset; transition: background-color 100000s ease 0s; caret-color: var(--accent); }
-
-    .btn { display: inline-block; border: 1px solid var(--c); padding: 0.42rem 1.5rem; letter-spacing: 0.18em; text-transform: uppercase;
-      color: var(--c); background: transparent; font-family: inherit; font-size: 0.92rem; cursor: pointer; }
-    .btn.solid { background: var(--c); color: var(--bg); box-shadow: 0 0 22px var(--glow); }
-    .btn:hover { box-shadow: 0 0 22px var(--glow); }
-    .cur { display: inline-block; width: 0.6em; height: 1.05em; background: var(--c); transform: translateY(2px); }
-    .link { color: var(--dim); cursor: pointer; }
-    .link b { color: var(--bright); text-shadow: 0 0 10px var(--glow); font-weight: 400; }
-    .link:hover b { text-decoration: underline; }
-    .errline { color: var(--err); min-height: 1.2em; margin: 0.6rem 0 0; }
-    .fields { margin-top: 0.4rem; }
-
-    /* Mobile: the desktop scale(1.5) blew the content past a viewport that clips
-       overflow, so the fields and the enter button ended up off-screen and login
-       was impossible. On narrow screens drop the transform, let the page scroll,
-       and let the label/input rows wrap so nothing runs off the edge. */
-    @media (max-width: 720px) {
-      html, body { overflow: auto; }
-      #scene { position: static; min-height: 100%; padding: 5vh 6vw; align-items: flex-start; }
-      .content { transform: none; width: 100%; font-size: 1rem; line-height: 1.75; }
-      .fl { flex-wrap: wrap; gap: 0.25rem 0.6rem; }
-      .fl .lab { min-width: 0; }
-      .fl input { flex: 1 1 100%; font-size: 16px; } /* 16px stops iOS zoom-on-focus */
-    }
+    .lf { max-width: 22rem; margin: 0 auto; text-align: center; }
+    .lf .field { text-align: left; }
+    .lf .field + .field { margin-top: 1rem; }
+    .lf .go { margin-top: 1.2rem; }
+    .lf .back { display: block; margin-top: 1.8rem; font-size: .8rem; color: var(--faint); text-decoration: none; }
+    .lf .back:hover { color: var(--ink); }
   </style>
-  <script src="/audio.js"></script>
 </head>
 <body>
-  <div id="scene">
-    <div class="glow-bg"></div>
-    <div class="content">
-      <div class="head" style="letter-spacing:0.14em">angelOS v0.2 &nbsp; secure terminal</div>
-      <div class="row dim">&gt; establishing link to Her ......... <span class="ok">OK</span></div>
-      <div class="row dim" id="statusline">&gt; awaiting credentials</div>
+  <div class="page solo middle">
+    <main class="panel">
+      <div class="inner">
+        <form class="lf" id="form" autocomplete="on">
+          <div class="solo-brand">angel<i>domme</i></div>
+          <div class="solo-tag">angelOS</div>
 
-      <form id="form" class="fields" autocomplete="on">
-        <div class="fl"><span class="lab" id="lab-user">login:</span><input id="username" name="username" autocomplete="username" required minlength="3" maxlength="30" /></div>
-        <div class="fl"><span class="lab">passphrase:</span><input id="password" name="password" type="password" autocomplete="current-password" required minlength="8" /></div>
+          <div class="field">
+            <label class="flabel" for="username">who</label>
+            <input id="username" name="username" autocomplete="username" required minlength="3" maxlength="30" />
+          </div>
+          <div class="field">
+            <label class="flabel" for="password">passphrase</label>
+            <input id="password" name="password" type="password" autocomplete="current-password" required minlength="8" />
+          </div>
 
-        <div class="errline" id="error"></div>
-        <div class="row" style="margin-top:1.3rem">
-          <button class="btn solid" id="submit" type="submit">enter</button>
-          <span class="dim" id="enter-hint" style="margin-left:1rem">&crarr; sign in</span>
-        </div>
-      </form>
-
-      <div class="row dim" id="guest-line" style="margin-top:1.7rem">not her? &nbsp;<span class="link" id="to-guest">&gt; <b>back to the dashboard</b></span></div>
-    </div>
+          <div class="warn" id="error"></div>
+          <button class="go" id="submit" type="submit">Enter</button>
+          <a class="back" href="/">not her? go back</a>
+        </form>
+      </div>
+    </main>
   </div>
-  <div class="scan"></div>
+
+  <div class="veil"></div>
+  <div class="frame"></div>
 
   <script>
-    const $ = (id) => document.getElementById(id);
-    const errorBox = $("error");
-    function err(msg) { errorBox.textContent = msg ? "! " + msg : ""; }
-
-    // Only Hermione has an account. Everyone else is already a guest and just
-    // goes back; the front door (/) makes a guest session if they have none.
-    $("to-guest").addEventListener("click", () => { window.location.href = "/"; });
-
-    $("form").addEventListener("submit", async (e) => {
-      e.preventDefault(); err("");
-      const payload = { username: $("username").value.trim(), password: $("password").value };
-      let res, data;
-      try {
-        res = await fetch("/api/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-        data = await res.json().catch(() => ({}));
-      } catch (e2) { err("connection lost. try again."); return; }
-      if (res.ok) {
-        // she gets the boot on the way in, same as a fresh guest does
-        if (window.Boot) Boot.play({ navigateTo: "/dashboard" });
-        else window.location.href = "/dashboard";
-      } else { err(data.error || "something went wrong."); }
+    var $ = function (id) { return document.getElementById(id); };
+    $("form").addEventListener("submit", function (e) {
+      e.preventDefault();
+      $("error").textContent = "";
+      fetch("/api/login", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: $("username").value.trim(), password: $("password").value }),
+      }).then(function (r) {
+        return r.json().catch(function () { return {}; }).then(function (d) { return { ok: r.ok, d: d }; });
+      }).then(function (out) {
+        if (out.ok) { window.location.href = "/dashboard"; return; }
+        $("error").textContent = out.d.error || "Something went wrong.";
+      }).catch(function () {
+        $("error").textContent = "Connection lost. Try again.";
+      });
     });
-
-    // Ambient glitch, gated by the flags the dashboard caches in localStorage
-    // (photosensitivity, and the flashing-effects toggle).
-    (function () {
-      let ok = true;
-      try { ok = localStorage.getItem("photosensitive") !== "1"; } catch (e) {}
-      // the flashing-effects toggle (cached by the dashboard) applies here too
-      try { if (localStorage.getItem("glitch-effects") === "0") ok = false; } catch (e) {}
-      if (window.DashGlitch) { window.DashGlitch.setEnabled(ok); if (ok) window.DashGlitch.startRandom(); }
-    })();
   </script>
   <script src="/ambience.js" defer></script>
 </body>

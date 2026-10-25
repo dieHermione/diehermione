@@ -3,53 +3,72 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Admin - angeldom.me</title>
+  <title>Admin · angeldomme</title>
+
+  <!--
+    The admin panel. Everything in it is drawn by public/adminpanel.js (~790
+    lines), which was written against the terminal palette and reads those
+    variable names directly — 17 uses of --dim2, 15 of --c, and so on.
+
+    Reskinned 2026-10-24 WITHOUT touching that file. The old names are simply
+    re-pointed at the shell's values below, so every rule in adminpanel.js keeps
+    applying and comes out in the new palette. Deleting the names instead would
+    not have left it merely off-colour: an undefined custom property drops the
+    WHOLE declaration, so the panel would have rendered unstyled.
+  -->
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Pinyon+Script&family=Montserrat:wght@300;400;500&family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,600;1,6..96,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/shell.css" />
   <script src="/me.js"></script>
   <!-- the effect editors drive these live; boot.js powers the decrypt preview -->
   <script src="/dashglitch.js"></script>
   <script src="/boot.js"></script>
   <script src="/audio.js"></script>
-  <script src="/theme.js"></script>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    /* Same dual-tone palette the dashboard uses; adminpanel.js reads these vars. */
-    :root { --c:#00acdb; --dim:#00acdb; --dim2:#00acdb; --bright:#eafaff; --accent:#00acdb;
-      --bg:#000000; --glow:rgba(0,172,219,0.34); --ok:#eafaff; --err:#ff7a6d; }
-    [hidden] { display: none !important; }
-    html, body { min-height: 100%; }
-    body { background: #000; color: var(--c); font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 14px; }
-    .scan { position: fixed; inset: 0; z-index: 200; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(0,0,0,.26) 0 1px, transparent 1px 3px); }
-
-    /* full-width, full-height admin surface */
-    .wrap { position: relative; z-index: 5; width: 100%; min-height: 100vh; padding: 3.2vh 3vw 6vh; }
-    .top { display: flex; justify-content: space-between; align-items: baseline; font-size: 11px;
-      letter-spacing: .3em; color: var(--dim); text-transform: uppercase; padding-left: 3.4rem; }
-    h1 { font-size: 1.4rem; color: var(--bright); letter-spacing: .06em; margin: 1.1rem 0 0.3rem 3.4rem; font-weight: 600; }
-    .sub { color: var(--dim); margin: 0 0 1.6rem 3.4rem; line-height: 1.6; }
+    /* The terminal names, re-pointed at the shell's palette. adminpanel.js is
+       untouched and does not know anything changed. */
+    :root {
+      --c: #171318;          /* was the house blue: now ink */
+      --dim: #3f3741;
+      --dim2: rgba(23, 19, 24, .2);   /* it is used as a border colour throughout */
+      --bright: #171318;
+      --accent: #171318;
+      --bg: transparent;
+      --glow: rgba(23, 19, 24, .12);
+      --ok: #1f5134;
+      --err: #8a1b2c;
+    }
+    .admin-head { margin-bottom: 1.6rem; }
+    .admin-head h1 { text-align: left; margin-bottom: .3rem; }
+    .admin-head .sub { color: var(--dim); line-height: 1.7; }
     #adminpanel { position: relative; }
-
-    /* standard site back button: a chevron pinned top-left, no plate */
-    .back { position: fixed; top: 1.3rem; left: 1.3rem; z-index: 1000; width: 2.6rem; height: 2.6rem;
-      border-radius: 50%; display: flex; align-items: center; justify-content: center; background: none;
-      color: var(--c); opacity: .8; text-decoration: none; transition: transform .2s ease, opacity .2s ease; }
-    .back:hover { transform: translateY(-2px); opacity: 1; }
-    .back svg { width: 22px; height: 22px; }
+    /* adminpanel.js sets inline monospace in a few places; keep it readable */
+    #adminpanel { font-family: var(--ui); }
+    #adminpanel input, #adminpanel textarea, #adminpanel select { font-family: var(--ui); }
   </style>
 </head>
 <body>
-  <div class="scan"></div>
-  <a class="back" href="/dashboard" aria-label="Back to dashboard" title="Back to dashboard">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
-  </a>
-  <div class="wrap">
-    <div class="top"><span><span style="text-transform:none">angelOS v0.2</span> // admin controls</span><span id="whoami"></span></div>
-    <h1>Admin controls</h1>
-    <div class="sub">Finished series, the editable text pools, and the effect triggers.</div>
-    <div id="adminpanel"><p style="color:var(--dim2)">Loading…</p></div>
+  <div class="page solo">
+    <main class="panel">
+      <a class="solo-back" href="/dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+        dashboard
+      </a>
+      <div class="inner wide">
+        <div class="admin-head">
+          <div class="eyebrow" id="whoami">Hers</div>
+          <h1>Admin</h1>
+          <p class="sub">Finished series, the editable text pools, and the effect triggers.</p>
+        </div>
+        <div id="adminpanel"><p class="loading">loading</p></div>
+      </div>
+    </main>
   </div>
+
+  <div class="veil"></div>
+  <div class="frame"></div>
 
   <script src="/adminpanel.js"></script>
   <script>

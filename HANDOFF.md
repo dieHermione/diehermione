@@ -19,13 +19,15 @@ edited through Replit sometimes, so **pull/rebase before pushing**.
 > require an account. Old disciple records may still sit in `users.json`; login
 > refuses them and nothing reads them.
 
-> **The redesign has started (2026-10-24).** `/dashboard` is now the
-> single-page shell — leopard frame, side nav, one panel — and devotion runs
-> inside it. **Every other page is still terminal-styled.** If something you
-> are about to touch looks like two different websites, that is why, and it is
-> expected until the pages listed under *Open items* are converted. New work on
-> the dashboard goes through `public/shell.css` and `public/panels/`; new work
-> on a terminal page is still terminal until it is its turn.
+> **The redesign is done (2026-10-24).** Every page is inside the leopard
+> frame and wears the same paper and faces. There is no terminal styling left
+> anywhere — no scan lines, no monospace chrome, no accent tinting. New work
+> goes through `public/shell.css`: the shell (`/dashboard`) for sections, and
+> the `solo` layout for a page that has no nav.
+>
+> Monospace survives in exactly three places, all on purpose: the console's log
+> and input (it is a command line), `<code>` samples on `/commands`, and inside
+> the wall's card art.
 
 ---
 
@@ -344,7 +346,8 @@ photo, illustration or material, propose image generation instead of CSS.
 ### Pages
 
 `public/index.html` is the **front door**: no form — it starts a guest session
-(`POST /api/guest`) and plays the boot into the dashboard. `GET /` is an
+(`POST /api/guest`) and goes to the dashboard. The terminal boot cascade that
+used to play here was removed on 2026-10-24; it is a line of type now. `GET /` is an
 explicit route registered before the static middleware: a visitor who already
 has a session is sent straight to `/dashboard`. `public/dashboard.html` is the
 dashboard; everything else is a view in `views/` behind a route.
@@ -603,6 +606,35 @@ otherwise have been lost silently:
   the shell opens `settings` instead, hides the current-password field (the
   server skips that check while the flag is set) and reloads once it clears.
 
+### Pages that are not the shell: `solo`
+The front door, login, the wall, the admin panel and the `pray` reference are
+still their own documents — they link `shell.css` and use **`.page solo`**: the
+same fixed box inside the same frame, with one panel and no side column.
+`.page solo.middle` centres a short thing (a form, a notice) in it. `.solo-back`
+is the chevron back to the shell, and `.solo-brand`/`.solo-tag` carry the
+wordmark on a page with no nav to hold it.
+
+Two of them were reskinned **without touching the script that draws them**:
+
+- **`/admin`** — `adminpanel.js` is ~790 lines written against the terminal
+  palette, reading those variable names directly (17 uses of `--dim2`, 15 of
+  `--c`). `admin.html` re-points those names at the shell's values, so every
+  rule in it keeps applying and comes out in the new palette. Deleting the names
+  would not have left it merely off-colour: an undefined custom property drops
+  the whole declaration, so the panel would have rendered unstyled.
+- **`/games`** — the page moved into the frame and **the cards did not**. They
+  are her art, and each interior is deliberately its own little world;
+  restyling them to vellum would be throwing the thing away to make it match.
+  Dark windows on pale paper is the composition. Their selection and focus
+  rings DID have to change: they were `var(--accent)`, which no longer exists,
+  so they had silently stopped drawing.
+
+**`/elysium` does not link `shell.css`**, on purpose: the scene defines its own
+`--ink` as a *light* colour for a dark field, and shell.css would overwrite it
+with near-black. It repeats the three `border-image` declarations instead, and
+every edge-anchored piece of UI (status, controls, audio, back, version, and
+both sliding panels) is offset by `--fw` so nothing sits under the leopard.
+
 ### The frame, and the one invariant that keeps it honest
 `border-image: url("/img/frame-leopard.webp") 184 round` on a
 `position:fixed; inset:0; pointer-events:none` overlay at `z-index:90`, over a
@@ -710,12 +742,7 @@ notifications; the admin panel on the dashboard; the boot vignette and
 
 ## Open items
 - The remaining ten CSS cards → generated posters like Devotion's (elysium and chess first; they are placeholders).
-- **The redesign, continued.** `/dashboard` is the shell (mockup 55) as of 2026-10-24. Everything else is still terminal-styled. In rough order of how jarring the seam is:
-  1. **The front door** (`public/index.html`) — a terminal boot cascade that lands on a vellum letter. It is the first thing anyone sees. Needs her decision, not a guess.
-  2. **The eight unported games.** Each is a full document with its own `<style>`/`<script>`, so it is one at a time. Devotion shows the shape: lift the loop, drop the page, redirect the old path.
-  3. **`console.js`** still draws itself in the terminal style on top of the shell — the last terminal artefact on a page that is otherwise done.
-  4. **`/games`** (the wall), `/admin`, `/login`, `/commands`.
-  Only once the terminal pages are gone can the hidden effects code and the boot be deleted.
+- **The hidden effects code and the boot can now be deleted.** Nothing is terminal-styled any more, so `dashglitch.js`'s `HIDDEN` switch, the `.scan` rules, `glitchboot.js` and `boot.js` are dead weight. `boot.js` is still loaded by `/admin` for the decrypt preview; check that before deleting it.
 - Elysium is short of *events*, not features (ideas below).
 - OT12 payout is moot now (no points); song-based questions; fill the thin member fields before a height question.
 - A photosensitivity toggle in Settings for guests would have to be localStorage-only (nothing identifies them); today a fresh browser gets the effects until Flashing effects is unticked.
