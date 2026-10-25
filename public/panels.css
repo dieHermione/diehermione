@@ -1,0 +1,122 @@
+/* ============================================================================
+   panels.css — the styling each ported game needs on top of shell.css.
+
+   Every block is scoped under `.p-<section>`, which shell.js puts on the panel
+   host while that section is mounted. Nothing here can reach another section,
+   so a game may use short, obvious class names without a prefix war.
+
+   Only what a game cannot express in the shell's own vocabulary belongs here.
+   If a game needs a row, a chip, a field or a button, it uses .row / .chip /
+   .field / .go from shell.css — that is what keeps twelve games looking like
+   one site.
+   ========================================================================== */
+
+/* ---------- two columns that stack, used by several games ---------- */
+.cols {
+  flex: 1 1 auto; min-height: 0;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 1.6rem;
+  margin-top: 1.4rem;
+}
+.col { display: flex; flex-direction: column; min-height: 0; min-width: 0; }
+.col-head { margin-bottom: .8rem; }
+
+/* ---------- summary ---------- */
+.p-summary .src-title { font-family: var(--display); font-size: 1.5rem; line-height: 1.2; }
+.p-summary .src-words { font-size: .62rem; letter-spacing: .24em; text-transform: uppercase; color: var(--faint); margin-top: .3rem; }
+.p-summary .src-body {
+  flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin;
+  font-size: .96rem; line-height: 1.85; color: var(--dim);
+  white-space: pre-wrap; padding-right: .8rem;
+  border-top: 1px solid var(--line); padding-top: .9rem;
+}
+.p-summary .src-body::-webkit-scrollbar { width: 5px; }
+.p-summary .src-body::-webkit-scrollbar-thumb { background: rgba(23, 19, 24, .22); border-radius: 99px; }
+.p-summary .src-cite { margin-top: .8rem; font-size: .8rem; color: var(--faint); }
+.p-summary .src-cite a { color: var(--dim); }
+.p-summary textarea { flex: 1 1 auto; min-height: 8rem; }
+.p-summary .tally { display: flex; align-items: baseline; gap: .8rem; margin: .7rem 0 .2rem; font-size: .82rem; color: var(--faint); }
+.p-summary .tally b { font-family: var(--display); font-weight: 400; font-size: 1.1rem; color: var(--ink); }
+.p-summary .tally .rules { margin-left: auto; font-style: italic; }
+.p-summary .actions { justify-content: flex-start; }
+
+@media (max-width: 820px) {
+  .cols { grid-template-columns: 1fr; gap: 1.4rem; }
+  .p-summary .src-body { max-height: 14rem; }
+}
+
+/* ---------- the answer chips, after they are graded ---------- */
+.chip.right { border-color: var(--ok); color: var(--ok); background: rgba(31, 81, 52, .09); }
+.chip.wrong { border-color: var(--err); color: var(--err); background: rgba(138, 27, 44, .08); text-decoration: line-through; }
+
+/* ---------- ot12 ---------- */
+.p-ot12 .ot-head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  font-size: .62rem; letter-spacing: .24em; text-transform: uppercase; color: var(--faint);
+  border-bottom: 1px solid var(--line); padding-bottom: .7rem; margin-bottom: 1.4rem;
+}
+.p-ot12 .ot-head b { font-family: var(--display); font-weight: 400; font-size: 1.1rem;
+  letter-spacing: 0; text-transform: none; color: var(--ink); }
+/* the photo is the question: give it the room, but never let it push the
+   options off the panel — it is capped against the panel's own height */
+.p-ot12 .ot-photo {
+  display: block; margin: 0 auto 1.4rem; border-radius: var(--r-md);
+  max-width: 100%; max-height: min(42vh, 22rem); object-fit: contain;
+}
+.p-ot12 .ot-prompt {
+  font-family: var(--display); font-size: clamp(1.3rem, 2.6vw, 1.9rem); line-height: 1.4;
+  text-align: center; margin: 1rem auto 1.8rem; max-width: 30rem;
+}
+.p-ot12 .ot-opts { justify-content: center; }
+.p-ot12 .actions { margin-top: 1.4rem; }
+
+/* ---------- deathroll ---------- */
+.p-deathroll .dr-picker { display: flex; gap: .6rem; flex-wrap: wrap; align-items: center; margin: 1.2rem 0; }
+.p-deathroll .dr-picker select,
+.p-deathroll .dr-picker input {
+  width: auto; flex: 0 1 11rem;
+  background: var(--tint); border: 1px solid var(--line); color: var(--ink);
+  font-family: inherit; font-weight: 300; font-size: .95rem;
+  padding: .5rem .8rem; border-radius: 999px;
+}
+.p-deathroll .dr-picker .go { margin-top: 0; }
+.p-deathroll .dr-grid { display: grid; grid-template-columns: 1fr auto 1fr; gap: 1.4rem; align-items: center; margin: 1.4rem 0; }
+.p-deathroll .dr-card { text-align: center; }
+.p-deathroll .dr-card .role { font-size: .6rem; letter-spacing: .28em; text-transform: uppercase; color: var(--faint); margin-bottom: .6rem; }
+.p-deathroll .dr-card .initial {
+  width: 3.4rem; height: 3.4rem; margin: 0 auto .5rem; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--line); background: rgba(255, 255, 255, .5);
+  font-family: var(--display); font-size: 1.5rem;
+}
+.p-deathroll .dr-card .name { font-size: .88rem; color: var(--dim); }
+.p-deathroll .dr-mid { text-align: center; }
+.p-deathroll .dr-status { font-size: 1rem; color: var(--dim); margin: 0 0 1rem; min-height: 1.5em; }
+.p-deathroll .dr-die {
+  width: 9rem; height: 9rem; margin: 0 auto 1.2rem; border-radius: var(--r-lg);
+  border: 1px solid var(--line); background: rgba(255, 255, 255, .5);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .2rem;
+}
+.p-deathroll .dr-die .cap { font-size: .58rem; letter-spacing: .26em; text-transform: uppercase; color: var(--faint); }
+.p-deathroll .dr-die .value { font-family: var(--display); font-size: 2.6rem; line-height: 1; font-variant-numeric: tabular-nums; }
+.p-deathroll .dr-die.rolling .value { animation: dr-flicker .09s steps(2) infinite; }
+.p-deathroll .dr-die.dead { border-color: var(--err); }
+.p-deathroll .dr-die.dead .value { color: var(--err); }
+@keyframes dr-flicker { to { opacity: .25; } }
+.p-deathroll .dr-log {
+  max-height: 11rem; overflow-y: auto; scrollbar-width: thin;
+  border-top: 1px solid var(--line); padding-top: .4rem;
+}
+.p-deathroll .dr-log::-webkit-scrollbar { width: 5px; }
+.p-deathroll .dr-log::-webkit-scrollbar-thumb { background: rgba(23, 19, 24, .22); border-radius: 99px; }
+.p-deathroll .log-empty { color: var(--faint); font-size: .88rem; margin: .6rem 0; }
+.p-deathroll .log-row { display: flex; justify-content: space-between; gap: 1rem; padding: .38rem 0; border-bottom: 1px solid var(--line); font-size: .9rem; }
+.p-deathroll .log-row:last-child { border-bottom: 0; }
+.p-deathroll .log-row .who { color: var(--faint); font-size: .66rem; letter-spacing: .2em; text-transform: uppercase; }
+.p-deathroll .log-row .roll { color: var(--dim); font-variant-numeric: tabular-nums; }
+.p-deathroll .log-row.fatal .roll { color: var(--err); }
+
+@media (max-width: 820px) {
+  .p-deathroll .dr-grid { grid-template-columns: 1fr 1fr; }
+  .p-deathroll .dr-mid { grid-column: 1 / -1; order: -1; }
+  .p-deathroll .dr-die { width: 7rem; height: 7rem; }
+}

@@ -7,9 +7,15 @@
      Shell.register("home", {
        label: "home",             // what the nav says
        admin: false,              // true = only hermione sees it
+       wide: false,               // true = drop the 36rem centred letter
        mount(host, ctx) { ... },  // fill `host`; ctx.me and ctx.site are ready
        unmount() { ... },         // optional: tear down timers/listeners
      });
+
+   The host carries `p-<id>` while a section is mounted, so a game's own CSS
+   lives in panels.css scoped under that class and cannot leak into any other
+   section. `wide: true` additionally drops the letter geometry, which exists
+   for prose and strangles a board or a keypad.
 
    Panels are plain scripts loaded with `defer`, so they are all registered
    before boot() runs. A panel owns its host element and may rewrite it freely
@@ -46,6 +52,7 @@ window.Shell = (function () {
     }
     current = id;
     hostEl.replaceChildren();
+    hostEl.className = "inner" + (panels.get(id).wide ? " wide" : "") + " p-" + id;
     panelEl.scrollTop = 0;
     navEl.querySelectorAll("button[data-s]").forEach((b) => b.classList.toggle("on", b.dataset.s === id));
     try { panels.get(id).mount(hostEl, ctx); }
@@ -151,5 +158,28 @@ window.Shell = (function () {
 
   document.addEventListener("DOMContentLoaded", boot);
 
-  return { register, open, reloadSite, ctx, get current() { return current; } };
+  /* The box a game may draw into, in CSS pixels: the panel's content area less
+     its padding. A game that sizes a canvas or a board asks for this rather
+     than guessing from the viewport, because the frame and the nav have already
+     taken their share. */
+  function room() {
+    if (!panelEl) return { w: 0, h: 0 };
+    const cs = getComputedStyle(panelEl);
+    return {
+      w: panelEl.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight),
+      h: panelEl.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom),
+    };
+  }
+
+  /* Re-fit on resize, for the sections that care. The listener is owned here so
+     a panel cannot leave one behind. */
+  const fitters = [];
+  function onResize(fn) { fitters.push(fn); return function () { const i = fitters.indexOf(fn); if (i >= 0) fitters.splice(i, 1); }; }
+  window.addEventListener("resize", () => fitters.forEach((f) => { try { f(); } catch (e) {} }));
+
+  /* Has this game been ported into the shell yet? home asks, so that porting a
+     game is adding its <script> and nothing else. */
+  function has(id) { return panels.has(id) && visible(id); }
+
+  return { register, open, reloadSite, ctx, room, onResize, has, get current() { return current; } };
 })();

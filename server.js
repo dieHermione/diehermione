@@ -703,9 +703,10 @@ async function fetchTopic(title) {
   return data;
 }
 
+// Moved into the shell (public/panels/summary.js). See the note on /writing.
 app.get("/summary", requirePlayer, (req, res) => {
   touchGuest(req);
-  res.sendFile(path.join(__dirname, "views", "summary.html"));
+  res.redirect("/dashboard#summary");
 });
 
 app.get("/api/summary/topic", async (req, res) => {
@@ -926,9 +927,10 @@ app.get(["/multitap", "/t9"], requirePlayer, (req, res) => {
 });
 
 // OT12 — match the photo to the LOONA member
+// Moved into the shell (public/panels/ot12.js). See the note on /writing.
 app.get("/ot12", requirePlayer, (req, res) => {
   touchGuest(req);
-  res.sendFile(path.join(__dirname, "views", "ot12.html"));
+  res.redirect("/dashboard#ot12");
 });
 
 /* ---- server-owned snake runs ---------------------------------------------
@@ -2050,9 +2052,8 @@ app.post("/api/notifications/clear", (req, res) => {
 });
 
 
-app.get("/deathroll", requirePlayer, (req, res) => {
-  res.sendFile(path.join(__dirname, "views", "deathroll.html"));
-});
+// Moved into the shell (public/panels/deathroll.js). See the note on /writing.
+app.get("/deathroll", requirePlayer, (req, res) => res.redirect("/dashboard#deathroll"));
 
 app.get("/games", requirePlayer, (req, res) => {
   res.sendFile(path.join(__dirname, "views", "games.html"));

@@ -357,8 +357,8 @@ dashboard; everything else is a view in `views/` behind a route.
 | `/login` | anyone | Hermione's sign-in form; reached only by `pray login`; redirects an existing login to the dashboard |
 | `/admin` | admin | the tabbed admin panel (`public/adminpanel.js`) |
 | `/commands` | admin | the `pray` reference, hand-maintained; back → `/admin` |
-| `/snake` `/multitap` (`/t9` alias) `/summary` `/skillcheck` `/ot12` `/deathroll` `/dummyparse` `/elysium` (`/tree` alias) `/chess` | player | the games on the wall, each still its own page |
-| `/writing` | player | **302 → `/dashboard#devotion`.** Devotion moved into the shell; `views/writing.html` was deleted rather than kept beside it |
+| `/snake` `/multitap` (`/t9` alias) `/skillcheck` `/dummyparse` `/elysium` (`/tree` alias) `/chess` | player | not yet ported — each still its own page |
+| `/writing` `/summary` `/ot12` `/deathroll` | player | **302 → `/dashboard#<section>`.** Ported into the shell; their views were deleted rather than kept beside the panel |
 | `/wheel` `/lottery` (`/slots` alias) | player | still routed, **not linked from the wall** (free play, pay nothing) |
 | `/coc2-engine/` | anyone (static) | a hosted writeup, unrelated to the site's own docs |
 | `/avatar/` | anyone (static) | a picture editor. Hosted here, **part of nothing here** — see below |
@@ -508,12 +508,23 @@ entry from guests — **presentation only**; every endpoint re-checks server-sid
 Routing is the hash, so reload and the back button both work; an unknown or
 forbidden hash falls back to home.
 
-**What runs in the panel:** home, devotion (the whole game), elysium (the
-tending console), settings, admin.
-**What still opens as its own page:** the other eight games. Their pills carry
-a small arrow so leaving is never a surprise. Porting them is the next tranche
-— each is a full document with its own `<style>` and `<script>`, so it is one
-game at a time, not one sweep.
+**Porting a game is adding its `<script>` to `dashboard.html` and nothing
+else.** `home.js` lists every game once with an `id`, asks `Shell.has(id)`, and
+opens the panel if the module is loaded or falls back to the page if not. The
+pills that still leave carry a small arrow, so it is never a surprise. Then
+redirect the old route and delete the view.
+
+Three things make each port cheap:
+
+| | |
+|---|---|
+| `p-<id>` on the host | shell.js sets it while a section is mounted, so a game's CSS lives in `panels.css` scoped under that class and cannot leak |
+| `wide: true` | drops the 36rem centred letter, which is right for prose and strangles a board or a keypad |
+| `Shell.room()` / `Shell.onResize()` | the box a game may draw into, after the frame and nav have taken their share — a canvas asks rather than guessing from the viewport |
+
+A game uses `.row`, `.chip`, `.field`, `.go` from `shell.css`. Only what it
+cannot say in that vocabulary belongs in `panels.css`. **That is what keeps
+twelve games looking like one site.**
 
 - **home** — the two lines of editable copy (`/api/site`, `{name}` filled
   server-side, pencils for her only), the games, and a link to the wall. Home
@@ -523,6 +534,13 @@ game at a time, not one sweep.
   the angelOS boot is gone (no terminal to boot) and the key clicks now run
   through `AudioBus`'s `typing` channel, so the slider in Settings — two clicks
   away in the same shell — finally governs them.
+- **summary** — two columns that stack below 820px. The source column owns its
+  own scrollbar, so a 7,000-character article never grows the panel.
+- **ot12** — three screens in one mount. Its sounds already rode AudioBus's
+  typing channel, so they came across untouched.
+- **deathroll** — the 4s poll (the other player rolls while you sit here) is
+  cleared on unmount, and a `dead` flag stops an in-flight fetch painting a
+  panel that is gone. An interval outliving its markup is how a shell leaks.
 - **elysium** — the readout and the tend buttons only. The game at `/elysium`
   is a whole environment (scene, weather, music, journal) and squeezing it into
   a 36rem note would cost the thing that makes it work, so the panel links to
@@ -731,6 +749,7 @@ passwordHash:b.hashSync("sandboxpass123",10),createdAt:Date.now()}},null,2))' <d
 - **Never transform `.dash`** — the scale-to-fit lives there. *(Gone with the terminal dashboard; left here because the trap outlives the element.)*
 - **`.nav` declares its own `--nav-ink/--nav-dim/--nav-faint`**, so setting them on `:root` or `body` looks right and does nothing. Set them on `.nav`. Six mockup dressings shipped with the wrong nav colour before this was caught.
 - **`element.append()` returns `undefined`**, so `host.append(x).lastChild` throws. Keep a reference.
+- **`[].slice.call(aSet)` returns `[]`** — a `Set` is iterable but not array-like, so it has no `length` for `slice` to read. Rewriting `[...picked]` that way posted an empty answer that the server rejected, and the panel's own `.catch` swallowed it into "nothing happened". Use `Array.from`.
 - **A test can pass for the wrong reason, twice over.** Sabotaging the narrow-layout rule produced no failure, because the section under test was too short to overflow at phone height; the per-element version then produced a *false positive*, because an element's bounding box extends past the clip box that is actually hiding it. Break every new rule and watch a check fail before believing it.
 - **nbsp in a typing box forces an unbreakable line** (horizontal scroll buried the caret); push real spaces as bare text nodes, not inside their own `<span>` (Safari).
 - **An undefined CSS custom property drops the whole declaration** silently.

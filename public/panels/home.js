@@ -12,19 +12,22 @@
 (function () {
   "use strict";
 
-  /* A game is either a panel in this shell, or its own page. The second kind
-     carries an arrow, so leaving is never a surprise. */
+  /* Her ordering, from the wall. A game opens in the panel once its module is
+     loaded and falls back to its own page until then, so **porting a game is
+     adding its <script> to dashboard.html and nothing else** — this list does
+     not change, and neither does anything else here. The ones that still leave
+     carry an arrow, so it is never a surprise. */
   var GAMES = [
-    { n: "Devotion",    panel: "devotion" },
-    { n: "Multitap",    href: "/multitap" },
-    { n: "Summary",     href: "/summary" },
-    { n: "Skill Check", href: "/skillcheck" },
-    { n: "OT12",        href: "/ot12" },
-    { n: "Snake",       href: "/snake" },
-    { n: "Deathroll",   href: "/deathroll" },
-    { n: "Dummy Parse", href: "/dummyparse" },
-    { n: "Elysium",     panel: "elysium" },
-    { n: "Chess",       href: "/chess" },
+    { n: "Devotion",    id: "devotion",   href: "/writing" },
+    { n: "Multitap",    id: "multitap",   href: "/multitap" },
+    { n: "Summary",     id: "summary",    href: "/summary" },
+    { n: "Skill Check", id: "skillcheck", href: "/skillcheck" },
+    { n: "OT12",        id: "ot12",       href: "/ot12" },
+    { n: "Snake",       id: "snake",      href: "/snake" },
+    { n: "Deathroll",   id: "deathroll",  href: "/deathroll" },
+    { n: "Dummy Parse", id: "dummyparse", href: "/dummyparse" },
+    { n: "Elysium",     id: "elysium",    href: "/elysium" },
+    { n: "Chess",       id: "chess",      href: "/chess" },
   ];
 
   var ORDINALS = ["", "first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth",
@@ -169,8 +172,8 @@
         var b = document.createElement("b");
         b.textContent = g.n;
         cell.append(b);
-        if (g.panel) {
-          cell.addEventListener("click", function () { window.Shell.open(g.panel); });
+        if (window.Shell.has(g.id)) {
+          cell.addEventListener("click", function () { window.Shell.open(g.id); });
         } else {
           var away = document.createElement("span");
           away.className = "away";
