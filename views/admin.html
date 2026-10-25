@@ -10,11 +10,20 @@
     lines), which was written against the terminal palette and reads those
     variable names directly — 17 uses of --dim2, 15 of --c, and so on.
 
-    Reskinned 2026-10-24 WITHOUT touching that file. The old names are simply
-    re-pointed at the shell's values below, so every rule in adminpanel.js keeps
-    applying and comes out in the new palette. Deleting the names instead would
-    not have left it merely off-colour: an undefined custom property drops the
-    WHOLE declaration, so the panel would have rendered unstyled.
+    Reskinned 2026-10-24 mostly by RE-POINTING those names at the shell's values
+    below, so every rule in adminpanel.js keeps applying and comes out in the new
+    palette. Deleting the names instead would not have left it merely off-colour:
+    an undefined custom property drops the WHOLE declaration, so the panel would
+    have rendered unstyled.
+
+    Two things could not be done from here and needed edits in adminpanel.js:
+      * five hardcoded `rgba(0,172,219,…)` fills — the house blue baked into
+        field and tab backgrounds, not reachable through any variable
+      * --dim2 was doing two jobs, four `color:` uses and four borders. One
+        value cannot serve both: a border alpha makes the hint text invisible,
+        and a readable grey makes the hairlines heavy. The border uses now read
+        `var(--line, var(--dim2))`, so they take the shell's hairline here and
+        still fall back to --dim2 anywhere that does not define --line.
   -->
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -32,7 +41,10 @@
     :root {
       --c: #171318;          /* was the house blue: now ink */
       --dim: #3f3741;
-      --dim2: rgba(23, 19, 24, .2);   /* it is used as a border colour throughout */
+      /* --dim2 is BOTH a border colour and a text colour in adminpanel.js (four
+         `color:` uses). A border alpha made the hint text almost invisible, so
+         it is a readable faint and the borders are a shade darker than ideal. */
+      --dim2: #5e545f;
       --bright: #171318;
       --accent: #171318;
       --bg: transparent;

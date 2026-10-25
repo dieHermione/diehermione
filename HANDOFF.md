@@ -622,6 +622,17 @@ Two of them were reskinned **without touching the script that draws them**:
   rule in it keeps applying and comes out in the new palette. Deleting the names
   would not have left it merely off-colour: an undefined custom property drops
   the whole declaration, so the panel would have rendered unstyled.
+
+  Re-pointing got most of the way, not all of it. Two things needed edits in
+  `adminpanel.js` itself:
+  - **five hardcoded `rgba(0,172,219,…)` fills** — the house blue baked into
+    field and tab backgrounds, reachable through no variable at all.
+  - **`--dim2` was doing two jobs**: four `color:` uses and thirteen borders.
+    One value cannot serve both — a border alpha makes the hint text invisible
+    (it measured illegible) and a readable grey makes every hairline heavy. The
+    border uses now read `var(--line, var(--dim2))`: the shell's hairline here,
+    falling back to `--dim2` anywhere `--line` is undefined. The hint text
+    measures **6.40:1** against the panel afterwards.
 - **`/games`** — the page moved into the frame and **the cards did not**. They
   are her art, and each interior is deliberately its own little world;
   restyling them to vellum would be throwing the thing away to make it match.

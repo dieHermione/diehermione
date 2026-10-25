@@ -113,10 +113,10 @@ window.AdminPanel = (function () {
          column does not get a horizontal scrollbar — it drops to one column. */
       ".adm { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(340px, 100%), 1fr)); gap: 0.4rem 2.2rem; align-items: start; }",
       /* tabs across the top-left: only one panel is shown at a time */
-      ".adm-tabs { display: flex; flex-wrap: wrap; gap: 0.3rem; margin: 0 0 1.6rem; border-bottom: 1px solid var(--dim2); }",
-      ".adm-tab { border: 1px solid var(--dim2); border-bottom: none; background: transparent; color: var(--dim); font-family: inherit; font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; padding: 0.5rem 1.15rem; cursor: pointer; position: relative; top: 1px; }",
+      ".adm-tabs { display: flex; flex-wrap: wrap; gap: 0.3rem; margin: 0 0 1.6rem; border-bottom: 1px solid var(--line, var(--dim2)); }",
+      ".adm-tab { border: 1px solid var(--line, var(--dim2)); border-bottom: none; background: transparent; color: var(--dim); font-family: inherit; font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; padding: 0.5rem 1.15rem; cursor: pointer; position: relative; top: 1px; }",
       ".adm-tab:hover { color: var(--c); }",
-      ".adm-tab.active { color: var(--bright); border-color: var(--accent); background: rgba(0,172,219,0.09); }",
+      ".adm-tab.active { color: var(--bright); border-color: var(--accent); background: rgba(23,19,24,.08); }",
       ".adm-tab .badge { color: var(--err); margin-left: 0.4rem; }",
       ".adm-panel { display: none; }",
       ".adm-subpanel { display: none; }",
@@ -128,12 +128,12 @@ window.AdminPanel = (function () {
       ".adm-sec { margin-bottom: 1.1rem; }",
       ".adm-empty { color: var(--dim2); font-size: 0.85rem; }",
       ".adm-lbl { display: block; font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); margin: 0.55rem 0 0.2rem; }",
-      ".adm-area { width: 100%; background: rgba(0,172,219,0.05); border: 1px solid var(--dim2); color: var(--bright); font-family: inherit; font-size: 0.8rem; line-height: 1.5; padding: 0.45rem 0.55rem; resize: vertical; }",
+      ".adm-area { width: 100%; background: rgba(23,19,24,.04); border: 1px solid var(--line, var(--dim2)); color: var(--bright); font-family: inherit; font-size: 0.8rem; line-height: 1.5; padding: 0.45rem 0.55rem; resize: vertical; }",
       ".adm-area:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 12px var(--glow); }",
       /* a disciple who rated Feet or Tasks/Chores below 4 is flagged red for review */
       ".adm-chip { border: 1px solid var(--c); background: transparent; color: var(--c); font-family: inherit; font-size: 0.76rem; padding: 0.24rem 0.7rem; cursor: pointer; text-transform: uppercase; letter-spacing: 0.08em; }",
       ".adm-chip:hover { background: var(--c); color: var(--bg); }",
-      ".adm-chip.ghost { border-color: var(--dim2); color: var(--dim); }",
+      ".adm-chip.ghost { border-color: var(--line, var(--dim2)); color: var(--dim); }",
       /* a selected chip is FILLED, not just a dimmer border — --dim/--dim2 equal
          --c site-wide now (dual-tone), so a border-colour-only toggle is invisible */
       ".adm-chip.sel { background: var(--c); color: var(--bg); }",
@@ -146,30 +146,30 @@ window.AdminPanel = (function () {
       ".ot-who { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.6rem 0; }",
       ".ot-list { display: flex; flex-wrap: wrap; gap: 0.9rem; margin-top: 0.8rem; }",
       ".ot-thumb { position: relative; width: 128px; text-align: center; }",
-      ".ot-thumb img { width: 128px; height: 128px; object-fit: contain; background: #000; border: 1px solid var(--dim2); display: block; cursor: pointer; }",
+      ".ot-thumb img { width: 128px; height: 128px; object-fit: contain; background: #000; border: 1px solid var(--line, var(--dim2)); display: block; cursor: pointer; }",
       ".ot-thumb.ot-current img { outline: 2px solid var(--accent); outline-offset: 2px; }",
       ".ot-thumb-nm { font-size: 0.68rem; color: var(--dim); margin-top: 0.25rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }",
       ".ot-thumb-x { position: absolute; top: 0; right: 0; background: rgba(0,0,0,0.7); }",
       ".adm-doc { display: block; color: var(--accent); padding: 0.2rem 0; }",
       ".adm-doc:hover { text-decoration: underline; }",
-      ".adm-log { display: flex; gap: 0.5rem; align-items: center; padding: 0.4rem 0.5rem; border: 1px solid var(--dim2); margin-bottom: 0.4rem; }",
+      ".adm-log { display: flex; gap: 0.5rem; align-items: center; padding: 0.4rem 0.5rem; border: 1px solid var(--line, var(--dim2)); margin-bottom: 0.4rem; }",
       ".adm-log:hover { border-color: var(--accent); }",
       ".adm-log .who2 { color: var(--bright); cursor: pointer; } .adm-log .meta2 { color: var(--dim); font-size: 0.8rem; text-align: right; flex: 1; cursor: pointer; }",
       ".adm-log-x { background: transparent; border: none; color: var(--dim); font-size: 1rem; line-height: 1; cursor: pointer; padding: 0 0.15rem; }",
       ".adm-log-x:hover { color: var(--err); }",
-      ".adm-preset { border: 1px solid var(--dim2); padding: 0.6rem; margin-bottom: 0.6rem; }",
+      ".adm-preset { border: 1px solid var(--line, var(--dim2)); padding: 0.6rem; margin-bottom: 0.6rem; }",
       ".adm-preset-head { display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem; }",
-      ".adm-preset input, .adm-preset textarea { width: 100%; background: rgba(0,172,219,0.06); border: 1px solid var(--dim2); color: var(--bright); font-family: inherit; font-size: 0.85rem; padding: 0.4rem 0.5rem; }",
+      ".adm-preset input, .adm-preset textarea { width: 100%; background: rgba(23,19,24,.05); border: 1px solid var(--line, var(--dim2)); color: var(--bright); font-family: inherit; font-size: 0.85rem; padding: 0.4rem 0.5rem; }",
       ".adm-preset input { flex: 1; } .adm-preset textarea { resize: vertical; line-height: 1.55; }",
       ".adm-preset-bar { display: flex; gap: 0.5rem; margin-top: 0.6rem; }",
-      ".adm-select { background: rgba(0,172,219,0.06); border: 1px solid var(--dim2); color: var(--c); font-family: inherit; font-size: 0.76rem; padding: 0.24rem 0.4rem; }",
+      ".adm-select { background: rgba(23,19,24,.05); border: 1px solid var(--line, var(--dim2)); color: var(--c); font-family: inherit; font-size: 0.76rem; padding: 0.24rem 0.4rem; }",
       ".adm-select option { background: #0a1420; }",
       /* finished-series modal (pmodal) */
       "#pmodal { position: fixed; inset: 0; z-index: 200; background: rgba(2,4,8,0.8); display: none; align-items: center; justify-content: center; }",
       "#pmodal.open { display: flex; }",
       "#pmodal .term { width: min(460px, 92vw); background: #06101a; border: 1px solid var(--accent); box-shadow: 0 0 40px var(--glow); padding: 1.6rem 1.8rem; font-family: 'IBM Plex Mono', monospace; color: var(--c); }",
       "#pmodal .pt-title { color: var(--bright); letter-spacing: 0.1em; margin-bottom: 0.6rem; }",
-      "#pmodal hr { border: none; border-top: 1px solid var(--dim2); margin: 0.7rem 0; }",
+      "#pmodal hr { border: none; border-top: 1px solid var(--line, var(--dim2)); margin: 0.7rem 0; }",
       "#pmodal .prow { display: flex; justify-content: space-between; padding: 0.15rem 0; }",
       "#pmodal .pk { color: var(--dim); } #pmodal .pdim { color: var(--dim2); }",
       "#pmodal .pclose { margin-top: 1.2rem; border: 1px solid var(--c); background: transparent; color: var(--c); font-family: inherit; padding: 0.3rem 1.2rem; cursor: pointer; text-transform: uppercase; letter-spacing: 0.1em; }",
@@ -179,7 +179,7 @@ window.AdminPanel = (function () {
       "#smodal.open { display: flex; }",
       "#smodal .term { width: min(620px, 92vw); background: #06101a; border: 1px solid var(--accent); box-shadow: 0 0 40px var(--glow); padding: 1.6rem 1.8rem; font-family: 'IBM Plex Mono', monospace; color: var(--c); }",
       "#smodal .pt-title { color: var(--bright); letter-spacing: 0.1em; margin-bottom: 0.6rem; }",
-      "#smodal hr { border: none; border-top: 1px solid var(--dim2); margin: 0.7rem 0; }",
+      "#smodal hr { border: none; border-top: 1px solid var(--line, var(--dim2)); margin: 0.7rem 0; }",
       "#smodal .prow { display: flex; justify-content: space-between; gap: 1rem; padding: 0.15rem 0; }",
       "#smodal .pk { color: var(--dim); } #smodal .pdim { color: var(--dim2); }",
       "#smodal .sm-text { max-height: 48vh; overflow-y: auto; white-space: pre-wrap; line-height: 1.6; color: var(--bright); font-size: 0.9rem; }",
@@ -494,7 +494,7 @@ window.AdminPanel = (function () {
 
     const songNameInput = document.createElement("input");
     songNameInput.type = "text"; songNameInput.placeholder = "song name"; songNameInput.maxLength = 120;
-    songNameInput.style.cssText = "width:100%;max-width:24rem;margin:.6rem 0;padding:.5rem .7rem;background:rgba(0,172,219,.05);border:1px solid var(--dim2);color:var(--bright);font-family:inherit;font-size:.9rem";
+    songNameInput.style.cssText = "width:100%;max-width:24rem;margin:.6rem 0;padding:.5rem .7rem;background:rgba(23,19,24,.04);border:1px solid var(--line, var(--dim2));color:var(--bright);font-family:inherit;font-size:.9rem";
     songSec.append(songNameInput);
 
     const songWho = document.createElement("div"); songWho.className = "ot-who";
@@ -559,7 +559,7 @@ window.AdminPanel = (function () {
     function songRow(s) {
       const box = document.createElement("div");
       box.className = "ot-thumb"; box.dataset.sid = s.id;
-      box.style.cssText = "width:auto;min-width:160px;max-width:220px;text-align:left;padding:.5rem .7rem;border:1px solid var(--dim2);cursor:pointer";
+      box.style.cssText = "width:auto;min-width:160px;max-width:220px;text-align:left;padding:.5rem .7rem;border:1px solid var(--line, var(--dim2));cursor:pointer";
       const nm = document.createElement("div");
       nm.style.cssText = "color:var(--bright);font-size:.85rem;margin-bottom:.2rem";
       nm.textContent = s.name;
