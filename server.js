@@ -921,9 +921,10 @@ app.get("/snake", requirePlayer, (req, res) => {
 // unguided: no on-screen hints about which key or how many taps. Self-refereed
 // client-side like the other typing games; no payout wired yet.
 // /t9 is kept as an alias — same route the wall used to link before the rename.
+// Moved into the shell (public/panels/multitap.js). See the note on /writing.
 app.get(["/multitap", "/t9"], requirePlayer, (req, res) => {
   touchGuest(req);
-  res.sendFile(path.join(__dirname, "views", "multitap.html"));
+  res.redirect("/dashboard#multitap");
 });
 
 // OT12 — match the photo to the LOONA member
@@ -2059,9 +2060,8 @@ app.get("/games", requirePlayer, (req, res) => {
   res.sendFile(path.join(__dirname, "views", "games.html"));
 });
 
-app.get("/skillcheck", requirePlayer, (req, res) => {
-  res.sendFile(path.join(__dirname, "views", "skillcheck.html"));
-});
+// Moved into the shell (public/panels/skillcheck.js). See the note on /writing.
+app.get("/skillcheck", requirePlayer, (req, res) => res.redirect("/dashboard#skillcheck"));
 
 app.get("/wheel", requirePlayer, (req, res) => {
   res.sendFile(path.join(__dirname, "views", "wheel.html"));

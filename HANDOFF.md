@@ -357,8 +357,8 @@ dashboard; everything else is a view in `views/` behind a route.
 | `/login` | anyone | Hermione's sign-in form; reached only by `pray login`; redirects an existing login to the dashboard |
 | `/admin` | admin | the tabbed admin panel (`public/adminpanel.js`) |
 | `/commands` | admin | the `pray` reference, hand-maintained; back → `/admin` |
-| `/snake` `/multitap` (`/t9` alias) `/skillcheck` `/dummyparse` `/elysium` (`/tree` alias) `/chess` | player | not yet ported — each still its own page |
-| `/writing` `/summary` `/ot12` `/deathroll` | player | **302 → `/dashboard#<section>`.** Ported into the shell; their views were deleted rather than kept beside the panel |
+| `/snake` `/dummyparse` `/elysium` (`/tree` alias) `/chess` | player | not yet ported — each still its own page |
+| `/writing` `/summary` `/ot12` `/deathroll` `/multitap` (`/t9` alias) `/skillcheck` | player | **302 → `/dashboard#<section>`.** Ported into the shell; their views were deleted rather than kept beside the panel |
 | `/wheel` `/lottery` (`/slots` alias) | player | still routed, **not linked from the wall** (free play, pay nothing) |
 | `/coc2-engine/` | anyone (static) | a hosted writeup, unrelated to the site's own docs |
 | `/avatar/` | anyone (static) | a picture editor. Hosted here, **part of nothing here** — see below |
@@ -541,6 +541,17 @@ twelve games looking like one site.**
 - **deathroll** — the 4s poll (the other player rolls while you sit here) is
   cleared on unmount, and a `dead` flag stops an in-flight fetch painting a
   panel that is gone. An interval outliving its markup is how a shell leaks.
+- **multitap** — mouse only by design, so there is no keydown listener at all.
+  The page called `window.playType()` inside a try/catch and **nothing has ever
+  defined it**, so the keypad was silent; it now makes devotion's key click on
+  the typing channel.
+- **skillcheck** — dials used to spawn anywhere in the viewport with
+  `position: fixed`. They now spawn inside a stage that fills the panel, so one
+  can never land under the leopard frame or behind the nav; verified by
+  sampling a live dial's box against both. The judging rule is untouched: the
+  needle is graded **where it is drawn**, not at a recomputed live angle, so a
+  frame of jank cannot grade a press the player never saw. Its colour comes
+  from `--ink` now, not the retired accent `--c`.
 - **elysium** — the readout and the tend buttons only. The game at `/elysium`
   is a whole environment (scene, weather, music, journal) and squeezing it into
   a 36rem note would cost the thing that makes it work, so the panel links to
