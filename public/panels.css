@@ -201,3 +201,122 @@
   .p-skillcheck .sc-hud { gap: 1.2rem; }
   .p-skillcheck .sc-stage { min-height: 20rem; }
 }
+
+/* ---------- chess ---------- */
+/* chess-extra.js carries its own stylesheet, written against the old page's
+   :root. It uses --vermilion, --ink-faint and the .brush button class, and an
+   undefined custom property drops the WHOLE declaration — so the admin panel
+   would render unstyled rather than merely off-colour. They are defined here,
+   on the section, which is an ancestor of everything that slot contains. */
+.p-chess { --vermilion: #8a1b2c; --ink-faint: var(--faint); }
+.p-chess .brush {
+  border: 1px solid var(--ink); background: none; color: var(--ink);
+  font-family: var(--ui); font-size: .7rem; letter-spacing: .22em; text-transform: uppercase;
+  padding: .55rem 1.2rem; cursor: pointer; border-radius: 999px;
+}
+.p-chess .brush:hover:not(:disabled) { background: var(--ink); color: #fff; }
+.p-chess .brush:disabled { opacity: .4; cursor: default; }
+
+.p-chess .cols { grid-template-columns: minmax(0, 20rem) minmax(0, 1fr); align-items: start; }
+.p-chess .ch-title { font-size: clamp(1.4rem, 2.6vw, 2rem); line-height: 1.2; margin: 0; text-align: left; }
+.p-chess .ch-title em { font-style: italic; color: var(--dim); }
+.p-chess .ch-meta { font-size: .88rem; color: var(--dim); margin-bottom: 1rem; }
+.p-chess .ch-meta div { display: flex; gap: .6rem; align-items: baseline; padding: .18rem 0; }
+.p-chess .ch-meta .k { flex: 0 0 4.2rem; font-size: .58rem; letter-spacing: .24em; text-transform: uppercase; color: var(--faint); }
+.p-chess .ch-meta .taken { font-size: 1.05rem; letter-spacing: .04em; }
+.p-chess .ch-status { font-size: .95rem; color: var(--dim); margin: 0 0 .9rem; min-height: 1.4em; }
+.p-chess .ch-status.alert { color: var(--err); }
+.p-chess .ch-moves {
+  max-height: 12rem; overflow-y: auto; scrollbar-width: thin;
+  font-size: .85rem; line-height: 1.8; color: var(--dim);
+  border-top: 1px solid var(--line); padding-top: .6rem; margin-bottom: 1rem;
+  font-variant-numeric: tabular-nums;
+}
+.p-chess .ch-moves::-webkit-scrollbar { width: 5px; }
+.p-chess .ch-moves::-webkit-scrollbar-thumb { background: rgba(23, 19, 24, .22); border-radius: 99px; }
+.p-chess .ch-moves .empty { color: var(--faint); font-style: italic; }
+.p-chess .ch-moves b { font-weight: 500; color: var(--ink); }
+.p-chess .actions { justify-content: flex-start; }
+.p-chess .go.armed { background: var(--err); border-color: var(--err); color: #fff; }
+
+/* The board is a square driven by the space the panel has, never the window,
+   so it cannot push past the frame. */
+.p-chess .ch-boardwrap { align-items: center; justify-content: flex-start; }
+.p-chess .ch-board {
+  display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr);
+  width: min(100%, 62vh); aspect-ratio: 1;
+  border: 1px solid var(--line); border-radius: var(--r-sm); overflow: hidden;
+  background: rgba(255, 255, 255, .5);
+}
+.p-chess .square { position: relative; display: grid; place-items: center; cursor: default; }
+.p-chess .square.dark { background: rgba(23, 19, 24, .085); }
+.p-chess .square.playable { cursor: pointer; }
+.p-chess .square.selected { box-shadow: inset 0 0 0 2px var(--ink); }
+.p-chess .square.last { background: rgba(138, 27, 44, .12); }
+.p-chess .square.last.dark { background: rgba(138, 27, 44, .2); }
+.p-chess .pc { font-size: clamp(1rem, 4.4vh, 2.1rem); line-height: 1; }
+.p-chess .pc.w { color: #fbfaf8; text-shadow: 0 0 1px rgba(23, 19, 24, .9), 0 1px 2px rgba(23, 19, 24, .35); }
+.p-chess .pc.b { color: #171318; }
+.p-chess .rk, .p-chess .fl {
+  position: absolute; font-style: normal; font-size: .48rem; letter-spacing: .1em;
+  color: var(--faint); pointer-events: none;
+}
+.p-chess .rk { top: 2px; left: 3px; }
+.p-chess .fl { bottom: 1px; right: 3px; }
+
+@media (max-width: 820px) {
+  .p-chess .cols { grid-template-columns: 1fr; }
+  .p-chess .ch-boardwrap { order: -1; }
+  .p-chess .ch-board { width: 100%; }
+}
+
+/* ---------- snake ---------- */
+.p-snake .sn-hud {
+  display: flex; gap: 2rem; flex-wrap: wrap; align-items: flex-end;
+  border-bottom: 1px solid var(--line); padding-bottom: .8rem; margin-bottom: .9rem;
+}
+.p-snake .sn-hud .k { font-size: .58rem; letter-spacing: .24em; text-transform: uppercase; color: var(--faint); }
+.p-snake .sn-hud .v {
+  margin-top: .2rem; font-family: var(--display); font-size: 1.3rem; line-height: 1;
+  color: var(--ink); font-variant-numeric: tabular-nums;
+}
+.p-snake .boostbar {
+  width: 7rem; height: 3px; margin-top: .5rem; border-radius: 3px;
+  background: var(--line); overflow: hidden;
+}
+.p-snake .boostbar span { display: block; height: 100%; width: 100%; background: var(--ink); }
+.p-snake .sn-timer { margin-left: auto; text-align: right; }
+.p-snake .sn-timer span {
+  display: block; margin-top: .2rem; font-family: var(--display); font-size: 1.3rem;
+  color: var(--ink); font-variant-numeric: tabular-nums;
+}
+/* the playfield: the panel's box, never the window */
+.p-snake .sn-stage {
+  position: relative; flex: 1 1 auto; min-height: 15rem;
+  border: 1px solid var(--line); border-radius: var(--r-md);
+  background: rgba(255, 255, 255, .34); overflow: hidden;
+}
+.p-snake .sn-stage canvas { display: block; width: 100%; height: 100%; }
+.p-snake .sn-status {
+  position: absolute; top: .8rem; left: 0; right: 0; text-align: center; margin: 0;
+  font-size: .6rem; letter-spacing: .3em; text-transform: uppercase; color: var(--faint);
+  pointer-events: none;
+}
+.p-snake .sn-overlay {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: .7rem; text-align: center;
+  background: rgba(255, 253, 250, .72);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+}
+.p-snake .sn-overlay[hidden] { display: none; }
+.p-snake .sn-overlay h1 { margin: 0 0 .3rem; }
+.p-snake .sn-overlay input { max-width: 7rem; text-align: center; }
+.p-snake .sn-stat { font-size: 1rem; color: var(--dim); margin-bottom: .6rem; }
+.p-snake .sn-stat b { font-family: var(--display); font-weight: 400; font-size: 1.8rem; color: var(--ink); }
+.p-snake .actions { margin-top: 1rem; justify-content: flex-start; }
+
+@media (max-width: 820px) {
+  .p-snake .sn-hud { gap: 1.1rem; }
+  .p-snake .sn-timer { margin-left: 0; text-align: left; }
+  .p-snake .sn-stage { min-height: 22rem; }
+}

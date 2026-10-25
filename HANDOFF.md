@@ -357,8 +357,8 @@ dashboard; everything else is a view in `views/` behind a route.
 | `/login` | anyone | Hermione's sign-in form; reached only by `pray login`; redirects an existing login to the dashboard |
 | `/admin` | admin | the tabbed admin panel (`public/adminpanel.js`) |
 | `/commands` | admin | the `pray` reference, hand-maintained; back → `/admin` |
-| `/snake` `/dummyparse` `/elysium` (`/tree` alias) `/chess` | player | not yet ported — each still its own page |
-| `/writing` `/summary` `/ot12` `/deathroll` `/multitap` (`/t9` alias) `/skillcheck` | player | **302 → `/dashboard#<section>`.** Ported into the shell; their views were deleted rather than kept beside the panel |
+| `/dummyparse` `/elysium` (`/tree` alias) | player | not yet ported — still their own pages |
+| `/writing` `/summary` `/ot12` `/deathroll` `/multitap` (`/t9` alias) `/skillcheck` `/chess` `/snake` | player | **302 → `/dashboard#<section>`.** Ported into the shell; their views were deleted rather than kept beside the panel |
 | `/wheel` `/lottery` (`/slots` alias) | player | still routed, **not linked from the wall** (free play, pay nothing) |
 | `/coc2-engine/` | anyone (static) | a hosted writeup, unrelated to the site's own docs |
 | `/avatar/` | anyone (static) | a picture editor. Hosted here, **part of nothing here** — see below |
@@ -508,6 +508,12 @@ entry from guests — **presentation only**; every endpoint re-checks server-sid
 Routing is the hash, so reload and the back button both work; an unknown or
 forbidden hash falls back to home.
 
+**Registration order is nav order**, and `dashboard.html` lists the scripts in
+her wall ordering, with home first and settings/admin last. Every section is
+therefore in the nav: it is the site's index, one click from anywhere. On a
+phone that costs 18% of the frame's opening across three rows, which is why the
+narrow nav is set tighter than the column — nothing is hidden.
+
 **Porting a game is adding its `<script>` to `dashboard.html` and nothing
 else.** `home.js` lists every game once with an `id`, asks `Shell.has(id)`, and
 opens the panel if the module is loaded or falls back to the page if not. The
@@ -552,6 +558,22 @@ twelve games looking like one site.**
   needle is graded **where it is drawn**, not at a recomputed live angle, so a
   frame of jank cannot grade a press the player never saw. Its colour comes
   from `--ink` now, not the retired accent `--c`.
+- **chess** — two things had to be designed around rather than copied.
+  `chess-extra.js` (STRIKE and REWIND, served by an admin-gated route that 404s
+  for everyone else) destructures `window.ChessCore`, appends to `#extra-slot`
+  and sets `G.onPaint`/`G.onClick` — so **the board, status line and extra slot
+  are built once in module scope and re-attached on every mount**; rebuilding
+  them per mount would leave the extra holding nodes that are off the page. It
+  loads once, and `G.paused` idles its own 4s poll while the section is away.
+  Its stylesheet uses `--vermilion` and `--ink-faint`, which `.p-chess` defines,
+  because an undefined custom property drops the whole declaration. `confirm()`
+  is gone — New game is a two-press confirmation, not a native dialog.
+- **snake** — the physics, the drawing and the food rules are **the page's own
+  code, moved across unedited**; retyping 400 lines of steering would only add
+  transcription bugs. The port is a surgical diff: the playfield is the panel's
+  stage rather than `innerWidth × innerHeight`, touch steering splits the canvas
+  rather than the window, the key handlers became named functions so unmount can
+  remove them, and the colours are `--err`/`--ink` rather than the terminal's.
 - **elysium** — the readout and the tend buttons only. The game at `/elysium`
   is a whole environment (scene, weather, music, journal) and squeezing it into
   a 36rem note would cost the thing that makes it work, so the panel links to

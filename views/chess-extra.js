@@ -206,6 +206,8 @@
     await loadGame();
   }
 
+  // The shell mounts and unmounts the board, so this poll must idle while the
+  // section is off screen; G.paused is set by the panel's unmount.
   loadGames();
-  setInterval(loadGames, 4000);
+  setInterval(function () { if (!G.paused) loadGames(); }, 4000);
 })();

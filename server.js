@@ -611,9 +611,10 @@ app.post("/api/elysium/debug", requireLogin, (req, res) => {
   res.json({ tree: elysium.publicView(next), debug: elysium.debugView(next) });
 });
 
-app.get("/chess", requirePlayer, (req, res) => {
-  res.sendFile(path.join(__dirname, "views", "chess.html"));
-});
+// Moved into the shell (public/panels/chess.js). See the note on /writing.
+// chess-extra.js keeps its own admin-gated route: the panel loads it the same
+// way the page did, and it still 404s for everyone else.
+app.get("/chess", requirePlayer, (req, res) => res.redirect("/dashboard#chess"));
 
 // Hermione's half of the chess page. It lives in views/ rather than public/ so
 // the static middleware cannot hand it out, and this route 404s rather than
@@ -913,9 +914,8 @@ app.get("/api/parses", (req, res) => {
   });
 });
 
-app.get("/snake", requirePlayer, (req, res) => {
-  res.sendFile(path.join(__dirname, "views", "snake.html"));
-});
+// Moved into the shell (public/panels/snake.js). See the note on /writing.
+app.get("/snake", requirePlayer, (req, res) => res.redirect("/dashboard#snake"));
 
 // Multitap — a typing game on an old-phone multi-tap keypad. Deliberately
 // unguided: no on-screen hints about which key or how many taps. Self-refereed
