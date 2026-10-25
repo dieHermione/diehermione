@@ -12,6 +12,10 @@
 (function () {
   "use strict";
 
+  /* Her ordering, from the wall. Dummy Parse is NOT here: it was taken off both
+     lists on 2026-10-24 rather than ported, the same treatment Wheel and Lottery
+     already have. The route still works for anyone holding the link — hiding is
+     not access control, and was never meant to be. */
   /* Her ordering, from the wall. A game opens in the panel once its module is
      loaded and falls back to its own page until then, so **porting a game is
      adding its <script> to dashboard.html and nothing else** — this list does
@@ -25,7 +29,6 @@
     { n: "OT12",        id: "ot12",       href: "/ot12" },
     { n: "Snake",       id: "snake",      href: "/snake" },
     { n: "Deathroll",   id: "deathroll",  href: "/deathroll" },
-    { n: "Dummy Parse", id: "dummyparse", href: "/dummyparse" },
     { n: "Elysium",     id: "elysium",    href: "/elysium" },
     { n: "Chess",       id: "chess",      href: "/chess" },
   ];

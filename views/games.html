@@ -149,14 +149,6 @@
     .c-elys-w .ew-cap { font-size: .58rem; letter-spacing: .18em; text-transform: uppercase; color: #4f8f6a; }
 
     /* DUMMY PARSE — a damage recount */
-    .c-parse { position: absolute; inset: 0; padding: .55rem .6rem; display: flex; flex-direction: column; gap: .3rem; }
-    .c-parse .b { position: relative; height: 20px; background: #140a0a; overflow: hidden; display: flex; align-items: center; }
-    .c-parse .b .f { position: absolute; inset: 0; opacity: .85; }
-    .c-parse .b .l { position: relative; z-index: 2; padding-left: .4rem; color: #fff; font-size: .68rem; }
-    .c-parse .b .v { position: relative; z-index: 2; margin-left: auto; padding-right: .4rem; color: #fff; font-size: .68rem; font-variant-numeric: tabular-nums; }
-    .c-parse .dps { margin-top: auto; display: flex; align-items: baseline; gap: .4rem; padding-top: .2rem; }
-    .c-parse .dps b { font-size: 1.4rem; color: #ff5a4a; text-shadow: 0 0 14px rgba(255,90,74,.6); }
-    .c-parse .dps span { font-size: .56rem; letter-spacing: .16em; color: #7a4a44; text-transform: uppercase; }
 
     /* SKILL CHECK — the dial and its good zone */
     .c-skill svg { position: absolute; inset: 0; width: 100%; height: 100%; }
@@ -244,7 +236,6 @@
       { n: "ot12",        href: "/ot12",                  art: "ot12",  a: "#ffa6c5", wb: "#0d0508", wip: true },
       { n: "snake",       href: "/snake",                 art: "snake", a: "#c11208", wb: "linear-gradient(#140506, #05060a)" },
       { n: "deathroll",   href: "/deathroll",             art: "death", a: "#c11208", wb: "#0e0607", tab: "extra" },
-      { n: "dummy parse", href: "/dummyparse",            art: "parse", a: "#ff5a4a", wb: "#0a0608", tab: "extra" },
       { n: "elysium",     href: "/elysium",               art: "elysium", a: "#3f9f6a", wb: "#04100a", tab: "extra" },
       { n: "chess",       href: "/chess",                 art: "chess", a: "#a4322a", wb: "#0c0a08", tab: "extra" },
     ];
@@ -296,12 +287,6 @@
       elys: () => `<div class="c-elys-w"><svg viewBox="0 0 214 210" preserveAspectRatio="xMidYMid meet">${wreath()}
         <text class="ew-num" x="107" y="118" text-anchor="middle" font-family="IBM Plex Mono" font-weight="700" font-size="22">–</text></svg>
         <div class="ew-cap">days tended</div></div>`,
-      parse: () => `<div class="c-parse">
-        <div class="b"><span class="f" style="width:100%;background:linear-gradient(90deg,#ffd36b,#a9791f)"></span><span class="l">Smite</span><span class="v">2,410</span></div>
-        <div class="b"><span class="f" style="width:78%;background:linear-gradient(90deg,#ff8a3d,#a1461a)"></span><span class="l">Holy Fire</span><span class="v">1,884</span></div>
-        <div class="b"><span class="f" style="width:63%;background:linear-gradient(90deg,#b98cff,#5a3a9a)"></span><span class="l">SW: Pain</span><span class="v">1,520</span></div>
-        <div class="b"><span class="f" style="width:44%;background:linear-gradient(90deg,#7fd0ff,#2f6a9a)"></span><span class="l">Mind Blast</span><span class="v">1,067</span></div>
-        <div class="dps"><b>812</b><span>dps</span></div></div>`,
       skill: () => `<div class="c-skill"><svg viewBox="0 0 214 262">
         <circle cx="107" cy="128" r="64" fill="none" stroke="#3a1416" stroke-width="14"/>
         <path d="M 63.6 171.4 A 64 64 0 0 1 47.7 102.9" fill="none" stroke="#c11208" stroke-width="14"/>

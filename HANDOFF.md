@@ -357,7 +357,8 @@ dashboard; everything else is a view in `views/` behind a route.
 | `/login` | anyone | Hermione's sign-in form; reached only by `pray login`; redirects an existing login to the dashboard |
 | `/admin` | admin | the tabbed admin panel (`public/adminpanel.js`) |
 | `/commands` | admin | the `pray` reference, hand-maintained; back → `/admin` |
-| `/dummyparse` `/elysium` (`/tree` alias) | player | not yet ported — still their own pages |
+| `/elysium` (`/tree` alias) | player | not yet ported — still its own page |
+| `/dummyparse` | player | still routed, **not linked from anywhere** — off the wall and off the dashboard since 2026-10-24, like Wheel and Lottery |
 | `/writing` `/summary` `/ot12` `/deathroll` `/multitap` (`/t9` alias) `/skillcheck` `/chess` `/snake` | player | **302 → `/dashboard#<section>`.** Ported into the shell; their views were deleted rather than kept beside the panel |
 | `/wheel` `/lottery` (`/slots` alias) | player | still routed, **not linked from the wall** (free play, pay nothing) |
 | `/coc2-engine/` | anyone (static) | a hosted writeup, unrelated to the site's own docs |
@@ -438,7 +439,7 @@ now returns what it wrote. **Penance was folded into it on 2026-09-11** — the 
 - **Deathroll** — Hermione sets the opening number against a live guest (her picker lists the active guest names); players alternate `1d(previous)`; a 1 loses. Games keyed by the guest name and dropped with it.
 - **Chess** — ink wash; every game is player (white) vs Hermione. Hermione has **STRIKE** (remove a piece, spent instead of a move, only on her turn) and **REWIND** (whole-state snapshot stack) via `chess-extra.js`. Her picker lists every live guest plus any game already on disk.
 - **Elysium** — the tree-care game, one tree per player (hermione, or a guest name — a guest's tree is dropped with the name after three quiet hours, so for them it is short by construction), server-authoritative and time-based (`elysium-engine.js`: hourly ticks, health/resilience/moisture/humidity/airflow/nutrients/leaf wetness/wound load, five zones, three diseases with stages, six growth stages, real-month seasons; actions Water/Mist/Trim/Fertilize/Inspect). Pays nothing, by design. Only page **without** the screen glitch. Admin debug panel at `/api/elysium/debug`.
-- **Dummy Parse** — priest damage sim; `GAME_VERSION` `"0.01"`; leaderboard shows best timed run per player on the current version only.
+- **Dummy Parse** — priest damage sim; `GAME_VERSION` `"0.01"`; leaderboard shows best timed run per player on the current version only. **Hidden since 2026-10-24**: it was dropped from the porting queue rather than moved into the shell, and taken off both the wall and the dashboard. Its route, its endpoints and `views/dummyparse.html` are untouched and still work for anyone holding the link — hiding is not access control. Its wall card and the `.c-parse` styles were deleted with it, so there is no orphaned renderer to puzzle over.
 - **Wheel** — the unrolled cylinder; unlimited free spins, pays nothing. Not on the wall.
 - **Lottery** (was Slots) — the INSTANT scratch card; free card, the "win" is just the number on it. Not on the wall.
 
@@ -721,7 +722,8 @@ notifications; the admin panel on the dashboard; the boot vignette and
 - `/admin` still hand-rolls its back chevron (`/commands` uses `nav.js` + `data-back`).
 - Hover sounds ride the typing channel; the settings panel has no fourth slider.
 - The shell has no notification bell. Admin reports the count; she has to go there to see one.
-- Wheel and Lottery are free-play curiosities off the wall; keep, re-card, or remove.
+- Wheel and Lottery are free-play curiosities off the wall; keep, re-card, or remove. **Dummy Parse now joins them** — hidden, not ported, not removed; decide whether it comes back.
+- Elysium is the last game still on its own page. It is a whole environment (scene, weather, music, journal), so porting it is a design question rather than a transcription one.
 
 ---
 
