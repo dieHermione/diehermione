@@ -6,34 +6,33 @@
   <title>The wall · angeldomme</title>
 
   <!--
-    The games wall. Each poster is a bespoke object for its game — nothing is
-    standardised between the interiors — dropped into one macOS-style window
-    frame.
+    The games wall, rebuilt 2026-10-27 in the shell's material.
 
-    Reskinned 2026-10-24: the PAGE moved into the shell's frame and faces, and
-    THE CARDS DID NOT. They are her art, and the card interiors are deliberately
-    their own little worlds; restyling them to the vellum palette would be
-    throwing the thing away to make it match. Dark windows on pale paper is the
-    composition now, and it reads like photographs laid out on a sheet.
+    The old cards were little dark screens — a terminal keypad, a red dial, a
+    black board — each its own world, which was right when the site was a
+    terminal. They are engravings on paper now: one ink drawing per game, in
+    the panel's own three greys, with the name set in the same didone as every
+    other heading. Nothing is a screenshot of the game; each drawing says what
+    the game IS.
+
+    The hover text she edits in Admin → Games → General is wired back up. It is
+    fetched from /api/gametips and shown on the card. The editor has been there
+    the whole time; the wall stopped reading it at some point and nobody noticed,
+    so she was editing text that nothing displayed.
   -->
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Major+Mono+Display&family=Bebas+Neue&family=Pinyon+Script&family=Montserrat:wght@300;400;500&family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,600;1,6..96,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Pinyon+Script&family=Montserrat:wght@300;400;500&family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,600;1,6..96,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/shell.css" />
   <script src="/me.js"></script>
   <script src="/audio.js"></script>
   <style>
-    /* The card interiors below still use these: they are the posters' own
-       palette, nothing to do with the page. */
-    :root {
-      --red: #ff3b2f; --deep: #c11208;
-    }
-    .stage { display: flex; flex-direction: column; height: 100%; }
+    .stage { display: flex; flex-direction: column; height: 100%; min-height: 0; }
     .wall-head { text-align: center; flex-shrink: 0; }
     .wall-head h1 { margin-bottom: .4rem; }
 
-    .tabs { display: flex; gap: .5rem; flex-shrink: 0; justify-content: center; margin: 1.2rem 0 1.4rem; }
+    .tabs { display: flex; gap: .5rem; flex-shrink: 0; justify-content: center; margin: 1.1rem 0 1.5rem; }
     .tab {
       background: rgba(255, 255, 255, .4); border: 1px solid var(--line); color: var(--dim);
       font-family: var(--ui); font-weight: 300; font-size: .85rem; letter-spacing: .14em;
@@ -43,169 +42,75 @@
     .tab:hover { color: var(--ink); border-color: var(--faint); }
     .tab.on { background: var(--ink); border-color: var(--ink); color: #fff; }
 
-    /* The wall is a single strip, flush left, that scrolls sideways as games
-       are added rather than wrapping. `grid-auto-flow: column` with one row
-       lets every card stand at full board height — much larger than the old
-       two-row wall, which had to fit two cards into that same space. */
-    .board { position: relative; flex: 1; min-height: 0; margin-top: 1rem;
+    /* One strip, flush left, that scrolls sideways as games are added rather
+       than wrapping. Below 820px it becomes an ordinary wrapping list. */
+    .board {
+      position: relative; flex: 1 1 auto; min-height: 0;
       overflow-x: auto; overflow-y: hidden; scrollbar-width: thin;
-      scrollbar-color: rgba(0,172,219,.35) transparent; cursor: grab; }
-    .board.dragging { cursor: grabbing; user-select: none; }
-    .board::-webkit-scrollbar { height: 7px; }
-    .board::-webkit-scrollbar-thumb { background: rgba(23,19,24,.22); border-radius: 999px; }
-    /* Horizontal padding is not cosmetic here: every card's drop shadow
-       (.frame-mac's box-shadow, present whether selected or not) bleeds well
-       past its own box. An inner card's bleed just overlaps its neighbour, but
-       the first and last card have no neighbour on their outer side — only the
-       board's scroll boundary, which clips flush with no room for it. */
-    .track { display: grid; grid-auto-flow: column; grid-template-rows: 1fr;
-      grid-auto-columns: max-content; gap: 30px; width: max-content; height: 100%;
-      align-content: stretch; align-items: center; padding: 0 26px 6px; }
+      scroll-behavior: smooth; cursor: grab; padding-bottom: .6rem;
+    }
+    .board.dragging { cursor: grabbing; user-select: none; scroll-behavior: auto; }
+    .board::-webkit-scrollbar { height: 6px; }
+    .board::-webkit-scrollbar-thumb { background: rgba(23, 19, 24, .22); border-radius: 999px; }
+    .track { display: flex; gap: 1rem; height: 100%; align-items: stretch; width: max-content; }
 
-    /* the poster is only a positioning / selection / lock wrapper; the frame fills it.
-       Height is a share of the single row (not the full row — that read too large
-       on a laptop); width follows from the aspect ratio, so cards grow and shrink
-       with the viewport instead of sitting at a fixed pixel size. */
-    .p { position: relative; height: 80%; aspect-ratio: 19 / 24; text-decoration: none; cursor: pointer; }
+    .p {
+      position: relative; flex: 0 0 auto; height: 100%; aspect-ratio: 3 / 4;
+      display: flex; flex-direction: column;
+      border: 1px solid var(--line); border-radius: var(--r-md);
+      background: rgba(255, 255, 255, .55);
+      text-decoration: none; color: inherit; cursor: pointer; overflow: hidden;
+      transition: background .2s ease, border-color .2s ease, transform .2s ease;
+    }
+    .p:hover, .p.sel { background: rgba(255, 255, 255, .86); border-color: var(--faint); transform: translateY(-4px); }
+    .p:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
 
-    /* ---------- the macOS window frame ---------- */
-    .frame-mac { position: relative; width: 100%; height: 100%; border: 1px solid #26333f; border-radius: 9px;
-      overflow: hidden; background: #04060a; box-shadow: 0 16px 38px rgba(0,0,0,.82); display: flex; flex-direction: column; }
-    .frame-mac .bar { display: flex; align-items: center; gap: .4rem; padding: .45rem .6rem;
-      background: #0c1219; border-bottom: 1px solid #1a2530; flex-shrink: 0; }
-    .frame-mac .bar i { width: 9px; height: 9px; border-radius: 50%; }
-    .frame-mac .bar .r { background: #ff5f57; } .frame-mac .bar .y { background: #febc2e; } .frame-mac .bar .g { background: #28c840; }
-    .frame-mac .bar .t { margin-left: .35rem; font-size: .62rem; color: #93a7ba; letter-spacing: .03em; }
-    .frame-mac .win { position: relative; flex: 1; min-height: 0; overflow: hidden; background: var(--wb, #04060a); }
-    .frame-mac .win::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 40%;
-      background: linear-gradient(180deg, transparent, rgba(4,6,10,.92)); pointer-events: none; z-index: 4; }
-    .frame-mac .num { position: absolute; bottom: 13px; right: 13px; z-index: 6; font-size: 10px;
-      letter-spacing: .24em; color: #3f5568; }
-    /* "unfinished" — an honest label, not a lock. The card underneath it is
-       still a live link; this never gets pointer-events, so it can never be
-       the thing a click lands on. */
-    .frame-mac .wip { position: absolute; top: 10px; right: 10px; z-index: 7; pointer-events: none;
-      background: rgba(24,14,0,.85); border: 1px solid #ffb020; color: #ffd27a;
-      font-size: .54rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase;
-      padding: .3rem .55rem; border-radius: 3px; text-shadow: 0 1px 4px rgba(0,0,0,.6); }
+    /* the drawing */
+    .art { flex: 1 1 auto; min-height: 0; position: relative; display: grid; place-items: center; padding: 1.1rem; }
+    /* `overflow: visible` let a caption near the viewBox's bottom edge spill out
+       of the card and land on top of the game's name. The drawing clips. */
+    .art svg { width: 100%; height: 100%; display: block; }
+    .ink { stroke: var(--ink); fill: none; stroke-width: 1.3; stroke-linecap: round; stroke-linejoin: round; }
+    .ink-2 { stroke: var(--dim); fill: none; stroke-width: 1.1; stroke-linecap: round; }
+    .ink-3 { stroke: var(--faint); fill: none; stroke-width: 1; stroke-linecap: round; }
+    .fill { fill: var(--ink); stroke: none; }
+    .fill-2 { fill: var(--dim); stroke: none; }
+    .fill-3 { fill: var(--faint); stroke: none; }
 
-    /* ===================== bespoke card interiors ===================== */
+    /* the foot: name, keyword, number */
+    .foot { flex-shrink: 0; border-top: 1px solid var(--line); padding: .7rem .9rem .8rem; }
+    .foot .n {
+      font-family: var(--display); font-weight: 400; font-size: 1.2rem; line-height: 1.1;
+      color: var(--ink); display: flex; align-items: baseline; justify-content: space-between; gap: .5rem;
+    }
+    .foot .num { font-family: var(--ui); font-size: .58rem; letter-spacing: .2em; color: var(--faint); }
+    .foot .k { font-size: .54rem; letter-spacing: .26em; text-transform: uppercase; color: var(--faint); margin-top: .25rem; }
 
-    /* a game whose card has not been designed yet */
-    .c-ph { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-      color: #7a8694; font-size: .92rem; letter-spacing: .08em; }
+    /* Her hover line, from /api/gametips. It sits over the DRAWING, not over the
+       foot: you should still be able to see which game you are reading about. */
+    .tip {
+      position: absolute; inset: auto 0 0 0; z-index: 3;   /* against .art's padding box */
+      background: rgba(255, 253, 250, .95);
+      backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+      border-top: 1px solid var(--line);
+      padding: .8rem .9rem; font-size: .78rem; line-height: 1.6; color: var(--dim);
+      opacity: 0; transform: translateY(6px); pointer-events: none;
+      transition: opacity .2s ease, transform .2s ease;
+    }
+    .p:hover .tip, .p.sel .tip { opacity: 1; transform: translateY(0); }
 
-    /* SNAKE — the real game screen, dimmed: the white countdown over the trail */
-    .c-snk { position: absolute; inset: 0; opacity: .75;
-      background: repeating-linear-gradient(0deg, rgba(210,15,5,.055) 0 1px, transparent 1px 4px); }
-    .c-snk svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-    .c-snk .timer { position: absolute; top: 10px; left: 0; right: 0; text-align: center; color: #fff;
-      font-variant-numeric: tabular-nums; text-shadow: 0 0 14px rgba(255,255,255,.35); }
-    .c-snk .timer .k { font-size: .5rem; letter-spacing: .26em; text-transform: uppercase;
-      color: var(--a); font-weight: 700; }
-    .c-snk .timer .t { font-size: 2rem; font-weight: 700; }
+    .wip {
+      position: absolute; top: .7rem; right: .7rem; z-index: 2;
+      font-size: .5rem; letter-spacing: .22em; text-transform: uppercase; color: var(--faint);
+      border: 1px solid var(--line); border-radius: 999px; padding: .2rem .55rem;
+      background: rgba(255, 255, 255, .7);
+    }
 
-    /* DEATHROLL — the play screen: the roll, whose turn it is, and the roll button */
-    .c-dr { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center;
-      justify-content: center; gap: .5rem; padding-bottom: 1.6rem; }
-    .c-dr .val { font-weight: 800; font-size: 3rem; line-height: .9; color: var(--a);
-      text-shadow: 0 0 26px rgba(193,18,8,.5); font-variant-numeric: tabular-nums; }
-    .c-dr .status { font-size: .58rem; letter-spacing: .06em; color: #eafaff; }
-    .c-dr .pill { border: 1.5px solid var(--a); color: var(--a); font-size: .5rem; letter-spacing: .22em;
-      text-transform: uppercase; padding: .3rem .8rem; margin-top: .3rem; }
-
-    /* MULTITAP — the flat old-phone keypad, one key lit. Sized off the card
-       itself (not a fixed px width) so it actually fills a card this much
-       larger than when it was first drawn, instead of floating small in the
-       middle of it. */
-    .c-mt { position: absolute; inset: 0; padding: 1rem 1rem 2.4rem; display: flex; align-items: center; justify-content: center; }
-    .c-mt .pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 88%; max-width: 320px; }
-    .c-mt .key { border: 1px solid color-mix(in srgb, var(--a) 22%, transparent); background: rgba(0,0,0,.45);
-      border-radius: 6px; display: flex; flex-direction: column;
-      align-items: center; justify-content: center; padding: .7rem 0; }
-    .c-mt .key b { color: #eafaff; font-size: 1.4rem; font-weight: 500; line-height: 1; }
-    .c-mt .key s { color: var(--a); font-size: .7rem; letter-spacing: .1em; text-decoration: none; margin-top: .3rem; min-height: .5em; }
-    .c-mt .key.on { border-color: var(--a); background: color-mix(in srgb, var(--a) 16%, transparent); box-shadow: 0 0 10px var(--a); }
-
-
-    /* DEVOTION — a verse reader: real lines, the current one lit, a small progress */
-    /* A generated poster, full-bleed. The first of the new cards (Devotion,
-       2026-09-11); the CSS-drawn ones are being replaced by these one at a time.
-       The image is 3:4 and the box is a little squarer, so it is cover-fit,
-       centred. No bottom fade over it: the art is complete as delivered. */
-    .c-img { position: absolute; inset: 0; overflow: hidden; }
-    .c-img img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center; }
-    .frame-mac .win:has(> .c-img)::after { display: none; }
-
-    /* ELYSIUM — a laurel wreath around the real days-tended count */
-    .c-elys-w { position: absolute; inset: 0; padding: .8rem .8rem 2.2rem; display: flex; flex-direction: column;
-      align-items: center; justify-content: center; gap: .3rem; }
-    .c-elys-w svg { width: 172px; height: 152px; }
-    .c-elys-w .ew-num { fill: #9fe0bb; }
-    .c-elys-w .ew-cap { font-size: .58rem; letter-spacing: .18em; text-transform: uppercase; color: #4f8f6a; }
-
-    /* DUMMY PARSE — a damage recount */
-
-    /* SKILL CHECK — the dial and its good zone */
-    .c-skill svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-
-    /* OT12 / LOONA — the one card that breaks from the terminal minimalism on
-       purpose: a real photo of the group, full-bleed, under a stylised display
-       wordmark. Every other card is a dim in-theme readout; this one is a poster. */
-    .c-ot12 { position: absolute; inset: 0; overflow: hidden; background: #000; }
-    .c-ot12 img { position: absolute; inset: 0; width: 100%; height: 100%;
-      object-fit: cover; object-position: center 22%; }
-    .c-ot12 .ot12-fade { position: absolute; inset: 0;
-      background: linear-gradient(180deg, rgba(0,0,0,.4) 0%, rgba(0,0,0,0) 32%, rgba(0,0,0,.22) 60%, rgba(0,0,0,.78) 100%); }
-    .c-ot12 .ot12-logo { position: absolute; left: 0; right: 0; top: 8%; text-align: center;
-      font-family: "Bebas Neue", "IBM Plex Mono", sans-serif; font-size: 7rem; font-weight: 400;
-      letter-spacing: .1em; color: #fff;
-      text-shadow: 0 2px 24px rgba(0,0,0,.7), 0 0 48px rgba(255,166,197,.55); }
-    .c-ot12 .ot12-sub { position: absolute; left: 0; right: 0; top: calc(8% + 6rem);
-      text-align: center; font-family: "IBM Plex Mono", monospace; font-size: 1rem;
-      letter-spacing: .3em; text-transform: uppercase; color: #ffd6e6; text-shadow: 0 1px 8px rgba(0,0,0,.6); }
-
-    /* SUMMARY — a read-and-retell column with a word-limit rule */
-    .c-sum { position: absolute; inset: 0; padding: .7rem .8rem; overflow: hidden; }
-    .c-sum .h { color: #eafaff; font-size: .82rem; letter-spacing: .02em; margin-bottom: .3rem; }
-    .c-sum .k { font-size: .54rem; letter-spacing: .16em; color: #00acdb; text-transform: uppercase; margin-bottom: .5rem; }
-    .c-sum .lines { display: flex; flex-direction: column; gap: 5px; }
-    .c-sum .lines i { display: block; height: 3px; background: #00acdb; }
-    .c-sum .lines i:nth-child(3n) { width: 74%; } .c-sum .lines i:nth-child(4n) { width: 88%; }
-    .c-sum .limit { margin-top: .5rem; height: 4px; background: #06222b; }
-    .c-sum .limit b { display: block; height: 100%; width: 62%; background: var(--a); }
-    .c-sum .wc { margin-top: .3rem; font-size: .56rem; letter-spacing: .1em; color: #00acdb; }
-
-    /* ---------- selection & lock ---------- */
-    .p.sel { z-index: 20; }
-    /* the hover border/glow follows the account's theme colour, not the game accent */
-    /* The selection and focus rings used to be the terminal accent. That accent
-       is retired, and an undefined custom property drops the WHOLE declaration
-       — so these rings would have silently stopped drawing. They are the page's
-       ink now, which reads against both the paper and the dark card. */
-    .p.sel .frame-mac { outline: 1px solid var(--ink); outline-offset: 3px;
-      box-shadow: 0 14px 34px rgba(23,19,24,.3); }
-    .p:focus-visible { outline: none; }
-    .p:focus-visible .frame-mac { outline: 2px solid var(--ink); outline-offset: 3px; }
-
-    .p.locked .frame-mac { filter: grayscale(.7) brightness(.55); }
-    .p.locked { cursor: not-allowed; }
-    .p .locknote { position: absolute; left: 0; right: 0; top: 46%; z-index: 30; display: none;
-      background: rgba(0,0,0,.82); border-top: 1px solid rgba(255,255,255,.3); border-bottom: 1px solid rgba(255,255,255,.3);
-      padding: .35rem 0; text-align: center; font-size: 9px; letter-spacing: .28em;
-      text-transform: uppercase; color: #eee; }
-    .p.locked .locknote { display: block; }
-
-    /* on a narrow screen the wall becomes a list */
-    @media (max-width: 900px) {
-      body { overflow: auto; }
-      .stage { position: static; min-height: 100%; }
-      /* on a narrow screen the strip becomes a normal wrapping list again */
-      .board { position: static; overflow: visible; }
-      .track { display: grid; grid-auto-flow: row; grid-template-rows: none;
-        grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
-        grid-auto-columns: auto; width: auto; height: auto; gap: 1.4rem; padding: 0; }
-      .p { width: auto; height: 300px; aspect-ratio: auto; }
+    @media (max-width: 820px) {
+      .board { overflow: visible; cursor: default; flex: none; }
+      .track { flex-wrap: wrap; width: auto; height: auto; justify-content: center; }
+      .p { height: auto; width: min(14rem, 44vw); }
+      .art { min-height: 11rem; }
     }
   </style>
 </head>
@@ -235,222 +140,9 @@
   <div class="veil"></div>
   <div class="frame"></div>
 
-  <script>
-    /* One poster per game. Wheel, chess and lottery are still routes in the
-       server and playable directly — they are just no longer linked from this
-       wall. Each game names a bespoke interior "art" and its accent; every card
-       shares the one macOS window frame. */
-    const GAMES = [
-      { n: "devotion",    href: "/dashboard#devotion",               art: "dev",   a: "#00acdb", wb: "#050a10" },
-      { n: "multitap",    href: "/dashboard#multitap",              art: "t9",    a: "#0bdb00", wb: "#050d05" },
-      { n: "summary",     href: "/dashboard#summary",               art: "sum",   a: "#00acdb", wb: "#050a10" },
-      { n: "skill check", href: "/dashboard#skillcheck",            art: "skill", a: "#c11208", wb: "radial-gradient(120% 120% at 50% 46%, #200a0c, #050202 74%)" },
-      { n: "ot12",        href: "/dashboard#ot12",                  art: "ot12",  a: "#ffa6c5", wb: "#0d0508", wip: true },
-      { n: "snake",       href: "/dashboard#snake",                 art: "snake", a: "#c11208", wb: "linear-gradient(#140506, #05060a)" },
-      { n: "deathroll",   href: "/dashboard#deathroll",             art: "death", a: "#c11208", wb: "#0e0607", tab: "extra" },
-      { n: "elysium",     href: "/dashboard#elysium",               art: "elysium", a: "#3f9f6a", wb: "#04100a", tab: "extra" },
-      { n: "chess",       href: "/dashboard#chess",                 art: "chess", a: "#a4322a", wb: "#0c0a08", tab: "extra" },
-    ];
-
-    // a ring of laurel leaves, for the elysium card
-    function wreath() {
-      let s = ""; const cx = 107, cy = 122, R = 52, degs = [22, 42, 62, 82, 102, 122, 142, 160];
-      for (const sgn of [1, -1]) for (const d of degs) {
-        const th = sgn * d, rad = th * Math.PI / 180;
-        const x = (cx + R * Math.sin(rad)).toFixed(1), y = (cy - R * Math.cos(rad)).toFixed(1), rot = (th + sgn * 90).toFixed(0);
-        s += `<ellipse cx="${x}" cy="${y}" rx="9" ry="3.4" fill="#3f9f6a" opacity=".85" transform="rotate(${rot} ${x} ${y})"/>`;
-      }
-      return s;
-    }
-
-    // Bespoke interior per game — nothing shared between them but the frame.
-    const ART = {
-      // snake & deathroll are placeholder cards for now — their art is still being
-      // worked out. The games themselves are unchanged and still linked.
-      snake: () => `<div class="c-snk">
-        <svg viewBox="0 0 214 214" preserveAspectRatio="none">
-          <path d="M-6 168 C 60 168, 40 92, 112 100 C 176 108, 152 44, 224 52" fill="none"
-                stroke="var(--a)" stroke-width="13" opacity=".4" stroke-linecap="round"/>
-        </svg>
-        <div class="timer"><div class="k">time left</div><div class="t">0:48</div></div></div>`,
-      // ot12 / LOONA: the real group photo, full-bleed, under a display wordmark
-      ot12: () => `<div class="c-ot12">
-        <img src="/img/ot12-loona.jpg" alt="" />
-        <div class="ot12-fade"></div>
-        <div class="ot12-logo">LOONA</div>
-        <div class="ot12-sub">fun trivia game</div></div>`,
-      elysium: () => `<div class="c-ph">placeholder card</div>`,
-      // chess: no bespoke art yet, same placeholder treatment as elysium
-      chess: () => `<div class="c-ph">placeholder card</div>`,
-      t9: () => `<div class="c-mt"><div class="pad">${
-        [["1",".,-"],["2","abc"],["3","def"],["4","ghi"],["5","jkl"],["6","mno"],
-         ["7","pqrs"],["8","tuv"],["9","wxyz"],["*","⌫"],["0","␣"],["#","↵"]]
-          .map(([n,l],i) => `<div class="key${i===5?" on":""}"><b>${n}</b><s>${l}</s></div>`).join("")
-      }</div></div>`,
-
-      // devotion: the generated poster (public/img/card-devotion.jpg)
-      dev: () => `<div class="c-img"><img src="/img/card-devotion.jpg" alt="" /></div>`,
-      death: () => `<div class="c-dr">
-        <div class="val">240</div>
-        <div class="status">your turn</div>
-        <div class="pill">roll</div></div>`,
-      // elysium: a laurel wreath around the real number of days the tree has been
-      // tended (hydrated from /api/elysium's ageDays; a dash until it loads).
-      elys: () => `<div class="c-elys-w"><svg viewBox="0 0 214 210" preserveAspectRatio="xMidYMid meet">${wreath()}
-        <text class="ew-num" x="107" y="118" text-anchor="middle" font-family="IBM Plex Mono" font-weight="700" font-size="22">–</text></svg>
-        <div class="ew-cap">days tended</div></div>`,
-      skill: () => `<div class="c-skill"><svg viewBox="0 0 214 262">
-        <circle cx="107" cy="128" r="64" fill="none" stroke="#3a1416" stroke-width="14"/>
-        <path d="M 63.6 171.4 A 64 64 0 0 1 47.7 102.9" fill="none" stroke="#c11208" stroke-width="14"/>
-        <circle cx="107" cy="128" r="64" fill="none" stroke="rgba(174,227,255,.18)" stroke-width="1"/>
-        <line x1="107" y1="128" x2="72" y2="86" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
-        <circle cx="107" cy="128" r="6" fill="#fff"/></svg></div>`,
-      sum: () => `<div class="c-sum"><div class="h">angels</div><div class="k">wikipedia · 150 words</div>
-        <div class="lines">${Array.from({length:9}).map(()=>'<i></i>').join("")}</div>
-        <div class="limit"><b></b></div><div class="wc">93 / 150 words</div></div>`,
-    };
-
-    function frameHTML(g, i) {
-      const num = String(i + 1).padStart(2, "0");
-      // an "unfinished" notice, not a lock — the card stays fully playable,
-      // it just says so. Separate from the account/multi lock treatment below.
-      const wip = g.wip ? '<div class="wip">unfinished</div>' : "";
-      return `<div class="frame-mac" style="--a:${g.a};--wb:${g.wb}">
-        <div class="bar"><i class="r"></i><i class="y"></i><i class="g"></i><span class="t">${g.n}@angeldomme</span></div>
-        <div class="win">${ART[g.art]()}${wip}<div class="num">${num}</div></div>
-      </div>`;
-    }
-
-    const board = document.getElementById("board");
-    let sel = 0;
-    let cards = [];
-    let guest = false;
-
-    // Placement is pure CSS now (a two-row, column-flow grid in .track), so
-    // there is no manual layout pass to run or to redo on resize.
-
-    // Only the active tab's games are on the wall; `shown` is what every index
-    // (selection, arrow keys, open) refers to, not the full GAMES list.
-    let curTab = "main", shown = [];
-    function build() {
-      board.replaceChildren();
-      const track = document.createElement("div");
-      track.className = "track";
-      board.append(track);
-      shown = GAMES.filter((g) => (g.tab || "main") === curTab);
-      cards = shown.map((g, i) => {
-        const a = document.createElement("a");
-        a.className = "p";
-        a.href = g.href;
-        a.tabIndex = 0;
-        a.style.setProperty("--a", g.a);   // so the selection glow picks up the game's accent
-        // (nothing is locked any more: accounts went, every game is open)
-        const locked = false;
-        if (locked) {
-          a.classList.add("locked");
-          a.removeAttribute("href");
-          a.setAttribute("aria-disabled", "true");
-        }
-        a.innerHTML = frameHTML(g, i) + (locked ? '<div class="locknote">sign in to play</div>' : "");
-        a.addEventListener("mouseenter", () => setSel(i));
-        a.addEventListener("focus", () => setSel(i));
-        a.addEventListener("click", (e) => { if (locked) e.preventDefault(); });
-        track.append(a);
-        return a;
-      });
-      document.getElementById("count").textContent = shown.length;
-      board.scrollLeft = 0;
-      setSel(0);
-      hydrate();
-    }
-
-    // The elysium card shows real state, not invented copy: the tree's actual
-    // days-tended. (Devotion's pool-line hydration went with its CSS card.)
-    function hydrate() {
-      fetch("/api/elysium").then((r) => (r.ok ? r.json() : null)).then((d) => {
-        const num = board.querySelector(".c-elys-w .ew-num");
-        const days = d && d.tree && typeof d.tree.ageDays === "number" ? d.tree.ageDays : null;
-        if (num && days != null) num.textContent = days;
-      }).catch(() => {});
-    }
-
-    function setSel(i) {
-      if (!shown.length) return;
-      sel = (i + shown.length) % shown.length;
-      cards.forEach((el, n) => el.classList.toggle("sel", n === sel));
-    }
-
-    function open() {
-      const g = shown[sel];
-      if (!g) return;
-      window.location.href = g.href;
-    }
-
-    document.addEventListener("keydown", (e) => {
-      const tag = (e.target && e.target.tagName || "").toLowerCase();
-      if (tag === "input" || tag === "textarea") return;
-      // one row now, not two — every arrow just steps to the next/previous card
-      if (e.key === "ArrowRight" || e.key === "ArrowDown") { e.preventDefault(); setSel(sel + 1); cards[sel].focus(); }
-      else if (e.key === "ArrowLeft" || e.key === "ArrowUp") { e.preventDefault(); setSel(sel - 1); cards[sel].focus(); }
-      else if (e.key === "Enter") { e.preventDefault(); open(); }
-    });
-
-
-    // Vertical wheel scrolls the strip sideways (down = right, up = left) —
-    // only when the strip actually overflows, so the narrow-screen fallback
-    // (a normal wrapping list, no horizontal scroll) keeps its normal page
-    // scroll instead of being eaten here.
-    board.addEventListener("wheel", (e) => {
-      if (board.scrollWidth <= board.clientWidth) return;
-      // A trackpad's own two-finger horizontal swipe already scrolls the strip
-      // natively via deltaX — leave that alone, or preventDefault below blocks
-      // it without anything picking up the slack. Only remap a vertical-only
-      // wheel (deltaX ~ 0, a plain mouse wheel or a vertical two-finger swipe).
-      if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
-      e.preventDefault();
-      board.scrollLeft += e.deltaY;
-    }, { passive: false });
-
-    // Click-and-drag panning. A card is an <a>, so a real click must still
-    // navigate — only a drag past a small threshold suppresses it.
-    let dragging = false, dragged = false, dragX = 0, dragScroll = 0;
-    board.addEventListener("mousedown", (e) => {
-      if (board.scrollWidth <= board.clientWidth) return;
-      dragging = true; dragged = false;
-      dragX = e.pageX; dragScroll = board.scrollLeft;
-      board.classList.add("dragging");
-    });
-    window.addEventListener("mousemove", (e) => {
-      if (!dragging) return;
-      const dx = e.pageX - dragX;
-      if (Math.abs(dx) > 4) dragged = true;
-      board.scrollLeft = dragScroll - dx;
-    });
-    window.addEventListener("mouseup", () => {
-      dragging = false;
-      board.classList.remove("dragging");
-    });
-    // capture phase: get to the click before the anchor's own navigation
-    board.addEventListener("click", (e) => {
-      if (!dragged) return;
-      e.preventDefault(); e.stopPropagation(); dragged = false;
-    }, true);
-
-    document.getElementById("tabs").addEventListener("click", (e) => {
-      const b = e.target.closest(".tab"); if (!b || b.dataset.tab === curTab) return;
-      [...document.querySelectorAll("#tabs .tab")].forEach((t) => t.classList.toggle("on", t === b));
-      curTab = b.dataset.tab;
-      build();
-    });
-
-    window.siteMe()
-      .then((d) => { if (window.Theme) window.Theme.fromAccount(d.themeColor || "default", d.guest); guest = Boolean(d.guest); build(); })
-      .catch(() => (window.location.href = "/"));
-  </script>
-  <!-- nav.js drew the old back chevron; .solo-back replaces it. dashglitch and
-       glitchboot have nothing left to glitch here. -->
-  <script src="/updatecheck.js" defer></script>
   <script src="/console.js" defer></script>
+  <script src="/updatecheck.js" defer></script>
   <script src="/ambience.js" defer></script>
+  <script src="/wall.js"></script>
 </body>
 </html>

@@ -37,10 +37,14 @@ edited through Replit sometimes, so **pull/rebase before pushing**.
 The site is called **angeldomme** — the `.me` is part of the word ("angel
 domme"). Never write bare `angeldom` anywhere a visitor sees, including window
 titles and `name@host` handles: write `angeldomme` or the full domain
-`angeldom.me`. Every page header reads **`angelOS v0.2`**, with exactly that
-casing — never `ANGELOS`. An uppercased header must wrap the word in a
-`text-transform: none` span (as `admin.html` and `commands.html` do). Internal
-identifiers and the domain string are fine.
+`angeldom.me`.
+
+**`angelOS` is retired (2026-10-27).** It was the machine's name, printed as a
+header on every page and as a tagline under the wordmark; it belonged to the
+terminal and went out with it. Removed from the dashboard nav, the front door,
+login, the console's greeting, the boot sequence, the wheel and dummy parse.
+Do not reintroduce it. The only trace left is in `public/_*.html` scratch files,
+which are gitignored and never deploy.
 
 ### Always push
 Commit and push to `main` after every task without asking. Small personal
@@ -633,12 +637,31 @@ Two of them were reskinned **without touching the script that draws them**:
     border uses now read `var(--line, var(--dim2))`: the shell's hairline here,
     falling back to `--dim2` anywhere `--line` is undefined. The hint text
     measures **6.40:1** against the panel afterwards.
-- **`/games`** — the page moved into the frame and **the cards did not**. They
-  are her art, and each interior is deliberately its own little world;
-  restyling them to vellum would be throwing the thing away to make it match.
-  Dark windows on pale paper is the composition. Their selection and focus
-  rings DID have to change: they were `var(--accent)`, which no longer exists,
-  so they had silently stopped drawing.
+- **`/games`** — **rebuilt on 2026-10-27** (`views/games.html` +
+  `public/wall.js`). The first pass kept the old dark card art on the reskinned
+  page; she asked for the whole thing in current styling, so the cards were
+  redrawn too. They are **ink engravings on paper** now: one SVG per game in the
+  panel's three greys (`--ink`, `--dim`, `--faint`) and nothing else, so nine
+  bespoke objects still read as one sheet. Each drawing says what the game IS
+  rather than picturing it — repeated handwriting for devotion, a long article
+  beside a short one for summary, a falling sequence ending in 1 for deathroll.
+  The macOS window frame, the per-game accents and the `wb` backgrounds are gone.
+
+  **Her hover text is wired back up.** The editor in Admin → Games → General has
+  existed all along, writing `gametips.json` through `/api/gametips`; the wall
+  had stopped reading it at some point, so she was editing text nothing
+  displayed. It is on the card again, over the drawing rather than over the
+  name — you should still be able to see which game you are reading about.
+
+  **`public/img/card-devotion.jpg` is no longer referenced.** It was the first
+  generated poster, from the plan to replace CSS cards with poster images one at
+  a time; it does not sit with a set of ink drawings. The file is kept, not
+  deleted. If the poster direction is resumed, the whole set should be
+  regenerated in this material rather than mixing the two.
+
+  Two traps the rebuild sprang: `overflow: visible` on the card SVG let a
+  caption near the viewBox's bottom edge land on top of the game's name, and
+  two symmetrical arcs near the top of a round crown read as a pair of eyes.
 
 **`/elysium` does not link `shell.css`**, on purpose: the scene defines its own
 `--ink` as a *light* colour for a dark field, and shell.css would overwrite it
@@ -752,7 +775,7 @@ notifications; the admin panel on the dashboard; the boot vignette and
 `[WARN]` lines; edge-burn glitch; the in-site `/guide` and `/tech` pages.
 
 ## Open items
-- The remaining ten CSS cards → generated posters like Devotion's (elysium and chess first; they are placeholders).
+- **Poster cards, decided or dropped.** The wall is ink drawings as of 2026-10-27, and `card-devotion.jpg` — the one generated poster — is unreferenced. Either resume the poster plan and regenerate the whole set in the current material (GPT image 2 is available; a brief would be one line each), or retire the idea and delete the file. Mixing the two is what looked wrong.
 - **The hidden effects code and the boot can now be deleted.** Nothing is terminal-styled any more, so `dashglitch.js`'s `HIDDEN` switch, the `.scan` rules, `glitchboot.js` and `boot.js` are dead weight. `boot.js` is still loaded by `/admin` for the decrypt preview; check that before deleting it.
 - Elysium is short of *events*, not features (ideas below).
 - OT12 payout is moot now (no points); song-based questions; fill the thin member fields before a height question.
@@ -823,6 +846,7 @@ passwordHash:b.hashSync("sandboxpass123",10),createdAt:Date.now()}},null,2))' <d
 - **`.nav` declares its own `--nav-ink/--nav-dim/--nav-faint`**, so setting them on `:root` or `body` looks right and does nothing. Set them on `.nav`. Six mockup dressings shipped with the wrong nav colour before this was caught.
 - **`element.append()` returns `undefined`**, so `host.append(x).lastChild` throws. Keep a reference.
 - **`[].slice.call(aSet)` returns `[]`** — a `Set` is iterable but not array-like, so it has no `length` for `slice` to read. Rewriting `[...picked]` that way posted an empty answer that the server rejected, and the panel's own `.catch` swallowed it into "nothing happened". Use `Array.from`.
+- **Measuring an element against the frame WITHOUT intersecting the scroll container's box first** reports faults nobody can see. A card's full rect routinely runs past the frame while the visible part of it does not. This has now produced a false positive three separate times; the sound check is the geometric invariant — *the panel sits inside the frame and clips its own overflow* — and per-element checks must intersect with the panel's box before testing anything.
 - **A test can pass for the wrong reason, twice over.** Sabotaging the narrow-layout rule produced no failure, because the section under test was too short to overflow at phone height; the per-element version then produced a *false positive*, because an element's bounding box extends past the clip box that is actually hiding it. Break every new rule and watch a check fail before believing it.
 - **nbsp in a typing box forces an unbreakable line** (horizontal scroll buried the caret); push real spaces as bare text nodes, not inside their own `<span>` (Safari).
 - **An undefined CSS custom property drops the whole declaration** silently.

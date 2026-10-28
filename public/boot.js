@@ -180,7 +180,7 @@
     var ov = document.createElement("div"); ov.id = "boot-overlay";
     ov.innerHTML =
       '<div class="scan"></div>' +
-      '<div class="top"><span style="text-transform:none">angelOS v0.2</span><span>power-on self test</span></div>' +
+      '<div class="top"><span>angeldomme</span><span>power-on self test</span></div>' +
       '<div class="console"><div id="boot-log"></div></div>';
     document.body.appendChild(ov);
     requestAnimationFrame(function () { ov.classList.add("on"); });
@@ -229,8 +229,8 @@
     var script = [];
     function step(gap, fn) { script.push([gap, fn]); }
 
-    step(0,    function () { line('<span class="dim">angelOS v0.2 bootloader      ' + stamp + "</span>"); });
-    step(140,  function () { line('<span class="dim">angelOS Startup Manager</span>'); });
+    step(0,    function () { line('<span class="dim">bootloader      ' + stamp + "</span>"); });
+    step(140,  function () { line('<span class="dim">Startup Manager</span>'); });
     step(240,  function () {
       var d = line("Memory Test : <b class='br'>0</b> KB");
       countUp(d.querySelector("b"), 655360, 900 * scale);
@@ -243,7 +243,7 @@
     step(210,  function () { line(lead("Detecting Devotion Bus", "<b class='br'>present</b> <span class='ok'>[OK]</span>")); });
     step(210,  function () { line(lead("Detecting Soul", "<b class='br'>bound</b> <span class='ok'>[OK]</span>")); });
     step(210,  function () { line(lead("Detecting Obedience Core", "<b class='br'>online</b> <span class='ok'>[OK]</span>")); });
-    step(280,  function () { line("&nbsp;"); line('<span class="acc">angelOS :: decrypt sequence</span>'); });
+    step(280,  function () { line("&nbsp;"); line('<span class="acc">decrypt sequence</span>'); });
     step(200,  function () { line(lead("mounting /dev/angel", "<span class='ok'>[OK]</span>")); });
     step(210,  function () { line(lead("loading devotion keyring", "<span class='ok'>[OK]</span>")); });
     step(210,  function () { line(lead("handshake // angeldom.me", "<span class='ok'>[OK]</span>")); });
@@ -258,7 +258,7 @@
     // then a long Arch/systemd-style startup cascade that scrolls for a while.
     // Wait out the last decrypt reveal (revealMs) before the cascade begins, so the
     // decrypt finishes resolving instead of scrolling away mid-resolve.
-    step(revealMs + 220, function () { line("&nbsp;"); line('<span class="acc">angelOS :: bringing up services</span>'); });
+    step(revealMs + 220, function () { line("&nbsp;"); line('<span class="acc">bringing up services</span>'); });
     var UNITS = [
       "Reached target Local File Systems", "Mounted /dev/angel", "Started Journal Service",
       "Started D-Bus System Message Bus", "Started udev Kernel Device Manager",

@@ -7,7 +7,7 @@
    POST /api/writing/complete refuses unless the server's own count says the run
    is finished. Nothing here is trusted with a number.
 
-   What is gone from the page version: the angelOS boot sequence (the shell has
+   What is gone from the page version: the boot sequence (the shell has
    no terminal to boot) and the raw AudioContext. The key clicks now run through
    AudioBus's `typing` channel, so the Typing slider in Settings — two clicks
    away in this same shell — actually governs them.

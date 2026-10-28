@@ -281,7 +281,7 @@
     open = true;
     box.classList.add("open");
     box.setAttribute("aria-hidden", "false");
-    if (!log.childElementCount) say("angelOS // console", "ok");
+    if (!log.childElementCount) say("console", "ok");
     setTimeout(function () { input.focus(); }, 60);
   }
   function hide() {
